@@ -15,9 +15,9 @@ build/
 *.blend~*
 
 # === Raw Renders (Regenerable from .blend) ===
-assets/*/render/raw/
-assets/*/render/processed/
-assets/*/sheets/
+assets/**/render/raw/
+assets/**/render/processed/
+assets/**/sheets/
 
 # === AI Concept References (Temporary) ===
 refs/
