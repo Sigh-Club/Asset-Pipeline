@@ -1,0 +1,38 @@
+# Asset-Pipeline
+# IoA Sprite Asset Generation
+
+# === Python / Pillow ===
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# === Blender ===
+*.blend1
+*.blend2
+*.blend~*
+
+# === Raw Renders (Regenerable from .blend) ===
+assets/*/render/raw/
+assets/*/render/processed/
+assets/*/sheets/
+
+# === AI Concept References (Temporary) ===
+refs/
+
+# === Build Output ===
+output/*/
+!output/.gitkeep
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
