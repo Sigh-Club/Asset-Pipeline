@@ -231,11 +231,23 @@ def setup_render_settings():
     if RENDER_ENGINE == "BLENDER_EEVEE":
         # Disable screen-space effects that blur pixel edges
         eevee = scene.eevee
-        eevee.taa_render_samples = 1   # No anti-aliasing oversampling
-        eevee.use_taa_reprojection = False
-        # Disable bloom, motion blur for crisp sprites
-        eevee.use_bloom = False
-        eevee.motion_blur_steps = 0
+        # In Blender 5.1+, taa_render_samples may not exist; safely try to set
+        try:
+            eevee.taa_render_samples = 1   # No anti-aliasing oversampling
+        except AttributeError:
+            pass
+        try:
+            eevee.use_taa_reprojection = False
+        except AttributeError:
+            pass
+        # Disable bloom for crisp sprites (check attr exists in this Blender version)
+        if hasattr(eevee, 'use_bloom'):
+            eevee.use_bloom = False
+        # Motion blur removed or renamed in newer versions
+        try:
+            eevee.motion_blur_steps = 0
+        except AttributeError:
+            pass
 
     # Image output
     scene.render.image_settings.file_format = FILE_FORMAT

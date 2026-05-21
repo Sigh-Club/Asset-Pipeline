@@ -186,7 +186,8 @@ def quantize_to_palette(img: Image.Image, palette: list) -> Image.Image:
     rgb_img = p_img.convert("RGB")
     rgba_img = rgb_img.convert("RGBA")
     out_pixels = rgba_img.load()
-    out_palette = rgba_img.getpalette()
+    # Get palette from the P-mode image, NOT from RGBA
+    src_palette = p_img.getpalette()
 
     for y in range(h):
         for x in range(w):
@@ -194,9 +195,9 @@ def quantize_to_palette(img: Image.Image, palette: list) -> Image.Image:
                 out_pixels[x, y] = (0, 0, 0, 0)
             else:
                 idx = pixels_out[x, y]
-                pr = out_palette[idx * 3]
-                pg = out_palette[idx * 3 + 1]
-                pb = out_palette[idx * 3 + 2]
+                pr = src_palette[idx * 3]
+                pg = src_palette[idx * 3 + 1]
+                pb = src_palette[idx * 3 + 2]
                 out_pixels[x, y] = (pr, pg, pb, 255)
 
     return rgba_img

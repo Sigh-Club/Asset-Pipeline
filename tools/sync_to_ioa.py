@@ -4,7 +4,7 @@ sync_to_ioa.py — Asset Sync Tool
 Copies finalized asset-pipeline output into the Imperium of Ash frontend directory.
 
 Usage:
-    python sync_to_ioa.py --version v0.1.0 --ioa-path /path/to/Imperium\ of\ Ash
+    python sync_to_ioa.py --version v0.1.0 --ioa-path "/path/to/Imperium of Ash"
 
 What it does:
 1. Reads the latest build from `output/<version>/`
@@ -166,7 +166,7 @@ def main():
     force_global = args.force or args.yes
     dry_run = not args.yes and not args.force
 
-    pipeline_root = Path(__file__).resolve().parents[2]
+    pipeline_root = Path(__file__).resolve().parents[1]  # asset-pipeline root
     pipeline_output = pipeline_root / "output"
     ioa_root = Path(args.ioa_path).resolve()
     ioa_assets = ioa_root / IOA_ASSETS_SUBDIR
