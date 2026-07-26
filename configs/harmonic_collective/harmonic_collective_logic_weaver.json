@@ -1,0 +1,41 @@
+{
+  "unit_name": "harmonic_collective_logic_weaver",
+  "faction": "harmonic_collective",
+  "output_blend": "assets/units/harmonic_collective_logic_weaver/model/logic_weaver_v2.blend",
+  "proportions": {
+    "height": 1.25,
+    "build": 1.0,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.34,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_ChromeWhite",
+    "torso": "MAT_ChromeWhite",
+    "shoulders": "MAT_ChromeWhite",
+    "upper_arms": "MAT_ChromeWhite",
+    "forearms": "MAT_ChromeWhite",
+    "thighs": "MAT_ChromeWhite",
+    "shins": "MAT_ChromeWhite",
+    "boots": "MAT_GrimdarkMetal",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_ChromeWhite",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "heavy",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.5,
+    "walk_stride": 0.3,
+    "attack_speed": 1.2
+  }
+}

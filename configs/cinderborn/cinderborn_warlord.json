@@ -1,0 +1,42 @@
+{
+  "unit_name": "cinderborn_warlord",
+  "faction": "cinderborn",
+  "output_blend": "assets/units/cinderborn_warlord/model/cinderborn_warlord_v2.blend",
+  "proportions": {
+    "height": 1.32,
+    "build": 1.25,
+    "leg_ratio": 0.4,
+    "arm_ratio": 0.36,
+    "head_ratio": 0.13
+  },
+  "materials": {
+    "helmet": "MAT_ChaosRust",
+    "torso": "MAT_ChaosRust",
+    "shoulders": "MAT_ChaosRust",
+    "upper_arms": "MAT_GrimdarkFabric",
+    "forearms": "MAT_GrimdarkLeather",
+    "thighs": "MAT_GrimdarkFabric",
+    "shins": "MAT_ChaosRust",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_ChaosRust",
+    "weapon_stock": "MAT_GrimdarkLeather",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "daemon_sword",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": true
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "cinderborn_cinder_cultist"
+}

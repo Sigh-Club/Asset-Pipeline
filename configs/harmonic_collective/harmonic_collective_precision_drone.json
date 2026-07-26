@@ -1,0 +1,41 @@
+{
+  "unit_name": "harmonic_collective_precision_drone",
+  "faction": "harmonic_collective",
+  "output_blend": "assets/units/harmonic_collective_precision_drone/model/precision_drone_v2.blend",
+  "proportions": {
+    "height": 1.2,
+    "build": 0.9,
+    "leg_ratio": 0.4,
+    "arm_ratio": 0.36,
+    "head_ratio": 0.16
+  },
+  "materials": {
+    "helmet": "MAT_ChromeWhite",
+    "torso": "MAT_ChromeWhite",
+    "shoulders": "MAT_ChromeWhite",
+    "upper_arms": "MAT_ChromeWhite",
+    "forearms": "MAT_ChromeWhite",
+    "thighs": "MAT_ChromeWhite",
+    "shins": "MAT_ChromeWhite",
+    "boots": "MAT_GrimdarkMetal",
+    "weapon_body": "MAT_ChromeWhite",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "weapon": {
+    "type": "rifle",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.8,
+    "walk_stride": 0.5,
+    "attack_speed": 1.8
+  }
+}

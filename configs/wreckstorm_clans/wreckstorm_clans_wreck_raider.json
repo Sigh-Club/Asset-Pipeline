@@ -1,0 +1,41 @@
+{
+  "unit_name": "wreckstorm_clans_wreck_raider",
+  "faction": "wreckstorm_clans",
+  "output_blend": "assets/units/wreckstorm_clans_wreck_raider/model/wreck_raider_v2.blend",
+  "proportions": {
+    "height": 1.22,
+    "build": 1.05,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.34,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_RedRust",
+    "torso": "MAT_RedRust",
+    "shoulders": "MAT_RedRust",
+    "upper_arms": "MAT_GrimdarkMetal",
+    "forearms": "MAT_RedRust",
+    "thighs": "MAT_GrimdarkLeather",
+    "shins": "MAT_RedRust",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_RedRust",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "rifle",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 1.2,
+    "walk_stride": 0.45,
+    "attack_speed": 1.6
+  }
+}

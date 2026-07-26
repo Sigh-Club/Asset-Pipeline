@@ -1,0 +1,50 @@
+{
+  "unit_name": "wreckstorm_clans_battle_wagon",
+  "faction": "wreckstorm_clans",
+  "body_type": "vehicle",
+  "output_blend": "assets/units/wreckstorm_clans_battle_wagon/model/battle_wagon_v2.blend",
+  "proportions": {
+    "height": 0.55,
+    "build": 1.15,
+    "leg_ratio": 0.0,
+    "arm_ratio": 0.0,
+    "head_ratio": 0.0
+  },
+  "materials": {
+    "hull": "MAT_RedRust",
+    "track": "MAT_RedRust",
+    "helmet": "MAT_RedRust",
+    "torso": "MAT_RedRust",
+    "shoulders": "MAT_RedRust",
+    "upper_arms": "MAT_RedRust",
+    "forearms": "MAT_RedRust",
+    "thighs": "MAT_RedRust",
+    "shins": "MAT_RedRust",
+    "boots": "MAT_RedRust",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_ImperialGold"
+  },
+  "vehicle": {
+    "type": "tank",
+    "track_width": 0.18,
+    "hull_length": 0.5,
+    "turret": true
+  },
+  "weapon": {
+    "type": "heavy",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.5,
+    "walk_stride": 0.4,
+    "attack_speed": 1.2
+  }
+}

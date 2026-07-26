@@ -1,3 +1,6 @@
+# === Secrets ===
+.env
+
 # Asset-Pipeline
 # IoA Sprite Asset Generation
 
@@ -24,7 +27,23 @@ refs/
 
 # === Build Output ===
 output/*/
-!output/.gitkeep
+output/render_queue.json
+output/render_progress.json
+output/render_queue_scheduled.log
+output/schedule_render.log
+output/nightly_render.log
+output/render_logs/
+output/v0.4.0_batch_render.log
+output/.render_pause
+output/.gitkeep
+!output/render_logs/.gitkeep
+
+# === Runtime / Temp ===
+.backend_pid
+test_metal.zip
+render/
+tile_set_library.blend
+imperial_guardsman.blend
 
 # === IDE ===
 .vscode/

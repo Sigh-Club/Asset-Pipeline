@@ -1,0 +1,41 @@
+{
+  "unit_name": "void_corsairs_void_raider",
+  "faction": "void_corsairs",
+  "output_blend": "assets/units/void_corsairs_void_raider/model/void_raider_v2.blend",
+  "proportions": {
+    "height": 1.22,
+    "build": 1.0,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.34,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_BlackSilver",
+    "torso": "MAT_BlackSilver",
+    "shoulders": "MAT_BlackSilver",
+    "upper_arms": "MAT_GrimdarkLeather",
+    "forearms": "MAT_BlackSilver",
+    "thighs": "MAT_GrimdarkLeather",
+    "shins": "MAT_BlackSilver",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_BlackSilver",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "weapon": {
+    "type": "rifle",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.8,
+    "walk_stride": 0.4,
+    "attack_speed": 1.4
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "unit_name": "cinderborn_soul_weaver",
+  "faction": "cinderborn",
+  "output_blend": "assets/units/cinderborn_soul_weaver/model/cinderborn_soul_weaver_v2.blend",
+  "proportions": {
+    "height": 1.22,
+    "build": 0.9,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.35,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_ChaosRust",
+    "torso": "MAT_ChaosRust",
+    "shoulders": "MAT_ChaosRust",
+    "upper_arms": "MAT_GrimdarkFabric",
+    "forearms": "MAT_GrimdarkLeather",
+    "thighs": "MAT_GrimdarkFabric",
+    "shins": "MAT_ChaosRust",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_ChaosRust",
+    "weapon_stock": "MAT_GrimdarkLeather",
+    "accent": "MAT_ChaosRust"
+  },
+  "weapon": {
+    "type": "soul_staff",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "cinderborn_cinder_cultist"
+}

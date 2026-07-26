@@ -1,0 +1,44 @@
+{
+  "unit_name": "iron_directorate_suppression_team",
+  "faction": "iron_directorate",
+  "output_blend": "assets/units/iron_directorate_suppression_team/model/suppression_team_v1.blend",
+  "proportions": {
+    "height": 1.26,
+    "build": 1.15,
+    "leg_ratio": 0.41,
+    "arm_ratio": 0.37,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_GrimdarkMetal",
+    "torso": "MAT_GrimdarkMetal",
+    "shoulders": "MAT_GrimdarkMetal",
+    "upper_arms": "MAT_GrimdarkFabric",
+    "forearms": "MAT_GrimdarkLeather",
+    "thighs": "MAT_GrimdarkFabric",
+    "shins": "MAT_GrimdarkMetal",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "heavy_machine_gun",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": true,
+    "crest": false,
+    "visor": true,
+    "aquila": false,
+    "ammo_belt": true,
+    "bipod": true
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "iron_directorate_line_infantry"
+}

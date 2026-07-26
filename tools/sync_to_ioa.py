@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 """
-sync_to_ioa.py — Asset Sync Tool
-Copies finalized asset-pipeline output into the Imperium of Ash frontend directory.
+sync_to_ioa.py — Extract atlas frames into individual PNGs for IoA compatibility.
+
+IoA expects: `/assets/units/<faction>_<unit>_<direction>.png`
+Our atlas has: `idle/N/frame_01.png`, `idle/N/frame_02.png`, etc.
+
+This tool:
+  1. Reads atlas JSON
+  2. Extracts `idle` state, frame 01 for each direction
+  3. Saves as `<faction>_<unit>_<direction>.png`
+  4. Copies to IoA `frontend/public/assets/units/`
+
+Later when IoA supports animations, we can export all frames.
 
 Usage:
-    python sync_to_ioa.py --version v0.1.0 --ioa-path "/path/to/Imperium of Ash"
-
-What it does:
-1. Reads the latest build from `output/<version>/`
-2. Copies `output/<version>/*` to `IoA/frontend/public/assets/<version>/`
-3. Generates a manifest for the game to load assets by version
-4. Optionally updates IoA's AGENTS.md or asset registry JSON
-5. Cleans unused old versions (configurable)
-
-Safety:
-- NEVER overwrites without explicit flag `--force`
-- Dry-run mode by default (shows what WOULD be copied)
-- Requires confirmation before modifying IoA working tree
-
-Author: Asset-Pipeline Automation
-Docs: docs/BLENDER_WORKFLOW.md, AGENTS.md
+    python tools/sync_to_ioa.py \
+        --atlas output/v0.1.0/characters/iron_line_infantry/iron_line_infantry_atlas.json \
+        --target /home/talzanar/Projects/Imperium\ of\ Ash/frontend/public/assets/units/
 """
 
 import os
@@ -28,172 +25,125 @@ import json
 import shutil
 import argparse
 from pathlib import Path
-
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
-
-# Default relative path from asset-pipeline repo to IoA repo
-DEFAULT_IOA_PATH = "../Imperium of Ash"
-
-# Target directory inside IoA frontend
-IOA_ASSETS_SUBDIR = "frontend/public/assets/pipeline"
-
-# Versions to keep (oldest auto-deleted)
-MAX_OLD_VERSIONS = 2
+from PIL import Image
 
 
-# =============================================================================
-# UTILITIES
-# =============================================================================
+def load_atlas_json(atlas_path: str) -> dict:
+    """Read atlas metadata."""
+    with open(atlas_path) as f:
+        return json.load(f)
 
 
-def log(msg: str):
-    print(f"[sync_to_ioa] {msg}")
+def extract_idle_frames(atlas_json: dict, atlas_png_path: str, out_dir: str) -> list:
+    """
+    Extract idle frame 01 for each direction from atlas.
+    Returns list of extracted file paths.
+    """
+    atlas_img = Image.open(atlas_png_path).convert("RGBA")
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    
+    extracted = []
+    frames = atlas_json.get("frames", [])
+    
+    for frame_info in frames:
+        filename = frame_info.get("filename", "")
+        # Only extract idle/01 frames
+        if "idle" in filename and "frame_01" in filename:
+            # Parse direction from filename: idle/N/frame_01.png
+            parts = filename.split("/")
+            if len(parts) >= 3:
+                direction = parts[1]
+            else:
+                continue
+            
+            # Get frame position in atlas
+            frame_data = frame_info.get("frame", {})
+            x = frame_data.get("x", 0)
+            y = frame_data.get("y", 0)
+            w = frame_data.get("w", 96)
+            h = frame_data.get("h", 128)
+            
+            # Extract
+            sprite = atlas_img.crop((x, y, x + w, y + h))
+            
+            # Build output name from atlas name + direction
+            atlas_name = Path(atlas_png_path).stem.replace("_atlas", "")
+            out_name = f"{atlas_name}_{direction}.png"
+            out_path = out_dir / out_name
+            
+            sprite.save(out_path)
+            extracted.append(str(out_path))
+            print(f"  Extracted {filename} -> {out_name}")
+    
+    return extracted
 
 
-def confirm(prompt: str) -> bool:
-    """Ask user for yes/no confirmation."""
-    while True:
-        inp = input(f"{prompt} [y/N]: ").strip().lower()
-        if inp in ("y", "yes"):
-            return True
-        if inp in ("n", "no", ""):
-            return False
+def copy_to_ioa(extracted_paths: list, ioa_units_dir: str) -> None:
+    """Copy extracted frames to IoA public assets."""
+    target = Path(ioa_units_dir)
+    target.mkdir(parents=True, exist_ok=True)
+    
+    for src in extracted_paths:
+        src_path = Path(src)
+        dst = target / src_path.name
+        shutil.copy2(src, dst)
+        print(f"  Copied to IoA: {dst}")
 
 
-# =============================================================================
-# SYNC LOGIC
-# =============================================================================
-
-
-def discover_versions(output_dir: Path) -> list:
-    """List all version directories in output/, sorted."""
-    if not output_dir.exists():
-        return []
-    versions = [d.name for d in output_dir.iterdir() if d.is_dir()]
-    # Simple semver-ish sort (assumes vX.Y.Z format)
-    def sort_key(v):
-        try:
-            parts = v.lstrip("v").split(".")
-            return tuple(int(p) for p in parts)
-        except ValueError:
-            return (0,)
-    return sorted(versions, key=sort_key)
-
-
-def sync_version(version: str, pipeline_output: Path, ioa_assets: Path, dry_run: bool, force: bool):
-    """Copy one version from pipeline output to IoA."""
-    src = pipeline_output / version
-    dst = ioa_assets / version
-
-    if not src.exists():
-        log(f"ERROR: Source version directory not found: {src}")
-        sys.exit(1)
-
-    if dst.exists() and not force:
-        log(f"Destination exists: {dst}")
-        if dry_run:
-            log("  (dry-run: would skip without --force)")
-            return
-        if not confirm(f"Overwrite {dst}?"):
-            log("Sync cancelled by user.")
-            sys.exit(0)
-
-    if dry_run:
-        file_count = sum(1 for _ in src.rglob("*") if _.is_file())
-        log(f"DRY RUN: Would copy {file_count} files from {src} -> {dst}")
-        return
-
-    # Perform copy
-    if dst.exists() and force:
-        shutil.rmtree(dst)
-    shutil.copytree(src, dst)
-    log(f"Copied: {src} -> {dst}")
-
-
-def generate_ioa_manifest(ioa_assets: Path):
-    """Generate or update asset manifest in IoA for runtime loading."""
-    manifest_path = ioa_assets / "manifest.json"
-    versions = discover_versions(ioa_assets)
-
-    manifest = {
-        "versions": versions,
-        "latest": versions[-1] if versions else None,
-        "format": "pipeline_v1",
+def generate_placeholder_tiles(ioa_tiles_dir: str) -> None:
+    """
+    Generate basic tile images if IoA doesn't have them.
+    Creates simple colored diamonds for testing.
+    """
+    target = Path(ioa_tiles_dir)
+    target.mkdir(parents=True, exist_ok=True)
+    
+    tiles = {
+        "normal": (74, 74, 74),      # Battle grey
+        "cover": (90, 74, 60),       # Leather
+        "heavy_cover": (60, 60, 60), # Gunmetal
+        "impassable": (10, 10, 10),  # Void black
     }
-
-    if manifest_path.exists() and not force_global:
-        log(f"Manifest exists: {manifest_path}")
-        if not confirm("Overwrite IoA asset manifest?"):
-            return
-
-    with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=2)
-    log(f"Manifest updated: {manifest_path}")
-
-
-def cleanup_old_versions(ioa_assets: Path, keep: int):
-    """Remove oldest versions beyond `keep` count."""
-    versions = discover_versions(ioa_assets)
-    if len(versions) <= keep:
-        return
-    to_remove = versions[:-keep]
-    for old in to_remove:
-        old_path = ioa_assets / old
-        log(f"Removing old version: {old_path}")
-        shutil.rmtree(old_path)
-
-
-# =============================================================================
-# MAIN
-# =============================================================================
-
-force_global = False  # set by argument
+    
+    for name, color in tiles.items():
+        path = target / f"{name}.png"
+        if not path.exists():
+            img = Image.new("RGBA", (96, 48), (*color, 255))
+            img.save(path)
+            print(f"  Generated tile: {name}.png")
 
 
 def main():
-    global force_global
-    parser = argparse.ArgumentParser(description="Sync asset-pipeline output to Imperium of Ash")
-    parser.add_argument("--version", required=True, help="Version tag to sync (e.g., v0.1.0)")
-    parser.add_argument("--ioa-path", default=os.environ.get("IOA_PATH", DEFAULT_IOA_PATH),
-                        help="Path to Imperium of Ash repository root")
-    parser.add_argument("--force", action="store_true", help="Overwrite existing version without prompt")
-    parser.add_argument("--yes", action="store_true", help="Auto-confirm all prompts (dangerous)")
-    parser.add_argument("--clean", action="store_true", help="Remove old versions after sync")
+    parser = argparse.ArgumentParser(description="Sync asset-pipeline to IoA repo")
+    parser.add_argument("--atlas-json", required=True, help="Atlas JSON path")
+    parser.add_argument("--atlas-png", required=True, help="Atlas PNG path")
+    parser.add_argument("--ioa-dir", required=True, help="IoA frontend/public path")
+    parser.add_argument("--units-only", action="store_true", help="Only sync units")
     args = parser.parse_args()
-
-    force_global = args.force or args.yes
-    dry_run = not args.yes and not args.force
-
-    pipeline_root = Path(__file__).resolve().parents[1]  # asset-pipeline root
-    pipeline_output = pipeline_root / "output"
-    ioa_root = Path(args.ioa_path).resolve()
-    ioa_assets = ioa_root / IOA_ASSETS_SUBDIR
-
-    if not ioa_root.exists():
-        log(f"ERROR: IoA repository not found at {ioa_root}")
-        sys.exit(1)
-
-    log(f"Pipeline output: {pipeline_output}")
-    log(f"IoA assets dir: {ioa_assets}")
-    log(f"Version to sync: {args.version}")
-
-    if dry_run:
-        log("Running in DRY RUN mode (no changes). Use --yes to execute.")
-
-    # 1. Sync files
-    sync_version(args.version, pipeline_output, ioa_assets, dry_run, force_global)
-
-    # 2. Generate manifest
-    if not dry_run:
-        generate_ioa_manifest(ioa_assets)
-
-    # 3. Cleanup old
-    if args.clean and not dry_run:
-        cleanup_old_versions(ioa_assets, MAX_OLD_VERSIONS)
-
-    log("Sync complete.")
+    
+    ioa_units = os.path.join(args.ioa_dir, "assets", "units")
+    ioa_tiles = os.path.join(args.ioa_dir, "assets", "tiles")
+    
+    print(f"[sync] Extracting from {args.atlas_png}")
+    # Use a temp dir relative to the atlas location — not a hardcoded v0.1.0 path
+    temp_dir = os.path.join(os.path.dirname(args.atlas_png), "..", "ioa_temp")
+    temp_dir = os.path.abspath(temp_dir)
+    extracted = extract_idle_frames(
+        load_atlas_json(args.atlas_json),
+        args.atlas_png,
+        temp_dir
+    )
+    
+    if extracted:
+        print(f"[sync] Copying {len(extracted)} frames to IoA...")
+        copy_to_ioa(extracted, ioa_units)
+    
+    if not args.units_only:
+        print(f"[sync] Checking tiles...")
+        generate_placeholder_tiles(ioa_tiles)
+    
+    print(f"[sync] Done. IoA assets ready for testing.")
 
 
 if __name__ == "__main__":

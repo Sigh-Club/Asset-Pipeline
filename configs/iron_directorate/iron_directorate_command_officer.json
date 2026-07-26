@@ -1,0 +1,44 @@
+{
+  "unit_name": "iron_directorate_command_officer",
+  "faction": "iron_directorate",
+  "output_blend": "assets/units/iron_directorate_command_officer/model/command_officer_v1.blend",
+  "proportions": {
+    "height": 1.25,
+    "build": 1.05,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.34,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_GrimdarkMetal",
+    "torso": "MAT_GrimdarkMetal",
+    "shoulders": "MAT_GrimdarkMetal",
+    "upper_arms": "MAT_GrimdarkFabric",
+    "forearms": "MAT_GrimdarkLeather",
+    "thighs": "MAT_GrimdarkFabric",
+    "shins": "MAT_GrimdarkMetal",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkLeather",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "pistol",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": true,
+    "cape": true,
+    "vox_caster": true
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "iron_directorate_line_infantry"
+}

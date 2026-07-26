@@ -1,0 +1,47 @@
+{
+  "unit_name": "void_corsairs_shade_swarm",
+  "faction": "void_corsairs",
+  "body_type": "insectoid",
+  "output_blend": "assets/units/void_corsairs_shade_swarm/model/shade_swarm_v2.blend",
+  "proportions": {
+    "height": 0.4,
+    "build": 0.85,
+    "leg_ratio": 0.0,
+    "arm_ratio": 0.0,
+    "head_ratio": 0.0
+  },
+  "materials": {
+    "helmet": "MAT_BlackSilver",
+    "torso": "MAT_BlackSilver",
+    "shoulders": "MAT_BlackSilver",
+    "upper_arms": "MAT_BlackSilver",
+    "forearms": "MAT_BlackSilver",
+    "thighs": "MAT_BlackSilver",
+    "shins": "MAT_BlackSilver",
+    "boots": "MAT_BlackSilver",
+    "weapon_body": "MAT_BlackSilver",
+    "weapon_stock": "MAT_BlackSilver",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "insectoid": {
+    "leg_count": 6,
+    "wings": true,
+    "segments": 3
+  },
+  "weapon": {
+    "type": "melee",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.2,
+    "walk_stride": 0.7,
+    "attack_speed": 2.0
+  }
+}

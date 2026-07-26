@@ -1,0 +1,41 @@
+{
+  "unit_name": "void_corsairs_shadow_blade",
+  "faction": "void_corsairs",
+  "output_blend": "assets/units/void_corsairs_shadow_blade/model/shadow_blade_v2.blend",
+  "proportions": {
+    "height": 1.18,
+    "build": 0.85,
+    "leg_ratio": 0.44,
+    "arm_ratio": 0.36,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_BlackSilver",
+    "torso": "MAT_BlackSilver",
+    "shoulders": "MAT_BlackSilver",
+    "upper_arms": "MAT_BlackSilver",
+    "forearms": "MAT_BlackSilver",
+    "thighs": "MAT_GrimdarkLeather",
+    "shins": "MAT_BlackSilver",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_BlackSilver",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "pistol",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.6,
+    "walk_stride": 0.5,
+    "attack_speed": 1.8
+  }
+}

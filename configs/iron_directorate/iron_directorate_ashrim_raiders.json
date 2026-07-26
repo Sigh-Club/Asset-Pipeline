@@ -1,0 +1,44 @@
+{
+  "unit_name": "iron_directorate_ashrim_raiders",
+  "faction": "iron_directorate",
+  "output_blend": "assets/units/iron_directorate_ashrim_raiders/model/ashrim_raiders_v1.blend",
+  "proportions": {
+    "height": 1.15,
+    "build": 0.95,
+    "leg_ratio": 0.44,
+    "arm_ratio": 0.36,
+    "head_ratio": 0.15
+  },
+  "materials": {
+    "helmet": "MAT_GrimdarkLeather",
+    "torso": "MAT_GrimdarkFabric",
+    "shoulders": "MAT_GrimdarkFabric",
+    "upper_arms": "MAT_GrimdarkFabric",
+    "forearms": "MAT_GrimdarkLeather",
+    "thighs": "MAT_GrimdarkFabric",
+    "shins": "MAT_GrimdarkLeather",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkLeather",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "glaive",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false,
+    "hood": true,
+    "trophy_rack": true
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "iron_directorate_line_infantry"
+}

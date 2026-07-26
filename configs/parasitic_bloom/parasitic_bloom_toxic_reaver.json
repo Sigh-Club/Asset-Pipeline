@@ -1,0 +1,41 @@
+{
+  "unit_name": "parasitic_bloom_toxic_reaver",
+  "faction": "parasitic_bloom",
+  "output_blend": "assets/units/parasitic_bloom_toxic_reaver/model/toxic_reaver_v2.blend",
+  "proportions": {
+    "height": 1.22,
+    "build": 1.0,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.34,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_BioFlesh",
+    "torso": "MAT_BioFlesh",
+    "shoulders": "MAT_BioFlesh",
+    "upper_arms": "MAT_BioFlesh",
+    "forearms": "MAT_GrimdarkMetal",
+    "thighs": "MAT_GrimdarkLeather",
+    "shins": "MAT_GrimdarkMetal",
+    "boots": "MAT_BioFlesh",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_BioFlesh",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "weapon": {
+    "type": "rifle",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  }
+}

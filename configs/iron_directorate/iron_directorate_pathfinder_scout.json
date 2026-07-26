@@ -1,0 +1,44 @@
+{
+  "unit_name": "iron_directorate_pathfinder_scout",
+  "faction": "iron_directorate",
+  "output_blend": "assets/units/iron_directorate_pathfinder_scout/model/pathfinder_scout_v1.blend",
+  "proportions": {
+    "height": 1.18,
+    "build": 0.92,
+    "leg_ratio": 0.45,
+    "arm_ratio": 0.36,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_GrimdarkMetal",
+    "torso": "MAT_GrimdarkFabric",
+    "shoulders": "MAT_GrimdarkFabric",
+    "upper_arms": "MAT_GrimdarkFabric",
+    "forearms": "MAT_GrimdarkLeather",
+    "thighs": "MAT_GrimdarkFabric",
+    "shins": "MAT_GrimdarkLeather",
+    "boots": "MAT_GrimdarkLeather",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkLeather",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "carbine",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": false,
+    "crest": false,
+    "visor": true,
+    "aquila": false,
+    "camouflage_cloak": true,
+    "binoculars": true
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "iron_directorate_line_infantry"
+}

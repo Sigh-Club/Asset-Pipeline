@@ -1,0 +1,48 @@
+{
+  "unit_name": "harmonic_collective_gun_drone",
+  "faction": "harmonic_collective",
+  "body_type": "vehicle",
+  "output_blend": "assets/units/harmonic_collective_gun_drone/model/gun_drone_v2.blend",
+  "proportions": {
+    "height": 0.35,
+    "build": 0.9,
+    "leg_ratio": 0.0,
+    "arm_ratio": 0.0,
+    "head_ratio": 0.0
+  },
+  "materials": {
+    "hull": "MAT_ChromeWhite",
+    "track": "MAT_ChromeWhite",
+    "helmet": "MAT_ChromeWhite",
+    "torso": "MAT_ChromeWhite",
+    "shoulders": "MAT_ChromeWhite",
+    "upper_arms": "MAT_ChromeWhite",
+    "forearms": "MAT_ChromeWhite",
+    "thighs": "MAT_ChromeWhite",
+    "shins": "MAT_ChromeWhite",
+    "boots": "MAT_GrimdarkMetal",
+    "weapon_body": "MAT_ChromeWhite",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "vehicle": {
+    "type": "gun_emplacement",
+    "turret": false
+  },
+  "weapon": {
+    "type": "rifle",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.2,
+    "walk_stride": 0.3,
+    "attack_speed": 1.5
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "unit_name": "iron_directorate_ironclad_warden",
+  "faction": "iron_directorate",
+  "output_blend": "assets/units/iron_directorate_ironclad_warden/model/ironclad_warden_v1.blend",
+  "proportions": {
+    "height": 1.35,
+    "build": 1.3,
+    "leg_ratio": 0.4,
+    "arm_ratio": 0.38,
+    "head_ratio": 0.12
+  },
+  "materials": {
+    "helmet": "MAT_GrimdarkMetal",
+    "torso": "MAT_GrimdarkMetal",
+    "shoulders": "MAT_GrimdarkMetal",
+    "upper_arms": "MAT_GrimdarkMetal",
+    "forearms": "MAT_GrimdarkMetal",
+    "thighs": "MAT_GrimdarkMetal",
+    "shins": "MAT_GrimdarkMetal",
+    "boots": "MAT_GrimdarkMetal",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_ImperialGold"
+  },
+  "weapon": {
+    "type": "power_sword",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": true,
+    "shield": true,
+    "servo_motors": true
+  },
+  "animation_params": {
+    "idle_intensity": 1.0,
+    "walk_stride": 0.4,
+    "attack_speed": 1.5
+  },
+  "promoted_from": "iron_directorate_line_infantry"
+}

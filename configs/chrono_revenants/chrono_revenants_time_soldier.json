@@ -1,0 +1,41 @@
+{
+  "unit_name": "chrono_revenants_time_soldier",
+  "faction": "chrono_revenants",
+  "output_blend": "assets/units/chrono_revenants_time_soldier/model/time_soldier_v2.blend",
+  "proportions": {
+    "height": 1.2,
+    "build": 0.95,
+    "leg_ratio": 0.42,
+    "arm_ratio": 0.34,
+    "head_ratio": 0.14
+  },
+  "materials": {
+    "helmet": "MAT_CyanBone",
+    "torso": "MAT_CyanBone",
+    "shoulders": "MAT_CyanBone",
+    "upper_arms": "MAT_GrimdarkMetal",
+    "forearms": "MAT_CyanBone",
+    "thighs": "MAT_GrimdarkMetal",
+    "shins": "MAT_CyanBone",
+    "boots": "MAT_CyanBone",
+    "weapon_body": "MAT_CyanBone",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "weapon": {
+    "type": "rifle",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": true,
+    "pauldrons": true,
+    "crest": true,
+    "visor": true,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.6,
+    "walk_stride": 0.35,
+    "attack_speed": 1.3
+  }
+}

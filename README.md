@@ -1,107 +1,298 @@
 # Asset-Pipeline for Imperium of Ash
 
-**Automated 3D-to-2D isometric sprite generation pipeline for grimdark tactical games.**
+**Multi-asset-type generation pipeline for grimdark tactical games.**
 
-Built for **Imperium of Ash** (IoA), a Warhammer 40K-inspired tactical combat game transitioning to true isometric gameplay.
+Built for **Imperium of Ash** (IoA), a Warhammer 40K-inspired tactical combat game. Generates characters, tiles, UI elements, and props — all deterministic, all in-house, zero budget.
 
 ## Quick Start
 
 ```bash
-# 1. Generate a character in Blender, save as .blend in assets/characters/<name>/model/
-# 2. Render 8 directions + animations
-blender assets/characters/imperial_guardsman/model/imperial_guardsman.blend --background --python tools/blender/render_8dir.py
+# === MATERIALS (one-time, or when adding new materials) ===
+python3 tools/pipeline_cli.py materials generate
 
-# 3. Post-process to palette-locked pixel art
-python tools/gimp/batch_pixelate.py --source assets/characters/imperial_guardsman/render/raw --output assets/characters/imperial_guardsman/render/processed
+# === CHARACTER — full pipeline for a single unit ===
+python3 tools/pipeline_cli.py character full --config configs/iron_directorate/iron_directorate_line_infantry.json
 
-# 4. Pack into sprite sheets
-python tools/packer/pack_sprites.py --source assets/characters/imperial_guardsman/render/processed --output output/v0.1.0/characters --name imperial_guardsman
+# === BATCH — generate + render + pack all units in a faction ===
+python3 tools/pipeline_cli.py character batch --config-dir configs/iron_directorate/
 
-# 5. Sync to IoA
-python tools/sync_to_ioa.py --version v0.1.0 --ioa-path "../Imperium of Ash" --yes
+# === UI — generate UI elements for a theme ===
+python3 tools/pipeline_cli.py ui buttons --theme iron_directorate
+
+# === TILES — generate a tile set ===
+python3 tools/pipeline_cli.py tile generate --tile-set urban_concrete
+
+# === CRITIC — quality check all rendered units ===
+python3 tools/pipeline_cli.py critic batch
+
+# === SYNC — copy atlases to the IoA game repo ===
+python3 tools/pipeline_cli.py sync --target ../imperium-of-ash/frontend/public/assets/atlases/
+
+# === DOCTOR — verify tool dependencies ===
+python3 tools/pipeline_cli.py doctor
 ```
+
+## What This Pipeline Does
+
+The pipeline is a unified orchestrator that routes commands to specialised sub-pipelines:
+
+| Asset Type | Entry Point | Input → Output |
+|------------|-------------|----------------|
+| **Characters** | `pipeline_cli.py character` | JSON config → rigged .blend → 208 rendered frames → palette-locked atlas |
+| **Tiles** | `pipeline_cli.py tile` | Tile set def → .blend model → rendered tile textures |
+| **UI elements** | `pipeline_cli.py ui` | Theme config → Pillow-generated PNG sprites (buttons, panels, dividers, icons) |
+| **PBR Materials** | `pipeline_cli.py materials` | Math noise → PBR texture maps → Blender material library |
+
+All deterministic, all scriptable, all free. Use the unified CLI — never run generators/renderers directly.
 
 ## Repository Layout
 
 ```
 asset-pipeline/
-├── AGENTS.md              # Master rules for all AI assistants
-├── README.md              # This file
-├── docs/
-│   ├── STYLE_GUIDE.md     # Resolution, palette, naming conventions
-│   ├── BLENDER_WORKFLOW.md # Step-by-step 3D-to-2D pipeline
-│   └── AI_GENERATION.md   # Gemini Pro prompts and concept workflow
+├── .pi/skills/asset-pipeline/SKILL.md  # AI assistant skill (loaded automatically by pi)
+├── .pipeline_version                    # Current version tag
+├── AGENTS.md                           # Master rules for AI assistants
+├── README.md                           # This file
+├── development.md                      # Dev log: issues, decisions, metrics
+│
+├── configs/                            # Unit JSON configs
+│   ├── iron_directorate/               #   9 Iron Directorate unit configs
+│   └── cinderborn/                     #   9 Cinderborn unit configs
+│
 ├── assets/
-│   ├── palettes/           # Shared color palettes (.gpl)
-│   ├── ui/                 # Buttons, panels, menus
-│   ├── tiles/              # Isometric environment tiles
-│   ├── characters/         # 3D models + renders + sheets (per unit)
-│   └── effects/            # VFX sprite sheets
+│   ├── pbr_textures/                   # 10 procedural PBR material sets
+│   ├── materials/                      # Blender material library .blend
+│   ├── palettes/                       # grimdark_64.gpl
+│   └── units/                          # Per-asset model + render output
+│
 ├── tools/
+│   ├── pipeline_cli.py                 # UNIFIED CLI entry point (always use this)
+│   ├── batch_pipeline.py               # Batch post-process + pack
+│   ├── critic.py                       # Automated quality metrics
+│   ├── generate_status_icons.py        # 32×32 status effect icons
+│   ├── generate_ui_elements.py         # UI button/panel/divider generation
+│   ├── sync_to_ioa.py                  # Extract & copy to IoA repo
+│   │
+│   ├── pbr/
+│   │   └── gen_procedural_textures.py  # PBR texture generator (10 materials)
+│   │
 │   ├── blender/
-│   │   ├── render_8dir.py      # 8-direction isometric auto-render
-│   │   └── batch_render_all.py # Batch render all characters
+│   │   ├── create_material_library.py  # Build grimdark_materials.blend
+│   │   ├── parametric_unit_generator.py # JSON config → rigged .blend
+│   │   ├── render_8dir_v2.py           # 8-dir render with Cycles/Eevee + GPU fallback
+│   │   └── tile_generator.py           # Procedural isometric tile generation
+│   │
 │   ├── gimp/
-│   │   └── batch_pixelate.py   # Post-process: quantize, noise removal, pad
-│   ├── packer/
-│   │   └── pack_sprites.py     # Sprite sheet atlas packer + JSON metadata
-│   ├── ai/
-│   │   └── (Gemini Pro wrapper scripts — TBD)
-│   └── sync_to_ioa.py          # Auto-sync output to IoA repo
+│   │   └── batch_pixelate.py           # Downscale + palette quantize
+│   │
+│   └── packer/
+│       └── pack_sprites.py             # Atlas packer + JSON metadata + LOD
+│
+├── tools/                              # (continued)
+│   ├── render_queue.py                 # Render job queue manager
+│   ├── queue_dashboard.py              # Web UI for queue management
+│   ├── schedule_render.sh              # Cron/at scheduler script
+│   │
+├── docs/
+│   ├── PIPELINE_V2.md                  # Pipeline architecture reference
+│   ├── PARAMETRIC_CONFIG.md            # JSON config schema
+│   ├── BLENDER_WORKFLOW.md             # Blender setup guide
+│   ├── STYLE_GUIDE.md                  # Visual identity spec
+│   └── AI_GENERATION.md                # AI prompting guide
+│
 └── output/
-    └── v<X.Y.Z>/           # Game-ready exports per release
+    └── v0.4.0/                         # Current output version
+        ├── (character atlases)
+        ├── ui/<theme>/                 # Generated UI elements
+        └── tiles/<tile_set>/           # Generated tile textures
 ```
+
+## Pipeline Architecture (v3)
+
+The pipeline has evolved through three generations:
+
+| Stage | v1 (Legacy) | v2 (Previous) | v3 (Current) |
+|-------|-------------|---------------|--------------|
+| **Entry** | Per-tool scripts | Per-tool scripts | **Unified CLI** (`pipeline_cli.py`) |
+| **Characters** | Emission shaders | PBR + Eevee | **PBR + Cycles + GPU fallback** |
+| **Animations** | Static poses | Subtle (1-9px) | **Bold (15+px frame diffs)** |
+| **Materials** | 5 flat colours | 5 PBR sets | **10 PBR sets (5 NPC factions)** |
+| **Tiles** | — | — | **Procedural tile pipeline** |
+| **UI** | Ad-hoc script | — | **Theme-based UI pipeline** |
+| **Geometry** | 630 vertices | — | **822 vertices, codpiece/tabard** |
+| **Quality** | Manual check | Critic script | **Critic + visual checklist + batch** |
+| **Skill** | — | AGENTS.md only | **Pi skill + AGENTS.md** |
+
+### Character Pipeline (v2 → v3 Improvements)
+
+- **Animation intensity**: Rotation amplitudes increased 3-8× across idle/walk/attack/hurt/die. Frame diffs now 15+ pixels at 96×128.
+- **Geometry detail**: Primitive segment counts increased (12→24), subsurf levels increased (1→3). 30% more vertices.
+- **Side-profile**: Shoulders widened (0.26→0.30), legs spread (0.08→0.10), codpiece/tabard geometry added for E/W silhouette.
+- **GPU fallback**: Auto-detects CUDA/OptiX devices, falls back to CPU if no GPU found.
+- **Render modes**: `--fast` (16 samples) for iteration, `--samples N` for quality control.
+
+### Materials Expansion
+
+10 procedural PBR material sets covering all 7 IoA factions:
+
+| Faction | Materials | Status |
+|---------|-----------|--------|
+| Iron Directorate | grimdark_metal, grimdark_leather, grimdark_fabric, imperial_gold | ✅ v2 |
+| Cinderborn | chaos_rust, grimdark_metal, grimdark_leather | ✅ v2 |
+| Parasitic Bloom | **bio_flesh**, grimdark_leather | ✅ v3 |
+| Harmonic Collective | **chrome_white**, grimdark_metal | ✅ v3 |
+| Chrono Revenants | **cyan_bone**, grimdark_metal | ✅ v3 |
+| Wreckstorm Clans | **red_rust**, grimdark_metal, grimdark_leather | ✅ v3 |
+| Void Corsairs | **black_silver**, grimdark_leather | ✅ v3 |
 
 ## Design Philosophy
 
-1. **Pre-rendered 3D to 2D**: The Fallout/Diablo 2 method, modernized. Models exist in 3D. Sprites are derived products.
-2. **True 8 Directions**: No mirroring. All 8 compass points (N, NE, E, SE, S, SW, W, NW) are individually rendered.
+1. **Pre-rendered 3D to 2D**: The Fallout/Diablo 2 method. Models exist in 3D, sprites are derived.
+2. **True 8 Directions**: No mirroring. All 8 compass points individually rendered.
 3. **Palette-Locked**: All sprites use the `grimdark_64` palette. Visual consistency is mandatory.
-4. **Fully Automated**: From `.blend` to sprite sheet, zero manual clicking.
-5. **AI-Assisted, Not AI-Generated**: Gemini Pro creates concepts and references. Blender creates final pixels.
+4. **Fully Automated**: Single CLI command → complete asset set. Zero manual Blender clicking.
+5. **Deterministic**: Same config + same scripts = identical output. Git-trackable, reproducible.
+6. **10 Materials**: Each faction has distinct PBR material sets. Faction coding through materials, not geometry.
+7. **Quality Gates**: Every render passes automated critic analysis before being declared done.
+
+## Render Queue & Dashboard
+
+The render queue system allows you to queue units for rendering during the day and process them when the machine is idle (night, lunch break, etc.).
+
+### Web Dashboard
+
+```
+http://localhost:8082    # (port auto-increments from 8080)
+```
+
+Launch with:
+```bash
+python3 tools/queue_dashboard.py                # default port (8080+)
+python3 tools/pipeline_cli.py dashboard          # same, via CLI
+python3 tools/queue_dashboard.py --port 9090     # custom port
+python3 tools/queue_dashboard.py --host 0.0.0.0  # accessible from LAN
+```
+
+**Dashboard features:**
+- Live render progress bar with frame count and percentage
+- Queue status: queued/running/done/failed counts
+- Job list with status badges and remove buttons
+- **Render Now** — start processing immediately
+- **Pause / Resume** — pause after current job finishes; resume later
+- **Stop** — kill current render process
+- Schedule time input (default 00:00) with **Install Cron** button
+- Add unit to queue via text input
+- Live log tail expander
+
+### CLI Queue Management
+
+```bash
+# Add units to the queue
+python3 tools/pipeline_cli.py queue add --unit iron_directorate_line_infantry
+python3 tools/pipeline_cli.py queue add --unit cinderborn_cinder_cultist --priority 1
+
+# List / status
+python3 tools/pipeline_cli.py queue list
+python3 tools/pipeline_cli.py queue status
+
+# Process all queued renders (run when machine is idle)
+python3 tools/pipeline_cli.py queue run --fast
+
+# Pause (finishes current job, then stops)
+python3 tools/pipeline_cli.py queue pause
+
+# Resume (removes pause, starts processing again)
+python3 tools/pipeline_cli.py queue resume
+
+# Clean stale jobs (reset "running" → "queued" after crash)
+python3 tools/pipeline_cli.py queue clean
+
+# Clear completed/failed jobs
+python3 tools/pipeline_cli.py queue clear --status done failed
+
+# Remove a specific job
+python3 tools/pipeline_cli.py queue remove --id 3
+```
+
+### Scheduler / Nightly Automation
+
+```bash
+# One-off: schedule for 2am
+at 02:00 -f tools/schedule_render.sh
+
+# Via cron (set via dashboard or manually):
+crontab -e
+# 0 0 * * * /path/to/tools/schedule_render.sh --fast >> /path/to/output/nightly_render.log 2>&1
+```
+
+The scheduler script handles:
+- Lock files (prevents overlapping runs)
+- `systemd-inhibit` (prevents sleep during renders)
+- `nice` priority (yields CPU to interactive tasks)
+- Per-job logging to `output/render_logs/`
+
+### Crash Recovery
+
+The queue system is resilient:
+- **Queue file on disk** (`output/render_queue.json`) — survives reboot
+- **Progress file** (`output/render_progress.json`) — real-time frame tracking
+- **Auto-recovery** — `queue run` resets stale "running" jobs
+- **Already-rendered detection** — skips units with existing output on disk
+- **Per-job logging** — every render has its own log in `output/render_logs/`
 
 ## IoA Integration
 
-Read `AGENTS.md` for exact IoA specs:
-- Tile footprint: 96×48 px, canvas 96×128
-- Character frames: 96×128 px
-- Animation target: 12 FPS
-- Grimdark palette: 64 colors (industrial, rust, bone, gold, blood)
+- **Game Engine**: React frontend + Phaser 3.90
+- **Grid System**: Isometric, 2:1 ratio tiles, multi-level Z-axis
+- **Character Frame Size**: 96×128 px
+- **Animation Frame Rate**: 12 FPS (retro tactical feel)
+- **Atlas Format**: Phaser multi-atlas (PNG + JSON, RGBA8888, pivot at bottom-center)
+- **Sync Command**: `python3 tools/pipeline_cli.py sync --target <ioa_atlases_path>`
+
+## Current Output (v0.4.0)
+
+**28 units** across 7 factions (2 playable + 5 NPC), each with 8 directions × 5 animations:
+
+| Faction | Playable | Units | Status |
+|---------|----------|-------|--------|
+| Iron Directorate | ✅ Playable | line_infantry, command_officer, pathfinder_scout, storm_talons, ashrim_raiders, suppression_team, ironclad_warden, logistics_engineer, ironclad_high_command (9) | ✅ Generated, rendered |
+| Cinderborn | ✅ Playable | cinder_cultist, voidtouched_legionnaire, cinder_wraith, soul_weaver, ashbound_artificer, zealot_captain, son_of_ciner, ash_stalker, warlord (9) | ✅ Generated, rendered |
+| Parasitic Bloom | ❌ NPC | bloated_swarm, toxic_reaver (2) | ✅ Configs + .blend, render pending |
+| Harmonic Collective | ❌ NPC | precision_drone, logic_weaver (2) | ✅ Configs + .blend, render pending |
+| Chrono Revenants | ❌ NPC | time_soldier, chrono_guardian (2) | ✅ Configs + .blend, render pending |
+| Wreckstorm Clans | ❌ NPC | wreck_raider, scrap_boss (2) | ✅ Configs + .blend, render pending |
+| Void Corsairs | ❌ NPC | void_raider, shadow_blade (2) | ✅ Configs + .blend, render pending |
+
+**Quality metrics** (line_infantry baseline, v0.4.0):
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| Frames passing critic | 234/234 | 100% | ✅ |
+| Alpha coverage (N/S) | 14-15% | 10%+ | ✅ |
+| Alpha coverage (E/W) | 8.4% | 6%+ | ✅ |
+| Edge density | 1.7-2.9% | 1.5%+ | ✅ |
+| Materials available | 10 sets | — | ✅ |
+| Animation frame diffs | 15+ px | 15+ px | ✅ |
 
 ## Documentation
 
 | Document | Purpose |
 |----------|---------|
-| `AGENTS.md` | Rules, naming conventions, tool defaults for AI assistants |
-| `docs/STYLE_GUIDE.md` | Visual identity, resolution tables, palette specs, animation standards |
-| `docs/BLENDER_WORKFLOW.md` | Blender setup, camera rig, lighting, render automation, troubleshooting |
-| `docs/AI_GENERATION.md` | Gemini Pro prompt templates, reference storage rules, concept→model workflow |
+| `.pi/skills/asset-pipeline/SKILL.md` | **Pi skill** — auto-loaded when working in this directory. Full standards, architecture, and workflow reference. |
+| `AGENTS.md` | Legacy master rules for AI assistants |
+| `docs/PIPELINE_V2.md` | Pipeline architecture, component reference, data flow |
+| `docs/BLENDER_WORKFLOW.md` | Blender setup, camera rig, PBR materials, render workflow |
+| `docs/PARAMETRIC_CONFIG.md` | JSON config schema, all fields, example configs |
+| `docs/STYLE_GUIDE.md` | Visual identity, resolution tables, palette specs |
+| `docs/AI_GENERATION.md` | AI prompting guide |
+| `development.md` | Development log: issues, decisions, metrics, session notes |
 
 ## Tool Dependencies
 
-All tools are **free**:
-- **Blender** 3.6+ (render engine)
-- **LibreSprite** (sprite cleanup)
-- **GIMP** 2.10+ (optional batch processing — script uses Pillow)
-- **Python** 3.10+ with **Pillow** (`pip install pillow`)
-- **Gemini Pro API** (user key in opencode config)
-
-## Phase Status
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Foundation | COMPLETE | Repo, docs, palette, tooling |
-| UI & Menus | READY TO START | Buttons, panels, icons |
-| Isometric Tiles | PENDING | Ground, walls, cover, props |
-| 8-Direction Characters | PENDING | Imperial Guardsman, Scout, Cultist, Marine, Officer |
-| Higher Fidelity | PLANNED | Normal maps, particles, LOD variants, re-render at higher resolution |
+All free, all open-source:
+- **Blender 5.1** (3D modeling + Cycles rendering)
+- **Python 3.14** with **Pillow** + **numpy** (textures, post-processing, UI generation)
+- No GIMP, no Aseprite, no ComfyUI, no paid services required
 
 ## License
 
-MIT — Tools and scripts are open. Game assets (sprites, textures) belong to Imperium of Ash project.
-
-## Contributing
-
-All asset creation follows the documentation in `docs/`. No undocumented code, no unapproved palette deviations.
-
-For IoA-specific requirements, see `AGENTS.md` Section 2: "IoA Integration Specs".
+MIT — Tools and scripts are open. Game assets belong to Imperium of Ash project.

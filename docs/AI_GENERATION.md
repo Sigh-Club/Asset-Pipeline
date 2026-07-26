@@ -1,154 +1,128 @@
 # AI Generation Workflow
-## Imperium of Ash Asset Pipeline — Gemini Pro Integration
+
+## Imperium of Ash Asset Pipeline — GLM-5.2 Integration
 
 ## Role of AI in This Pipeline
 
-**Gemini Pro is a concept artist, NOT a final asset generator.**  
-It generates references, mood boards, and orthographic turnaround guides. Final sprites are Blender-rendered from 3D models that use AI concepts as visual targets.
+**GLM-5.2 is a pipeline architect and script writer, NOT a final asset generator.**
+It generates unit configs, writes Blender Python scripts, analyzes render quality, and troubleshoots API issues. Final sprites come from the Blender render pipeline — deterministic, palette-locked, git-trackable.
 
 **Why not AI direct-to-sprite?**
-- Copyright risk: AI training data unclear
+- Copyright risk: AI training data unclear, output not safely ownable
 - Inconsistency: AI struggles with 8-direction consistency, palette-locking, exact frame sizes
 - Control: Blender gives exact angles, exact colors, exact timing
-- Scale: Re-rendering 5 animations × 8 directions for 10 units = 400 frames. AI batch generation is unreliable; Blender scripting is deterministic.
+- Scale: Re-rendering 5 animations x 8 directions for 18 units = ~3,700 frames. Blender scripting is deterministic; AI batch generation is not.
+- Determinism: Same config + same scripts = identical output. AI varies between runs.
+- Reproducibility: .blend files + JSON configs are git-trackable. AI-generated images are opaque binary blobs that can't be regenerated from source.
 
-## What Gemini Pro Generates
+## What GLM-5.2 Does
 
-### 1. Concept Art (Per Unit / Per Tile Set)
+### 1. Pipeline Architecture and Scripting
 
-**Prompt structure** (copy this template, fill variables):
+GLM-5.2 writes and maintains all pipeline scripts:
+- `tools/pbr/gen_procedural_textures.py` — PBR texture generator
+- `tools/blender/create_material_library.py` — Blender material library builder
+- `tools/blender/parametric_unit_generator.py` — JSON config to rigged model
+- `tools/blender/render_8dir_v2.py` — 8-direction render pipeline
+- `tools/gimp/batch_pixelate.py` — Post-processing (downscale + palette quantize)
+- `tools/packer/pack_sprites.py` — Atlas packer
+- `tools/batch_pipeline.py` — Batch orchestration
 
-```
-Isometric sprite concept art for a grimdark tactical game. 
-Subject: [UNIT_NAME], [DESCRIPTION].
-Style: Industrial military, Warhammer 40K inspired, pre-rendered 3D-to-2D pixel art look.
-Palette: Restricted 64-color grimdark — gunmetal, bone, rust, Imperial gold, hazard yellow.
-View: True isometric, 30-degree elevation, showing [DIRECTION] facing.
-Background: Pure black (void).
-Resolution target: 96x128 pixel sprite frame.
-Details: [ARMOR_TYPE], [WEAPON], [DISTINCTIVE_FEATURES].
-Mood: Oppressive, battle-worn, heavy industrial.
-No text, no UI elements, clean sprite on black background.
-```
+This includes debugging Blender 5.1 API changes (layered Actions, NLA strip creation, ChannelBag fcurves) and writing workarounds.
 
-**Example — Imperial Guardsman**:
-```
-Isometric sprite concept art for a grimdark tactical game. 
-Subject: Imperial Guardsman, basic human infantry in flak armor.
-Style: Industrial military, Warhammer 40K inspired, pre-rendered 3D-to-2D pixel art look.
-Palette: Restricted 64-color grimdark — gunmetal (#1E1E1E), bone (#E8E0D4), rust (#78543C), Imperial gold (#D4A024), hazard yellow (#E8D000).
-View: True isometric, 30-degree elevation, showing SOUTH-EAST facing.
-Background: Pure black (#0A0A0A void).
-Resolution target: 96x128 pixel sprite frame.
-Details: Flak armor with aquila chest plate, lasgun held at ready, helmet with rebreather, fatigue pants (green), heavy boots.
-Mood: Oppressive, battle-worn, determined.
-No text, no UI elements, clean sprite on black background.
-```
+### 2. Unit Config Generation
 
-### 2. Orthographic Turnaround (4-View)
+GLM-5.2 writes JSON configs for each unit based on faction lore and game design docs:
+- Proportions (height, build, limb ratios)
+- Material assignments (which PBR material on which body part)
+- Weapon type and equipment flags
+- Animation parameters
 
-For 3D modeling reference, generate 4 orthographic views (front, side, back, top) in a single prompt:
+See `docs/PARAMETRIC_CONFIG.md` for the full schema.
 
-```
-Character orthographic turnaround reference sheet, 4 views arranged in a grid:
-Top-left: Front view. Top-right: Side view (facing right).
-Bottom-left: Back view. Bottom-right: Top-down view.
-Subject: [same as above]
-Style: Clean line art, flat colors, no shading, no background.
-Useful for 3D modelers.
-```
+### 3. Quality Analysis
 
-### 3. UI Concept Sheets
+GLM-5.2 runs the critic analysis (`tools/critic.py`) on rendered output and interprets results:
+- Alpha coverage (model visibility)
+- Mean brightness (lighting adequacy)
+- Brightness std (contrast/detail)
+- Unique color count (palette utilization)
+- Direction variance (model consistency)
 
-```
-UI element concept sheet for a grimdark tactical game.
-Elements needed:
-- Rectangular button, gothic industrial style, 64x32px
-- Panel frame segment, modular 64x64
-- Circular unit portrait frame with gold aquila border
-- Status icons (buff, debuff, wounded, dead), 32x32px each
-Style: Dark steel, gold accents, bone parchment textures, hazard stripes.
-Palette: grimdark industrial (gunmetal, gold, bone, blood red, hazard yellow).
-Arranged on black background with labels.
-```
+It then diagnoses failures (too dark = lighting, too small = ortho_scale, flat = wrong materials) and applies fixes.
 
-### 4. Environment Mood Boards
+### 4. Troubleshooting and Debugging
 
-```
-Environment concept art: industrial battlefield tileset.
-5 scenes showing different terrain types:
-1. Cracked concrete factory floor with rusted pipes
-2. Ash-waste desert with metal ruins
-3. Corrupted temple with tentacle growth (Chaos)
-4. Imperial trench with sandbag walls
-5. Hive city interior with metal walkways
-Style: Pre-rendered 3D-to-2D, isometric view, grimdark 40K.
-Palette: grimdark 64-color restricted.
-Use as reference for Blender tile modeling.
-```
+When the pipeline breaks, GLM-5.2:
+- Reads error output from Blender
+- Identifies API version mismatches (Blender 5.1 changed many APIs)
+- Writes fixes (new API calls, workarounds)
+- Tests fixes by re-running the pipeline
+- Records issues and fixes in `development.md`
 
-## Storing AI-Generated References
+## What GLM-5.2 Does NOT Do
 
-**Never commit AI output to git.** Keep it in a refs directory that is gitignored:
+- Does NOT generate sprite images directly (no diffusion, no img2img)
+- Does NOT generate 3D models via AI (no TripoSR, no image-to-mesh)
+- Does NOT make artistic decisions without user approval
+- Does NOT use paid APIs or external services
 
-```
-refs/                            # .gitignore this entire directory
-├── units/
-│   └── imperial_guardsman/
-│       ├── concept_front.png
-│       ├── concept_side.png
-│       ├── concept_ortho_sheet.png
-│       └── mood_battlefield.png
-├── ui/
-│   └── ui_concept_sheet_01.png
-└── tiles/
-    └── tile_concrete_01.png
-```
+## Pipeline vs AI-Direct Comparison
 
-Only `.blend` files and final sprite outputs are tracked.
+| Approach | GLM-5.2 + Blender Pipeline | AI Direct-to-Sprite |
+|----------|---------------------------|---------------------|
+| Determinism | Same input = same output | Varies between runs |
+| Reproducibility | .blend + JSON in git | Binary blobs, can't regenerate |
+| 8-direction consistency | Exact (same 3D model rotated) | AI struggles |
+| Palette lock | Enforced (64-color quantize) | AI ignores palettes |
+| Cost | Free (Blender + Python) | Needs GPU + model downloads |
+| Quality control | Critic metrics + visual inspection | Hope for the best |
+| Copyright | Fully owned (procedural) | Unclear training data |
+| Animation | Procedural NLA actions | AI can't do frame-by-frame |
+| Scalability | JSON config per unit (~1 min) | Each unit needs prompt engineering |
 
-## From AI Concept to Blender Model
+## How to Use GLM-5.2 for Asset Work
 
-Workflow:
-```
-1. Generate concept with Gemini Pro → Save to refs/
-2. Open LibreSprite or GIMP → Trace key silhouette and color blocks
-3. Use traced image as background reference in Blender
-4. Model in Blender using palette materials (Emission shader)
-5. Compare render to concept → Iterate model until match
-6. Once concept is matched, run render_8dir.py
-7. Archive concept in refs/ (or delete if confident)
-```
+### Generating a new unit
 
-## Prompt Discipline Tips
+Tell GLM-5.2:
+> "Create a config for a new Cinderborn unit called 'cinderborn_blood_priest'. It should be a lean caster with a pistol, chaos rust robes, no pauldrons, no backpack. Height 1.18, build 0.85."
 
-- **Always specify "isometric" and angle**: "true isometric, 30-degree elevation"
-- **Always specify the palette**: Gemini handles color better when constrained
-- **Always specify "no text, no UI"**: Prevents watermarks and labels in output
-- **Use "pre-rendered 3D-to-2D pixel art look"**: This cues Gemini to generate images that look like they came from a 3D render pipeline (clean edges, flat color regions, consistent lighting)
-- **Generate multiple concepts per prompt**: 3–4 variations, pick best
-- **Iterate**: If concept is 70% right, crop the good part and prompt again with "inspired by this image" + corrected details
+GLM-5.2 will:
+1. Write `configs/cinderborn/cinderborn_blood_priest.json`
+2. Run the generator: `blender --background --python tools/blender/parametric_unit_generator.py -- --config configs/cinderborn/cinderborn_blood_priest.json`
+3. Run the renderer
+4. Run post-processing + packing
+5. Sync to IoA
 
-## API Call Example
+### Diagnosing a render problem
 
-The user has Gemini Pro API key in opencode config. A wrapper script (`tools/ai/generate_concept.py`) will eventually automate this. For now, manual via Google AI Studio or API curl:
+Tell GLM-5.2:
+> "The cinder_wraith renders are too dark. What's wrong?"
 
-```bash
-curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=$GEMINI_API_KEY" \
-  -H 'Content-Type: application/json' \
-  -X POST \
-  -d '{
-    "contents": [{
-      "parts":[{
-        "text": "[PROMPT HERE]"
-      }]
-    }]
-  }'
-```
+GLM-5.2 will:
+1. Run `critic.py` on the renders
+2. Check brightness metrics
+3. Inspect material assignments in the config
+4. Check lighting setup in `render_8dir_v2.py`
+5. Propose and apply a fix (adjust material, boost light energy, etc.)
+6. Re-render and verify
 
-## Safety & Policy
+### Adding a new material
 
-- Do not generate content that violates Google AI safety policies
-- AI references are temporary creative aids, not final products
-- Always verify AI-generated concepts match the grimdark palette before using as modeling targets
-- If AI output is unusable (wrong proportions, wrong colors), re-prompt with more specific constraints rather than editing the bad output
+Tell GLM-5.2:
+> "Add a 'grimdark_bone' material — off-white, porous, for skeleton units."
+
+GLM-5.2 will:
+1. Add a `gen_grimdark_bone()` function to `gen_procedural_textures.py`
+2. Regenerate textures
+3. Add the material to `create_material_library.py`
+4. Rebuild the material library .blend
+5. It's now available in any unit config's `"materials"` section
+
+## Model Information
+
+**Current AI model**: `ollama-cloud/glm-5.2`
+**Hardware**: AMD Ryzen 7 5700X3D, RTX 3070 Ti (8GB VRAM), 32GB RAM
+**Role**: Pipeline architect, script writer, config generator, quality analyst, debugger
+**Not used for**: Direct image generation, 3D mesh generation, diffusion-based sprite generation

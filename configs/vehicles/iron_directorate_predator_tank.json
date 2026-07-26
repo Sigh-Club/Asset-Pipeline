@@ -1,0 +1,50 @@
+{
+  "unit_name": "iron_directorate_predator_tank",
+  "faction": "iron_directorate",
+  "body_type": "vehicle",
+  "output_blend": "assets/units/iron_directorate_predator_tank/model/predator_tank_v2.blend",
+  "proportions": {
+    "height": 0.6,
+    "build": 1.0,
+    "leg_ratio": 0.0,
+    "arm_ratio": 0.0,
+    "head_ratio": 0.0
+  },
+  "materials": {
+    "hull": "MAT_GrimdarkMetal",
+    "track": "MAT_GrimdarkMetal",
+    "helmet": "MAT_GrimdarkMetal",
+    "torso": "MAT_GrimdarkMetal",
+    "shoulders": "MAT_GrimdarkMetal",
+    "upper_arms": "MAT_GrimdarkMetal",
+    "forearms": "MAT_GrimdarkMetal",
+    "thighs": "MAT_GrimdarkMetal",
+    "shins": "MAT_GrimdarkMetal",
+    "boots": "MAT_GrimdarkMetal",
+    "weapon_body": "MAT_GrimdarkMetal",
+    "weapon_stock": "MAT_GrimdarkMetal",
+    "accent": "MAT_ImperialGold"
+  },
+  "vehicle": {
+    "type": "tank",
+    "track_width": 0.16,
+    "hull_length": 0.45,
+    "turret": true
+  },
+  "weapon": {
+    "type": "heavy",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.3,
+    "walk_stride": 0.5,
+    "attack_speed": 1.0
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "faction": "imperial_guard",
+  "kits": {
+    "guardsman": {
+      "body": "imperial_male",
+      "chest": "flak_guard",
+      "head": "guardsman_standard",
+      "shoulders": null,
+      "hands": null,
+      "legs": null,
+      "weapon": "lasgun",
+      "back": "backpack_standard",
+      "belt": null
+    },
+    "sergeant": {
+      "body": "imperial_male",
+      "chest": "flak_guard",
+      "head": "sergeant_crest",
+      "shoulders": ["flak_pauldron_l", "flak_pauldron_r"],
+      "hands": "gloves_standard",
+      "legs": "flak_greaves",
+      "weapon": "chainsword",
+      "back": "backpack_standard",
+      "belt": null
+    },
+    "officer": {
+      "body": "imperial_male",
+      "chest": "carapace_officer",
+      "head": "officer_peaked",
+      "shoulders": null,
+      "hands": null,
+      "legs": null,
+      "weapon": "boltpistol",
+      "back": "cape_officer",
+      "belt": null
+    }
+  }
+}

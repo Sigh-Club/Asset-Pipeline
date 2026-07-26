@@ -1,0 +1,47 @@
+{
+  "unit_name": "chrono_revenants_chrono_scarab",
+  "faction": "chrono_revenants",
+  "body_type": "insectoid",
+  "output_blend": "assets/units/chrono_revenants_chrono_scarab/model/chrono_scarab_v2.blend",
+  "proportions": {
+    "height": 0.5,
+    "build": 1.0,
+    "leg_ratio": 0.0,
+    "arm_ratio": 0.0,
+    "head_ratio": 0.0
+  },
+  "materials": {
+    "helmet": "MAT_CyanBone",
+    "torso": "MAT_CyanBone",
+    "shoulders": "MAT_CyanBone",
+    "upper_arms": "MAT_CyanBone",
+    "forearms": "MAT_CyanBone",
+    "thighs": "MAT_CyanBone",
+    "shins": "MAT_CyanBone",
+    "boots": "MAT_CyanBone",
+    "weapon_body": "MAT_CyanBone",
+    "weapon_stock": "MAT_CyanBone",
+    "accent": "MAT_GrimdarkMetal"
+  },
+  "insectoid": {
+    "leg_count": 6,
+    "wings": true,
+    "segments": 3
+  },
+  "weapon": {
+    "type": "melee",
+    "position": "right_hand"
+  },
+  "equipment": {
+    "backpack": false,
+    "pauldrons": false,
+    "crest": false,
+    "visor": false,
+    "aquila": false
+  },
+  "animation_params": {
+    "idle_intensity": 0.3,
+    "walk_stride": 0.6,
+    "attack_speed": 1.8
+  }
+}

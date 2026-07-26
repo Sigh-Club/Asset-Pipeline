@@ -3,25 +3,10 @@
 batch_pixelate.py — GIMP Python-Fu / Python Batch Script
 Post-process raw Blender renders into palette-locked pixel art sprites.
 
-Can be run:
-- From GIMP: Filters -> Python-Fu -> Console, paste/run
-- From command line: python batch_pixelate.py (if Pillow installed)
-
-Dependencies:
-    pip install pillow
-
 Usage:
     python batch_pixelate.py --source assets/characters/foo/render/raw --output assets/characters/foo/render/processed
 
-What it does per frame:
-1. Convert RGBA to indexed color using the grimdark_64 palette (nearest color)
-2. Quantize to uniform frame size (crop to tight bounds, then pad to standard canvas)
-3. Remove single-pixel noise (stray pixels from alpha blending)
-4. Sharpen edges (enforce crisp pixel transitions)
-5. Save as indexed PNG with proper alpha
-
-Author: Asset-Pipeline Automation
-Docs: docs/BLENDER_WORKFLOW.md
+FIXED VERSION: Proper nearest-color quantization without alpha bleed.
 """
 
 import os
@@ -29,19 +14,12 @@ import sys
 import json
 import argparse
 from pathlib import Path
-
-# Try Pillow first; if unavailable, provide instructions
-try:
-    from PIL import Image
-except ImportError:
-    print("ERROR: Pillow is required. Install: pip install pillow")
-    sys.exit(1)
+from PIL import Image
 
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
 
-# Standard canvas sizes from STYLE_GUIDE
 CANVAS_SIZES = {
     "character": (96, 128),
     "tile": (96, 128),
@@ -52,11 +30,7 @@ CANVAS_SIZES = {
     "portrait": (64, 64),
 }
 
-# Tolerance for considering a pixel "transparent"
 ALPHA_THRESHOLD = 10
-
-# Noise removal: remove isolated single pixels of non-transparent color
-NOISE_FILTER_SIZE = 1
 
 # =============================================================================
 # PALETTE LOADING
@@ -64,10 +38,7 @@ NOISE_FILTER_SIZE = 1
 
 
 def load_palette(gpl_path: str) -> list:
-    """
-    Load a GIMP .gpl palette file.
-    Returns list of (r, g, b) tuples.
-    """
+    """Load GIMP .gpl palette. Returns list of (r, g, b) tuples."""
     colors = []
     with open(gpl_path, "r") as f:
         for line in f:
@@ -77,26 +48,23 @@ def load_palette(gpl_path: str) -> list:
             parts = line.split()
             if len(parts) >= 3:
                 try:
-                    r = int(parts[0])
-                    g = int(parts[1])
-                    b = int(parts[2])
+                    r, g, b = int(parts[0]), int(parts[1]), int(parts[2])
                     colors.append((r, g, b))
                 except ValueError:
                     continue
     return colors
 
 
-# Load grimdark_64
 PALETTE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "palettes", "grimdark_64.gpl")
 PALETTE_PATH = os.path.abspath(PALETTE_PATH)
 if not os.path.exists(PALETTE_PATH):
-    print(f"WARNING: Palette not found at {PALETTE_PATH}. Using embedded fallback.")
+    print(f"WARNING: Palette not found at {PALETTE_PATH}")
     GRIMDARK_64 = []
 else:
     GRIMDARK_64 = load_palette(PALETTE_PATH)
 
 if not GRIMDARK_64:
-    # Fallback embedded palette (first 32 colors essential)
+    # Fallback embedded first 32
     GRIMDARK_64 = [
         (10, 10, 10), (20, 20, 20), (30, 30, 30), (40, 40, 40),
         (50, 50, 50), (70, 60, 50), (90, 74, 60), (110, 94, 76),
@@ -108,16 +76,14 @@ if not GRIMDARK_64:
         (200, 192, 180), (168, 160, 148), (232, 208, 0), (184, 168, 0),
     ]
 
+
 # =============================================================================
-# IMAGE PROCESSING
+# IMAGE PROCESSING (FIXED)
 # =============================================================================
 
 
 def find_bounding_box(img: Image.Image) -> tuple:
-    """
-    Find bounding box of non-transparent content.
-    Returns (left, upper, right, lower) or None if fully transparent.
-    """
+    """Find bounding box of non-transparent content."""
     if img.mode != "RGBA":
         img = img.convert("RGBA")
     alpha = img.split()[-1]
@@ -126,7 +92,7 @@ def find_bounding_box(img: Image.Image) -> tuple:
 
 
 def nearest_palette_color(r: int, g: int, b: int, palette: list) -> int:
-    """Find index of nearest color in palette using Euclidean distance."""
+    """Find nearest color index using Euclidean distance in RGB space."""
     min_dist = float('inf')
     nearest_idx = 0
     for idx, (pr, pg, pb) in enumerate(palette):
@@ -139,75 +105,52 @@ def nearest_palette_color(r: int, g: int, b: int, palette: list) -> int:
 
 def quantize_to_palette(img: Image.Image, palette: list) -> Image.Image:
     """
-    Convert image to palette mode using nearest-color mapping.
-    Preserves alpha channel by first filling transparent areas with a distinct color,
-    then restoring transparency after conversion.
+    Convert RGBA image to palette-locked RGBA.
+    - Transparent pixels stay transparent (alpha < threshold)
+    - Opaque pixels snap to nearest palette colour
+    - No red filler bleed-through
+    
+    STRICT: Always snap to nearest palette colour. PBR + Cycles renders
+    produce colours close to palette values but may be off by 1-3 due to
+    Filmic colour management, denoising, and anti-aliasing. Hard snap
+    preserves palette purity for pixel-art style.
     """
     if img.mode != "RGBA":
         img = img.convert("RGBA")
 
-    # Fill transparent pixels with a clearly identifiable color (Pure Red, slot 63)
-    # so they remain distinct after quantization
-    filler = Image.new("RGBA", img.size, (255, 0, 0, 255))
-    composited = Image.alpha_composite(filler, img)
-
-    # Build palette image
-    flat_palette = []
-    for r, g, b in palette:
-        flat_palette.extend([r, g, b])
-    # Pad to 768 entries (256 colors * 3)
-    while len(flat_palette) < 768:
-        flat_palette.extend([0, 0, 0])
-
-    p_img = Image.new("P", img.size)
-    p_img.putpalette(flat_palette)
-
-    # Map each pixel to nearest palette index
-    pixels_in = composited.load()
-    pixels_out = p_img.load()
     w, h = img.size
-    alpha_map = []
+    pixels_in = img.load()
+    
+    # Create output RGBA image
+    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    pixels_out = out.load()
 
     for y in range(h):
-        row_alpha = []
         for x in range(w):
             r, g, b, a = pixels_in[x, y]
             if a < ALPHA_THRESHOLD:
-                # Transparent -> map to index 63 (Pure Red placeholder)
-                pixels_out[x, y] = 63
-                row_alpha.append(0)
+                pixels_out[x, y] = (0, 0, 0, 0)
             else:
-                idx = nearest_palette_color(r, g, b, palette)
-                pixels_out[x, y] = idx
-                row_alpha.append(255)
-        alpha_map.append(row_alpha)
+                # Check if already close to palette (emission render)
+                min_dist = float('inf')
+                nearest = (0, 0, 0)
+                for pr, pg, pb in palette:
+                    dist = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2
+                    if dist < min_dist:
+                        min_dist = dist
+                        nearest = (pr, pg, pb)
+                
+                # STRICT: Always snap to nearest palette color.
+                # Emission renders should be exact palette hexes, but
+                # EEVEE color management + AA may produce off-by-1 colors.
+                # Hard snap preserves palette purity for pixel art style.
+                pixels_out[x, y] = (*nearest, 255)
 
-    # Convert back to RGBA with true alpha
-    rgb_img = p_img.convert("RGB")
-    rgba_img = rgb_img.convert("RGBA")
-    out_pixels = rgba_img.load()
-    # Get palette from the P-mode image, NOT from RGBA
-    src_palette = p_img.getpalette()
-
-    for y in range(h):
-        for x in range(w):
-            if alpha_map[y][x] == 0:
-                out_pixels[x, y] = (0, 0, 0, 0)
-            else:
-                idx = pixels_out[x, y]
-                pr = src_palette[idx * 3]
-                pg = src_palette[idx * 3 + 1]
-                pb = src_palette[idx * 3 + 2]
-                out_pixels[x, y] = (pr, pg, pb, 255)
-
-    return rgba_img
+    return out
 
 
 def remove_noise(img: Image.Image) -> Image.Image:
-    """
-    Remove isolated single pixels that aren't connected to same-color neighbors.
-    Simple 4-connected neighborhood check.
-    """
+    """Remove isolated single pixels (4-connected neighborhood check)."""
     if img.mode != "RGBA":
         img = img.convert("RGBA")
     w, h = img.size
@@ -222,7 +165,6 @@ def remove_noise(img: Image.Image) -> Image.Image:
                 out_pixels[x, y] = (0, 0, 0, 0)
                 continue
 
-            # Count same-color neighbors (non-transparent, same RGB)
             same_neighbors = 0
             neighbors = [(x-1,y), (x+1,y), (x,y-1), (x,y+1)]
             for nx, ny in neighbors:
@@ -231,7 +173,6 @@ def remove_noise(img: Image.Image) -> Image.Image:
                     if na > 0 and (nr, ng, nb) == (r, g, b):
                         same_neighbors += 1
 
-            # If isolated (0 same-color neighbors), mark transparent
             if same_neighbors == 0:
                 out_pixels[x, y] = (0, 0, 0, 0)
             else:
@@ -241,18 +182,12 @@ def remove_noise(img: Image.Image) -> Image.Image:
 
 
 def pad_to_canvas(img: Image.Image, target_size: tuple, origin: str = "bottom_center") -> Image.Image:
-    """
-    Center-crop or pad image to target canvas size.
-    Origin defines where the content anchor point sits within the canvas.
-    For isometric sprites, origin is bottom-center of the tile footprint.
-    """
+    """Center-crop or pad image to target canvas size."""
     tw, th = target_size
     w, h = img.size
 
-    # Create transparent canvas
     canvas = Image.new("RGBA", target_size, (0, 0, 0, 0))
 
-    # Calculate paste position
     if origin == "bottom_center":
         px = (tw - w) // 2
         py = th - h
@@ -263,7 +198,6 @@ def pad_to_canvas(img: Image.Image, target_size: tuple, origin: str = "bottom_ce
         px = (tw - w) // 2
         py = (th - h) // 2
 
-    # Clamp to canvas bounds
     px = max(0, min(px, tw - w))
     py = max(0, min(py, th - h))
 
@@ -272,35 +206,43 @@ def pad_to_canvas(img: Image.Image, target_size: tuple, origin: str = "bottom_ce
 
 
 def process_frame(src_path: str, dst_path: str, canvas_size: tuple = (96, 128)):
-    """Process a single frame from raw render to final sprite."""
+    """Process a single frame from raw render to final sprite.
+    
+    Handles both:
+       Direct 96x128 renders (v1 pipeline)
+       4x supersampled renders (384x512, v2 pipeline) downscales before quantization
+    """
     img = Image.open(src_path)
 
-    # 1. Crop to content
+    # 1. If image is larger than target, downscale with nearest-neighbor FIRST
+    #    This preserves hard edges from the high-res render before palette quantization
+    target_w, target_h = canvas_size
+    if img.size[0] > target_w or img.size[1] > target_h:
+        img = img.resize((target_w, target_h), Image.NEAREST)
+
+    # 2. Crop to content
     bbox = find_bounding_box(img)
     if bbox:
         img = img.crop(bbox)
     else:
-        # Fully transparent? Skip.
         return
 
-    # 2. Quantize to palette
+    # 3. Quantize to palette
     img = quantize_to_palette(img, GRIMDARK_64)
 
-    # 3. Remove noise
+    # 4. Remove noise
     img = remove_noise(img)
 
-    # 4. Pad to standard canvas
+    # 5. Pad to standard canvas
     img = pad_to_canvas(img, canvas_size, origin="bottom_center")
 
-    # 5. Save
+    # 6. Save
     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
     img.save(dst_path, "PNG")
 
 
 def process_directory(src_dir: str, dst_dir: str, canvas_size: tuple = (96, 128)):
-    """
-    Recursively process all PNG files in src_dir, mirror directory structure in dst_dir.
-    """
+    """Recursively process all PNGs in src_dir."""
     src_path = Path(src_dir)
     dst_path = Path(dst_dir)
     processed = 0
@@ -334,7 +276,7 @@ def main():
     print(f"Batch pixelating: {args.source}")
     print(f"Output: {args.output}")
     print(f"Canvas size: {canvas_size}")
-    print(f"Palette: {PALETTE_PATH}")
+    print(f"Palette: {PALETTE_PATH} ({len(GRIMDARK_64)} colors)")
 
     process_directory(args.source, args.output, canvas_size)
 
