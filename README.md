@@ -28,6 +28,15 @@ python3 tools/pipeline_cli.py critic batch
 # === SYNC — copy atlases to the IoA game repo ===
 python3 tools/pipeline_cli.py sync --target ../imperium-of-ash/frontend/public/assets/atlases/
 
+# === QUEUE — manage and process render jobs ===
+python3 tools/pipeline_cli.py queue add --unit iron_directorate_line_infantry
+python3 tools/pipeline_cli.py queue list
+python3 tools/pipeline_cli.py queue run --fast
+python3 tools/pipeline_cli.py queue status
+
+# === DASHBOARD — web UI for queue management ===
+python3 tools/pipeline_cli.py dashboard
+
 # === DOCTOR — verify tool dependencies ===
 python3 tools/pipeline_cli.py doctor
 ```
@@ -57,7 +66,15 @@ asset-pipeline/
 │
 ├── configs/                            # Unit JSON configs
 │   ├── iron_directorate/               #   9 Iron Directorate unit configs
-│   └── cinderborn/                     #   9 Cinderborn unit configs
+│   ├── cinderborn/                     #   9 Cinderborn unit configs
+│   ├── parasitic_bloom/               #   2 configs
+│   ├── harmonic_collective/           #   2 configs
+│   ├── chrono_revenants/              #   2 configs
+│   ├── wreckstorm_clans/              #   2 configs
+│   ├── void_corsairs/                 #   2 configs
+│   ├── vehicles/                      #   3 vehicle configs
+│   ├── creatures/                     #   1 creature config
+│   └── insectoids/                    #   2 insectoid configs
 │
 ├── assets/
 │   ├── pbr_textures/                   # 10 procedural PBR material sets
@@ -69,30 +86,28 @@ asset-pipeline/
 │   ├── pipeline_cli.py                 # UNIFIED CLI entry point (always use this)
 │   ├── batch_pipeline.py               # Batch post-process + pack
 │   ├── critic.py                       # Automated quality metrics
+│   ├── render_queue.py                 # Render job queue manager
+│   ├── queue_dashboard.py              # Web UI for queue management
+│   ├── schedule_render.sh              # Cron/at scheduler script
 │   ├── generate_status_icons.py        # 32×32 status effect icons
 │   ├── generate_ui_elements.py         # UI button/panel/divider generation
 │   ├── sync_to_ioa.py                  # Extract & copy to IoA repo
 │   │
-│   ├── pbr/
-│   │   └── gen_procedural_textures.py  # PBR texture generator (10 materials)
-│   │
 │   ├── blender/
 │   │   ├── create_material_library.py  # Build grimdark_materials.blend
-│   │   ├── parametric_unit_generator.py # JSON config → rigged .blend
+│   │   ├── parametric_unit_generator.py # JSON config → rigged .blend (humanoid)
+│   │   ├── parametric_vehicle_generator.py # JSON config → rigged .blend (vehicle/creature/insectoid)
 │   │   ├── render_8dir_v2.py           # 8-dir render with Cycles/Eevee + GPU fallback
 │   │   └── tile_generator.py           # Procedural isometric tile generation
 │   │
 │   ├── gimp/
 │   │   └── batch_pixelate.py           # Downscale + palette quantize
 │   │
+│   ├── pbr/
+│   │   └── gen_procedural_textures.py  # PBR texture generator (10 materials)
+│   │
 │   └── packer/
 │       └── pack_sprites.py             # Atlas packer + JSON metadata + LOD
-│
-├── tools/                              # (continued)
-│   ├── render_queue.py                 # Render job queue manager
-│   ├── queue_dashboard.py              # Web UI for queue management
-│   ├── schedule_render.sh              # Cron/at scheduler script
-│   │
 ├── docs/
 │   ├── PIPELINE_V2.md                  # Pipeline architecture reference
 │   ├── PARAMETRIC_CONFIG.md            # JSON config schema
@@ -121,6 +136,7 @@ The pipeline has evolved through three generations:
 | **UI** | Ad-hoc script | — | **Theme-based UI pipeline** |
 | **Geometry** | 630 vertices | — | **822 vertices, codpiece/tabard** |
 | **Quality** | Manual check | Critic script | **Critic + visual checklist + batch** |
+| **Non-humanoid** | — | — | **Vehicle, creature, insectoid body templates** |
 | **Skill** | — | AGENTS.md only | **Pi skill + AGENTS.md** |
 
 ### Character Pipeline (v2 → v3 Improvements)
@@ -251,17 +267,19 @@ The queue system is resilient:
 
 ## Current Output (v0.4.0)
 
-**28 units** across 7 factions (2 playable + 5 NPC), each with 8 directions × 5 animations:
+**34 units** across 7 factions (2 playable + 5 NPC), including 28 humanoid + 6 non-humanoid (vehicles, creatures, insectoids). Each unit has 8 directions × 5 animations:
 
 | Faction | Playable | Units | Status |
 |---------|----------|-------|--------|
-| Iron Directorate | ✅ Playable | line_infantry, command_officer, pathfinder_scout, storm_talons, ashrim_raiders, suppression_team, ironclad_warden, logistics_engineer, ironclad_high_command (9) | ✅ Generated, rendered |
-| Cinderborn | ✅ Playable | cinder_cultist, voidtouched_legionnaire, cinder_wraith, soul_weaver, ashbound_artificer, zealot_captain, son_of_ciner, ash_stalker, warlord (9) | ✅ Generated, rendered |
-| Parasitic Bloom | ❌ NPC | bloated_swarm, toxic_reaver (2) | ✅ Configs + .blend, render pending |
-| Harmonic Collective | ❌ NPC | precision_drone, logic_weaver (2) | ✅ Configs + .blend, render pending |
-| Chrono Revenants | ❌ NPC | time_soldier, chrono_guardian (2) | ✅ Configs + .blend, render pending |
-| Wreckstorm Clans | ❌ NPC | wreck_raider, scrap_boss (2) | ✅ Configs + .blend, render pending |
-| Void Corsairs | ❌ NPC | void_raider, shadow_blade (2) | ✅ Configs + .blend, render pending |
+| Iron Directorate | ✅ Playable | line_infantry, command_officer, pathfinder_scout, storm_talons, ashrim_raiders, suppression_team, ironclad_warden, logistics_engineer, ironclad_high_command, **predator_tank** (10) | ✅ Generated, .blend, partial render |
+| Cinderborn | ✅ Playable | cinder_cultist, voidtouched_legionnaire, cinder_wraith, soul_weaver, ashbound_artificer, zealot_captain, son_of_ciner, ash_stalker, warlord (9) | ✅ Generated, .blend, partial render |
+| Parasitic Bloom | ❌ NPC | bloated_swarm, toxic_reaver, **swarm_beast** (3) | ✅ Configs + .blend, render pending |
+| Harmonic Collective | ❌ NPC | precision_drone, logic_weaver, **gun_drone** (3) | ✅ Configs + .blend, render pending |
+| Chrono Revenants | ❌ NPC | time_soldier, chrono_guardian, **chrono_scarab** (3) | ✅ Configs + .blend, render pending |
+| Wreckstorm Clans | ❌ NPC | wreck_raider, scrap_boss, **battle_wagon** (3) | ✅ Configs + .blend, render pending |
+| Void Corsairs | ❌ NPC | void_raider, shadow_blade, **shade_swarm** (3) | ✅ Configs + .blend, render pending |
+
+**Body type breakdown:** 28 humanoid, 3 vehicle (predator_tank, battle_wagon, gun_drone), 1 creature (swarm_beast), 2 insectoid (chrono_scarab, shade_swarm)
 
 **Quality metrics** (line_infantry baseline, v0.4.0):
 | Metric | Value | Target | Status |
