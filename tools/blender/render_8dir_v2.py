@@ -27,17 +27,19 @@ import mathutils
 # CONFIGURATION
 # =============================================================================
 
-FRAME_W = 96
-FRAME_H = 128
-SUPER_SAMPLE = 4  # render at 4× then downscale
-RENDER_W = FRAME_W * SUPER_SAMPLE  # 384
-RENDER_H = FRAME_H * SUPER_SAMPLE  # 512
+FRAME_W = 384
+FRAME_H = 512
+SUPER_SAMPLE = 3  # render at 3× (1152×1536) → LANCZOS → 384×512
+RENDER_W = FRAME_W * SUPER_SAMPLE  # 1152
+RENDER_H = FRAME_H * SUPER_SAMPLE  # 1536
 
-DEFAULT_SAMPLES = 32  # reduced from 64 for reasonable render times
+DEFAULT_SAMPLES = 128  # high-quality Cycles PBR samples
+MAX_SAMPLES = 256      # absolute max for final renders
+FAST_SAMPLES = 64      # fast iteration mode
 RENDER_ENGINE = "CYCLES"
 COLOR_MODE = "RGBA"
 FILE_FORMAT = "PNG"
-COLOR_DEPTH = "8"
+COLOR_DEPTH = "16"    # 16-bit for full PBR material depth
 COMPRESSION = 15
 FILM_TRANSPARENT = True
 
@@ -173,31 +175,41 @@ def create_rig(ortho_scale: float, target_z: float, bbox_diagonal: float):
 # =============================================================================
 
 def setup_lighting():
-    """3-point grimdark lighting tuned for Principled BSDF (not emission)."""
+    """Miniature-style 4-point grimdark lighting with hard shadows.
+
+    Tuned for Warhammer 40K miniature photography:
+    - Small, bright lights create sharp shadow lines (not soft/gradient)
+    - Strong rim light picks out armour edge details
+    - High key-to-fill ratio for dramatic contrast (10:1)
+    """
     # Remove existing lights
     for obj in list(bpy.data.objects):
         if obj.type == 'LIGHT':
             bpy.data.objects.remove(obj, do_unlink=True)
     
-    # Key light — warm rusty (warm 3500K), upper-left, strong
-    key = create_light("KEY", color=(1.0, 0.85, 0.65), energy=1000,
-                       location=(-3, -2, 5))
+    # Key light — warm rusty (3500K), upper-left, small & bright for hard shadows
+    key = create_light("KEY", color=(1.0, 0.85, 0.65), energy=3000,
+                       location=(-4, -3, 6), size=0.5)
     
-    # Fill light — cool blue (7500K), lower-right, moderate
-    fill = create_light("FILL", color=(0.6, 0.7, 1.0), energy=400,
-                        location=(3, 1, 3))
+    # Fill light — cool blue (7500K), lower-right, low intensity
+    fill = create_light("FILL", color=(0.6, 0.7, 1.0), energy=500,
+                        location=(3, 2, 2), size=1.0)
     
-    # Rim light — gold, behind subject, catches edges
-    rim = create_light("RIM", color=(1.0, 0.82, 0.3), energy=600,
-                        location=(0, 4, 4))
+    # Rim/kicker light — gold, from behind-right, catches armour edges
+    rim = create_light("RIM", color=(1.0, 0.82, 0.3), energy=2000,
+                        location=(1, 6, 3), size=0.3)
     
-    log("Lighting: 3-point grimdark (key=warm 1000W, fill=cool 400W, rim=gold 600W)")
+    # Top specular — small bright point from above for helmet/pauldron highlights
+    spec = create_light("SPECULAR", color=(1.0, 0.95, 0.9), energy=800,
+                         location=(0, 0, 8), size=0.2)
+    
+    log("Lighting: miniature grimdark (key=3000W small, fill=500W, rim=2000W tight, specular=800W)")
 
-def create_light(name: str, color: tuple, energy: float, location: tuple):
+def create_light(name: str, color: tuple, energy: float, location: tuple, size: float = 0.5):
     light_data = bpy.data.lights.new(name=name, type="AREA")
     light_data.color = color
     light_data.energy = energy
-    light_data.size = 3.0  # Area light for soft shadows
+    light_data.size = size  # Small size = hard shadows for miniature look
     
     light_obj = bpy.data.objects.new(name=name, object_data=light_data)
     bpy.context.scene.collection.objects.link(light_obj)
@@ -470,7 +482,7 @@ def downscale_all_renders(out_dir: str):
             img = Image.open(filepath)
             if img.size == (RENDER_W, RENDER_H):
                 # Downscale with nearest-neighbor
-                small = img.resize((FRAME_W, FRAME_H), Image.NEAREST)
+                small = img.resize((FRAME_W, FRAME_H), Image.LANCZOS)
                 small.save(filepath, "PNG")
                 count += 1
     

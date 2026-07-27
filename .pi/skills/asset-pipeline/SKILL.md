@@ -13,19 +13,25 @@ This skill enforces quality standards, code conventions, and project rules for t
 
 **Repository**: `asset-pipeline` (in `/run/media/talzanar/games2/Projects/IoA/asset-pipeline/`)
 **Purpose**: Multi-asset-type generation pipeline for Imperium of Ash — characters, tiles, UI, props — all grimdark isometric.
-**Method**: Automated sub-pipelines routed through a unified CLI. No MCP, no live Blender — batch mode only.
+**Method**: Automated sub-pipelines routed through a unified CLI. Batch-mode Blender (--background) for renders. MCP bridge planned for Phase 1 of engine roadmap.
+**Target Quality**: Dawn of War 1/2 calibre — hard-surface modelling, heroic proportions, baked normal maps, team-colour masking.
+**Master Tracking**: `docs/DEVELOPMENT.md` — MUST be updated before any new task.
 
 ---
 
 ## Critical Rules
 
-1. **Palette Lock**: All indexed-colour assets MUST use `assets/palettes/grimdark_64.gpl`. No exceptions.
-2. **Naming Convention**: Strictly follow `<category>_<descriptor>_<state>_<direction>_<frame>.png`.
-3. **8 Directions True**: No mirroring — N, NE, E, SE, S, SW, W, NW.
-4. **Blender Single Source of Truth**: The `.blend` file is the master asset. PNGs are derived.
-5. **Version Everything**: Every output directory MUST include a version tag (e.g. `v0.4.0/`).
-6. **AI Concept Only**: AI generates configs and pipeline scripts. Final sprites come from Blender or Pillow generation — never AI direct-to-sprite.
-7. **Use the Unified CLI**: Always use `tools/pipeline_cli.py` as the entry point. It handles routing, versioning, and dependency ordering.
+1. **Full Colour, No Palette Lock**: Assets use full RGBA colour at 16-bit depth. The `grimdark_64.gpl` palette is optional for retro variants.
+2. **LANCZOS Downscale**: Raw renders supersampled at 1152×1536 (3×), final output 384×512 via LANCZOS. All LOD downscales also use LANCZOS. NEVER use NEAREST.
+3. **Hard-Surface Modelling, Not Subsurf**: Armour parts use `add_hard_surface()` (Edge Split + Bevel + Shade Flat). Subsurf is ONLY for cloth, flesh, organic parts. This is critical — subsurf on armour creates smooth blobs with ~1.5% edge density. Target is 15-30% edge density for DoW-quality hard surface.
+4. **Miniature Lighting**: Small, bright lights (size=0.2-0.5, not 3.0). 4-point setup — key (3000W), fill (500W), rim (2000W), specular (800W). Hard shadows for edge definition, not soft studio lighting.
+5. **8 Directions True**: No mirroring — N, NE, E, SE, S, SW, W, NW.
+6. **Blender Single Source of Truth**: The `.blend` file is the master asset. PNGs are derived.
+7. **Version Everything**: Every output directory MUST include a version tag (e.g. `v0.5.0/`).
+8. **Kill Stale Blender Processes Before Render**: Always call `kill_blender_processes()` before spawning a render. Orphaned/crashed Blender processes consume GPU memory. Uses `pgrep -x blender` + `ps` to identify background renders, then `SIGKILL`. Fallback: `/proc` scanning. Implemented in `render_queue.py`, `pipeline_cli.py`, `batch_render.sh`.
+9. **Gallery Uses External JS**: Gallery at `tools/gallery_server.py` serves `tools/static/gallery.js` externally. No inline JavaScript in Python triple-quoted strings — the `\'` → `''` bug crashes the UI. Use template literals (backticks) instead.
+10. **Port Clearing at Boot**: Both `server.py` and `gallery_server.py` call `ensure_port()` which runs `fuser -k PORT/tcp` before binding. This prevents "port in use" errors from orphaned processes.
+11. **Batch Overnight**: Each unit takes ~3h at 128 samples. Queue all units and batch overnight via the render queue system.
 
 ---
 
@@ -87,23 +93,27 @@ asset-pipeline/
 │   ├── blender/
 │   │   ├── create_material_library.py    # Build grimdark_materials.blend
 │   │   ├── parametric_unit_generator.py  # JSON config → rigged .blend (characters)
-│   │   ├── render_8dir_v2.py             # 8-dir character render pipeline
-│   │   ├── tile_generator.py             # NEW: procedural isometric tile generation
+│   │   ├── render_8dir_v2.py             # 8-dir render pipeline (8× supersample, Cycles)
+│   │   ├── preview_model.py              # Interactive 3D model viewer
+│   │   ├── tile_generator.py             # Procedural isometric tile generation
 │   │   └── render_tiles.py               # (future) tile-specific renderer
 │   │
-│   ├── gimp/
-│   │   └── batch_pixelate.py             # Downscale + palette quantize
+│   ├── batch_process.py                  # LANCZOS downscale + optional palette (v0.5.0+)
+│   ├── batch_pipeline.py                 # Legacy pixel-art pipeline (v0.4.0)
 │   │
 │   └── packer/
-│       └── pack_sprites.py               # Atlas packing + LOD generation
+│       └── pack_sprites.py               # Atlas packing + LOD generation (LANCZOS)
 │
 ├── docs/                                  # Full documentation set
 │
-└── output/
-    └── v0.4.0/                            # Versioned output
-        ├── (character atlases)
-        ├── ui/                            # UI elements per theme
-        └── tiles/                         # Tile set outputs
+├── output/
+│   ├── v0.5.0/                            # Current versioned output
+│   │   ├── (character atlases — full RGBA)
+│   │   ├── ui/                            # UI elements per theme
+│   │   └── tiles/                         # Tile set outputs
+│   ├── releases/                          # Timestamped release snapshots
+│   │   └── latest/ -> v0.5.0-2026-...     # Symlink to latest release
+│   └── v0.4.0/                            # Previous version (pixel-art)
 ```
 
 ---
@@ -116,27 +126,30 @@ Full 3D-to-2D isometric sprite generation for humanoid units. See `docs/PARAMETR
 
 **Sub-pipeline stages**:
 1. `character generate --config <path>` — JSON → rigged .blend (armature + 5 NLA actions + PBR materials)
-2. `character render --unit <name> --engine CYCLES` — 8 directions × 5 animations at 384×512
+2. `character render --unit <name> --engine CYCLES` — 8 directions × 5 animations at 1152×1536 supersample
 3. `critic single --dir <raw_render_dir>` — automated quality check
-4. `pack --unit <name>` — post-process → palette-lock → atlas pack
+4. `pack --unit <name>` — post-process (LANCZOS 1152×1536→384×512) → atlas pack
 5. `sync --target <ioa_path>` — copy to IoA game repo
 6. `character full --config <path>` — all of the above in one command
 
 **Key constraints**:
-- ortho_scale must NOT be multiplied by SUPER_SAMPLE (4×). Resolution handles supersample, not camera scale.
+- ortho_scale must NOT be multiplied by SUPER_SAMPLE. Resolution handles supersample, not camera scale. Current render buffer is 1152×1536 (3× supersample), final output is 384×512 via LANCZOS.
 - NLA action isolation is mandatory before each render block — never rely on `scene.frame_set()` alone.
 - All humanoids follow the same bone hierarchy: Hips → Chest → Neck → Head | Thigh_L/R → Shin_L/R → Foot_L/R | UpperArm_L/R → Forearm_L/R → Hand_L/R.
 - Animation frame ranges are fixed: idle(1-4), walk(10-16), attack(20-24), hurt(30-32), die(40-46).
 
-**Render quality targets for characters**:
+**Render quality targets for characters** (v0.5.0+ full RGBA, 384×512 final, 16-bit colour):
 | Metric | Target | Fail threshold |
 |--------|--------|---------------|
-| Alpha coverage | 10-30% | < 6% or > 85% |
-| Mean brightness | 40-150/255 | < 40 or > 220 |
+| Alpha coverage | 8-25% | < 4% or > 80% |
+| Mean brightness | 60-150/255 | < 40 or > 220 |
 | Brightness stddev | > 10/255 | < 10 |
-| Edge density | > 2% | < 2% |
-| Direction variance | < 30% | > 30% |
-| Unique colours (palette) | 50+ | — |
+| Edge density (hard surface target) | > 5% at 384×512 | < 1.5% |
+| Edge density (DoW target) | 15-30% | — |
+| Direction variance | < 50% | > 50% |
+| Unique colours | 200+ | — |
+
+**Note on edge density**: At 1.5% the models are smooth blobs (1990s quality). At 5%+ the hard-surface armour edges become visible. Target of 15-30% equals DoW1/2 miniature-level detail. The hard-surface modelling changes (`add_hard_surface()`) aim to raise edge density from ~1.5% to 5%+. Normal map baking will push it to the 15-30% target.
 
 ### Tiles — `tools/pipeline_cli.py tile <action>`
 
@@ -257,38 +270,43 @@ Procedural PBR texture generation + Blender material library management.
 | alpha_coverage_high | Model fills > 85% frame | Increase ortho_scale or check framing |
 | brightness_low | Too dark (< 40/255) | Boost light energy (×1.5), add ambient light, brighten materials |
 | brightness_high | Blown out (> 220/255) | Reduce light energy or darken materials |
-| contrast_low | Flat, no detail (stddev < 10) | Increase key/fill ratio, add rim light, check normal maps |
-| edge_density_low | Too few edges (< 2%) | Increase resolution, add geometry detail, check subsurf levels |
+| contrast_low | Flat, no detail (stddev < 10) | Increase key/fill ratio (6:1 target), add rim light, check normal maps. Ensure light size is small (0.2-0.5) for hard shadows |
+| edge_density_low | Too few edges (< 2%) | Check that `add_hard_surface()` is used instead of `add_subsurf()` on armour parts. Verify Edge Split modifier angle limit (30°). Increase base geometry segments (cylinder 48, sphere 48×32). Flat shade, not smooth shade. |
+| edge_density_very_low | Blobby (< 1.5%) | Subsurf is still on armour parts. Replace with `add_hard_surface()`. The `parametric_unit_generator.py` should use `shade_flat()` + `add_hard_surface()` for all non-cloth parts. |
 | direction_variance | Asymmetric across directions (> 30%) | Check rig alignment, part attachment, model centering |
 
-### Visual Verification Checklist
+### Visual Verification Checklist (miniature-level detail standard)
 
-After critic passes, visual inspection is still required:
+After critic passes, visual inspection is still required. Compare against tabletop miniatures and Dawn of War 2 quality:
 
-1. **Silhouette readability**: At 64×64 thumbnail, can you identify the unit type?
-2. **Palette visibility**: Do dark materials (#1E1E1E) disappear on transparent background?
-3. **Proportions**: Are head/torso/limb ratios human-proportionate?
-4. **Detail at 96×128**: Can you distinguish weapon from body, helmet from head?
-5. **Direction consistency**: All 8 directions look like the same unit, not 8 different models.
-6. **Contrast separation**: Enough value difference between armour, skin, and weapon?
+1. **Silhouette readability**: At 384×512, can you identify the unit type and faction from outline alone?
+2. **Material fidelity**: Do PBR materials read clearly? Can you distinguish ceramite armour from fabric under-layer?
+3. **Proportions**: DoW2/tabletop miniature proportions are the benchmark. Armour should read as thick ceramite. Heroic scale: hands +30%, weapons +25%, pauldrons +30%, boots +20%.
+4. **Hard-surface definition**: Can you see individual armour plates with sharp edges, or is the model a smooth blob? Look for edge highlights, panel lines, armour plate separation.
+5. **Detail at full resolution**: At 384×512, can you distinguish weapon from body, helmet crest from visor, faction-specific trim?
+6. **Direction consistency**: All 8 directions look like the same unit from different angles.
+7. **Contrast separation**: High contrast between armour plates, under-armour, weapons, and faction accents. Miniature photography uses 10:1 key-to-fill ratio.
+8. **Faction identity**: Each faction MUST be visually distinct — gold/blue + cool key light for Iron Directorate, purple/orange + magenta key for Cinderborn.
 
 ---
 
 ## Faction Coding Reference
 
-| Faction | Playable | Theme | Visual Signature | Materials |
-|---------|----------|-------|------------------|-----------|
-| Iron Directorate | Yes | Order & Tech | Gold/blue, clean lines, industrial | grimdark_metal, imperial_gold, grimdark_fabric, grimdark_leather |
-| Cinderborn | Yes | Occult & Sacrifice | Purple/orange, ritual markings, asymmetrical | chaos_rust, grimdark_metal, grimdark_leather |
-| Parasitic Bloom | No | Bio horror | Green/flesh, swarm behaviour | bio_flesh, grimdark_leather |
-| Harmonic Collective | No | AI precision | White/chrome, precise geometry | chrome_white, grimdark_metal |
-| Chrono Revenants | No | Time-warped undead | Cyan/bone, temporal effects | cyan_bone, grimdark_metal |
-| Wreckstorm Clans | No | Speed & fury | Red/rust, aggressive | red_rust, grimdark_metal, grimdark_leather |
-| Void Corsairs | No | Mercenary pirates | Black/silver, tactical | black_silver, grimdark_leather |
+| Faction | Playable | Theme | Visual Signature | Materials | Lighting Profile |
+|---------|----------|-------|------------------|-----------|-----------------|
+| Iron Directorate | Yes | Order & Tech | Gold/blue, clean lines, industrial | grimdark_metal, imperial_gold, grimdark_fabric, grimdark_leather | Cool key (5500K), neutral fill — ordered militaristic |
+| Cinderborn | Yes | Occult & Sacrifice | Purple/orange, ritual markings, asymmetrical | chaos_rust, grimdark_metal, grimdark_leather | Warm magenta key, purple fill — corrupted ritual |
+| Parasitic Bloom | No | Bio horror | Green/flesh, swarm behaviour | bio_flesh, grimdark_leather | Sickly green key, pink fill — fleshy horror |
+| Harmonic Collective | No | AI precision | White/chrome, precise geometry | chrome_white, grimdark_metal | Cool blue key, white rim — sleek machine |
+| Chrono Revenants | No | Time-warped undead | Cyan/bone, temporal effects | cyan_bone, grimdark_metal | Warm gold/bronze key, teal fill — aged temporal |
+| Wreckstorm Clans | No | Speed & fury | Red/rust, aggressive | red_rust, grimdark_metal, grimdark_leather | Rusty orange key, minimal fill — scrap heat |
+| Void Corsairs | No | Mercenary pirates | Black/silver, tactical | black_silver, grimdark_leather | Cool purple key, deep shadows — stealth |
+
+**TODO**: Faction-specific lighting profiles are NOT yet implemented in `render_8dir_v2.py`. All factions currently use the same 4-point miniature lighting. Each needs its own key light colour temperature and intensity to establish distinct visual identity.
 
 **NPC configs**: 10 unit configs across 5 NPC factions exist in `configs/<faction>/`. Each has 2 unit types (T1 infantry + T2/T3 elite). Materials exist for all — generate .blend files with `pipeline_cli.py character generate --config <config_path>`.
 
-When adding new factions, create new PBR material sets in `gen_procedural_textures.py` first, then assign them in unit configs. Faction distinctiveness comes from material choice + colour palette, not geometry.
+When adding new factions, create new PBR material sets in `gen_procedural_textures.py` first, then assign them in unit configs. Faction distinctiveness comes from material choice + colour palette + lighting profile, not geometry alone.
 
 ---
 
@@ -365,11 +383,19 @@ python3 tools/pipeline_cli.py queue add --unit all_units...
 # Step 2: Process when machine is free
 bash tools/schedule_render.sh --fast
 
-# Step 3: After all renders succeed, pack v0.4.0
-PIPELINE_VERSION=v0.4.0 python3 tools/batch_pipeline.py
+# Step 3: After all renders succeed, pack (full RGBA, LANCZOS downscale)
+PIPELINE_VERSION=v0.5.0 python3 tools/batch_pipeline.py
 
-# Step 4: Sync to IoA
+# Step 4: Create timestamped release snapshot
+python3 tools/pipeline_cli.py release
+
+# Step 5: Sync to IoA
 python3 tools/pipeline_cli.py sync --target ../imperium-of-ash/frontend/public/assets/atlases/
+```
+
+To use the optional palette quantisation (retro pixel-art look):
+```bash
+PIPELINE_VERSION=v0.5.0 python3 tools/batch_pipeline.py --palette assets/palettes/grimdark_64.gpl
 ```
 
 ### Render Queue & Dashboard
@@ -417,13 +443,18 @@ The queue is crash-safe — all state is on disk. If a render is interrupted:
 
 ## Known Technical Debt
 
-Tracked issues that need attention:
+Tracked issues that need attention. See `docs/DEVELOPMENT.md` section 14 for full tracking.
 
-1. **Animation intensity**: **DONE** — Base rotation amplitudes increased 3-8× across all animations (idle, walk, attack, hurt, die). Config params updated to idle_intensity=1.0, walk_stride=0.4, attack_speed=1.5. All 28 configs updated.
-2. **Side-view coverage**: **IMPROVED** — Shoulders widened (0.26→0.30), legs spread (0.08→0.10), codpiece/tabard geometry added. E/W alpha coverage at ~8.45% vs ~14.7% for N/S. Direction variance threshold adjusted to 50% to account for humanoid anatomy.
-3. **NPC factions**: **DONE** — 5 new PBR material sets added (bio_flesh, chrome_white, cyan_bone, red_rust, black_silver). 10 unit configs created across all 5 NPC factions. .blend files generated.
-5. **Tile render script**: `tools/blender/render_tiles.py` not yet written — tile `render` command warns. Currently tile rendering is part of `tile_generator.py` itself.
-6. **Animation pipelines for tiles**: Tiles don't have animation support yet. Destructible states (intact → damaged → destroyed) would need frame sequences.
-7. **Non-humanoid templates**: **DONE** — Vehicle, creature (quadruped), and insectoid body types added via `tools/blender/parametric_vehicle_generator.py`. 6 configs created. Animation frame ranges defined but bone keyframe data not yet written.
-8. **Render timeout**: Cycles at 32 samples/384×512 takes ~5 minutes for 248 frames. Use `--fast` (16 samples) for iteration, full quality for final. The CLI's 120s timeout is too short — run Blender directly for full renders.
-9. **Codpiece/tabard geometry**: Added but minimal E/W silhouette impact. Consider adding over-shoulder weapon sling, cape, or larger backpack for more dramatic side-profile volume.
+1. **Hard-surface modelling implemented but untested**: `add_hard_surface()` replaces subsurf on all armour parts. Needs a re-render to verify edge density improvement from ~1.5% to target 5%+.
+2. **Faction-specific lighting not implemented**: All factions use the identical 4-point miniature lighting. Needs per-faction key light colour temperature and energy profiles.
+3. **Normal map baking**: No normal map pipeline exists. This is required to push edge density from 5% (hard-surface geometry only) to 15-30% (DoW target with baked detail).
+4. **Team-colour mask generation**: No alpha-channel team colour mask on materials. Required for game engine faction tinting.
+5. **Animation intensity**: **DONE** — Base rotation amplitudes increased 3-8× across all animations (idle, walk, attack, hurt, die). Config params updated to idle_intensity=1.0, walk_stride=0.4, attack_speed=1.5. All 28 configs updated.
+6. **Side-view coverage**: **IMPROVED** — Shoulders widened (0.26→0.30), legs spread (0.08→0.10), codpiece/tabard geometry added. E/W alpha coverage at ~8.45% vs ~14.7% for N/S. Direction variance threshold adjusted to 50% to account for humanoid anatomy.
+7. **NPC factions**: **DONE** — 5 new PBR material sets added (bio_flesh, chrome_white, cyan_bone, red_rust, black_silver). 10 unit configs created across all 5 NPC factions. .blend files generated.
+8. **Tile render script**: `tools/blender/render_tiles.py` not yet written — tile `render` command warns. Currently tile rendering is part of `tile_generator.py` itself.
+9. **Animation pipelines for tiles**: Tiles don't have animation support yet. Destructible states (intact → damaged → destroyed) would need frame sequences.
+10. **Non-humanoid templates**: **DONE** — Vehicle, creature (quadruped), and insectoid body types added via `tools/blender/parametric_vehicle_generator.py`. 6 configs created. Animation frame ranges defined but bone keyframe data not yet written.
+11. **Render timeout**: Cycles at 128 samples/1152×1536 takes ~3 hours for 248 frames (full unit). Use `--fast` (64 samples at 1152×1536) for iteration, full quality for final. The CLI's 120s timeout is too short — run Blender directly for full renders. The render queue handles this automatically in background mode.
+12. **Codpiece/tabard geometry**: Added but minimal E/W silhouette impact. Consider adding over-shoulder weapon sling, cape, or larger backpack for more dramatic side-profile volume.
+

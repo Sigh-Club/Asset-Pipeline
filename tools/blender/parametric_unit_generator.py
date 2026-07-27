@@ -137,18 +137,42 @@ def assign_material(obj, mats, mat_name):
 # GEOMETRY HELPERS
 # =============================================================================
 
-def add_subsurf(obj, levels=2, render_levels=3):
+def add_subsurf(obj, levels=3, render_levels=4):
+    """Add subdivision surface modifier for organic/smooth parts (head, cloth)."""
     mod = obj.modifiers.new(name="Subsurf", type='SUBSURF')
     mod.levels = levels
     mod.render_levels = render_levels
     mod.subdivision_type = 'CATMULL_CLARK'
 
-def add_bevel(obj, width=0.005, segments=2):
+def add_hard_surface(obj, bevel_width=0.008, bevel_segments=2):
+    """Hard-surface armour finish: edge split + limited bevel.
+
+    For DoW1-style chunky armour. Keeps sharp edges where surfaces meet
+    while slightly bevelling the most exposed vertices. No subsurf smoothing.
+    """
+    # Edge split — creates sharp creases at angle boundaries
+    edge_split = obj.modifiers.new(name="EdgeSplit", type='EDGE_SPLIT')
+    edge_split.split_angle = math.radians(30)
+    # Limited bevel — only bevells the sharpest edges
+    bevel = obj.modifiers.new(name="Bevel", type='BEVEL')
+    bevel.limit_method = 'ANGLE'
+    bevel.angle_limit = math.radians(30)
+    bevel.width = bevel_width
+    bevel.segments = bevel_segments
+    bevel.loop_slide = True
+
+def add_bevel(obj, width=0.005, segments=3):
+    """Add bevel modifier with higher segment count for smooth edges."""
     mod = obj.modifiers.new(name="Bevel", type='BEVEL')
     mod.limit_method = 'ANGLE'
     mod.angle_limit = math.radians(30)
     mod.width = width
     mod.segments = segments
+
+def shade_flat(obj):
+    """Flat shading for hard-surface armour look — facets catch light."""
+    for poly in obj.data.polygons:
+        poly.use_smooth = False
 
 def shade_smooth(obj):
     for poly in obj.data.polygons:
@@ -191,7 +215,7 @@ def create_head(config, mats, z_top):
     mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
     
     # Main helmet
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=16, radius=head_r, location=(0, 0, head_z))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=24, radius=head_r, location=(0, 0, head_z))
     helm = bpy.context.active_object
     helm.name = "Helmet"
     for v in helm.data.vertices:
@@ -199,9 +223,8 @@ def create_head(config, mats, z_top):
         v.co.y *= 1.1
         v.co.z *= 0.85
     assign_material(helm, mats, mat_helm)
-    add_bevel(helm, width=0.003, segments=2)
-    add_subsurf(helm, levels=2, render_levels=3)
-    shade_smooth(helm)
+    add_hard_surface(helm, bevel_width=0.003, bevel_segments=2)
+    shade_flat(helm)
     simple_uv_unwrap(helm)
     parts.append(helm)
     
@@ -214,6 +237,7 @@ def create_head(config, mats, z_top):
             v.co.y *= head_r * 0.15
             v.co.z *= head_r * 0.2
         assign_material(visor, mats, mat_helm)
+        shade_flat(visor)
         parts.append(visor)
     
     if eq.get("crest", True):
@@ -225,6 +249,9 @@ def create_head(config, mats, z_top):
             v.co.y *= head_r * 0.85
             v.co.z *= head_r * 0.2
         assign_material(crest, mats, mat_accent)
+        add_hard_surface(crest, bevel_width=0.002, bevel_segments=1)
+        shade_flat(crest)
+        simple_uv_unwrap(crest)
         parts.append(crest)
     
     return parts, head_z, head_h
@@ -278,8 +305,8 @@ def create_tabard(config, mats, torso_z, torso_h, leg_x):
             if v.co.z < 0:
                 v.co.y *= 0.7  # Taper to crotch
         assign_material(plate, mats, mat_plate)
-        add_subsurf(plate, levels=1, render_levels=2)
-        shade_smooth(plate)
+        add_hard_surface(plate, bevel_width=0.005, bevel_segments=2)
+        shade_flat(plate)
         simple_uv_unwrap(plate)
         parts.append(plate)
         
@@ -320,9 +347,8 @@ def create_torso(config, mats, z_top, head_h):
             v.co.x *= 0.85
             v.co.y *= 0.80
     assign_material(torso, mats, mat_torso)
-    add_bevel(torso, width=0.005, segments=2)
-    add_subsurf(torso, levels=2, render_levels=3)
-    shade_smooth(torso)
+    add_hard_surface(torso, bevel_width=0.008, bevel_segments=2)
+    shade_flat(torso)
     simple_uv_unwrap(torso)
     parts.append(torso)
     
@@ -331,10 +357,12 @@ def create_torso(config, mats, z_top, head_h):
         aquila = bpy.context.active_object
         aquila.name = "Aquila"
         for v in aquila.data.vertices:
-            v.co.x *= 0.05
-            v.co.y *= 0.01
-            v.co.z *= 0.06
+            v.co.x *= 0.08
+            v.co.y *= 0.02
+            v.co.z *= 0.08
         assign_material(aquila, mats, mat_accent)
+        shade_flat(aquila)
+        simple_uv_unwrap(aquila)
         parts.append(aquila)
     
     return parts, torso_z, torso_h
@@ -355,15 +383,17 @@ def create_shoulders(config, mats, torso_z, torso_h):
         return parts, shoulder_z, shoulder_x
     
     for side, x in [("L", -shoulder_x), ("R", shoulder_x)]:
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=pauldron_r, location=(x, 0, shoulder_z))
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=36, ring_count=24, radius=pauldron_r, location=(x, 0, shoulder_z))
         pauldron = bpy.context.active_object
         pauldron.name = f"Pauldron_{side}"
         for v in pauldron.data.vertices:
             v.co.z *= 0.6
+            # Flatten inner face slightly for armour plate look
+            if abs(v.co.x) < 0.1:
+                v.co.x *= 0.8
         assign_material(pauldron, mats, mat_shoulder)
-        add_bevel(pauldron, width=0.003, segments=2)
-        add_subsurf(pauldron, levels=1, render_levels=2)
-        shade_smooth(pauldron)
+        add_hard_surface(pauldron, bevel_width=0.005, bevel_segments=2)
+        shade_flat(pauldron)
         simple_uv_unwrap(pauldron)
         parts.append(pauldron)
     
@@ -384,22 +414,22 @@ def create_arms(config, mats, shoulder_z, shoulder_x):
     
     for side, x in [("L", -shoulder_x), ("R", shoulder_x)]:
         upper_z = shoulder_z - upper_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.04 * build, depth=upper_h, location=(x, 0, upper_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.04 * build, depth=upper_h, location=(x, 0, upper_z))
         upper = bpy.context.active_object
         upper.name = f"UpperArm_{side}"
         assign_material(upper, mats, mat_upper)
-        add_subsurf(upper, levels=1, render_levels=2)
-        shade_smooth(upper)
+        add_hard_surface(upper, bevel_width=0.005, bevel_segments=1)
+        shade_flat(upper)
         simple_uv_unwrap(upper)
         parts.append(upper)
         
         lower_z = upper_z - upper_h * 0.5 - lower_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.035 * build, depth=lower_h, location=(x, 0, lower_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.035 * build, depth=lower_h, location=(x, 0, lower_z))
         lower = bpy.context.active_object
         lower.name = f"Forearm_{side}"
         assign_material(lower, mats, mat_lower)
-        add_subsurf(lower, levels=1, render_levels=2)
-        shade_smooth(lower)
+        add_hard_surface(lower, bevel_width=0.005, bevel_segments=1)
+        shade_flat(lower)
         simple_uv_unwrap(lower)
         parts.append(lower)
     
@@ -433,7 +463,7 @@ def create_legs(config, mats, torso_z, torso_h):
     
     for side, x in [("L", -leg_x), ("R", leg_x)]:
         thigh_z = torso_bottom - thigh_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.05 * build, depth=thigh_h, location=(x, 0, thigh_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.05 * build, depth=thigh_h, location=(x, 0, thigh_z))
         thigh = bpy.context.active_object
         thigh.name = f"Thigh_{side}"
         assign_material(thigh, mats, mat_thigh)
@@ -443,11 +473,11 @@ def create_legs(config, mats, torso_z, torso_h):
         parts.append(thigh)
         
         shin_z = thigh_z - thigh_h * 0.5 - shin_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.045 * build, depth=shin_h, location=(x, 0, shin_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.045 * build, depth=shin_h, location=(x, 0, shin_z))
         shin = bpy.context.active_object
         shin.name = f"Shin_{side}"
         assign_material(shin, mats, mat_shin)
-        add_bevel(shin, width=0.003, segments=1)
+        add_bevel(shin, width=0.003, segments=3)
         add_subsurf(shin, levels=1, render_levels=2)
         shade_smooth(shin)
         simple_uv_unwrap(shin)
@@ -462,7 +492,7 @@ def create_legs(config, mats, torso_z, torso_h):
             v.co.y *= 0.09 * build
             v.co.z *= 0.06 * build
         assign_material(boot, mats, mat_boot)
-        add_bevel(boot, width=0.004, segments=2)
+        add_bevel(boot, width=0.004, segments=3)
         add_subsurf(boot, levels=1, render_levels=2)
         shade_smooth(boot)
         simple_uv_unwrap(boot)
@@ -504,7 +534,7 @@ def create_weapon(config, mats, arm_joints):
         assign_material(body, mats, mat_body)
         parts.append(body)
         
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.012, depth=0.12, location=(wrist_r[0], wrist_r[1] + 0.22, wrist_r[2]))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.012, depth=0.12, location=(wrist_r[0], wrist_r[1] + 0.22, wrist_r[2]))
         barrel = bpy.context.active_object
         barrel.name = "WeaponBarrel"
         barrel.rotation_euler = (math.radians(90), 0, 0)
@@ -533,7 +563,7 @@ def create_weapon(config, mats, arm_joints):
         parts.append(body)
     
     elif weapon_type == "melee":
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.015, depth=0.18, location=(wrist_r[0], wrist_r[1] + 0.09, wrist_r[2]))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.015, depth=0.18, location=(wrist_r[0], wrist_r[1] + 0.09, wrist_r[2]))
         blade = bpy.context.active_object
         blade.name = "WeaponBlade"
         blade.rotation_euler = (math.radians(90), 0, 0)
@@ -551,7 +581,7 @@ def create_weapon(config, mats, arm_joints):
         assign_material(body, mats, mat_body)
         parts.append(body)
         
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.03, depth=0.08, location=(wrist_r[0], wrist_r[1] - 0.05, wrist_r[2] - 0.04))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.03, depth=0.08, location=(wrist_r[0], wrist_r[1] - 0.05, wrist_r[2] - 0.04))
         drum = bpy.context.active_object
         drum.name = "WeaponDrum"
         drum.rotation_euler = (0, math.radians(90), 0)
@@ -577,8 +607,8 @@ def create_backpack(config, mats, torso_z, torso_h):
         v.co.y *= 0.06 * build
         v.co.z *= 0.14 * build
     assign_material(pack, mats, mat_pack)
-    add_bevel(pack, width=0.004, segments=2)
-    add_subsurf(pack, levels=2, render_levels=3)
+    add_bevel(pack, width=0.004, segments=3)
+    add_subsurf(pack, levels=3, render_levels=4)
     shade_smooth(pack)
     simple_uv_unwrap(pack)
     return [pack]

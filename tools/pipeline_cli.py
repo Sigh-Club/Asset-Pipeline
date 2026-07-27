@@ -46,6 +46,7 @@ Usage:
 import os
 import sys
 import json
+import signal
 import argparse
 import subprocess
 from pathlib import Path
@@ -53,6 +54,54 @@ from datetime import datetime
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+
+
+# =============================================================================
+# BLENDER PROCESS MANAGEMENT
+# =============================================================================
+
+def kill_blender_processes(include_gui: bool = False):
+    """Force-kill all stale Blender --background processes.
+
+    Prevents resource exhaustion from orphaned/crashed renders.
+    """
+    try:
+        result = subprocess.run(
+            ["pgrep", "-x", "blender"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if not result.stdout.strip():
+            return
+
+        killed = 0
+        for pid_str in result.stdout.strip().split():
+            if not pid_str:
+                continue
+            try:
+                pid = int(pid_str)
+                cmdline = subprocess.run(
+                    ["ps", "-p", str(pid), "-o", "args="],
+                    capture_output=True, text=True, timeout=5,
+                ).stdout.strip()
+
+                is_background = "--background" in cmdline
+                is_gui = not is_background and "blender" in cmdline.lower()
+
+                if is_background or (include_gui and is_gui):
+                    os.kill(pid, signal.SIGKILL)
+                    killed += 1
+                    log(f"Killed stale blender PID {pid}")
+            except (ProcessLookupError, OSError, ValueError):
+                pass
+
+        if killed > 0:
+            import time as _t
+            _t.sleep(0.5)
+            log(f"Cleaned {killed} stale Blender process(es)")
+    except FileNotFoundError:
+        pass  # pgrep not available
+    except subprocess.TimeoutExpired:
+        pass
 
 # =============================================================================
 # PATHS (anchored to project root — NEVER hardcode absolute paths)
@@ -83,7 +132,7 @@ PATHS = {
 # VERSION MANAGEMENT
 # =============================================================================
 
-CURRENT_VERSION = "v0.4.0"
+CURRENT_VERSION = "v0.5.0"
 VERSIONS_FILE = os.path.join(PROJECT_ROOT, ".pipeline_version")
 
 
@@ -138,6 +187,7 @@ def run_command(cmd: list, cwd: str = None, check: bool = True) -> int:
 
 def cmd_character_generate(args):
     """Generate a rigged .blend from a JSON config."""
+    kill_blender_processes()
     if not args.config:
         log("No config file specified. Use --config <path>", "ERROR")
         return 1
@@ -152,6 +202,7 @@ def cmd_character_generate(args):
 
 def cmd_character_render(args):
     """Render all 8 directions × 5 animations for a unit."""
+    kill_blender_processes()
     units_dir = PATHS["units_dir"]
     if args.unit:
         # Find the .blend file for this unit — prefer model/ subdir and v2
@@ -489,10 +540,172 @@ def cmd_sync(args):
 
 
 # =============================================================================
-# SUB-COMMANDS — RENDER QUEUE (new)
+# SUB-COMMANDS — RELEASE (timestamped snapshot)
 # =============================================================================
 
+def cmd_release(args):
+    """Create a timestamped release snapshot with MANIFEST.md."""
+    import shutil
+    from datetime import datetime
+
+    version = args.version or get_latest_version()
+    src_dir = versioned_output_dir(version)
+
+    if not os.path.exists(src_dir):
+        log(f"Version directory not found: {src_dir}", "ERROR")
+        return 1
+
+    # Gather atlas files
+    atlas_extensions = (".png", ".json")
+    atlas_files = [f for f in Path(src_dir).iterdir()
+                   if f.suffix in atlas_extensions and f.is_file()]
+
+    if not atlas_files:
+        log(f"No atlas files found in {src_dir}. Run `pipeline pack` first.", "ERROR")
+        return 1
+
+    # Build release directory name
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    release_dirname = f"{version}-{timestamp}"
+    releases_root = os.path.join(PATHS["output"], "releases")
+    release_dir = os.path.join(releases_root, release_dirname)
+    os.makedirs(release_dir, exist_ok=True)
+
+    # Copy all atlas files
+    count = 0
+    for f in atlas_files:
+        shutil.copy2(str(f), os.path.join(release_dir, f.name))
+        count += 1
+
+    # Generate MANIFEST.md
+    manifest_lines = [
+        f"# Release: {release_dirname}",
+        "",
+        f"**Pipeline Version**: {version}",
+        f"**Created**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"**Source**: {src_dir}",
+        f"**Assets**: {count} files ({len(atlas_files)} atlas packages)",
+        "",
+        "## Contents",
+        "",
+    ]
+
+    # Group files by unit name
+    unit_files = {}
+    for f in atlas_files:
+        # Parse unit name from filename: "<unit>_atlas[_(lod\d+)]?.ext"
+        name = f.stem
+        # Strip _atlas, _atlas_lod1, _atlas_lod2
+        unit_key = name.replace("_atlas_lod1", "").replace("_atlas_lod2", "").replace("_atlas", "")
+        if unit_key not in unit_files:
+            unit_files[unit_key] = []
+        unit_files[unit_key].append(f.name)
+
+    for unit in sorted(unit_files.keys()):
+        files = unit_files[unit]
+        # Determine LOD levels present
+        has_lod = any("lod1" in f or "lod2" in f for f in files)
+        lod_info = " (LOD0" + (", LOD1, LOD2" if any("lod1" in f for f in files) else "")
+        lod_info += ")" if has_lod else ""
+        manifest_lines.append(f"- **{unit}**{lod_info}: {len(files)} files")
+
+    manifest_lines.extend([
+        "",
+        "## Usage",
+        "",
+        "These atlases are ready for import into the IoA game engine.",
+        "See the README for atlas format documentation.",
+        "",
+    ])
+
+    manifest_path = os.path.join(release_dir, "MANIFEST.md")
+    with open(manifest_path, "w") as f:
+        f.write("\n".join(manifest_lines))
+
+    log(f"Wrote manifest: {manifest_path}")
+
+    # Create/update latest symlink
+    latest_link = os.path.join(releases_root, "latest")
+    # Remove old symlink if it exists
+    if os.path.islink(latest_link) or os.path.exists(latest_link):
+        os.remove(latest_link)
+    os.symlink(release_dirname, latest_link)
+
+    log(f"Created release: {release_dir}")
+    log(f"  {count} atlas files copied")
+    log(f"  Latest symlink: {latest_link} -> {release_dirname}")
+    return 0
+
+
+# =============================================================================
+# SUB-COMMANDS — PREVIEW (interactive 3D model inspection)
+# =============================================================================
+
+PREVIEW_SCRIPT = os.path.join(SCRIPT_DIR, "blender", "preview_model.py")
+
+
+def cmd_preview(args):
+    """Open Blender with a unit's model for interactive 3D inspection."""
+    units_dir = PATHS["units_dir"]
+    unit_dir = Path(units_dir) / args.unit
+
+    if not unit_dir.exists():
+        log(f"Unit directory not found: {unit_dir}", "ERROR")
+        log(f"Available units: {', '.join(sorted(os.listdir(units_dir)))}", "INFO")
+        return 1
+
+    # Find .blend files — prefer model/ subdir and v2 blends
+    model_blends = list((unit_dir / "model").rglob("*.blend")) if (unit_dir / "model").exists() else []
+    if not model_blends:
+        # Look for any .blend in unit directory
+        unit_blends = list(unit_dir.rglob("*.blend"))
+        if not unit_blends:
+            log(f"No .blend file found in {unit_dir}", "ERROR")
+            return 1
+        blend_files = unit_blends
+    else:
+        blend_files = model_blends
+
+    # Prefer v2 blends if multiple exist
+    v2_blends = [f for f in blend_files if "v2" in f.name.lower()]
+    blend_path = str((v2_blends or blend_files)[0])
+
+    if not os.path.exists(blend_path):
+        log(f"Blend file not found: {blend_path}", "ERROR")
+        return 1
+
+    log(f"Opening Blender with: {blend_path}")
+    log("Controls: Middle-mouse orbit | Scroll zoom | Shift+MMB pan")
+
+    # Build shading arg for the preview script
+    shading_arg = f"--shading={args.shading}"
+
+    # Launch Blender with UI (not --background)
+    cmd = [
+        "blender", blend_path, "--python", PREVIEW_SCRIPT, "--",
+        args.unit, shading_arg
+    ]
+    return run_command(cmd)
+
+
+# =============================================================================
+# SUB-COMMANDS — GALLERY (web-based sprite browser)
+# =============================================================================
+
+UNIFIED_SERVER_SCRIPT = os.path.join(SCRIPT_DIR, "server.py")
+GALLERY_SCRIPT = os.path.join(SCRIPT_DIR, "gallery_server.py")
 DASHBOARD_SCRIPT = os.path.join(SCRIPT_DIR, "queue_dashboard.py")
+
+
+def cmd_gallery(args):
+    """Launch the web-based sprite atlas gallery (standalone)."""
+    cmd = [sys.executable, GALLERY_SCRIPT,
+           "--port", str(args.port),
+           "--host", args.host]
+    if args.no_browser:
+        cmd.append("--no-browser")
+    log(f"Starting gallery on http://{args.host}:{args.port}")
+    return run_command(cmd)
 
 
 def cmd_queue(args):
@@ -546,15 +759,17 @@ def cmd_queue(args):
 
 
 def cmd_dashboard(args):
-    """Launch the render queue dashboard web UI."""
-    if not os.path.exists(DASHBOARD_SCRIPT):
-        log(f"Dashboard not found: {DASHBOARD_SCRIPT}", "ERROR")
+    """Launch the unified web dashboard (gallery + render queue)."""
+    if not os.path.exists(UNIFIED_SERVER_SCRIPT):
+        log(f"Unified server not found: {UNIFIED_SERVER_SCRIPT}", "ERROR")
         return 1
-    log("Launching render queue dashboard...")
-    return run_command(
-        [sys.executable, DASHBOARD_SCRIPT],
-        check=False,
-    )
+    cmd = [sys.executable, UNIFIED_SERVER_SCRIPT,
+           "--port", str(args.port),
+           "--host", args.host]
+    if args.no_browser:
+        cmd.append("--no-browser")
+    log(f"Starting unified dashboard on http://{args.host}:{args.port}")
+    return run_command(cmd)
 
 
 # =============================================================================
@@ -756,6 +971,45 @@ Examples:
     sync_parser.add_argument("--target", "-t", required=True, help="IoA atlases directory")
     sync_parser.add_argument("--version", default=CURRENT_VERSION, help="Version to sync")
 
+    # --- release ---
+    release_parser = subparsers.add_parser(
+        "release",
+        help="Create a timestamped release snapshot with MANIFEST.md"
+    )
+    release_parser.add_argument(
+        "--version", default=CURRENT_VERSION,
+        help="Pipeline version to release (default: current)"
+    )
+
+    # --- preview ---
+    preview_parser = subparsers.add_parser(
+        "preview",
+        help="Open Blender with a unit's 3D model for interactive inspection"
+    )
+    preview_parser.add_argument("--unit", "-u", required=True, help="Unit name")
+    preview_parser.add_argument(
+        "--shading", default="material", choices=["solid", "material", "rendered"],
+        help="Viewport shading mode (default: material)"
+    )
+
+    # --- dashboard (unified) ---
+    dash_parser = subparsers.add_parser(
+        "dashboard",
+        help="Launch unified web dashboard (gallery + render queue)"
+    )
+    dash_parser.add_argument("--port", "-p", type=int, default=8080, help="Port (default: 8080)")
+    dash_parser.add_argument("--host", default="127.0.0.1", help="Host (default: 127.0.0.1)")
+    dash_parser.add_argument("--no-browser", action="store_true", help="Don't auto-open browser")
+
+    # --- gallery (standalone, for compatibility) ---
+    gallery_parser = subparsers.add_parser(
+        "gallery",
+        help="Launch web-based sprite atlas gallery browser"
+    )
+    gallery_parser.add_argument("--port", "-p", type=int, default=8082, help="Port (default: 8082)")
+    gallery_parser.add_argument("--host", default="127.0.0.1", help="Host (default: 127.0.0.1)")
+    gallery_parser.add_argument("--no-browser", action="store_true", help="Don't auto-open browser")
+
     # --- queue ---
     queue_parser = subparsers.add_parser("queue", help="Render queue management")
     queue_sub = queue_parser.add_subparsers(dest="action", help="Queue action")
@@ -793,9 +1047,6 @@ Examples:
     subparsers.add_parser("info", help="Show pipeline configuration")
     subparsers.add_parser("doctor", help="Check tool dependencies")
 
-    # --- dashboard ---
-    subparsers.add_parser("dashboard", help="Launch render queue dashboard web UI")
-
     return parser
 
 
@@ -818,6 +1069,9 @@ COMMANDS = {
     ("critic", "batch"): cmd_critic_batch,
     ("pack",): cmd_pack,
     ("sync",): cmd_sync,
+    ("release",): cmd_release,
+    ("preview",): cmd_preview,
+    ("gallery",): cmd_gallery,
     ("queue",): cmd_queue,
     ("dashboard",): cmd_dashboard,
     ("info",): cmd_info,
@@ -829,7 +1083,8 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    if args.version:
+    # Only intercept --version flag (bool), not subcommand --version (string)
+    if args.version is True:
         print(f"IoA Asset Pipeline {CURRENT_VERSION}")
         return 0
 

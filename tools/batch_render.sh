@@ -65,6 +65,10 @@ for UNIT in "${UNITS[@]}"; do
     echo "[$COUNT/$TOTAL] Rendering: $UNIT"
     echo "========================================"
     
+    # Kill any stale Blender processes before starting
+    pkill -9 blender 2>/dev/null || true
+    sleep 0.5
+    
     # Find the .blend file — prefer model/*v2.blend
     BLEND=$(find "$PROJECT_ROOT/assets/units/$UNIT/model" -name "*.blend" 2>/dev/null | head -1)
     

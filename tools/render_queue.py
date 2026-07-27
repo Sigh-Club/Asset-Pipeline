@@ -42,6 +42,7 @@ import json
 import time
 import threading
 import subprocess
+import signal
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -58,6 +59,93 @@ QUEUE_PATH = os.path.join(QUEUE_DIR, "render_queue.json")
 PROGRESS_PATH = os.path.join(QUEUE_DIR, "render_progress.json")
 PAUSE_PATH = os.path.join(QUEUE_DIR, ".render_pause")
 LOG_DIR = os.path.join(QUEUE_DIR, "render_logs")
+
+
+# =============================================================================
+# BLENDER PROCESS MANAGEMENT
+# =============================================================================
+
+def kill_blender_processes(include_gui: bool = False):
+    """Force-kill all stale Blender processes before starting a new render.
+
+    Prevents resource exhaustion from orphaned/crashed Blender processes.
+    By default only kills --background processes (headless renders).
+    Set include_gui=True to also kill GUI Blender instances.
+    """
+    import subprocess
+    import signal
+
+    try:
+        # Get all blender PIDs
+        result = subprocess.run(
+            ["pgrep", "-x", "blender"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if not result.stdout.strip():
+            return 0
+
+        pids = [int(p) for p in result.stdout.strip().split() if p]
+        if not pids:
+            return 0
+
+        killed = 0
+        for pid in pids:
+            try:
+                # Check if this is a background render process
+                cmdline = subprocess.run(
+                    ["ps", "-p", str(pid), "-o", "args="],
+                    capture_output=True, text=True, timeout=5,
+                ).stdout.strip()
+
+                is_background = "--background" in cmdline
+                is_gui = not is_background and "blender" in cmdline.lower()
+
+                if is_background or (include_gui and is_gui):
+                    os.kill(pid, signal.SIGKILL)
+                    killed += 1
+                    log(f"Killed stale Blender PID {pid} ({'--background' if is_background else 'GUI'})")
+            except (ProcessLookupError, OSError):
+                pass
+
+        if killed > 0:
+            # Brief wait to ensure processes release GPU/resources
+            time.sleep(0.5)
+            log(f"Cleaned {killed} stale Blender process(es)")
+
+        return killed
+    except FileNotFoundError:
+        # pgrep not available — fallback to ps-based approach
+        return _kill_blender_fallback(include_gui)
+    except subprocess.TimeoutExpired:
+        return 0
+
+
+def _kill_blender_fallback(include_gui: bool = False) -> int:
+    """Fallback: iterate /proc to find and kill blender processes."""
+    killed = 0
+    try:
+        for entry in os.listdir("/proc"):
+            if not entry.isdigit():
+                continue
+            try:
+                with open(f"/proc/{entry}/cmdline", "rb") as f:
+                    raw = f.read()
+                cmdline = raw.decode("utf-8", errors="replace").replace("\0", " ")
+                if "blender" not in cmdline.lower():
+                    continue
+                is_background = "--background" in cmdline
+                is_gui = not is_background
+                if is_background or (include_gui and is_gui):
+                    os.kill(int(entry), signal.SIGKILL)
+                    killed += 1
+            except (ProcessLookupError, OSError, IOError):
+                pass
+    except FileNotFoundError:
+        pass  # /proc not available (unusual)
+    if killed > 0:
+        time.sleep(0.5)
+        log(f"Cleaned {killed} stale Blender process(es) (fallback)")
+    return killed
 
 
 def _load_queue() -> list:
@@ -538,6 +626,9 @@ def _render_job(job: dict, engine: str, fast: bool) -> dict:
     job["started"] = _timestamp()
     job["log_path"] = log_path
 
+    # Kill stale Blender processes before starting (avoids resource exhaustion)
+    kill_blender_processes()
+
     with open(log_path, "w") as log:
         _write_progress("generating", unit_name, job["id"],
                         done=0, total=TOTAL_FRAMES_PER_UNIT)
@@ -713,6 +804,9 @@ def _render_job(job: dict, engine: str, fast: bool) -> dict:
 
 def cmd_run(args):
     """Process all queued render jobs."""
+    # Kill any stale Blender processes before starting queue processing
+    kill_blender_processes()
+
     queue = _load_queue()
     engine = args.engine or "CYCLES"
     fast = args.fast or False

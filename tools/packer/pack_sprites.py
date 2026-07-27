@@ -30,8 +30,8 @@ from PIL import Image
 # CONFIGURATION
 # =============================================================================
 
-ATLAS_MAX_SIZE = 4096       # Max texture dimension (safe for most GPUs)
-PADDING = 2                 # Pixels between frames (prevent bleeding)
+ATLAS_MAX_SIZE = 8192       # Max texture dimension — 384×512 frames need larger atlases
+PADDING = 4                 # Pixels between frames (prevent bleeding, larger for 4K frames)
 
 # LOD scales
 LODS = {
@@ -117,8 +117,8 @@ def build_lod_atlas(src_atlas: Image.Image, scale: float) -> Image.Image:
     """Downscale atlas for LOD generation."""
     new_w = int(src_atlas.width * scale)
     new_h = int(src_atlas.height * scale)
-    # Use NEAREST neighbor to preserve crisp pixel edges (no interpolation)
-    return src_atlas.resize((new_w, new_h), Image.NEAREST)
+    # Use LANCZOS for smooth detail preservation at lower LODs
+    return src_atlas.resize((new_w, new_h), Image.LANCZOS)
 
 
 def pack_unit(source_dir: str, output_dir: str, unit_name: str):
