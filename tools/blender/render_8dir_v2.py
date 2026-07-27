@@ -114,15 +114,16 @@ FACTION_DEFAULT = "iron_directorate"
 # =============================================================================
 
 def parse_args():
-    """Parse --engine, --no-depth, --no-normal, --fast, --samples, --faction from sys.argv after --"""
+    """Parse --engine, --no-depth, --no-normal, --fast, --samples, --faction, --anim from sys.argv after --"""
     args = []
     if "--" in sys.argv:
         args = sys.argv[sys.argv.index("--") + 1:]
     
     global RENDER_ENGINE, OUTPUT_DEPTH, OUTPUT_NORMAL, DEFAULT_SAMPLES, CURRENT_FACTION
-    global FACTION_DEFAULT
+    global FACTION_DEFAULT, ANIM_FILTER
     
     selected_faction = FACTION_DEFAULT
+    ANIM_FILTER = None  # None = all; comma-separated names to limit (e.g. "idle,walk")
     
     i = 0
     while i < len(args):
@@ -148,6 +149,10 @@ def parse_args():
                 log(f"Faction lighting: {val}")
             else:
                 log(f"WARNING: Unknown faction '{val}', using default ({FACTION_DEFAULT})")
+            i += 2
+        elif args[i] == "--anim" and i + 1 < len(args):
+            ANIM_FILTER = set(a.strip() for a in args[i + 1].split(","))
+            log(f"Animation filter: {sorted(ANIM_FILTER)}")
             i += 2
         else:
             i += 1
@@ -280,9 +285,39 @@ def setup_lighting(faction="iron_directorate"):
                        location=rim_cfg["location"], size=rim_cfg["size"])
     spec = create_light("SPECULAR", color=spec_cfg["color"], energy=spec_cfg["energy"],
                         location=spec_cfg["location"], size=spec_cfg["size"])
-    
+
+    # Camera-relative lighting: store each light's base world location so render_direction_anim
+    # can orbit them around Z with the rig and re-aim at the origin. This keeps every
+    # direction evenly lit (Dawn-of-War style) instead of the model's front being back-lit
+    # in some directions. Lights stay in world space (no parenting) to avoid local-rotation
+    # complications.
+    _store_light_base_transforms([key, fill, rim, spec])
+
     log(f"Lighting: {faction} (key={key_cfg['energy']}W {key_cfg['color']}, "
         f"fill={fill_cfg['energy']}W, rim={rim_cfg['energy']}W, specular={spec_cfg['energy']}W)")
+
+
+_LIGHT_BASE = None
+def _store_light_base_transforms(lights):
+    global _LIGHT_BASE
+    _LIGHT_BASE = [(lt, lt.matrix_world.copy()) for lt in lights]
+
+
+def _orbit_lights_for_direction(dangle_deg: float):
+    """Rotate every stored light around world Z by the direction angle, then re-aim at the
+    origin. Called once per direction so the model is lit from the same camera-relative
+    angles in all 8 views."""
+    if not _LIGHT_BASE:
+        return
+    ang = math.radians(dangle_deg)
+    rot = mathutils.Matrix.Rotation(ang, 4, 'Z')
+    origin = mathutils.Vector((0, 0, 0))
+    for lt, base in _LIGHT_BASE:
+        m = rot @ base
+        lt.matrix_world = m
+        direction = origin - lt.matrix_world.translation
+        if direction.length > 1e-6:
+            lt.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 
 def create_light(name: str, color: tuple, energy: float, location: tuple, size: float = 0.5):
     light_data = bpy.data.lights.new(name=name, type="AREA")
@@ -490,6 +525,7 @@ def render_direction_anim(dlabel: str, dangle: float, anim_name: str,
     scene = bpy.context.scene
     rig = bpy.data.objects["ISO_CAM_RIG"]
     rig.rotation_euler = (0.0, 0.0, math.radians(dangle))
+    _orbit_lights_for_direction(dangle)
     bpy.context.view_layer.update()
     
     # --- Animation setup: apply the right action/strip BEFORE rendering ---
@@ -625,6 +661,9 @@ def main():
     animations = scan_animations()
     all_rendered_files = []
     for anim_name, anim_info in animations.items():
+        if ANIM_FILTER and anim_name not in ANIM_FILTER:
+            log(f"Skipping anim '{anim_name}' (filter)")
+            continue
         frame_start, frame_end = anim_info["frames"]
         armature = anim_info.get("armature")
         action = anim_info.get("action")

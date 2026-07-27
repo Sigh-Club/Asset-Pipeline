@@ -188,6 +188,107 @@ def simple_uv_unwrap(obj):
     obj.select_set(False)
 
 
+# =============================================================================
+# ATLAS UV ASSIGNMENT — map each part's UVs into a tile of the per-unit diffuse atlas
+# (matches tools/pbr/paint_unit_diffuse.py TILE_LAYOUT). DoW1 detail lives in the
+# painted diffuse texture, not geometry, so parts must sample predictable atlas tiles.
+# =============================================================================
+
+try:
+    sys.path.insert(0, os.path.join(SCRIPT_DIR, "..", "pbr"))
+    from atlas_layout import TILE_LAYOUT as _ATLAS_TILE_LAYOUT
+    _ATLAS_TILES_PER_ROW = 4
+    _ATLAS_TILE_FRAC = 1.0 / _ATLAS_TILES_PER_ROW
+    _ATLAS_MARGIN_FRAC = 0.02
+except ImportError:
+    _ATLAS_TILE_LAYOUT = None
+
+# Object name prefix (lowercased, underscores stripped) -> atlas tile key.
+_ANCHOR_NAME_MAP = [
+    ("torso", "torso"),
+    ("helmet", "helmet"), ("visor", "helmet"), ("crest", "helmet"),
+    ("pauldron", "pauldron"),
+    ("upperarm", "upper_arm"),
+    ("forearm", "forearm"), ("elbowguard", "forearm"),
+    ("thigh", "thigh"), ("hipplate", "thigh"),
+    ("shin", "shin"), ("kneepad", "shin"), ("kneespike", "shin"),
+    ("boot", "boot"),
+    ("beltring", "belt"), ("beltbuckle", "belt"), ("pouch", "belt"), ("belt", "belt"),
+    ("codpiece", "codpiece"), ("tabard", "codpiece"),
+    ("backpack", "backpack"), ("vent", "backpack"),
+    ("rifle", "weapon"), ("pistol", "weapon"), ("weapon", "weapon"),
+    ("scope", "weapon"), ("magazine", "weapon"), ("barrel", "weapon"), ("sight", "weapon"),
+]
+
+
+def _anchor_key_for(obj):
+    name = obj.name.lower().replace("_", "")
+    for prefix, key in _ANCHOR_NAME_MAP:
+        if name.startswith(prefix):
+            return key
+    return None
+
+
+def _tile_uv_rect(row, col):
+    u0 = col * _ATLAS_TILE_FRAC + _ATLAS_MARGIN_FRAC
+    u1 = (col + 1) * _ATLAS_TILE_FRAC - _ATLAS_MARGIN_FRAC
+    v0 = (_ATLAS_TILES_PER_ROW - 1 - row) * _ATLAS_TILE_FRAC + _ATLAS_MARGIN_FRAC
+    v1 = (_ATLAS_TILES_PER_ROW - row) * _ATLAS_TILE_FRAC - _ATLAS_MARGIN_FRAC
+    return u0, v0, u1, v1
+
+
+def _remap_obj_uv_to_tile(obj, row, col):
+    """Box-project each face into its atlas tile based on face normal (deterministic).
+
+    For each face, the dominant normal axis selects which two object-space axes drive
+    the UV (+Y front -> X,Z; +X side -> Y,Z; +Z top -> X,Y). This is a deterministic
+    cube/cylinder-style unwrap that always places each face inside its tile, unlike
+    smart_project whose arbitrary orientation scatters faces across tiles.
+    """
+    if not obj.data.uv_layers:
+        obj.data.uv_layers.new(name="UVMap")
+    uv_layer = obj.data.uv_layers.active
+    verts = [v.co for v in obj.data.vertices]
+    minc = [min(v[i] for v in verts) for i in range(3)]
+    maxc = [max(v[i] for v in verts) for i in range(3)]
+    span = [max(maxc[i] - minc[i], 1e-6) for i in range(3)]
+    u0, v0, u1, v1 = _tile_uv_rect(row, col)
+    tw, th = u1 - u0, v1 - v0
+    for poly in obj.data.polygons:
+        n = poly.normal
+        ax = max(range(3), key=lambda i: abs(n[i]))
+        if ax == 0:      ua, va = 1, 2    # X-dominant face -> use Y,Z
+        elif ax == 1:    ua, va = 0, 2    # Y-dominant face -> use X,Z
+        else:            ua, va = 0, 1    # Z-dominant face -> use X,Y
+        for li in poly.loop_indices:
+            co = obj.data.vertices[obj.data.loops[li].vertex_index].co
+            uu = (co[ua] - minc[ua]) / span[ua]
+            vv = (co[va] - minc[va]) / span[va]
+            uv_layer.data[li].uv = (u0 + uu * tw, v0 + vv * th)
+
+
+def remap_uvs_to_atlas(all_parts):
+    """Remap every part's UVs into its atlas tile. Anchor parts by name; small greebles
+    inherit the tile of the nearest anchor by object-origin distance (so rivets/trim/vents
+    sample the same tile as their parent body part)."""
+    if _ATLAS_TILE_LAYOUT is None:
+        print("  [atlas] paint_unit_diffuse unavailable, skipping UV remap")
+        return
+    anchors = [(o, _anchor_key_for(o)) for o in all_parts if _anchor_key_for(o)]
+    for o in all_parts:
+        if o.get("atlas_uv_manual"):
+            continue   # UVs set explicitly (e.g. chest aquila decal)
+        k = _anchor_key_for(o)
+        if k is None and anchors:
+            oc = o.matrix_world.translation
+            best = min(anchors, key=lambda a: (a[0].matrix_world.translation - oc).length_squared)
+            k = best[1]
+        if k is None or k not in _ATLAS_TILE_LAYOUT:
+            continue
+        row, col = _ATLAS_TILE_LAYOUT[k]
+        _remap_obj_uv_to_tile(o, row, col)
+
+
 def clear_scene():
     for obj in list(bpy.data.objects):
         bpy.data.objects.remove(obj, do_unlink=True)
@@ -365,16 +466,28 @@ def create_torso(config, mats, z_top, head_h):
     parts.append(torso)
     
     if eq.get("aquila", True):
-        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0.135 * build, torso_z + torso_h * 0.1))
+        # Chest aquila as a FLAT DECAL plate facing +Y, with UVs mapped exactly to the
+        # dedicated "aquila" atlas tile — so the painted imperial eagle always lands
+        # centred on the chest front (not at the mercy of smart-project orientation).
+        bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0.150 * build, torso_z + torso_h * 0.10))
         aquila = bpy.context.active_object
         aquila.name = "Aquila"
-        for v in aquila.data.vertices:
-            v.co.x *= 0.08
-            v.co.y *= 0.02
-            v.co.z *= 0.08
+        aquila.rotation_euler = (math.radians(90), 0.0, 0.0)  # face +Y
+        aquila.scale = (0.20 * build, 0.17 * build, 1.0)
+        # Set UVs to the aquila tile rect directly (single quad)
+        if _ATLAS_TILE_LAYOUT is not None and "aquila" in _ATLAS_TILE_LAYOUT:
+            arow, acol = _ATLAS_TILE_LAYOUT["aquila"]
+            u0, v0, u1, v1 = _tile_uv_rect(arow, acol)
+        else:
+            u0, v0, u1, v1 = 0.0, 0.0, 1.0, 1.0
+        uv = aquila.data.uv_layers.active.data
+        # plane loops in order: (0,0)->(1,0)->(1,1)->(0,1) after rotate; map to tile corners
+        corners = [(u0, v0), (u1, v0), (u1, v1), (u0, v1)]
+        for li, corner in enumerate(corners):
+            uv[li].uv = (corner[0], corner[1])
+        aquila["atlas_uv_manual"] = True   # skip general atlas remap (UVs set explicitly)
         assign_material(aquila, mats, mat_accent)
         shade_flat(aquila)
-        simple_uv_unwrap(aquila)
         parts.append(aquila)
     
     return parts, torso_z, torso_h
@@ -1880,6 +1993,10 @@ def generate_unit(config_path):
         print(f"  Unknown body_type '{body_type}', falling back to humanoid")
         all_parts, joints = _build_humanoid(config, mats)
     
+    # Remap every part's UVs into its atlas tile (matches paint_unit_diffuse.py layout),
+    # so the per-unit painted diffuse + team mask map correctly onto the model.
+    remap_uvs_to_atlas(all_parts)
+
     # Join all meshes into one
     bpy.ops.object.select_all(action='DESELECT')
     for p in all_parts:
