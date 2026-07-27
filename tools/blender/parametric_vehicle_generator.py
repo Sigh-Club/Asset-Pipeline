@@ -51,6 +51,25 @@ def assign_material(obj, mats, mat_name):
         obj.data.materials.clear()
         obj.data.materials.append(mats[mat_name])
 
+def add_hard_surface(obj, bevel_width=0.008, bevel_segments=2):
+    """Hard-surface armour finish: edge split + limited bevel.
+    
+    For chitinous carapace/armour plates on creatures and insectoids.
+    """
+    edge_split = obj.modifiers.new(name="EdgeSplit", type='EDGE_SPLIT')
+    edge_split.split_angle = math.radians(30)
+    bevel = obj.modifiers.new(name="Bevel", type='BEVEL')
+    bevel.limit_method = 'ANGLE'
+    bevel.angle_limit = math.radians(30)
+    bevel.width = bevel_width
+    bevel.segments = bevel_segments
+    bevel.loop_slide = True
+
+def shade_flat(obj):
+    """Flat shading for hard-surface/carapace look."""
+    for poly in obj.data.polygons:
+        poly.use_smooth = False
+
 # =============================================================================
 # VEHICLE TEMPLATE
 # =============================================================================
@@ -267,7 +286,7 @@ def generate_creature(config: dict, mats: dict) -> tuple:
     body_w = 0.20 * build
     body_l = 0.30 * build
     
-    # === Body (torso) ===
+    # === Body (torso) — hard-surface carapace ===
     body_z = leg_h + body_h / 2
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, body_z))
     body = bpy.context.active_object
@@ -280,42 +299,44 @@ def generate_creature(config: dict, mats: dict) -> tuple:
         if v.co.y < 0:
             v.co.x *= 0.6
             v.co.z *= 0.7
+        # Flatten top into carapace plates
+        if v.co.z > 0 and v.co.z < 0.2:
+            v.co.x *= 1.1  # Widen at carapace ridge
     assign_material(body, mats, mat_body)
-    add_bevel(body, width=0.008, segments=3)
-    add_subsurf(body, levels=2, render_levels=3)
-    shade_smooth(body)
+    add_hard_surface(body, bevel_width=0.006, bevel_segments=2)
+    shade_flat(body)
     simple_uv_unwrap(body)
     parts.append(body)
     
-    # === Head ===
+    # === Head — hard-surface carapace ===
     head_r = 0.06 * build
     head_z = body_z + body_h / 2 + head_r * 0.5
     head_y = body_l / 2 + head_r * 0.5
     
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=head_r, location=(0, head_y, head_z))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=32, radius=head_r, location=(0, head_y, head_z))
     head = bpy.context.active_object
     head.name = "Head"
     for v in head.data.vertices:
         v.co.y *= 1.2  # Snout elongation
     assign_material(head, mats, mat_body)
-    add_subsurf(head, levels=1, render_levels=2)
-    shade_smooth(head)
+    add_hard_surface(head, bevel_width=0.003, bevel_segments=2)
+    shade_flat(head)
     simple_uv_unwrap(head)
     parts.append(head)
     
-    # === Horns ===
+    # === Horns — hard-surface chitin ===
     if creature_cfg.get("horn", True):
         for side, sign in [("L", -1), ("R", 1)]:
-            bpy.ops.mesh.primitive_cone_add(vertices=6, radius1=0.015, radius2=0.005, depth=0.06, location=(sign * head_r * 0.4, head_y, head_z + head_r * 0.5))
+            bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.015, radius2=0.005, depth=0.06, location=(sign * head_r * 0.4, head_y, head_z + head_r * 0.5))
             horn = bpy.context.active_object
             horn.name = f"Horn_{side}"
             horn.rotation_euler = (math.radians(-30), 0, sign * 0.2)
             assign_material(horn, mats, mat_accent)
-            add_subsurf(horn, levels=1, render_levels=2)
-            shade_smooth(horn)
+            add_hard_surface(horn, bevel_width=0.002, bevel_segments=1)
+            shade_flat(horn)
             parts.append(horn)
     
-    # === Legs (4) ===
+    # === Legs (4) — hard-surface carapace ===
     leg_positions = [
         ("FL", -body_w * 0.35, body_l * 0.3),  # Front-left
         ("FR", body_w * 0.35, body_l * 0.3),   # Front-right
@@ -325,27 +346,30 @@ def generate_creature(config: dict, mats: dict) -> tuple:
     
     for label, lx, ly in leg_positions:
         leg_z = leg_h / 2
-        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.025 * build, depth=leg_h, location=(lx, ly, leg_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.025 * build, depth=leg_h, location=(lx, ly, leg_z))
         leg = bpy.context.active_object
         leg.name = f"Leg_{label}"
         assign_material(leg, mats, mat_body if "F" in label else mat_leather)
-        add_subsurf(leg, levels=1, render_levels=2)
-        shade_smooth(leg)
+        add_hard_surface(leg, bevel_width=0.004, bevel_segments=2)
+        shade_flat(leg)
         simple_uv_unwrap(leg)
         parts.append(leg)
         
-        # Foot/claw
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=0.02 * build, location=(lx, ly, 0.01))
+        # Foot/claw — hard-surface
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=12, radius=0.02 * build, location=(lx, ly, 0.01))
         foot = bpy.context.active_object
         foot.name = f"Foot_{label}"
         for v in foot.data.vertices:
             v.co.z *= 0.4
+            v.co.z *= 0.4
         assign_material(foot, mats, mat_leather)
+        add_hard_surface(foot, bevel_width=0.002, bevel_segments=1)
+        shade_flat(foot)
         parts.append(foot)
         
         joints[f"leg_{label.lower()}"] = (lx, ly, leg_z)
     
-    # === Tail ===
+    # === Tail — hard-surface carapace plates ===
     if creature_cfg.get("tail", True):
         bpy.ops.mesh.primitive_cube_add(size=1, location=(0, -body_l / 2 - 0.05, body_z * 0.8))
         tail = bpy.context.active_object
@@ -358,12 +382,12 @@ def generate_creature(config: dict, mats: dict) -> tuple:
                 v.co.x *= 1.5  # Flatten at tip
                 v.co.z *= 0.5
         assign_material(tail, mats, mat_body)
-        add_subsurf(tail, levels=1, render_levels=2)
-        shade_smooth(tail)
+        add_hard_surface(tail, bevel_width=0.003, bevel_segments=2)
+        shade_flat(tail)
         simple_uv_unwrap(tail)
         parts.append(tail)
     
-    # === Wings ===
+    # === Wings — soft membrane (keep subsurf) ===
     if creature_cfg.get("wing", False):
         for side, sign in [("L", -1), ("R", 1)]:
             bpy.ops.mesh.primitive_cube_add(size=1, location=(sign * (body_w / 2 + 0.02), 0, body_z + body_h * 0.3))
@@ -460,13 +484,13 @@ def generate_insectoid(config: dict, mats: dict) -> tuple:
     seg_length = 0.20 * build
     total_length = seg_length * segments
     
-    # === Segmented body ===
+    # === Segmented body — hard-surface carapace plates ===
     for i in range(segments):
         seg_y = (i - (segments - 1) / 2) * seg_length
         seg_h = body_h * (1.0 - i * 0.15)  # Taper toward rear
         seg_r = body_w * (1.0 - i * 0.1)
         
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=seg_r, location=(0, seg_y, body_h / 2))
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=32, radius=seg_r, location=(0, seg_y, body_h / 2))
         seg = bpy.context.active_object
         seg.name = f"Segment_{i}"
         for v in seg.data.vertices:
@@ -474,38 +498,38 @@ def generate_insectoid(config: dict, mats: dict) -> tuple:
             if i > 0:
                 v.co.y *= 0.9  # Taper
         assign_material(seg, mats, mat_carapace if i % 2 == 0 else mat_joint)
-        add_subsurf(seg, levels=1, render_levels=2)
-        shade_smooth(seg)
+        add_hard_surface(seg, bevel_width=0.004, bevel_segments=2)
+        shade_flat(seg)
         simple_uv_unwrap(seg)
         parts.append(seg)
     
-    # === Head (front segment) ===
+    # === Head — hard-surface carapace ===
     head_y = total_length / 2 + 0.05
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=body_w * 0.4, location=(0, head_y, body_h * 0.5))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=32, radius=body_w * 0.4, location=(0, head_y, body_h * 0.5))
     head = bpy.context.active_object
     head.name = "InsectHead"
     for v in head.data.vertices:
         v.co.y *= 1.3  # Elongated
         v.co.z *= 0.5
     assign_material(head, mats, mat_carapace)
-    add_subsurf(head, levels=1, render_levels=2)
-    shade_smooth(head)
+    add_hard_surface(head, bevel_width=0.003, bevel_segments=2)
+    shade_flat(head)
     simple_uv_unwrap(head)
     parts.append(head)
     
-    # === Mandibles ===
+    # === Mandibles — hard-surface chitin ===
     for side, sign in [("L", -1), ("R", 1)]:
-        bpy.ops.mesh.primitive_cone_add(vertices=6, radius1=0.01, radius2=0.003, depth=0.05, location=(sign * body_w * 0.25, head_y + 0.05, body_h * 0.3))
+        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.01, radius2=0.003, depth=0.05, location=(sign * body_w * 0.25, head_y + 0.05, body_h * 0.3))
         mandible = bpy.context.active_object
         mandible.name = f"Mandible_{side}"
         assign_material(mandible, mats, mat_accent)
-        add_subsurf(mandible, levels=1, render_levels=2)
-        shade_smooth(mandible)
+        add_hard_surface(mandible, bevel_width=0.002, bevel_segments=1)
+        shade_flat(mandible)
         parts.append(mandible)
     
-    # === Eyes (glowing) ===
+    # === Eyes (glowing) — keep smooth/organic ===
     for side, sign in [("L", -1), ("R", 1)]:
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=0.012, location=(sign * body_w * 0.3, head_y + 0.02, body_h * 0.55))
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=12, radius=0.012, location=(sign * body_w * 0.3, head_y + 0.02, body_h * 0.55))
         eye = bpy.context.active_object
         eye.name = f"Eye_{side}"
         for v in eye.data.vertices:
@@ -513,7 +537,7 @@ def generate_insectoid(config: dict, mats: dict) -> tuple:
         assign_material(eye, mats, mat_accent)
         parts.append(eye)
     
-    # === Legs ===
+    # === Legs — hard-surface carapace ===
     for leg_idx in range(leg_count):
         side_mult = -1 if leg_idx % 2 == 0 else 1
         seg_idx = leg_idx // 2
@@ -522,25 +546,27 @@ def generate_insectoid(config: dict, mats: dict) -> tuple:
         leg_len = 0.12 * build
         leg_z = body_h * 0.3
         
-        bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.012, depth=leg_len, location=(side_mult * body_w * 0.6, leg_y, leg_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.012, depth=leg_len, location=(side_mult * body_w * 0.6, leg_y, leg_z))
         leg = bpy.context.active_object
         leg.name = f"Leg_{leg_idx}"
         leg.rotation_euler = (0, 0, side_mult * math.radians(30))
         assign_material(leg, mats, mat_carapace)
-        add_subsurf(leg, levels=1, render_levels=2)
-        shade_smooth(leg)
+        add_hard_surface(leg, bevel_width=0.003, bevel_segments=2)
+        shade_flat(leg)
         parts.append(leg)
         
-        # Joint/Claw
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=6, ring_count=4, radius=0.008, location=(side_mult * (body_w * 0.6 + leg_len * 0.5), leg_y, leg_z))
+        # Joint/Claw — hard-surface
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.008, location=(side_mult * (body_w * 0.6 + leg_len * 0.5), leg_y, leg_z))
         claw = bpy.context.active_object
         claw.name = f"Claw_{leg_idx}"
         assign_material(claw, mats, mat_joint)
+        add_hard_surface(claw, bevel_width=0.001, bevel_segments=1)
+        shade_flat(claw)
         parts.append(claw)
         
         joints[f"leg_{leg_idx}"] = (side_mult * body_w * 0.6, leg_y, leg_z)
     
-    # === Wings (optional) ===
+    # === Wings — soft membrane (keep smooth) ===
     if insect_cfg.get("wings", False):
         for side, sign in [("L", -1), ("R", 1)]:
             bpy.ops.mesh.primitive_cube_add(size=1, location=(sign * (body_w * 0.5 + 0.01), -seg_length * 0.3, body_h * 0.8))
@@ -601,7 +627,7 @@ def get_nonhumanoid_animations(body_type: str = "vehicle"):
             "attack": (20, 24),
             "destroy": (40, 44),
         }
-    elif body_type == "creature":
+    elif body_type in ("creature", "quadruped"):
         return {
             "idle": (1, 5),
             "walk": (10, 18),

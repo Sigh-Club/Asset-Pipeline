@@ -166,82 +166,103 @@ def save_maps(name, albedo_rgb, normal_rgb, roughness_gray, metallic_gray, heigh
 
 
 def gen_grimdark_metal(seed=42):
-    """Weathered gunmetal — dark base, rust spots, scratches, pitting."""
+    """Weathered gunmetal — uniform dark steel with fine micro-detail and thin rust streaks.
+
+    DoW1 base surface texture: a near-uniform faction-colour base with FINE micro-detail
+    (fine pitting, thin scratches, subtle rust staining). NO large high-contrast blobs —
+    those read as camouflage at sprite scale. Large features (panel lines, rivets, aquila)
+    come from the per-unit painted diffuse, not this tiled surface texture.
+    """
     w = h = TEX_SIZE
 
-    # Base: dark gunmetal with subtle variation
-    base_noise = fractal_noise(w, h, octaves=4, base_scale=128, seed=seed)
-    base_val = 30 + base_noise * 20  # 30-50 range (gunmetal_dark to gunmetal_mid)
-    albedo_gray = base_val
+    # Base: uniform dark gunmetal with subtle fine variation (amplitude kept small so it
+    # reads as a solid colour, not camo).
+    base_noise = fractal_noise(w, h, octaves=4, base_scale=64, seed=seed)
+    base_val = 38 + base_noise * 10  # 38-48 — tight range, uniform steel
+    r = base_val * 1.00
+    g = base_val * 0.99
+    b = base_val * 1.02  # faint cool tint
 
-    # Add rust streaks (horizontal-ish via warped noise)
-    rust_noise = fractal_noise(w, h, octaves=3, base_scale=64, seed=seed + 1)
-    rust_mask = (rust_noise > 0.65).astype(np.float32)
-    # Blend rust color (120, 84, 60) into base
-    rust_r = rust_mask * 120 + (1 - rust_mask) * albedo_gray * 0.9
-    rust_g = rust_mask * 84 + (1 - rust_mask) * albedo_gray * 0.9
-    rust_b = rust_mask * 60 + (1 - rust_mask) * albedo_gray * 0.85
+    # Fine pitting (subtle, low amplitude) — surface micro-detail, not visible blobs
+    pit_noise = worley_noise(w, h, num_points=40, seed=seed + 3)
+    pit = (1 - pit_noise) * 6  # ±6 variation only
+    r = (r - pit * 0.9).clip(0, 255)
+    g = (g - pit * 0.9).clip(0, 255)
+    b = (b - pit * 1.0).clip(0, 255)
 
-    # Add scratches (broad lines, not fine — must survive 4x downscale to 96x128)
+    # Thin rust STREAKS (low coverage, thin) — not large blobs. Reads as weathering, not camo.
+    streak_noise = fractal_noise(w, h, octaves=3, base_scale=32, seed=seed + 1)
+    streak_mask = (streak_noise > 0.82).astype(np.float32)  # <18% coverage, thin
+    streak_r = streak_mask * 96
+    streak_g = streak_mask * 66
+    streak_b = streak_mask * 48
+    r = (r * (1 - streak_mask) + streak_r).clip(0, 255)
+    g = (g * (1 - streak_mask) + streak_g).clip(0, 255)
+    b = (b * (1 - streak_mask) + streak_b).clip(0, 255)
+
+    # Fine scratches (broad low-contrast lines that survive downscale)
     scratch_noise = fractal_noise(w, h, octaves=3, base_scale=64, seed=seed + 2)
-    scratches = (scratch_noise > 0.72).astype(np.float32) * 0.3
-    # Scratches lighten the surface slightly (metal exposed)
-    r = (rust_r + scratches * 40).clip(0, 255)
-    g = (rust_g + scratches * 40).clip(0, 255)
-    b = (rust_b + scratches * 38).clip(0, 255)
+    scratches = (scratch_noise > 0.78).astype(np.float32) * 12
+    r = (r + scratches).clip(0, 255)
+    g = (g + scratches).clip(0, 255)
+    b = (b + scratches * 0.95).clip(0, 255)
+
     albedo = np.stack([r, g, b], axis=-1).astype(np.uint8)
 
-    # Height map: pitting + scratches — keep low-frequency for downscale survival
-    pit_noise = worley_noise(w, h, num_points=20, seed=seed + 3)
-    height = (1 - pit_noise) * 0.4 + scratches * 0.15
-    height = height / height.max()  # normalize 0-1
+    # Height map: fine pitting + scratches
+    height = (1 - pit_noise) * 0.25 + scratches * 0.1 + streak_mask * 0.15
+    height = height / max(height.max(), 0.01)
 
     # Normal from height
     normal = height_to_normal(height, strength=3.0)
 
-    # Roughness: base is semi-rough, rust is rougher, scratches are smoother
-    roughness = 0.5 + base_noise * 0.2 + rust_mask * 0.3 - scratches * 0.2
+    # Roughness: base semi-rough, rust streaks rougher, scratches smoother
+    roughness = 0.45 + base_noise * 0.15 + streak_mask * 0.3 - scratches * 0.15
     roughness = (roughness * 255).clip(0, 255)
 
-    # Metallic: mostly metal (high), rust areas less metallic
-    metallic = (1.0 - rust_mask * 0.6) * 255
+    # Metallic: mostly metal (high), rust streaks less metallic
+    metallic = (1.0 - streak_mask * 0.5) * 255
 
     save_maps("grimdark_metal", albedo, normal, roughness, metallic, height)
 
 
 def gen_grimdark_leather(seed=100):
-    """Worn leather — brown base, creases, cracks, wear patterns."""
+    """Worn leather — uniform brown with fine grain and thin creases.
+
+    DoW1 base surface: near-uniform leather colour with fine grain micro-detail and thin
+    crease lines. NO large mud/blob variation (reads as camo at sprite scale).
+    """
     w = h = TEX_SIZE
 
-    # Base leather color: (90, 74, 60) leather_mid
+    # Base: uniform leather (90, 74, 60) with subtle fine variation
     base_noise = fractal_noise(w, h, octaves=3, base_scale=64, seed=seed)
-    r = 90 + base_noise * 20
-    g = 74 + base_noise * 16
-    b = 60 + base_noise * 12
+    r = 90 + base_noise * 8
+    g = 74 + base_noise * 7
+    b = 60 + base_noise * 6
 
-    # Add crease lines (low frequency directional)
-    crease_noise = fractal_noise(w, h, octaves=2, base_scale=96, seed=seed + 1)
-    creases = (crease_noise < 0.3).astype(np.float32) * 30
-    r = (r - creases).clip(0, 255)
-    g = (g - creases * 0.8).clip(0, 255)
-    b = (b - creases * 0.6).clip(0, 255)
-
-    # Coarse grain texture (must survive 4x downscale)
+    # Fine grain (subtle)
     grain = fractal_noise(w, h, octaves=3, base_scale=48, seed=seed + 2)
-    r = (r + grain * 10 - 5).clip(0, 255)
-    g = (g + grain * 8 - 4).clip(0, 255)
-    b = (b + grain * 6 - 3).clip(0, 255)
+    r = (r + grain * 6 - 3).clip(0, 255)
+    g = (g + grain * 5 - 2).clip(0, 255)
+    b = (b + grain * 4 - 2).clip(0, 255)
+
+    # Thin crease lines (low coverage) — reads as leather creases, not mud blobs
+    crease_noise = fractal_noise(w, h, octaves=2, base_scale=96, seed=seed + 1)
+    creases = (crease_noise < 0.22).astype(np.float32) * 18
+    r = (r - creases).clip(0, 255)
+    g = (g - creases * 0.85).clip(0, 255)
+    b = (b - creases * 0.7).clip(0, 255)
 
     albedo = np.stack([r, g, b], axis=-1).astype(np.uint8)
 
-    # Height: creases are depressions, grain is micro-bumps
-    height = grain * 0.3 + (1 - crease_noise) * 0.4
-    height = height / height.max()
+    # Height: fine grain + thin crease depressions
+    height = grain * 0.25 + (1 - crease_noise) * 0.3
+    height = height / max(height.max(), 0.01)
 
     normal = height_to_normal(height, strength=2.0)
 
     # Roughness: leather is fairly rough, creases are rougher
-    roughness = 0.65 + grain * 0.15 + (1 - crease_noise) * 0.1
+    roughness = 0.65 + grain * 0.12 + (1 - crease_noise) * 0.08
     roughness = (roughness * 255).clip(0, 255)
 
     # Non-metallic
@@ -251,39 +272,44 @@ def gen_grimdark_leather(seed=100):
 
 
 def gen_grimdark_fabric(seed=200):
-    """Military fabric/fatigue — green weave, folds, wear."""
+    """Military under-armour fabric — dark, desaturated, subtle weave.
+
+    DoW1 base surface: a near-uniform DARK under-armour colour with a subtle weave,
+    not a bright green checkered plaid (which reads as camo at sprite scale). Faction
+    colour is applied via the per-unit team-colour mask, not this base texture.
+    """
     w = h = TEX_SIZE
 
-    # Base: fatigue green (78, 120, 78)
-    base_noise = fractal_noise(w, h, octaves=3, base_scale=48, seed=seed)
-    r = 78 + base_noise * 20
-    g = 120 + base_noise * 25
-    b = 78 + base_noise * 20
+    # Base: dark desaturated under-armour (48, 54, 46) — dark, not bright green
+    base_noise = fractal_noise(w, h, octaves=3, base_scale=64, seed=seed)
+    r = 48 + base_noise * 8
+    g = 54 + base_noise * 9
+    b = 46 + base_noise * 7
 
-    # Weave pattern (broad cross-hatch — ~16px period survives 4x downscale to 4px)
-    weave_x = np.sin(np.arange(w)[:, None] * np.pi / 16) * 0.5 + 0.5
-    weave_y = np.sin(np.arange(h)[None, :] * np.pi / 16) * 0.5 + 0.5
-    weave = (weave_x * weave_y) * 15
-    r = (r + weave - 7).clip(0, 255)
-    g = (g + weave - 7).clip(0, 255)
-    b = (b + weave - 7).clip(0, 255)
+    # Subtle weave (low amplitude — reads as fabric texture, not a plaid grid)
+    weave_x = np.sin(np.arange(w)[:, None] * np.pi / 12) * 0.5 + 0.5
+    weave_y = np.sin(np.arange(h)[None, :] * np.pi / 12) * 0.5 + 0.5
+    weave = (weave_x * weave_y) * 5  # ±5 only — very subtle
+    r = (r + weave - 2).clip(0, 255)
+    g = (g + weave - 2).clip(0, 255)
+    b = (b + weave - 2).clip(0, 255)
 
-    # Folds (large-scale undulation)
+    # Subtle folds (low amplitude)
     fold_noise = fractal_noise(w, h, octaves=2, base_scale=128, seed=seed + 1)
-    r = (r + fold_noise * 15 - 7).clip(0, 255)
-    g = (g + fold_noise * 18 - 9).clip(0, 255)
-    b = (b + fold_noise * 15 - 7).clip(0, 255)
+    r = (r + fold_noise * 6 - 3).clip(0, 255)
+    g = (g + fold_noise * 7 - 3).clip(0, 255)
+    b = (b + fold_noise * 6 - 3).clip(0, 255)
 
     albedo = np.stack([r, g, b], axis=-1).astype(np.uint8)
 
-    # Height: weave + folds
-    height = weave * 0.15 + fold_noise * 0.3
+    # Height: subtle weave + folds
+    height = weave * 0.1 + fold_noise * 0.2
     height = height / max(height.max(), 0.01)
 
     normal = height_to_normal(height, strength=1.5)
 
     # Roughness: fabric is rough
-    roughness = 0.75 + base_noise * 0.15
+    roughness = 0.75 + base_noise * 0.12
     roughness = (roughness * 255).clip(0, 255)
 
     metallic = np.zeros((w, h), dtype=np.uint8)

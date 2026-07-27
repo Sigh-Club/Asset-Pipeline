@@ -213,48 +213,60 @@ def create_head(config, mats, z_top):
     eq = config.get("equipment", {})
     mat_helm = config["materials"].get("helmet", "MAT_GrimdarkMetal")
     mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+    # Dark lens material for the visor eye-slit — falls back to leather if unavailable
+    mat_lens = config["materials"].get("visor_lens", "MAT_GrimdarkLeather")
     
-    # Main helmet
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=24, radius=head_r, location=(0, 0, head_z))
+    # Main helmet — faceted flat-faced helmet (NOT a sphere). A cube reads as a helmet at
+    # sprite scale; a sphere reads as a bare head. Bevelled + flat-shaded for hard-surface edges.
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, head_z))
     helm = bpy.context.active_object
     helm.name = "Helmet"
     for v in helm.data.vertices:
-        v.co.x *= 0.95
-        v.co.y *= 1.1
-        v.co.z *= 0.85
+        v.co.x *= head_r * 1.05   # full width — slightly wider than the old sphere
+        v.co.y *= head_r * 1.15   # full depth — front-to-back helmet
+        v.co.z *= head_r * 1.10   # full height — tall dome
+        if v.co.z < 0:
+            v.co.z *= 0.7         # taper the jaw/chin narrower than the crown
+        if v.co.y < 0:
+            v.co.y *= 0.85        # slight rear taper
     assign_material(helm, mats, mat_helm)
-    add_hard_surface(helm, bevel_width=0.003, bevel_segments=2)
+    add_hard_surface(helm, bevel_width=0.004, bevel_segments=2)
     shade_flat(helm)
     simple_uv_unwrap(helm)
     parts.append(helm)
     
     if eq.get("visor", True):
-        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, head_r * 0.85, head_z - head_h * 0.05))
+        # Dark eye-slit slab on the flat front face of the helmet. Cube vertices are at ±0.5,
+        # so factors give FULL extents of ~2*0.5*factor. Uses a distinct dark-lens material so
+        # it reads as an eye slit, not a patch of the same helmet colour.
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, head_r * 1.05, head_z - head_h * 0.04))
         visor = bpy.context.active_object
         visor.name = "Visor"
         for v in visor.data.vertices:
-            v.co.x *= head_r * 0.45
-            v.co.y *= head_r * 0.15
-            v.co.z *= head_r * 0.2
-        assign_material(visor, mats, mat_helm)
+            v.co.x *= head_r * 1.80   # full width ~0.9*head_r — spans most of the face
+            v.co.y *= head_r * 0.50   # full depth ~0.5*head_r — recessed into the flat face
+            v.co.z *= head_r * 0.45   # full height ~0.45*head_r — horizontal eye band
+        assign_material(visor, mats, mat_lens)
         shade_flat(visor)
         parts.append(visor)
-    
+
     if eq.get("crest", True):
-        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, -head_r * 0.35, head_z + head_h * 0.35))
+        # Pronounced dorsal fin sitting ON TOP of the helmet (head top at z ~= head_z +
+        # head_r*0.85). Base embeds into the helmet, fin rises clearly above the crown.
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, -head_r * 0.05, head_z + head_r * 1.0))
         crest = bpy.context.active_object
         crest.name = "Crest"
         for v in crest.data.vertices:
-            v.co.x *= head_r * 0.15
-            v.co.y *= head_r * 0.85
-            v.co.z *= head_r * 0.2
+            v.co.x *= head_r * 0.50   # thin sideways
+            v.co.y *= head_r * 1.50   # long front-to-back
+            v.co.z *= head_r * 0.90   # tall fin, rises well above the helmet
         assign_material(crest, mats, mat_accent)
         add_hard_surface(crest, bevel_width=0.002, bevel_segments=1)
         shade_flat(crest)
         simple_uv_unwrap(crest)
         parts.append(crest)
     
-    return parts, head_z, head_h
+    return parts, head_z, head_h, head_r
 
 
 def create_tabard(config, mats, torso_z, torso_h, leg_x):
@@ -368,11 +380,74 @@ def create_torso(config, mats, z_top, head_h):
     return parts, torso_z, torso_h
 
 
+def create_belt(config, mats, torso_z, torso_h, leg_x):
+    """Create belt/webbing detail at the waist.
+    
+    Adds a belt ring with pouches at the waistline for silhouette depth,
+    particularly improving E/W side-profile visibility.
+    """
+    build = config["proportions"].get("build", 1.0)
+    eq = config.get("equipment", {})
+    mat_armour = config["materials"].get("torso", "MAT_GrimdarkMetal")
+    mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+    mat_leather = config["materials"].get("boots", "MAT_GrimdarkLeather")
+    
+    torso_bottom = torso_z - torso_h * 0.5
+    
+    parts = []
+    
+    # Belt ring — thin strip around waist
+    bpy.ops.mesh.primitive_torus_add(
+        location=(0, 0, torso_bottom),
+        major_radius=0.18 * build,
+        minor_radius=0.015 * build,
+        major_segments=32,
+        minor_segments=6,
+    )
+    belt = bpy.context.active_object
+    belt.name = "BeltRing"
+    # Flatten slightly
+    for v in belt.data.vertices:
+        v.co.z *= 0.4
+        v.co.y *= 0.8  # Oval shape (wider front-to-back)
+    assign_material(belt, mats, mat_leather)
+    parts.append(belt)
+    
+    # Belt buckle (front centre)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0.16 * build, torso_bottom))
+    buckle = bpy.context.active_object
+    buckle.name = "BeltBuckle"
+    for v in buckle.data.vertices:
+        v.co.x *= 0.04 * build
+        v.co.y *= 0.02 * build
+        v.co.z *= 0.03 * build
+    assign_material(buckle, mats, mat_accent)
+    add_hard_surface(buckle, bevel_width=0.002, bevel_segments=1)
+    shade_flat(buckle)
+    parts.append(buckle)
+    
+    # Pouches on right hip
+    for i, (side_label, side_x, sign) in enumerate([("R", 0.12 * build, -1), ("L", -0.12 * build, 1)]):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(side_x, 0.10 * build * (i * 0.5 + 0.5), torso_bottom - 0.02 * build))
+        pouch = bpy.context.active_object
+        pouch.name = f"Pouch_{side_label}"
+        for v in pouch.data.vertices:
+            v.co.x *= 0.025 * build
+            v.co.y *= 0.03 * build
+            v.co.z *= 0.04 * build
+        assign_material(pouch, mats, mat_leather)
+        add_hard_surface(pouch, bevel_width=0.002, bevel_segments=1)
+        shade_flat(pouch)
+        parts.append(pouch)
+    
+    return parts
+
+
 def create_shoulders(config, mats, torso_z, torso_h):
     props = config["proportions"]
     build = props.get("build", 1.0)
-    pauldron_r = 0.07 * build
-    shoulder_z = torso_z + torso_h * 0.35
+    pauldron_r = 0.13 * build  # was 0.07 — dominant overhanging pauldron (heroic +30%+)
+    shoulder_z = torso_z + torso_h * 0.40   # sit pauldrons atop the shoulder, not flush with arm
     shoulder_x = 0.30 * build  # widened for better side-view coverage (was 0.26)
     
     parts = []
@@ -383,7 +458,7 @@ def create_shoulders(config, mats, torso_z, torso_h):
         return parts, shoulder_z, shoulder_x
     
     for side, x in [("L", -shoulder_x), ("R", shoulder_x)]:
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=36, ring_count=24, radius=pauldron_r, location=(x, 0, shoulder_z))
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=32, radius=pauldron_r, location=(x, 0, shoulder_z))
         pauldron = bpy.context.active_object
         pauldron.name = f"Pauldron_{side}"
         for v in pauldron.data.vertices:
@@ -396,6 +471,29 @@ def create_shoulders(config, mats, torso_z, torso_h):
         shade_flat(pauldron)
         simple_uv_unwrap(pauldron)
         parts.append(pauldron)
+        
+        # Trim ring around pauldron edge (accent colour)
+        mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+        trim_r = pauldron_r * 0.85
+        bpy.ops.mesh.primitive_torus_add(
+            location=(x, 0, shoulder_z),
+            major_radius=trim_r,
+            minor_radius=0.008,
+            major_segments=32,
+            minor_segments=8,
+        )
+        trim_ring = bpy.context.active_object
+        trim_ring.name = f"PauldronTrim_{side}"
+        # Flatten the torus to match the pauldron shape
+        for v in trim_ring.data.vertices:
+            v.co.z *= 0.6
+        # Scale outward to sit on pauldron rim
+        for v in trim_ring.data.vertices:
+            # Scale only horizontal components
+            v.co.x *= 1.15
+            v.co.y *= 1.15
+        assign_material(trim_ring, mats, mat_accent)
+        parts.append(trim_ring)
     
     return parts, shoulder_z, shoulder_x
 
@@ -414,7 +512,7 @@ def create_arms(config, mats, shoulder_z, shoulder_x):
     
     for side, x in [("L", -shoulder_x), ("R", shoulder_x)]:
         upper_z = shoulder_z - upper_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.04 * build, depth=upper_h, location=(x, 0, upper_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.04 * build, depth=upper_h, location=(x, 0, upper_z))
         upper = bpy.context.active_object
         upper.name = f"UpperArm_{side}"
         assign_material(upper, mats, mat_upper)
@@ -424,7 +522,7 @@ def create_arms(config, mats, shoulder_z, shoulder_x):
         parts.append(upper)
         
         lower_z = upper_z - upper_h * 0.5 - lower_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.035 * build, depth=lower_h, location=(x, 0, lower_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.035 * build, depth=lower_h, location=(x, 0, lower_z))
         lower = bpy.context.active_object
         lower.name = f"Forearm_{side}"
         assign_material(lower, mats, mat_lower)
@@ -463,23 +561,22 @@ def create_legs(config, mats, torso_z, torso_h):
     
     for side, x in [("L", -leg_x), ("R", leg_x)]:
         thigh_z = torso_bottom - thigh_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.05 * build, depth=thigh_h, location=(x, 0, thigh_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.05 * build, depth=thigh_h, location=(x, 0, thigh_z))
         thigh = bpy.context.active_object
         thigh.name = f"Thigh_{side}"
         assign_material(thigh, mats, mat_thigh)
-        add_subsurf(thigh, levels=1, render_levels=2)
-        shade_smooth(thigh)
+        add_hard_surface(thigh, bevel_width=0.005, bevel_segments=2)
+        shade_flat(thigh)
         simple_uv_unwrap(thigh)
         parts.append(thigh)
         
         shin_z = thigh_z - thigh_h * 0.5 - shin_h * 0.5
-        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.045 * build, depth=shin_h, location=(x, 0, shin_z))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.045 * build, depth=shin_h, location=(x, 0, shin_z))
         shin = bpy.context.active_object
         shin.name = f"Shin_{side}"
         assign_material(shin, mats, mat_shin)
-        add_bevel(shin, width=0.003, segments=3)
-        add_subsurf(shin, levels=1, render_levels=2)
-        shade_smooth(shin)
+        add_hard_surface(shin, bevel_width=0.005, bevel_segments=2)
+        shade_flat(shin)
         simple_uv_unwrap(shin)
         parts.append(shin)
         
@@ -492,11 +589,40 @@ def create_legs(config, mats, torso_z, torso_h):
             v.co.y *= 0.09 * build
             v.co.z *= 0.06 * build
         assign_material(boot, mats, mat_boot)
-        add_bevel(boot, width=0.004, segments=3)
-        add_subsurf(boot, levels=1, render_levels=2)
-        shade_smooth(boot)
+        add_hard_surface(boot, bevel_width=0.005, bevel_segments=2)
+        shade_flat(boot)
         simple_uv_unwrap(boot)
         parts.append(boot)
+        
+        # --- Kneepad (hard-surface armour plate) ---
+        mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+        kneepad_z = shin_z + shin_h * 0.35
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(x, 0.055 * build, kneepad_z))
+        kneepad = bpy.context.active_object
+        kneepad.name = f"Kneepad_{side}"
+        for v in kneepad.data.vertices:
+            v.co.x *= 0.035 * build
+            v.co.y *= 0.005
+            v.co.z *= 0.025 * build
+            # Round front face
+            if v.co.y > 0:
+                v.co.x *= 1.2
+        assign_material(kneepad, mats, mat_shin)
+        add_hard_surface(kneepad, bevel_width=0.003, bevel_segments=2)
+        shade_flat(kneepad)
+        simple_uv_unwrap(kneepad)
+        parts.append(kneepad)
+        
+        # Kneepad gold trim edge
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(x, 0.058 * build, kneepad_z))
+        trim = bpy.context.active_object
+        trim.name = f"KneepadTrim_{side}"
+        for v in trim.data.vertices:
+            v.co.x *= 0.038 * build
+            v.co.y *= 0.002
+            v.co.z *= 0.002
+        assign_material(trim, mats, mat_accent)
+        parts.append(trim)
     
     leg_joints = {
         "hip_l": (-leg_x, 0, torso_bottom),
@@ -534,12 +660,53 @@ def create_weapon(config, mats, arm_joints):
         assign_material(body, mats, mat_body)
         parts.append(body)
         
-        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.012, depth=0.12, location=(wrist_r[0], wrist_r[1] + 0.22, wrist_r[2]))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.012, depth=0.12, location=(wrist_r[0], wrist_r[1] + 0.22, wrist_r[2]))
         barrel = bpy.context.active_object
         barrel.name = "WeaponBarrel"
         barrel.rotation_euler = (math.radians(90), 0, 0)
         assign_material(barrel, mats, mat_body)
         parts.append(barrel)
+        
+        # Scope (mounted on top of weapon body)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.008, depth=0.04, location=(wrist_r[0], wrist_r[1] + 0.12, wrist_r[2] + 0.04))
+        scope = bpy.context.active_object
+        scope.name = "WeaponScope"
+        scope.rotation_euler = (math.radians(90), 0, 0)
+        assign_material(scope, mats, mat_body)
+        parts.append(scope)
+        
+        # Scope lens (small disc on front)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.006, depth=0.002, location=(wrist_r[0], wrist_r[1] + 0.14, wrist_r[2] + 0.04))
+        lens = bpy.context.active_object
+        lens.name = "WeaponLens"
+        lens.rotation_euler = (math.radians(90), 0, 0)
+        mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+        assign_material(lens, mats, mat_accent)
+        parts.append(lens)
+        
+        # Magazine (curved box under barrel)
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(wrist_r[0], wrist_r[1] + 0.10, wrist_r[2] - 0.04))
+        magazine = bpy.context.active_object
+        magazine.name = "WeaponMagazine"
+        for v in magazine.data.vertices:
+            v.co.x *= 0.02
+            v.co.y *= 0.04
+            v.co.z *= 0.06
+        assign_material(magazine, mats, mat_body)
+        add_hard_surface(magazine, bevel_width=0.002, bevel_segments=1)
+        shade_flat(magazine)
+        parts.append(magazine)
+        
+        # Front grip/foregrip
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(wrist_r[0], wrist_r[1] + 0.16, wrist_r[2] - 0.01))
+        foregrip = bpy.context.active_object
+        foregrip.name = "WeaponForegrip"
+        for v in foregrip.data.vertices:
+            v.co.x *= 0.015
+            v.co.y *= 0.02
+            v.co.z *= 0.03
+        assign_material(foregrip, mats, mat_stock)
+        parts.append(foregrip)
         
         bpy.ops.mesh.primitive_cube_add(size=1, location=(wrist_r[0], wrist_r[1] - 0.02, wrist_r[2] - 0.02))
         stock = bpy.context.active_object
@@ -550,6 +717,36 @@ def create_weapon(config, mats, arm_joints):
             v.co.z *= 0.06
         assign_material(stock, mats, mat_stock)
         parts.append(stock)
+        
+        # --- Muzzle detail: barrel tip ring ---
+        barrel_tip_y = wrist_r[1] + 0.28
+        mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+        
+        bpy.ops.mesh.primitive_torus_add(
+            location=(wrist_r[0], barrel_tip_y, wrist_r[2]),
+            major_radius=0.016,
+            minor_radius=0.003,
+            major_segments=24,
+            minor_segments=6,
+        )
+        tip_ring = bpy.context.active_object
+        tip_ring.name = "MuzzleTipRing"
+        tip_ring.rotation_euler = (math.radians(90), 0, 0)
+        assign_material(tip_ring, mats, mat_accent)
+        parts.append(tip_ring)
+        
+        # --- Muzzle detail: sight post (front blade sight) ---
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(wrist_r[0], barrel_tip_y - 0.02, wrist_r[2] + 0.02))
+        sight = bpy.context.active_object
+        sight.name = "SightPost"
+        for v in sight.data.vertices:
+            v.co.x *= 0.004
+            v.co.y *= 0.004
+            v.co.z *= 0.02
+        assign_material(sight, mats, mat_body)
+        add_hard_surface(sight, bevel_width=0.001, bevel_segments=1)
+        shade_flat(sight)
+        parts.append(sight)
     
     elif weapon_type == "pistol":
         bpy.ops.mesh.primitive_cube_add(size=1, location=(wrist_r[0], wrist_r[1] + 0.05, wrist_r[2]))
@@ -563,7 +760,7 @@ def create_weapon(config, mats, arm_joints):
         parts.append(body)
     
     elif weapon_type == "melee":
-        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.015, depth=0.18, location=(wrist_r[0], wrist_r[1] + 0.09, wrist_r[2]))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.015, depth=0.18, location=(wrist_r[0], wrist_r[1] + 0.09, wrist_r[2]))
         blade = bpy.context.active_object
         blade.name = "WeaponBlade"
         blade.rotation_euler = (math.radians(90), 0, 0)
@@ -581,7 +778,7 @@ def create_weapon(config, mats, arm_joints):
         assign_material(body, mats, mat_body)
         parts.append(body)
         
-        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.03, depth=0.08, location=(wrist_r[0], wrist_r[1] - 0.05, wrist_r[2] - 0.04))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.03, depth=0.08, location=(wrist_r[0], wrist_r[1] - 0.05, wrist_r[2] - 0.04))
         drum = bpy.context.active_object
         drum.name = "WeaponDrum"
         drum.rotation_euler = (0, math.radians(90), 0)
@@ -612,6 +809,586 @@ def create_backpack(config, mats, torso_z, torso_h):
     shade_smooth(pack)
     simple_uv_unwrap(pack)
     return [pack]
+
+
+# =============================================================================
+# DETAIL ELEMENTS — Hard-Surface Armour Greebles
+# =============================================================================
+
+def create_torso_panel_lines(config, mats, torso_z, torso_h):
+    """Add thin inset panel line strips along torso chest plate edges.
+
+    Creates geometry strips simulating armour plate seams for DoW1-style
+    hard-surface detail. Each strip uses add_hard_surface + shade_flat.
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_armour = config["materials"].get("torso", "MAT_GrimdarkMetal")
+
+    parts = []
+    panel_w = 0.003 * build   # Width of each panel line
+    panel_d = 0.003 * build   # Depth (protrusion from surface)
+    side_off = 0.16 * build   # Side offset for vertical lines
+    front_off = 0.10 * build  # Front surface offset
+
+    torso_mid = torso_z
+
+    # 1. Left and right vertical panel lines (chest plate edge seams)
+    for sign in (-1, 1):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(sign * side_off, front_off, torso_mid))
+        outer = bpy.context.active_object
+        outer.name = f"PanelLine_Torso_Vert_{'L' if sign < 0 else 'R'}"
+        for v in outer.data.vertices:
+            v.co.x *= panel_w * 0.5
+            v.co.y *= panel_d * 0.5
+            v.co.z *= torso_h * 0.55
+        assign_material(outer, mats, mat_armour)
+        add_hard_surface(outer, bevel_width=0.001, bevel_segments=1)
+        shade_flat(outer)
+        parts.append(outer)
+
+    # 2. Top horizontal panel line (upper chest seam)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, front_off, torso_mid + torso_h * 0.42))
+    top_line = bpy.context.active_object
+    top_line.name = "PanelLine_Torso_Top"
+    for v in top_line.data.vertices:
+        v.co.x *= side_off * 0.8
+        v.co.y *= panel_d * 0.5
+        v.co.z *= panel_w * 0.5
+    assign_material(top_line, mats, mat_armour)
+    add_hard_surface(top_line, bevel_width=0.001, bevel_segments=1)
+    shade_flat(top_line)
+    parts.append(top_line)
+
+    # 3. Center vertical panel line (chest centre seam / chest plate divide)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, front_off + 0.02 * build, torso_mid))
+    center_line = bpy.context.active_object
+    center_line.name = "PanelLine_Torso_Center"
+    for v in center_line.data.vertices:
+        v.co.x *= panel_w * 0.5
+        v.co.y *= panel_d * 0.5
+        v.co.z *= torso_h * 0.35
+    assign_material(center_line, mats, mat_armour)
+    add_hard_surface(center_line, bevel_width=0.001, bevel_segments=1)
+    shade_flat(center_line)
+    parts.append(center_line)
+
+    # 4. Horizontal abdominal panel line (below chest plate divide)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, front_off * 0.8, torso_mid - torso_h * 0.15))
+    mid_line = bpy.context.active_object
+    mid_line.name = "PanelLine_Torso_Abdominal"
+    for v in mid_line.data.vertices:
+        v.co.x *= side_off * 0.65
+        v.co.y *= panel_d * 0.5
+        v.co.z *= panel_w * 0.5
+    assign_material(mid_line, mats, mat_armour)
+    add_hard_surface(mid_line, bevel_width=0.001, bevel_segments=1)
+    shade_flat(mid_line)
+    parts.append(mid_line)
+
+    return parts
+
+
+def create_helmet_panel_lines(config, mats, head_z, head_h, head_r):
+    """Add panel lines and ridge details to the helmet.
+
+    Creates brow ridge, cheek plate edge strips, and neck guard ring.
+    All use hard-surface modelling approach.
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_helm = config["materials"].get("helmet", "MAT_GrimdarkMetal")
+    mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+
+    parts = []
+    panel_d = 0.003 * build
+
+    # 1. Brow ridge — horizontal ridge above visor area
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, -head_r * 0.3, head_z + head_h * 0.2))
+    brow = bpy.context.active_object
+    brow.name = "Helmet_BrowRidge"
+    for v in brow.data.vertices:
+        v.co.x *= head_r * 0.7
+        v.co.y *= panel_d * 0.5
+        v.co.z *= 0.015 * build
+    assign_material(brow, mats, mat_helm)
+    add_hard_surface(brow, bevel_width=0.001, bevel_segments=1)
+    shade_flat(brow)
+    parts.append(brow)
+
+    # 2. Cheek plate edges — vertical strips on helmet sides
+    for sign in (-1, 1):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(sign * head_r * 0.7, head_r * 0.2, head_z - head_h * 0.05))
+        cheek = bpy.context.active_object
+        cheek.name = f"Helmet_CheekPlate_{'L' if sign < 0 else 'R'}"
+        for v in cheek.data.vertices:
+            v.co.x *= panel_d * 0.5
+            v.co.y *= panel_d * 0.5
+            v.co.z *= head_h * 0.2
+        assign_material(cheek, mats, mat_helm)
+        add_hard_surface(cheek, bevel_width=0.001, bevel_segments=1)
+        shade_flat(cheek)
+        parts.append(cheek)
+
+    # 3. Neck guard ring — partial torus at helmet base
+    bpy.ops.mesh.primitive_torus_add(
+        location=(0, 0, head_z - head_h * 0.35),
+        major_radius=head_r * 0.9,
+        minor_radius=0.012 * build,
+        major_segments=32,
+        minor_segments=6,
+    )
+    neck_ring = bpy.context.active_object
+    neck_ring.name = "Helmet_NeckGuard"
+    for v in neck_ring.data.vertices:
+        v.co.z *= 0.35
+    assign_material(neck_ring, mats, mat_accent)
+    add_hard_surface(neck_ring, bevel_width=0.001, bevel_segments=1)
+    shade_flat(neck_ring)
+    parts.append(neck_ring)
+
+    # 4. Visor frame line — thin strip outlining the visor
+    eq = config.get("equipment", {})
+    if eq.get("visor", True):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, head_r * 0.7, head_z - head_h * 0.05))
+        visor_frame = bpy.context.active_object
+        visor_frame.name = "Helmet_VisorFrame"
+        for v in visor_frame.data.vertices:
+            v.co.x *= head_r * 0.55
+            v.co.y *= panel_d * 0.5
+            v.co.z *= panel_d * 0.5
+        assign_material(visor_frame, mats, mat_accent)
+        shade_flat(visor_frame)
+        parts.append(visor_frame)
+
+    return parts
+
+
+def create_outer_chest_plate(config, mats, torso_z, torso_h):
+    """Create an outer chest armour plate layered over the torso with gap.
+
+    The outer plate sits forward of the torso with a 0.005-0.01 unit gap,
+    simulating layered armour plates on DoW1-style power armour.
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_armour = config["materials"].get("torso", "MAT_GrimdarkMetal")
+    mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+
+    parts = []
+    gap = 0.008 * build  # Visible gap between plates
+
+    # Outer chest plate — wider and slightly forward of inner torso
+    plate_w = 0.20 * build
+    plate_h = torso_h * 0.55
+    plate_d = 0.03 * build  # Thickness of outer plate
+    plate_y = 0.06 * build + gap
+
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, plate_y, torso_z + torso_h * 0.05))
+    outer = bpy.context.active_object
+    outer.name = "OuterChestPlate"
+    for v in outer.data.vertices:
+        v.co.x *= plate_w
+        v.co.y *= plate_d
+        v.co.z *= plate_h
+        # Slight dome curve
+        if v.co.z > 0:
+            radius_val = math.sqrt(v.co.x * v.co.x + v.co.z * v.co.z)
+            if radius_val > 0:
+                v.co.y += 0.005 * (v.co.z / plate_h)
+    assign_material(outer, mats, mat_armour)
+    add_hard_surface(outer, bevel_width=0.005, bevel_segments=2)
+    shade_flat(outer)
+    simple_uv_unwrap(outer)
+    parts.append(outer)
+
+    # Gold trim along outer plate upper edge
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, plate_y + plate_d + 0.001, torso_z + torso_h * 0.05 + plate_h))
+    trim = bpy.context.active_object
+    trim.name = "OuterChestPlate_Trim"
+    for v in trim.data.vertices:
+        v.co.x *= plate_w * 0.85
+        v.co.y *= 0.002 * build
+        v.co.z *= 0.003 * build
+    assign_material(trim, mats, mat_accent)
+    shade_flat(trim)
+    parts.append(trim)
+
+    return parts
+
+
+def create_rivets(config, mats, shoulder_z, shoulder_x, torso_z, torso_h):
+    """Add small sphere clusters along pauldron edges and torso plate seams.
+
+    Rivets are small hard-surface spheres (radius 0.003-0.005) placed at
+    regular intervals along armour edges. Uses MAT_ImperialGold material.
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+
+    parts = []
+    rivet_r = 0.004 * build
+    rivet_segments = 8
+
+    # Pauldron rivets — placed around the trim ring perimeter (front half)
+    for side_sign in (-1, 1):
+        pauldron_center_z = shoulder_z
+        pauldron_r = 0.07 * build * 0.85  # Inside trim ring radius
+        rivet_count = 5
+        for i in range(rivet_count):
+            angle = -math.radians(60) + (i / (rivet_count - 1)) * math.radians(120)
+            rx = pauldron_r * math.cos(angle)
+            ry = pauldron_r * math.sin(angle)
+            bpy.ops.mesh.primitive_uv_sphere_add(
+                segments=rivet_segments,
+                ring_count=rivet_segments // 2,
+                radius=rivet_r,
+                location=(side_sign * shoulder_x + rx, ry, pauldron_center_z),
+            )
+            rivet = bpy.context.active_object
+            rivet.name = f"Rivet_Pauldron_{'L' if side_sign < 0 else 'R'}_{i}"
+            for v in rivet.data.vertices:
+                v.co.z *= 0.6
+            assign_material(rivet, mats, mat_accent)
+            shade_flat(rivet)
+            parts.append(rivet)
+
+    # Torso rivets — placed along the abdominal panel line
+    torso_front = 0.10 * build
+    rivet_count = 4
+    for i in range(rivet_count):
+        x_off = -0.12 * build + (i / (rivet_count - 1)) * 0.24 * build
+        bpy.ops.mesh.primitive_uv_sphere_add(
+            segments=rivet_segments,
+            ring_count=rivet_segments // 2,
+            radius=rivet_r,
+            location=(x_off, torso_front * 0.8, torso_z - torso_h * 0.15),
+        )
+        rivet = bpy.context.active_object
+        rivet.name = f"Rivet_Torso_{i}"
+        for v in rivet.data.vertices:
+            v.co.z *= 0.6
+        assign_material(rivet, mats, mat_accent)
+        shade_flat(rivet)
+        parts.append(rivet)
+
+    return parts
+
+
+def create_vent_greebles(config, mats, torso_z, torso_h):
+    """Add vent slat greebles to the backpack.
+
+    Creates 3-5 thin rectangular slots per backpack side (left/right faces),
+    with internal dark geometry for depth illusion.
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_armour = config["materials"].get("torso", "MAT_GrimdarkMetal")
+    mat_dark = config["materials"].get("boots", "MAT_GrimdarkLeather")
+
+    parts = []
+    pack_z = torso_z + torso_h * 0.05
+    pack_w = 0.10 * build
+    pack_d = 0.06 * build
+    pack_h = 0.14 * build
+
+    slat_count = 4
+    slat_spacing = pack_h * 0.7 / (slat_count + 1)
+    slat_w = pack_w * 0.85
+    slat_h = 0.01 * build
+    slat_d = 0.003 * build
+
+    # Vents on left and right faces of backpack
+    for side_sign in (-1, 1):
+        for i in range(slat_count):
+            z_offset = -pack_h * 0.35 + (i + 1) * slat_spacing
+
+            # Vent frame (lighter metal)
+            bpy.ops.mesh.primitive_cube_add(size=1, location=(
+                side_sign * (pack_w + slat_d),
+                -pack_d * 0.2,
+                pack_z + z_offset,
+            ))
+            vent = bpy.context.active_object
+            vent.name = f"Vent_{'L' if side_sign < 0 else 'R'}_{i}"
+            for v in vent.data.vertices:
+                v.co.x *= slat_d
+                v.co.y *= slat_w * 0.5
+                v.co.z *= slat_h * 0.5
+            assign_material(vent, mats, mat_armour)
+            add_hard_surface(vent, bevel_width=0.001, bevel_segments=1)
+            shade_flat(vent)
+            parts.append(vent)
+
+            # Vent interior (dark recess)
+            bpy.ops.mesh.primitive_cube_add(size=1, location=(
+                side_sign * (pack_w - slat_d * 0.5),
+                -pack_d * 0.2,
+                pack_z + z_offset,
+            ))
+            interior = bpy.context.active_object
+            interior.name = f"VentInterior_{'L' if side_sign < 0 else 'R'}_{i}"
+            for v in interior.data.vertices:
+                v.co.x *= slat_d * 0.5
+                v.co.y *= slat_w * 0.4
+                v.co.z *= slat_h * 0.3
+            assign_material(interior, mats, mat_dark)
+            shade_flat(interior)
+            parts.append(interior)
+
+    # Vents on back face of backpack
+    for i in range(slat_count):
+        z_offset = -pack_h * 0.35 + (i + 1) * slat_spacing
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(
+            0,
+            -(pack_d + slat_d),
+            pack_z + z_offset,
+        ))
+        vent_b = bpy.context.active_object
+        vent_b.name = f"Vent_Back_{i}"
+        for v in vent_b.data.vertices:
+            v.co.x *= slat_w * 0.5
+            v.co.y *= slat_d
+            v.co.z *= slat_h * 0.5
+        assign_material(vent_b, mats, mat_armour)
+        add_hard_surface(vent_b, bevel_width=0.001, bevel_segments=1)
+        shade_flat(vent_b)
+        parts.append(vent_b)
+
+    return parts
+
+
+def create_elbow_guards(config, mats, arm_joints):
+    """Add small armour plates on forearms at elbow height.
+
+    Creates hard-surface armour plates around the elbow/forearm area,
+    similar to kneepad design. Uses shin/armour material.
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_armour = config["materials"].get("shins", "MAT_GrimdarkMetal")
+    mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+
+    parts = []
+
+    for side, side_label in [("l", "L"), ("r", "R")]:
+        elbow_key = f"elbow_{side}"
+        if elbow_key not in arm_joints:
+            continue
+
+        elbow_pos = arm_joints[elbow_key]
+        guard_w = 0.03 * build
+        guard_h = 0.04 * build
+        guard_d = 0.005 * build
+
+        # Armour plate at elbow (outer side of arm)
+        arm_side = -1 if side == "l" else 1
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(
+            elbow_pos[0] + arm_side * 0.02 * build,
+            elbow_pos[1],
+            elbow_pos[2] - guard_h * 0.3,
+        ))
+        guard = bpy.context.active_object
+        guard.name = f"ElbowGuard_{side_label}"
+        for v in guard.data.vertices:
+            v.co.x *= guard_w
+            v.co.y *= guard_d
+            v.co.z *= guard_h
+            # Slight curve on outer face
+            if (side == "l" and v.co.x < 0) or (side == "r" and v.co.x > 0):
+                v.co.z *= 1.1
+        assign_material(guard, mats, mat_armour)
+        add_hard_surface(guard, bevel_width=0.003, bevel_segments=2)
+        shade_flat(guard)
+        simple_uv_unwrap(guard)
+        parts.append(guard)
+
+        # Gold trim line on elbow guard
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(
+            elbow_pos[0] + arm_side * 0.024 * build,
+            elbow_pos[1],
+            elbow_pos[2] - guard_h * 0.3 + guard_h * 0.8,
+        ))
+        trim = bpy.context.active_object
+        trim.name = f"ElbowGuardTrim_{side_label}"
+        for v in trim.data.vertices:
+            v.co.x *= guard_w * 0.8
+            v.co.y *= 0.002 * build
+            v.co.z *= 0.002 * build
+        assign_material(trim, mats, mat_accent)
+        shade_flat(trim)
+        parts.append(trim)
+
+    return parts
+
+
+def create_side_profile_elements(config, mats, torso_z, torso_h, shoulder_z, shoulder_x, arm_joints, leg_joints):
+    """Add CHUNKY hard-surface geometry visible from E/W side profiles.
+
+    E/W edge density is the weakest at 2.5% vs N/S at 4.2%. The issue is
+    that thin ridges (< 0.008 BU) are only 1-3 pixels at 384×512 after
+    LANCZOS downscale — they blur into smooth area instead of creating edges.
+
+    Solution: use CHUNKY elements (0.02-0.08 BU thick) that actually CHANGE
+    THE SILHOUETTE from side views. Each element is a blocky hard-surface
+    shape with NO bevel — maximises edge sharpness at low resolution.
+
+    Added:
+      - Side torso armour blocks (0.02 BU thick, visible silhouette change)
+      - Chunky pauldron blades (0.015 BU thick, projects past shoulder)
+      - Backpack side pods (cylinders on backpack sides)
+      - Knee side spikes (small pyramids on outer knee)
+      - Belt side armour plates (0.02 BU thick hip plates)
+    """
+    build = config["proportions"].get("build", 1.0)
+    mat_armour = config["materials"].get("torso", "MAT_GrimdarkMetal")
+    mat_accent = config["materials"].get("accent", "MAT_ImperialGold")
+    mat_shin = config["materials"].get("shins", "MAT_GrimdarkMetal")
+
+    parts = []
+
+    # ========================================================================
+    # 1. SIDE TORSO ARMOUR BLOCKS — thick armour blocks on torso sides
+    #    These project outward by 0.02 BU (~8 px at 384×512) to create a
+    #    visible side silhouette change.
+    # ========================================================================
+    for side_sign in (-1, 1):
+        x_pos = side_sign * 0.215 * build
+        block_h = torso_h * 0.55
+        block_w = 0.02 * build      # Thick enough to survive LANCZOS downscale
+        block_d = 0.08 * build      # Front-to-back depth for contrast
+
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(x_pos + side_sign * block_w * 0.5, 0, torso_z))
+        block = bpy.context.active_object
+        block.name = f"SideTorsoBlock_{'L' if side_sign < 0 else 'R'}"
+        for v in block.data.vertices:
+            v.co.x *= block_w * 0.5
+            v.co.y *= block_d * 0.5
+            v.co.z *= block_h * 0.5
+        assign_material(block, mats, mat_armour)
+        shade_flat(block)        # NO bevel — maximises edge sharpness
+        parts.append(block)
+
+        # Gold accent strip on outer face — wider for edge detection
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(x_pos + side_sign * block_w * 0.3, 0, torso_z))
+        accent = bpy.context.active_object
+        accent.name = f"SideTorsoAccent_{'L' if side_sign < 0 else 'R'}"
+        for v in accent.data.vertices:
+            v.co.x *= 0.003 * build
+            v.co.y *= block_d * 0.6
+            v.co.z *= block_h * 0.7
+        assign_material(accent, mats, mat_accent)
+        shade_flat(accent)
+        parts.append(accent)
+
+    # ========================================================================
+    # 2. CHUNKY PAULDRON BLADES — thick blade/spur projecting sideways
+    #    Creates a visible shoulder width increase from E/W views.
+    # ========================================================================
+    for side_sign in (-1, 1):
+        outer_x = side_sign * (shoulder_x + 0.04 * build)
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(outer_x, 0, shoulder_z))
+        blade = bpy.context.active_object
+        blade.name = f"PauldronBlade_{'L' if side_sign < 0 else 'R'}"
+        for v in blade.data.vertices:
+            v.co.x *= 0.015 * build
+            v.co.y *= 0.07 * build
+            v.co.z *= 0.05 * build
+        assign_material(blade, mats, mat_armour)
+        shade_flat(blade)
+        parts.append(blade)
+
+        # Gold accent on blade tip
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(side_sign * (shoulder_x + 0.053 * build), 0, shoulder_z))
+        tip = bpy.context.active_object
+        tip.name = f"PauldronBladeTip_{'L' if side_sign < 0 else 'R'}"
+        for v in tip.data.vertices:
+            v.co.x *= 0.004 * build
+            v.co.y *= 0.05 * build
+            v.co.z *= 0.03 * build
+        assign_material(tip, mats, mat_accent)
+        shade_flat(tip)
+        parts.append(tip)
+
+    # ========================================================================
+    # 3. BACKPACK SIDE PODS — cylinders on backpack sides visible from E/W
+    #    The backpack itself is behind the body; these pods project sideways.
+    # ========================================================================
+    pack_z = torso_z + torso_h * 0.05
+    for side_sign in (-1, 1):
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=16, radius=0.025 * build, depth=0.03 * build,
+            location=(side_sign * 0.11 * build, -0.12 * build, pack_z)
+        )
+        pod = bpy.context.active_object
+        pod.name = f"BackpackPod_{'L' if side_sign < 0 else 'R'}"
+        pod.rotation_euler = (0, math.radians(90), 0)
+        assign_material(pod, mats, mat_armour)
+        shade_flat(pod)
+        parts.append(pod)
+
+    # ========================================================================
+    # 4. KNEE SIDE SPIKES — small pyramid spikes on outer knee
+    #    Creates visible knee width from side views.
+    # ========================================================================
+    knee_l = leg_joints.get("knee_l", (-0.10, 0, 0.55))
+    knee_r = leg_joints.get("knee_r", (0.10, 0, 0.55))
+
+    for side, knee, sign in [("L", knee_l, -1), ("R", knee_r, 1)]:
+        spike_x = knee[0] + sign * 0.02 * build
+        bpy.ops.mesh.primitive_cone_add(
+            vertices=6, radius1=0.012 * build, radius2=0.002 * build,
+            depth=0.025 * build,
+            location=(spike_x, knee[1], knee[2])
+        )
+        spike = bpy.context.active_object
+        spike.name = f"KneeSpike_{side}"
+        spike.rotation_euler = (0, math.radians(90), 0)
+        assign_material(spike, mats, mat_accent)
+        shade_flat(spike)
+        parts.append(spike)
+
+    # ========================================================================
+    # 5. BELT SIDE ARMOUR — thick hip plates on belt sides
+    # ========================================================================
+    torso_bottom = torso_z - torso_h * 0.5
+    hip_z = torso_bottom - 0.02 * build
+
+    for side_sign in (-1, 1):
+        x_pos = side_sign * 0.19 * build
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(x_pos, 0, hip_z))
+        hip = bpy.context.active_object
+        hip.name = f"HipArmour_{'L' if side_sign < 0 else 'R'}"
+        for v in hip.data.vertices:
+            v.co.x *= 0.015 * build
+            v.co.y *= 0.06 * build
+            v.co.z *= 0.09 * build
+        assign_material(hip, mats, mat_armour)
+        shade_flat(hip)
+        parts.append(hip)
+
+        # Gold trim
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(x_pos, 0, hip_z - 0.045 * build))
+        trim = bpy.context.active_object
+        trim.name = f"HipArmourTrim_{'L' if side_sign < 0 else 'R'}"
+        for v in trim.data.vertices:
+            v.co.x *= 0.015 * build
+            v.co.y *= 0.06 * build
+            v.co.z *= 0.003 * build
+        assign_material(trim, mats, mat_accent)
+        shade_flat(trim)
+        parts.append(trim)
+
+    # ========================================================================
+    # 6. BACKPACK TOP EXTENSION — extends upward to break side silhouette
+    # ========================================================================
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, -0.17 * build, pack_z + 0.08 * build))
+    top_ext = bpy.context.active_object
+    top_ext.name = "BackpackTopExtension"
+    for v in top_ext.data.vertices:
+        v.co.x *= 0.03 * build
+        v.co.y *= 0.02 * build
+        v.co.z *= 0.02 * build
+    assign_material(top_ext, mats, mat_armour)
+    shade_flat(top_ext)
+    parts.append(top_ext)
+
+    return parts
 
 
 # =============================================================================
@@ -935,7 +1712,7 @@ def _build_humanoid(config, mats):
     
     all_parts = []
     
-    head_parts, head_z, head_h = create_head(config, mats, z_top)
+    head_parts, head_z, head_h, head_r = create_head(config, mats, z_top)
     all_parts.extend(head_parts)
     
     torso_parts, torso_z, torso_h = create_torso(config, mats, z_top, head_h)
@@ -952,12 +1729,40 @@ def _build_humanoid(config, mats):
 
     tabard_parts = create_tabard(config, mats, torso_z, torso_h, 0.10)
     all_parts.extend(tabard_parts)
-    
+
+    belt_parts = create_belt(config, mats, torso_z, torso_h, 0.10)
+    all_parts.extend(belt_parts)
+
     weapon_parts = create_weapon(config, mats, arm_joints)
     all_parts.extend(weapon_parts)
     
     backpack_parts = create_backpack(config, mats, torso_z, torso_h)
     all_parts.extend(backpack_parts)
+
+    # --- Detail elements (hard-surface armour greebles) ---
+    torso_panel_parts = create_torso_panel_lines(config, mats, torso_z, torso_h)
+    all_parts.extend(torso_panel_parts)
+
+    helmet_panel_parts = create_helmet_panel_lines(config, mats, head_z, head_h, head_r)
+    all_parts.extend(helmet_panel_parts)
+
+    outer_plate_parts = create_outer_chest_plate(config, mats, torso_z, torso_h)
+    all_parts.extend(outer_plate_parts)
+
+    rivet_parts = create_rivets(config, mats, shoulder_z, shoulder_x, torso_z, torso_h)
+    all_parts.extend(rivet_parts)
+
+    vent_parts = create_vent_greebles(config, mats, torso_z, torso_h)
+    all_parts.extend(vent_parts)
+
+    elbow_guard_parts = create_elbow_guards(config, mats, arm_joints)
+    all_parts.extend(elbow_guard_parts)
+
+    # --- Side-profile improvements (boosts E/W edge density) ---
+    side_profile_parts = create_side_profile_elements(
+        config, mats, torso_z, torso_h, shoulder_z, shoulder_x, arm_joints, leg_joints
+    )
+    all_parts.extend(side_profile_parts)
     
     joints = {**arm_joints, **leg_joints}
     return all_parts, joints
@@ -975,8 +1780,24 @@ def _build_creature(config, mats):
     return all_parts, joints
 
 
+def _build_quadruped(config, mats):
+    """Build a quadruped creature with hard-surface carapace plates.
+    
+    Follows the same pattern as _build_creature but explicitly uses
+    hard-surface modelling on all carapace/armour parts and subsurf
+    only on flesh/membrane areas (wings, soft tissue).
+    Delegates to generate_creature which has hard-surface carapace profiles.
+    """
+    all_parts, joints = generate_creature(config, mats)
+    return all_parts, joints
+
+
 def _build_insectoid(config, mats):
-    """Build an insectoid unit using the non-humanoid template."""
+    """Build an insectoid unit using the non-humanoid template.
+    
+    Uses hard-surface modelling on body segments, head, mandibles, and legs.
+    Subsurf/smooth only on eyes and wings (soft/fleshy parts).
+    """
     all_parts, joints = generate_insectoid(config, mats)
     return all_parts, joints
 
@@ -987,10 +1808,10 @@ def _create_body_armature(joints, config):
     
     if body_type == "humanoid":
         return create_armature(joints)
+    elif body_type in ("quadruped", "creature") and NONHUMANOID_AVAILABLE:
+        return create_creature_armature(joints, config)
     elif body_type == "vehicle" and NONHUMANOID_AVAILABLE:
         return create_vehicle_armature(joints, config)
-    elif body_type == "creature" and NONHUMANOID_AVAILABLE:
-        return create_creature_armature(joints, config)
     elif body_type == "insectoid" and NONHUMANOID_AVAILABLE:
         return create_insectoid_armature(joints, config)
     else:
@@ -1051,8 +1872,8 @@ def generate_unit(config_path):
         all_parts, joints = _build_humanoid(config, mats)
     elif body_type == "vehicle" and NONHUMANOID_AVAILABLE:
         all_parts, joints = _build_vehicle(config, mats)
-    elif body_type == "creature" and NONHUMANOID_AVAILABLE:
-        all_parts, joints = _build_creature(config, mats)
+    elif body_type in ("quadruped", "creature") and NONHUMANOID_AVAILABLE:
+        all_parts, joints = _build_quadruped(config, mats)
     elif body_type == "insectoid" and NONHUMANOID_AVAILABLE:
         all_parts, joints = _build_insectoid(config, mats)
     else:

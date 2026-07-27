@@ -687,6 +687,9 @@ def _render_job(job: dict, engine: str, fast: bool) -> dict:
                        "--", "--engine", engine]
         if fast:
             render_args.append("--fast")
+        faction = job.get("faction")
+        if faction:
+            render_args.extend(["--faction", faction])
 
         # --- STREAMING RENDER with real-time progress tracking ---
         _write_progress("rendering", unit_name, job["id"],

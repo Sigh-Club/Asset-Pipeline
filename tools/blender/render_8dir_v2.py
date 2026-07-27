@@ -14,6 +14,8 @@ Improvements over v1:
 Usage:
     blender model.blend --background --python render_8dir_v2.py
     blender model.blend --background --python render_8dir_v2.py -- --engine CYCLES --no-depth
+    blender model.blend --background --python render_8dir_v2.py -- --faction iron_directorate --fast
+    blender model.blend --background --python render_8dir_v2.py -- --faction cinderborn --samples 128
 """
 
 import bpy
@@ -57,16 +59,71 @@ DIRECTIONS = [
 ISO_ELEVATION_DEG = 30
 
 # =============================================================================
+# FACTION LIGHTING PROFILES
+# =============================================================================
+
+FACTION_LIGHTING = {
+    "iron_directorate": {
+        "key": {"color": (0.85, 0.90, 1.0), "energy": 3500, "size": 0.5, "location": (-4, -3, 6)},      # Cool 5500K — ordered militaristic
+        "fill": {"color": (0.75, 0.80, 0.85), "energy": 600, "size": 1.0, "location": (3, 2, 2)},       # Neutral grey fill
+        "rim": {"color": (0.80, 0.70, 0.50), "energy": 2000, "size": 0.3, "location": (1, 6, 3)},       # Dulled gold rim
+        "specular": {"color": (0.95, 0.95, 1.0), "energy": 800, "size": 0.2, "location": (0, 0, 8)},    # Cool white top
+    },
+    "cinderborn": {
+        "key": {"color": (1.0, 0.40, 0.70), "energy": 3500, "size": 0.5, "location": (-4, -3, 6)},      # Warm magenta — corrupted ritual
+        "fill": {"color": (0.60, 0.30, 0.80), "energy": 500, "size": 1.0, "location": (3, 2, 2)},       # Deep purple fill
+        "rim": {"color": (1.0, 0.60, 0.20), "energy": 2500, "size": 0.3, "location": (1, 6, 3)},        # Orange rim (magma)
+        "specular": {"color": (1.0, 0.80, 0.90), "energy": 800, "size": 0.2, "location": (0, 0, 8)},    # Pink-white top
+    },
+    "parasitic_bloom": {
+        "key": {"color": (0.65, 0.95, 0.60), "energy": 3000, "size": 0.5, "location": (-4, -3, 6)},     # Sickly green-white
+        "fill": {"color": (0.90, 0.55, 0.65), "energy": 500, "size": 1.0, "location": (3, 2, 2)},       # Pinkish fill
+        "rim": {"color": (0.85, 0.75, 0.60), "energy": 2000, "size": 0.3, "location": (1, 6, 3)},       # Bone-coloured rim
+        "specular": {"color": (0.80, 0.95, 0.70), "energy": 800, "size": 0.2, "location": (0, 0, 8)},   # Green-white top
+    },
+    "wreckstorm_clans": {
+        "key": {"color": (1.0, 0.60, 0.20), "energy": 4000, "size": 0.5, "location": (-4, -3, 6)},      # Orange-red — hot scrap
+        "fill": {"color": (0.50, 0.35, 0.25), "energy": 300, "size": 1.0, "location": (3, 2, 2)},       # Dark brown fill (minimal)
+        "rim": {"color": (1.0, 0.85, 0.30), "energy": 2500, "size": 0.3, "location": (1, 6, 3)},        # Yellow rim — welding spark
+        "specular": {"color": (1.0, 0.90, 0.70), "energy": 600, "size": 0.2, "location": (0, 0, 8)},    # Warm white top
+    },
+    "harmonic_collective": {
+        "key": {"color": (0.50, 0.70, 1.0), "energy": 3000, "size": 0.5, "location": (-4, -3, 6)},      # Cool blue — sleek machine
+        "fill": {"color": (0.85, 0.87, 0.90), "energy": 700, "size": 1.0, "location": (3, 2, 2)},       # Clean white fill
+        "rim": {"color": (0.65, 0.75, 0.95), "energy": 2500, "size": 0.3, "location": (1, 6, 3)},       # Silver-blue rim
+        "specular": {"color": (0.90, 0.92, 1.0), "energy": 1000, "size": 0.2, "location": (0, 0, 8)},   # Bright white top
+    },
+    "chrono_revenants": {
+        "key": {"color": (1.0, 0.80, 0.40), "energy": 3000, "size": 0.5, "location": (-4, -3, 6)},      # Warm gold — aged bronze
+        "fill": {"color": (0.30, 0.75, 0.75), "energy": 500, "size": 1.0, "location": (3, 2, 2)},       # Teal fill — temporal decay
+        "rim": {"color": (0.85, 0.90, 0.45), "energy": 2500, "size": 0.3, "location": (1, 6, 3)},       # Gold-green rim
+        "specular": {"color": (1.0, 0.95, 0.80), "energy": 800, "size": 0.2, "location": (0, 0, 8)},    # Warm white top
+    },
+    "void_corsairs": {
+        "key": {"color": (0.50, 0.40, 0.90), "energy": 3500, "size": 0.5, "location": (-4, -3, 6)},     # Purple-blue — stealth void
+        "fill": {"color": (0.80, 0.82, 0.95), "energy": 400, "size": 1.0, "location": (3, 2, 2)},       # Cool white fill (minimal)
+        "rim": {"color": (0.55, 0.65, 0.95), "energy": 2200, "size": 0.3, "location": (1, 6, 3)},       # Silver rim — edge catch
+        "specular": {"color": (0.80, 0.75, 1.0), "energy": 700, "size": 0.2, "location": (0, 0, 8)},    # Lavender top
+    },
+}
+
+FACTION_DEFAULT = "iron_directorate"
+
+# =============================================================================
 # ARG PARSING
 # =============================================================================
 
 def parse_args():
-    """Parse --engine, --no-depth, --no-normal, --fast, --samples from sys.argv after --"""
+    """Parse --engine, --no-depth, --no-normal, --fast, --samples, --faction from sys.argv after --"""
     args = []
     if "--" in sys.argv:
         args = sys.argv[sys.argv.index("--") + 1:]
     
-    global RENDER_ENGINE, OUTPUT_DEPTH, OUTPUT_NORMAL, DEFAULT_SAMPLES
+    global RENDER_ENGINE, OUTPUT_DEPTH, OUTPUT_NORMAL, DEFAULT_SAMPLES, CURRENT_FACTION
+    global FACTION_DEFAULT
+    
+    selected_faction = FACTION_DEFAULT
+    
     i = 0
     while i < len(args):
         if args[i] == "--engine" and i + 1 < len(args):
@@ -84,10 +141,18 @@ def parse_args():
         elif args[i] == "--samples" and i + 1 < len(args):
             DEFAULT_SAMPLES = int(args[i + 1])
             i += 2
+        elif args[i] == "--faction" and i + 1 < len(args):
+            val = args[i + 1].lower()
+            if val in FACTION_LIGHTING:
+                selected_faction = val
+                log(f"Faction lighting: {val}")
+            else:
+                log(f"WARNING: Unknown faction '{val}', using default ({FACTION_DEFAULT})")
+            i += 2
         else:
             i += 1
-
-parse_args()
+    
+    return selected_faction
 
 # =============================================================================
 # LOGGING
@@ -95,6 +160,9 @@ parse_args()
 
 def log(msg: str):
     print(f"[render_8dir_v2] {msg}")
+
+# Parse args and set faction (must be after log() definition)
+CURRENT_FACTION = parse_args()
 
 # =============================================================================
 # OUTPUT DIRECTORY
@@ -171,39 +239,50 @@ def create_rig(ortho_scale: float, target_z: float, bbox_diagonal: float):
     log(f"Camera rig: ortho_scale={ortho_scale:.1f}, target_z={target_z:.1f}, distance={distance:.1f}")
 
 # =============================================================================
-# LIGHTING — PBR TUNED
+# LIGHTING — PBR TUNED, FACTION-AWARE
 # =============================================================================
 
-def setup_lighting():
+def setup_lighting(faction="iron_directorate"):
     """Miniature-style 4-point grimdark lighting with hard shadows.
+
+    Accepts a faction parameter to apply faction-specific colour temperatures
+    and energy levels. Falls back to iron_directorate (default) for unknown
+    factions.
 
     Tuned for Warhammer 40K miniature photography:
     - Small, bright lights create sharp shadow lines (not soft/gradient)
     - Strong rim light picks out armour edge details
     - High key-to-fill ratio for dramatic contrast (10:1)
+    - Per-faction colour temperatures enforce visual identity (see FACTION_LIGHTING)
     """
+    faction = faction.lower()
+    if faction not in FACTION_LIGHTING:
+        log(f"WARNING: Unknown faction '{faction}', using default ({FACTION_DEFAULT})")
+        faction = FACTION_DEFAULT
+    
+    profile = FACTION_LIGHTING[faction]
+    
     # Remove existing lights
     for obj in list(bpy.data.objects):
         if obj.type == 'LIGHT':
             bpy.data.objects.remove(obj, do_unlink=True)
     
-    # Key light — warm rusty (3500K), upper-left, small & bright for hard shadows
-    key = create_light("KEY", color=(1.0, 0.85, 0.65), energy=3000,
-                       location=(-4, -3, 6), size=0.5)
+    key_cfg = profile["key"]
+    fill_cfg = profile["fill"]
+    rim_cfg = profile["rim"]
+    spec_cfg = profile["specular"]
     
-    # Fill light — cool blue (7500K), lower-right, low intensity
-    fill = create_light("FILL", color=(0.6, 0.7, 1.0), energy=500,
-                        location=(3, 2, 2), size=1.0)
+    key = create_light("KEY", color=key_cfg["color"], energy=key_cfg["energy"],
+                       location=key_cfg["location"], size=key_cfg["size"])
+    fill = create_light("FILL", color=fill_cfg["color"], energy=fill_cfg["energy"],
+                        location=fill_cfg["location"], size=fill_cfg["size"])
+    rim = create_light("RIM", color=rim_cfg["color"], energy=rim_cfg["energy"],
+                       location=rim_cfg["location"], size=rim_cfg["size"])
+    spec = create_light("SPECULAR", color=spec_cfg["color"], energy=spec_cfg["energy"],
+                        location=spec_cfg["location"], size=spec_cfg["size"])
     
-    # Rim/kicker light — gold, from behind-right, catches armour edges
-    rim = create_light("RIM", color=(1.0, 0.82, 0.3), energy=2000,
-                        location=(1, 6, 3), size=0.3)
-    
-    # Top specular — small bright point from above for helmet/pauldron highlights
-    spec = create_light("SPECULAR", color=(1.0, 0.95, 0.9), energy=800,
-                         location=(0, 0, 8), size=0.2)
-    
-    log("Lighting: miniature grimdark (key=3000W small, fill=500W, rim=2000W tight, specular=800W)")
+    log(f"Lighting: {faction} (key={key_cfg['energy']}W {key_cfg['color']}, "
+        f"fill={fill_cfg['energy']}W, rim={rim_cfg['energy']}W, specular={spec_cfg['energy']}W)")
 
 def create_light(name: str, color: tuple, energy: float, location: tuple, size: float = 0.5):
     light_data = bpy.data.lights.new(name=name, type="AREA")
@@ -541,7 +620,7 @@ def main():
     
     setup_render_settings()
     create_rig(ortho_scale, target_z, bbox_diagonal)
-    setup_lighting()
+    setup_lighting(faction=CURRENT_FACTION)
     
     animations = scan_animations()
     all_rendered_files = []

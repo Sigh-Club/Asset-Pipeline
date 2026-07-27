@@ -237,6 +237,8 @@ def cmd_character_render(args):
         extra_args.append("--fast")
     if getattr(args, 'samples', None):
         extra_args.extend(["--samples", str(args.samples)])
+    if getattr(args, 'faction', None):
+        extra_args.extend(["--faction", args.faction])
 
     return run_command([
         "blender", "--background", blend_path, "--python", PATHS["render_script"],
@@ -272,6 +274,9 @@ def cmd_character_full(args):
         engine=args.engine or "CYCLES",
         no_depth=args.no_depth or False,
         no_normal=args.no_normal or False,
+        fast=False,
+        samples=None,
+        faction=getattr(args, 'faction', None),
     )
     if cmd_character_render(render_args) != 0:
         log("Render failed, aborting full pipeline", "ERROR")
@@ -710,8 +715,9 @@ def cmd_gallery(args):
 
 def cmd_queue(args):
     """Route queue commands to the render_queue module."""
-    if not os.path.exists(QUEUE_SCRIPT):
-        log(f"Queue module not found: {QUEUE_SCRIPT}", "ERROR")
+    queue_script = os.path.join(SCRIPT_DIR, "render_queue.py")
+    if not os.path.exists(queue_script):
+        log(f"Queue module not found: {queue_script}", "ERROR")
         return 1
 
     # Build subcommand args
@@ -916,18 +922,33 @@ Examples:
     char_ren.add_argument("--samples", type=int, default=None, help="Cycles render samples")
     char_ren.add_argument("--no-depth", action="store_true")
     char_ren.add_argument("--no-normal", action="store_true")
+    char_ren.add_argument("--faction", default=None,
+                          choices=["iron_directorate", "cinderborn", "parasitic_bloom",
+                                   "wreckstorm_clans", "harmonic_collective",
+                                   "chrono_revenants", "void_corsairs"],
+                          help="Faction-specific lighting profile")
 
     char_full = char_sub.add_parser("full", help="Full pipeline: generate → render → pack")
     char_full.add_argument("--config", "-c", required=True, help="Path to JSON config")
     char_full.add_argument("--engine", "-e", default="CYCLES")
     char_full.add_argument("--no-depth", action="store_true")
     char_full.add_argument("--no-normal", action="store_true")
+    char_full.add_argument("--faction", default=None,
+                          choices=["iron_directorate", "cinderborn", "parasitic_bloom",
+                                   "wreckstorm_clans", "harmonic_collective",
+                                   "chrono_revenants", "void_corsairs"],
+                          help="Faction-specific lighting profile")
 
     char_batch = char_sub.add_parser("batch", help="Process all configs in a directory")
     char_batch.add_argument("--config-dir", "-d", required=True, help="Directory of JSON configs")
     char_batch.add_argument("--engine", "-e", default="CYCLES")
     char_batch.add_argument("--no-depth", action="store_true")
     char_batch.add_argument("--no-normal", action="store_true")
+    char_batch.add_argument("--faction", default=None,
+                          choices=["iron_directorate", "cinderborn", "parasitic_bloom",
+                                   "wreckstorm_clans", "harmonic_collective",
+                                   "chrono_revenants", "void_corsairs"],
+                          help="Faction-specific lighting profile")
 
     # --- tile ---
     tile_parser = subparsers.add_parser("tile", help="Tile/terrain pipeline (new)")

@@ -71,7 +71,7 @@ def process_unit(unit_name, raw_dir, frame_count, palette=None):
 
     # NOTE: pack_unit appends _atlas suffix itself — don't double it
     pack_unit(processed_dir, OUTPUT_DIR, unit_name)
-    print(f"  Atlas: {os.path.join(OUTPUT_DIR, atlas_name)}.png")
+    print(f"  Atlas: {os.path.join(OUTPUT_DIR, unit_name)}_atlas.png")
 
 
 def main():
