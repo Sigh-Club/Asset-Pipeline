@@ -64,10 +64,10 @@ ISO_ELEVATION_DEG = 30
 
 FACTION_LIGHTING = {
     "iron_directorate": {
-        "key": {"color": (0.85, 0.90, 1.0), "energy": 3500, "size": 0.5, "location": (-4, -3, 6)},      # Cool 5500K — ordered militaristic
-        "fill": {"color": (0.75, 0.80, 0.85), "energy": 600, "size": 1.0, "location": (3, 2, 2)},       # Neutral grey fill
-        "rim": {"color": (0.80, 0.70, 0.50), "energy": 2000, "size": 0.3, "location": (1, 6, 3)},       # Dulled gold rim
-        "specular": {"color": (0.95, 0.95, 1.0), "energy": 800, "size": 0.2, "location": (0, 0, 8)},    # Cool white top
+        "key": {"color": (0.85, 0.90, 1.0), "type": "SUN", "energy": 2.5, "size": 0.08, "location": (-4, -3, 6)},    # SUN key — softer angle (0.08 rad) for midtone gradient ramp, not a hard stencil
+        "fill": {"color": (0.75, 0.80, 0.85), "energy": 600, "size": 1.2, "location": (3, 2, 2)},       # AREA fill — lifts shadow side off the black background
+        "rim": {"color": (0.80, 0.70, 0.50), "type": "SUN", "energy": 2.5, "size": 0.02, "location": (1, 6, 3)},        # SUN rim — stronger, carves shadow-side silhouette
+        "specular": {"color": (0.95, 0.95, 1.0), "energy": 400, "size": 0.2, "location": (0, 0, 8)},    # Top sparkle
     },
     "cinderborn": {
         "key": {"color": (1.0, 0.40, 0.70), "energy": 3500, "size": 0.5, "location": (-4, -3, 6)},      # Warm magenta — corrupted ritual
@@ -215,6 +215,10 @@ def create_camera(ortho_scale: float):
     cam_data = bpy.data.cameras.new(name="ISO_Camera")
     cam_data.type = "ORTHO"
     cam_data.ortho_scale = ortho_scale  # NO supersample multiply — resolution handles that
+    # Lock sensor fit to HORIZONTAL so ortho_scale is always the world WIDTH shown and
+    # the world height = ortho_scale * (RENDER_H/RENDER_W). The default AUTO makes
+    # ortho_scale the height in portrait frames, which inverted our framing math.
+    cam_data.sensor_fit = 'HORIZONTAL'
     cam_data.clip_start = 0.01
     cam_data.clip_end = 5000.0
     
@@ -247,7 +251,7 @@ def create_rig(ortho_scale: float, target_z: float, bbox_diagonal: float):
 # LIGHTING — PBR TUNED, FACTION-AWARE
 # =============================================================================
 
-def setup_lighting(faction="iron_directorate"):
+def setup_lighting(faction="iron_directorate", size_factor=1.0):
     """Miniature-style 4-point grimdark lighting with hard shadows.
 
     Accepts a faction parameter to apply faction-specific colour temperatures
@@ -276,15 +280,32 @@ def setup_lighting(faction="iron_directorate"):
     fill_cfg = profile["fill"]
     rim_cfg = profile["rim"]
     spec_cfg = profile["specular"]
-    
-    key = create_light("KEY", color=key_cfg["color"], energy=key_cfg["energy"],
-                       location=key_cfg["location"], size=key_cfg["size"])
-    fill = create_light("FILL", color=fill_cfg["color"], energy=fill_cfg["energy"],
-                        location=fill_cfg["location"], size=fill_cfg["size"])
-    rim = create_light("RIM", color=rim_cfg["color"], energy=rim_cfg["energy"],
-                       location=rim_cfg["location"], size=rim_cfg["size"])
-    spec = create_light("SPECULAR", color=spec_cfg["color"], energy=spec_cfg["energy"],
-                        location=spec_cfg["location"], size=spec_cfg["size"])
+
+    # Model-scale-invariant lighting: scale light positions by size_factor and energies by
+    # size_factor^2 (inverse-square) so any mesh at any unit scale is lit correctly. The
+    # fixed locations/energies are tuned for a ~1.5-diagonal reference model; a 16-unit
+    # base mesh gets lights pushed out and powered up proportionally.
+    sf = size_factor
+    e2 = sf * sf
+    def _loc(c): return (c[0]*sf, c[1]*sf, c[2]*sf)
+
+    # SUN lights use irradiance (W/m^2) — distance-invariant, so NO size-factor energy
+    # scaling. AREA lights use watts and need e2 scaling for inverse-square at distance.
+    def _en(cfg):
+        return cfg["energy"] if cfg.get("type", "AREA") == "SUN" else cfg["energy"] * e2
+
+    key = create_light("KEY", color=key_cfg["color"], energy=_en(key_cfg),
+                       location=_loc(key_cfg["location"]), size=key_cfg["size"],
+                       light_type=key_cfg.get("type", "AREA"))
+    fill = create_light("FILL", color=fill_cfg["color"], energy=_en(fill_cfg),
+                        location=_loc(fill_cfg["location"]), size=fill_cfg["size"],
+                        light_type=fill_cfg.get("type", "AREA"))
+    rim = create_light("RIM", color=rim_cfg["color"], energy=_en(rim_cfg),
+                       location=_loc(rim_cfg["location"]), size=rim_cfg["size"],
+                       light_type=rim_cfg.get("type", "AREA"))
+    spec = create_light("SPECULAR", color=spec_cfg["color"], energy=_en(spec_cfg),
+                        location=_loc(spec_cfg["location"]), size=spec_cfg["size"],
+                        light_type=spec_cfg.get("type", "AREA"))
 
     # Camera-relative lighting: store each light's base world location so render_direction_anim
     # can orbit them around Z with the rig and re-aim at the origin. This keeps every
@@ -319,16 +340,19 @@ def _orbit_lights_for_direction(dangle_deg: float):
         if direction.length > 1e-6:
             lt.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 
-def create_light(name: str, color: tuple, energy: float, location: tuple, size: float = 0.5):
-    light_data = bpy.data.lights.new(name=name, type="AREA")
+def create_light(name: str, color: tuple, energy: float, location: tuple, size: float = 0.5, light_type: str = "AREA"):
+    light_data = bpy.data.lights.new(name=name, type=light_type)
     light_data.color = color
     light_data.energy = energy
-    light_data.size = size  # Small size = hard shadows for miniature look
-    
+    if light_type == "AREA":
+        light_data.size = size  # Small size = hard shadows for miniature look
+    elif light_type == "SUN":
+        light_data.angle = size  # sun angular size (radians); small = hard shadows
+
     light_obj = bpy.data.objects.new(name=name, object_data=light_data)
     bpy.context.scene.collection.objects.link(light_obj)
     light_obj.location = location
-    # Point at origin
+    # Point at origin (for SUN, this sets the direction; location distance is irrelevant)
     direction = mathutils.Vector((0, 0, 0)) - mathutils.Vector(location)
     light_obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
     return light_obj
@@ -352,6 +376,33 @@ def setup_render_settings():
     scene.render.image_settings.color_depth = COLOR_DEPTH
     scene.render.image_settings.compression = COMPRESSION
     scene.render.film_transparent = FILM_TRANSPARENT
+
+    # Colour management: force a consistent view transform regardless of the input
+    # blend (the CC0 base mesh ships with view_transform=Standard/Filmic which renders
+    # mids dark/flat; our generated units use AgX which is brighter with readable mids).
+    try:
+        scene.view_settings.view_transform = 'AgX'
+    except Exception:
+        scene.view_settings.view_transform = 'Filmic'  # fallback if AgX unavailable
+    scene.view_settings.exposure = 1.0
+    scene.view_settings.look = 'None'
+    scene.view_settings.use_curve_mapping = False
+    scene.sequencer_colorspace_settings.name = 'sRGB'
+    log(f"Colour mgmt: view_transform={scene.view_settings.view_transform} exposure={scene.view_settings.exposure} device={scene.display_settings.display_device}")
+
+    # Dark world background so the input blend's own world (which can be a bright ambient
+    # that flattens contrast) doesn't lift shadows. With film_transparent, the background
+    # renders transparent for the sprite alpha, but the world shader still contributes
+    # ambient illumination to surfaces — a near-black world means only the 4 rigged
+    # lights define shading, so the key:fill ratio actually reads as tonal contrast.
+    world = scene.world or bpy.data.worlds.new("IsoWorld")
+    scene.world = world
+    world.use_nodes = True
+    bg = world.node_tree.nodes.get("Background") or world.node_tree.nodes.new("ShaderNodeBackground")
+    bg.inputs["Color"].default_value = (0.05, 0.055, 0.065, 1.0)
+    bg.inputs["Strength"].default_value = 0.25   # ambient lifts the shadow side so the silhouette reads against the black BG
+    if RENDER_ENGINE == "CYCLES":
+        scene.cycles.sample_clamp_indirect = 0.0  # don't clamp the key
     
     if RENDER_ENGINE == "CYCLES":
         # Cycles settings for quality + reasonable speed
@@ -661,15 +712,24 @@ def main():
     bbox_height = max_z - min_z
     bbox_depth = max_y - min_y
     bbox_diagonal = math.sqrt(bbox_width**2 + bbox_height**2 + bbox_depth**2)
-    
+
     log(f"Scene bounds: W={bbox_width:.1f} H={bbox_height:.1f} D={bbox_depth:.1f} diag={bbox_diagonal:.1f}")
-    
-    ortho_scale = max(bbox_height / 0.80, 1.0)  # Fill 80% of frame, min 1.0
+
+    # Lock framing across all 8 directions. The ortho frame is portrait (RENDER_H/RENDER_W
+    # tall), so the world-height shown = ortho_scale * aspect. The model's projected
+    # width varies as it orbits (max = the horizontal diagonal sqrt(W^2+D^2)); using that
+    # guarantees no direction clips horizontally, and bbox_height/aspect guarantees no
+    # vertical clip. Fill ~85% of the tightest dimension for a consistent, non-jumping
+    # frame across N/NE/E/.../NW.
+    aspect = RENDER_H / RENDER_W  # 1.333 for 1152x1536 / 384x512
+    max_proj_width = math.sqrt(bbox_width**2 + bbox_depth**2)
+    ortho_scale = max(max_proj_width, bbox_height / aspect) / 0.85
+    ortho_scale = max(ortho_scale, 1.0)
     target_z = min_z + bbox_height / 2.0
     
     setup_render_settings()
     create_rig(ortho_scale, target_z, bbox_diagonal)
-    setup_lighting(faction=CURRENT_FACTION)
+    setup_lighting(faction=CURRENT_FACTION, size_factor=bbox_diagonal / 1.5)
     
     animations = scan_animations()
     all_rendered_files = []

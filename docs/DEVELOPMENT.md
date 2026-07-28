@@ -779,12 +779,14 @@ is sound and reusable; the GEOMETRY was the flaw.
 
 - [x] Phase 5.1: Source + stage CC0 humanoid base — DONE (2026-08-03). male.blend staged,
   inspected (1147v/2332tris/84-bone rig/UVs/512 diff), rendered through pipeline.
-- [ ] Phase 5.2: Pipeline fixes — camera framing lock, lighting contrast, iso angle
-      verify, baseline pose. NOT DONE.
-- [ ] Phase 5.3: Model Iron Directorate armour kit on the base (manual Blender) — line
-      infantry first, then reuse across roster. NOT DONE.
-- [ ] Phase 5.4: Re-run full texture pipeline (atlas/AO/downscale/critic) on the
-      armoured mesh; gate = critic 40/40 + visual DoW1 read. NOT DONE.
+- [x] Phase 5.2: Pipeline fixes — DONE (2026-08-03). Four fixes in `render_8dir_v2.py`:
+  1. **Camera framing lock**: `sensor_fit='HORIZONTAL'` + ortho_scale from bbox diagonal `sqrt(W^2+D^2)` and height/aspect → consistent ~80% vertical fill across all 8 directions (no scale jumps, no clipping).
+  2. **Scale-invariant lighting**: AREA lights scale position×size_factor and energy×size_factor² (inverse-square); SUN lights are irradiance-based (no scaling). Any mesh at any unit scale lights correctly.
+  3. **SUN key + rim** (irradiance W/m²): hard, directional, scale-invariant — replaced the weak AREA key that couldn't dominate. Iron Directorate: key SUN 2.5 W/m² (angle 0.08 rad = soft terminator with midtone ramp), rim SUN 2.5, AREA fill 600, spec 400. Result: ~7:1 contrast, midtones (p50~60), visible shadow detail (p10~33), bright lit side (p90~222) — DoW1 miniature look, not a 2-tone stencil.
+  4. **Colour management override**: force AgX view transform + exposure 1.0 + sRGB display device regardless of input blend (the CC0 base shipped with Standard/Filmic = dark/flat). Dark world (strength 0.25) for shadow contrast + silhouette lift.
+  Validated on the CC0 base mesh (`body_base_norm.blend`, scaled to 1.22 units, pose baked). Review renders in `output/v0.5.1_phase52_pipeline/base_mesh_validation/`.
+- [ ] Phase 5.3: Model Iron Directorate armour kit on the base (manual Blender) — line infantry first, then reuse across roster. NOT DONE.
+- [ ] Phase 5.4: Re-run full texture pipeline (atlas/AO/downscale/critic) on the armoured mesh; gate = critic 40/40 + visual DoW1 read. NOT DONE.
 
 ---
 
