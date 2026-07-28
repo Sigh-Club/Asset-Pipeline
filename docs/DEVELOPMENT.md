@@ -738,6 +738,56 @@ python3 tools/gallery_server.py
 
 ---
 
+## 17. PIVOT (2026-08-03): Real mesh foundation — retire primitive assembly
+
+### 17.1 The ceiling of primitive assembly
+
+Phase 3.5-3.7 hit a hard ceiling: `parametric_unit_generator.py` builds units from
+54 `primitive_*_add` calls (cylinders/spheres/cubes); even `assets/bodies/.../body.blend`
+was 8-vertex cubes per limb. No UV/atlas/AO/downscale tuning turns a cylinder into a
+Dawn of War 1 space marine. The critic edge-density metric (14%) was passing on a
+primitive mannequin — metric-gaming, not the visual goal. The texture/render pipeline
+is sound and reusable; the GEOMETRY was the flaw.
+
+### 17.2 New foundation: CC0 humanoid base + manual armour
+
+- **Body**: CC0 MakeHuman-retopology base mesh (`assets/bodies/imperial_male/model/body_base_cc0.blend`,
+  ~2,332 tris, 84-bone rig, UV-mapped, 512 diffuse + normal). See `CREDIT_cc0_base.txt`.
+  Validated through the existing pipeline: renders as a real humanoid (correct
+  proportions, anatomical silhouette) — clear step up from the cylinder mannequin.
+- **Armour**: modelled manually in Blender on top of the base (pauldrons, helmet,
+  chest/back plates, greaves, backpack, faction iconography). This is the IoA-original,
+  IP-clean layer — NO Warhammer 40K fan-art assets (GW IP risk; the project is already
+  40K-adjacent by rename, armour must be ours).
+- **Pipeline reused**: UV/atlas/AO/downscale/critic infrastructure runs on any mesh.
+  `parametric_unit_generator.py` primitive assembly retired for humanoids (kept only
+  for non-humanoid body types if useful).
+
+### 17.3 Pipeline fixes flagged by the base-mesh validation (before armour)
+
+1. **Camera framing inconsistency**: front view has margins, side view fills ~90% —
+   orthographic bounds not locked across the 8 directions → scale jumps. Lock the
+   camera bbox to the unit's bounding box across all directions.
+2. **Lighting too flat**: grimdark 3-point lighting underlit; tonal range compressed;
+   form/volume barely reads. Push key/fill contrast ~15-20% within the grimdark range.
+3. **Isometric angle verification**: side view reads as true 90° profile, not isometric
+   3/4 (should be 30°/35.264°). Verify the projection matrix in `render_8dir_v2.py`.
+4. **Baseline pose**: base is akimbo (hands on hips) — occludes hip/belt. Consider an
+   A-pose for the armour-modelling baseline so belt/codpiece seams are accessible.
+
+### 17.4 Phase status
+
+- [x] Phase 5.1: Source + stage CC0 humanoid base — DONE (2026-08-03). male.blend staged,
+  inspected (1147v/2332tris/84-bone rig/UVs/512 diff), rendered through pipeline.
+- [ ] Phase 5.2: Pipeline fixes — camera framing lock, lighting contrast, iso angle
+      verify, baseline pose. NOT DONE.
+- [ ] Phase 5.3: Model Iron Directorate armour kit on the base (manual Blender) — line
+      infantry first, then reuse across roster. NOT DONE.
+- [ ] Phase 5.4: Re-run full texture pipeline (atlas/AO/downscale/critic) on the
+      armoured mesh; gate = critic 40/40 + visual DoW1 read. NOT DONE.
+
+---
+
 ## 16. DoW1 Texture-Driven Pipeline Pivot
 
 ### 16.1 Evidence (2026-08-02 review)

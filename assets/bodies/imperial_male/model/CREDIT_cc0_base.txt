@@ -1,0 +1,18 @@
+# CC0 Humanoid Base Mesh — credit & licence
+
+`body_base_cc0.blend` is a CC0 (public domain) humanoid base mesh sourced from
+OpenGameArt, used as the anatomical foundation for IoA units (armour is modelled
+on top manually).
+
+- **Source**: https://opengameart.org/content/human-basaemeshes ("Human basaemeshes")
+- **File**: male.blend (re-uploaded MakeHuman retopology)
+- **Author**: Nawia (OpenGameArt user)
+- **Licence**: CC0 1.0 Universal (Public Domain). MakeHuman output models are CC0.
+- **Stats**: ~1,147 verts / ~2,332 tris, 84-bone rig ("pc_rig"), UV-mapped,
+  512x512 diffuse + normal bake.
+- **Use**: modified and incorporated into Imperium of Ash assets. No attribution
+  required under CC0, but credited here for provenance.
+
+Per AGENTS.md, the body foundation is a generic CC0 humanoid; all faction armour,
+iconography, and identity are modelled originally by the IoA project (no Warhammer
+40K fan-art assets are used, to keep the project IP-clean).
