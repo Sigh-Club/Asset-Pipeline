@@ -724,7 +724,7 @@ def main():
     aspect = RENDER_H / RENDER_W  # 1.333 for 1152x1536 / 384x512
     max_proj_width = math.sqrt(bbox_width**2 + bbox_depth**2)
     ortho_scale = max(max_proj_width, bbox_height / aspect) / 0.85
-    ortho_scale = max(ortho_scale, 1.0)
+    ortho_scale = max(ortho_scale, 0.01)  # min clamp (was 1.0 — made small meshes render as specks)
     target_z = min_z + bbox_height / 2.0
     
     setup_render_settings()
