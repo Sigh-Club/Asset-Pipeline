@@ -12,7 +12,7 @@
 
 1. **Full Colour, No Palette Lock**: Assets use full RGBA colour. The `grimdark_64.gpl` palette is available as an optional retro/pixel-art variant but is NOT the default. PBR materials render with full colour fidelity.
 2. **LANCZOS Downscale**: Raw renders are supersampled at 8× (768×1024) and downscaled with LANCZOS resampling for smooth anti-aliased edges — never nearest-neighbour.
-3. **DEVELOPMENT.md MUST BE UPDATED BEFORE ANY NEW TASK**: `docs/DEVELOPMENT.md` is the master development tracking document. After completing any task (render fix, code change, pipeline improvement, asset generation), update it before starting the next task. Mark fixed items as ✅, add new open items, update the Last Updated date. This is NOT optional.
+3. **STAGE TRACKING IS TOP PRIORITY — TESTS MUST PASS BEFORE MARKING COMPLETE** (HIGHEST PRIORITY): `docs/DEVELOPMENT.md` is the master development tracking document. A stage/phase is marked complete (✅) ONLY after its verification gate passes — for Phase 3.5+ this means `tools/validate_uv.py` (pre-render) AND `tools/critic.py` (post-render) both pass; never mark a stage ✅ on "it ran without error" alone. Update `docs/DEVELOPMENT.md` immediately after each passing gate: flip the phase status `[ ] → [x]`, update the Last Updated date, and record the evidence (metric values, pass rate). Do not start the next stage until the current one is marked complete. If a gate fails, the stage stays `[ ]` (or `[~]` in-progress) and the failure is logged as an open item. This is NOT optional and takes precedence over all other rules.
 4. **Naming Convention**: Strict enforcement. Wrong names break the engine importer.
 5. **8 Directions True**: No mirroring allowed. Each direction is a unique render. N, NE, E, SE, S, SW, W, NW.
 6. **Blender Single Source of Truth**: The `.blend` file is the master asset. Sprites are derived products, not masters.
@@ -285,6 +285,12 @@ Every tool, every script, every pipeline stage MUST have:
 - Technical decisions and their rationale
 - Quality metrics and improvement targets
 - Open technical debt items
+
+**Per-stage gate discipline (enforces Critical Rule #3):** Each pipeline stage has a defined verification gate. The stage's `[ ]`/`[~]`/`[x]` status in §16.5 reflects gate state, not effort:
+- `[ ]` = not started or gate failed
+- `[~]` = implemented but gate not yet passed
+- `[x]` = gate passed (record the evidence: metric values, pass rate, date)
+A stage is flipped to `[x]` only when its gate passes. Phase 3.5+ gates: `tools/validate_uv.py` (anisotropy, coverage, seam, texel variance, overlap, margin, bounds, occupancy) AND `tools/critic.py` (edge_density ≥ 15% target, all sprite metrics in range).
 
 No undocumented code. No "I'll remember how this works."
 
