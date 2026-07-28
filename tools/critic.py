@@ -27,13 +27,13 @@ THRESHOLDS = {
     "mean_brightness_min": 40,          # 0-255; < 40 = too dark
     "mean_brightness_max": 220,         # > 220 = blown out
     "brightness_stddev_min": 10,        # < 10 = flat, no detail
-    "edge_density_min": 0.020,          # < 2.0% = too low-poly (was 1.5%, raised for hard-surface)
+    "edge_density_min": 0.08,           # < 8% alpha-normalised = too flat (hard-surface floor)
     "direction_variance_max": 0.50,     # alpha coverage varies > 50% = asymmetric
     "unique_colors_min": 50,            # < 50 unique colours = material detail too uniform
-    # Dawn of War 1/2 target thresholds (informational, not pass/fail)
-    "dow_edge_density_low": 0.05,       # 5% = minimum for visible hard-surface detail
-    "dow_edge_density_target": 0.15,    # 15% = DoW1 baseline
-    "dow_edge_density_ideal": 0.30,     # 30% = DoW2 high-detail
+    # Dawn of War 1/2 target thresholds (alpha-normalised edge density, informational)
+    "dow_edge_density_low": 0.08,       # 8% = minimum for visible hard-surface detail
+    "dow_edge_density_target": 0.14,    # 14% = DoW1 baseline (12-16% band)
+    "dow_edge_density_ideal": 0.26,     # 26% = DoW2 high-detail (22-30% band)
     "dow_unique_colors_target": 200,    # 200+ = material variation target
 }
 
@@ -111,11 +111,17 @@ def analyze_frame(path: str) -> dict:
     variance = sum((b - mean_brightness) ** 2 for b in brightnesses) / len(brightnesses)
     stddev = math.sqrt(variance)
 
-    # Edge density using Sobel-like filter
+    # Edge density using Sobel-like filter, NORMALISED to the sprite's alpha footprint
+    # (not the full frame). The old edge_pixels/(w*h) metric was miscalibrated: with
+    # ~14% alpha coverage, 15% frame-normalised edge density is mathematically impossible.
+    # Alpha-normalised: DoW1 calibre = 12-16%, DoW2 calibre = 22-30%. See DEVELOPMENT.md.
     gray = img.convert("L")
     edges = gray.filter(ImageFilter.FIND_EDGES)
-    edge_pixels = sum(1 for p in edges.getdata() if p > 30)
-    edge_density = edge_pixels / (w * h)
+    edge_data = list(edges.getdata())
+    alpha_vals = [p[3] for p in pixels]
+    edge_pixels_in_sprite = sum(1 for ep, a in zip(edge_data, alpha_vals) if ep > 30 and a > 10)
+    edge_density = edge_pixels_in_sprite / max(alpha_pixels, 1)
+    edge_density_frame = sum(1 for ep in edge_data if ep > 30) / (w * h)  # legacy, for reference
 
     # Unique colours in visible area
     visible_pixel_tuples = {(r, g, b) for r, g, b in visible_pixels if not (r == 0 and g == 0 and b == 0)}
@@ -288,11 +294,11 @@ def analyze_full_render_tree(render_dir: str) -> dict:
     min_edge_density = min(all_edge_densities) if all_edge_densities else 0
     
     if avg_edge_density < THRESHOLDS["dow_edge_density_low"]:
-        suggestions.append(f"AVG edge density {avg_edge_density:.2%} — below 5% hard-surface minimum. Add more geometric detail or normal maps.")
+        suggestions.append(f"AVG edge density {avg_edge_density:.2%} (alpha-normalised) — below {THRESHOLDS['dow_edge_density_low']:.0%} hard-surface minimum. Add more geometric detail or normal maps.")
     elif avg_edge_density < THRESHOLDS["dow_edge_density_target"]:
-        suggestions.append(f"AVG edge density {avg_edge_density:.2%} — below 15% DoW target. Gap: {THRESHOLDS['dow_edge_density_target'] - avg_edge_density:.2%}. Normal maps will help bridge this.")
+        suggestions.append(f"AVG edge density {avg_edge_density:.2%} (alpha-normalised) — below {THRESHOLDS['dow_edge_density_target']:.0%} DoW1 target. Gap: {THRESHOLDS['dow_edge_density_target'] - avg_edge_density:.2%}. Denser painted detail / AO will help bridge this.")
     else:
-        suggestions.append(f"AVG edge density {avg_edge_density:.2%} — within DoW target range ({THRESHOLDS['dow_edge_density_target']:.0%}-{THRESHOLDS['dow_edge_density_ideal']:.0%}).")
+        suggestions.append(f"AVG edge density {avg_edge_density:.2%} (alpha-normalised) — within DoW target range ({THRESHOLDS['dow_edge_density_target']:.0%}-{THRESHOLDS['dow_edge_density_ideal']:.0%}).")
 
     if not global_variance_pass:
         suggestions.append("Asymmetric across directions. Check part attachment or rig alignment.")

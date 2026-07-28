@@ -18,7 +18,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageFilter
 
 # =============================================================================
 # CONFIGURATION
@@ -153,9 +153,12 @@ def process_frame(src_path: str, dst_path: str, canvas_size: tuple = (96, 128),
 
     target_w, target_h = canvas_size
 
-    # Downscale from supersampled resolution using LANCZOS
+    # Downscale from supersampled resolution. Bilinear (not Lanczos) preserves hard
+    # painted lines; Lanczos interpolates 1px panel lines into muddy gradients across
+    # the 3x downscale. An unsharp mask restores high-frequency Sobel boundaries.
     if img.size[0] > target_w or img.size[1] > target_h:
-        img = img.resize((target_w, target_h), Image.LANCZOS)
+        img = img.resize((target_w, target_h), Image.BILINEAR)
+        img = img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=150, threshold=3))
 
     # Crop to content bounding box
     bbox = find_bounding_box(img)

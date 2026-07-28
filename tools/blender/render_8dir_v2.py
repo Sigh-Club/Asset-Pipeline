@@ -606,12 +606,15 @@ def downscale_all_renders(out_dir: str):
             filepath = os.path.join(root, f)
             img = Image.open(filepath)
             if img.size == (RENDER_W, RENDER_H):
-                # Downscale with nearest-neighbor
-                small = img.resize((FRAME_W, FRAME_H), Image.LANCZOS)
+                # Bilinear (not Lanczos) preserves hard painted lines across the 3x
+                # downscale; Lanczos interpolates 1px panel lines into muddy gradients.
+                # Then an unsharp mask restores high-frequency Sobel boundaries.
+                small = img.resize((FRAME_W, FRAME_H), Image.BILINEAR)
+                small = small.filter(ImageFilter.UnsharpMask(radius=1.0, percent=150, threshold=3))
                 small.save(filepath, "PNG")
                 count += 1
-    
-    log(f"Downscaled {count} frames from {RENDER_W}x{RENDER_H} to {FRAME_W}x{FRAME_H} (nearest-neighbor)")
+
+    log(f"Downscaled {count} frames from {RENDER_W}x{RENDER_H} to {FRAME_W}x{FRAME_H} (bilinear + unsharp mask)")
 
 # =============================================================================
 # MANIFEST

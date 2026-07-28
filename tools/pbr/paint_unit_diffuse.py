@@ -32,6 +32,7 @@ import sys
 import json
 import math
 import random
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -168,12 +169,13 @@ def rivet_row_v(draw, row, col, x_frac, count, radius, colour):
 
 
 def edge_highlight(draw, row, col, inset, colour):
-    """Paint a lighter edge band around the tile (bevel/highlight)."""
+    """Paint a lighter edge band around the tile (bevel/highlight) with a darker shadow
+    on the opposing edges — high contrast simulates hand-painted DoW1 edge highlights."""
     x0, y0, x1, y1 = tile_rect(row, col)
-    draw.rectangle([x0, y0, x1, y0 + inset], fill=colour)        # top
-    draw.rectangle([x0, y1 - inset, x1, y1], fill=shade(colour, -0.15))  # bottom (shadow)
-    draw.rectangle([x0, y0, x0 + inset, y1], fill=colour)        # left
-    draw.rectangle([x1 - inset, y0, x1, y1], fill=shade(colour, -0.15))  # right
+    draw.rectangle([x0, y0, x1, y0 + inset], fill=colour)                # top (highlight)
+    draw.rectangle([x0, y1 - inset, x1, y1], fill=shade(colour, -0.28))  # bottom (shadow)
+    draw.rectangle([x0, y0, x0 + inset, y1], fill=colour)                # left (highlight)
+    draw.rectangle([x1 - inset, y0, x1, y1], fill=shade(colour, -0.28))  # right (shadow)
 
 
 def aquila(draw, row, col, colour):
@@ -238,6 +240,52 @@ def add_wear(draw, row, col, seed, amount=0.10):
 
 
 # =============================================================================
+# PHASE 3.7 — Micro-detail grain overlay (composites Phase 2 PBR albedos per tile)
+# =============================================================================
+# DoW1 textures are grain-dense; a flat colour base produces few edges. This multiplies
+# each tile by the matching Phase 2 albedo (converted to a grayscale grain mask) so the
+# painted diffuse carries high-frequency surface micro-detail that survives LANCZOS.
+_PBR_DIR = os.path.join(PROJECT_ROOT, "assets", "pbr_textures")
+_GRAIN_CACHE = {}
+_GRAIN_KEY = {
+    "torso": "grimdark_metal", "helmet": "grimdark_metal", "pauldron": "grimdark_metal",
+    "upper_arm": "grimdark_fabric", "forearm": "grimdark_leather", "thigh": "grimdark_fabric",
+    "shin": "grimdark_metal", "boot": "grimdark_leather", "belt": "grimdark_leather",
+    "codpiece": "grimdark_metal", "backpack": "grimdark_metal", "weapon": "grimdark_metal",
+    "aquila": "imperial_gold",
+}
+
+
+def _grain_mask(key):
+    """Load a PBR albedo, convert to a normalized grayscale grain mask in [0.72, 1.08]."""
+    if key not in _GRAIN_CACHE:
+        path = os.path.join(_PBR_DIR, key, "albedo.png")
+        if not os.path.exists(path):
+            _GRAIN_CACHE[key] = None
+            return None
+        img = Image.open(path).convert("L").resize((TILE, TILE), Image.LANCZOS)
+        arr = np.asarray(img, dtype=np.float32) / 255.0
+        lo, hi = float(arr.min()), float(arr.max())
+        arr = 0.72 + (arr - lo) / max(hi - lo, 1e-6) * 0.36      # grain modulates base +/- ~18%
+        _GRAIN_CACHE[key] = arr
+    return _GRAIN_CACHE[key]
+
+
+def apply_per_tile_grain(diffuse):
+    """Multiply each atlas tile by its material grain mask (in place, returns new image)."""
+    arr = np.asarray(diffuse, dtype=np.float32).copy()
+    for tile_id, (row, col) in TILE_LAYOUT.items():
+        grain = _grain_mask(_GRAIN_KEY.get(tile_id, "grimdark_metal"))
+        if grain is None:
+            continue
+        y0, x0 = row * TILE, col * TILE
+        arr[y0:y0 + TILE, x0:x0 + TILE, :3] *= grain[:, :, None]
+    out = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
+    # restore fully-transparent pixels (aquila tile bg) so grain doesn't fill them
+    return out
+
+
+# =============================================================================
 # PER-PART PAINTERS  (diffuse, team-mask)
 # =============================================================================
 
@@ -256,7 +304,7 @@ def paint_torso(d, m, pal, faction):
     # Rivets along top edge (shoulder line)
     rivet_row_h(d, row, col, 0.08, 6, 3, pal["trim"])
     rivet_row_h(d, row, col, 0.08, 6, 1, shade(pal["trim"], -0.3))
-    edge_highlight(d, row, col, 3, shade(pal["primary"], 0.18))
+    edge_highlight(d, row, col, 3, shade(pal["primary"], 0.30))
     add_wear(d, row, col, 11)
 
 
@@ -280,7 +328,7 @@ def paint_helmet(d, m, pal, faction):
     panel_line_h(d, row, col, 0.85, 3, pal["dark"])
     # Chapter icon on forehead
     chapter_insignia(d, row, col, faction, pal["trim"])
-    edge_highlight(d, row, col, 3, shade(pal["primary"], 0.18))
+    edge_highlight(d, row, col, 3, shade(pal["primary"], 0.30))
     add_wear(d, row, col, 22)
 
 
@@ -318,7 +366,7 @@ def paint_limb(d, m, pal, seg_colour_mask, bands, rivets=True):
         panel_line_h(d, row, col, bf + 0.04, 1, shade(pal["primary"], 0.2))
     if rivets:
         rivet_row_v(d, row, col, 0.5, 3, 2, pal["trim"])
-    edge_highlight(d, row, col, 3, shade(seg_colour_mask[1], 0.18))
+    edge_highlight(d, row, col, 3, shade(seg_colour_mask[1], 0.30))
     add_wear(d, row, col, 44 + row * 4 + col)
 
 
@@ -363,7 +411,7 @@ def paint_backpack(d, m, pal):
     rivet_row_h(d, row, col, 0.72, 4, 2, pal["trim"])
     # Top cap plate
     panel_line_h(d, row, col, 0.12, 4, shade(pal["primary"], 0.2))
-    edge_highlight(d, row, col, 3, shade(pal["primary"], 0.18))
+    edge_highlight(d, row, col, 3, shade(pal["primary"], 0.30))
     add_wear(d, row, col, 77)
 
 
@@ -444,7 +492,34 @@ def build_atlases(config):
     paint_codpiece(d, m, pal)
     paint_aquila(d, m, pal)
 
-    # Slight blur to avoid harsh aliasing on painted lines (helps LANCZOS downscale)
+    # Phase 3.7: composite Phase 2 micro-detail grain per tile (DoW1 textures are
+    # grain-dense; flat colour produces few edges). Then a slight blur for LANCZOS.
+    diffuse = apply_per_tile_grain(diffuse)
+
+    # Phase 3.6: multiply the baked Ambient Occlusion map (geometry-aware depth —
+    # darkens pauldron undersides, under-armour folds, visor crevices). Optional:
+    # if the AO bake hasn't run yet, this is a no-op.
+    out_blend = config.get("output_blend", "")
+    if out_blend:
+        if not os.path.isabs(out_blend):
+            out_blend = os.path.join(PROJECT_ROOT, out_blend)
+        unit = config["unit_name"]
+        ao_path = os.path.join(os.path.dirname(out_blend), f"{unit}_ao.png")
+        if os.path.exists(ao_path):
+            ao = Image.open(ao_path).convert("L").resize((ATLAS_SIZE, ATLAS_SIZE), Image.LANCZOS)
+            ao_arr = np.asarray(ao, dtype=np.float32) / 255.0
+            # High-contrast remap: isolate darkening to deep crevices only. Raw multiply
+            # (Diffuse x AO) crushes mid-tones because baked AO has broad 0.4-0.75 grey
+            # zones. Remap AO to [0,1] over the 0.2-0.8 input range, then a power curve
+            # (gamma 2) so flat surfaces (AO>0.7 -> remapped ~1.0) stay full brightness
+            # and only deep recesses darken. See DEVELOPMENT.md Issue 2.
+            ao_remapped = np.clip((ao_arr - 0.2) / (0.8 - 0.2), 0.0, 1.0)
+            ao_steep = np.power(ao_remapped, 2.0)
+            arr = np.asarray(diffuse, dtype=np.float32)
+            arr[:, :, :3] *= ao_steep[:, :, None]
+            diffuse = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
+            print(f"  [paint] AO multiplied (high-contrast remap): {ao_path}")
+
     diffuse = diffuse.filter(ImageFilter.GaussianBlur(0.6))
     return diffuse, mask
 
