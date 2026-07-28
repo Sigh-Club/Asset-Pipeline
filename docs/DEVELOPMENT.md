@@ -732,8 +732,9 @@ python3 tools/gallery_server.py
 ---
 
 > **Document Maintainer**: AI Assistant + Human Review
-> **Last Updated**: 2026-08-02 — DoW1 texture-driven pipeline pivot (section 16). Evidence: fresh render of iron_directorate_line_infantry with current generator → edge density 1.71% (DoW floor 5%, target 15%), 25% pass rate. Visual: camo-painted mannequin, no readable pauldrons/helmet, camo-blot PBR albedo textures. Root causes: (1) PBR albedo textures are camo/mud blots not surface detail; (2) ~7,400 verts of greeble geometry blurs to nothing after LANCZOS downscale — detail-from-geometry fails at sprite scale; (3) normal-map bake subsurfs the same primitives so bakes no real detail. DoW2 research: ~2000-2600 tris geometry, all detail in per-unit _dif/_nrm/_tem/_drt/_spec textures. Pivot to DoW1 (no normal maps — skips expensive high-poly sculpt/bake).
-> **Next Review**: Phase 1 (geometry proportion fix) verification on iron_directorate_line_infantry.
+> **Last Updated**: 2026-08-03 — Phase 3.5 architecture fully specified (§16.4/16.5). Adds: semantic per-primitive UV unwrap, UV-Space Island Normaliser (CONTAIN/FILL/ALIGN_BOTTOM + orientation lock), Island-Footprint Manifest bridge (Blender→Pillow), headless AO bake (replaces deprecated normal-map bake), footprint-aware 3-layer diffuse comp, and pre-render UV validation gate (`tools/validate_uv.py`). All grounded in code review of `parametric_unit_generator.py`, `paint_unit_diffuse.py`, `atlas_layout.py`, `critic.py`.
+> **Prior (2026-08-02)**: DoW1 texture-driven pipeline pivot. Evidence: fresh render of iron_directorate_line_infantry with current generator → edge density 1.71% (DoW floor 5%, target 15%), 25% pass rate. Visual: camo-painted mannequin, no readable pauldrons/helmet, camo-blot PBR albedo textures. Root causes: (1) PBR albedo textures are camo/mud blots not surface detail; (2) ~7,400 verts of greeble geometry blurs to nothing after LANCZOS downscale — detail-from-geometry fails at sprite scale; (3) normal-map bake subsurfs the same primitives so bakes no real detail. DoW2 research: ~2000-2600 tris geometry, all detail in per-unit _dif/_nrm/_tem/_drt/_spec textures. Pivot to DoW1 (no normal maps — skips expensive high-poly sculpt/bake).
+> **Next Review**: Phase 3.5 implementation on iron_directorate_line_infantry — coherent painted diffuse across all 8 directions.
 
 ---
 
@@ -773,27 +774,112 @@ DEVELOPMENT.md previously claimed edge density 5.68%. The actual fresh render is
 
 ### 16.4 DoW1 Implementation Plan
 
-**Phase 1 — Geometry foundation (correct silhouette):**
+**Phase 1 — Geometry foundation (correct silhouette):** ✅ DONE
 - Fix pauldron proportions: larger dome (r ~0.12–0.15), overhang torso edge, flattened dome shape. Heroic +30%.
 - Fix head/helmet: larger visor slab, pronounced crest, so it reads as a helmet not a sphere.
 - Fix backpack/weapon proportions to read in silhouette.
 - Re-render, verify silhouette reads as armoured trooper (not camo mannequin).
 
-**Phase 2 — Surface base textures:**
+**Phase 2 — Surface base textures:** ✅ DONE
 - Replace camo-blot PBR albedos with real surface micro-detail (metal grain, leather pebble, fabric weave).
 - Regenerate `grimdark_materials.blend`.
 
-**Phase 3 — Per-unit painted diffuse + team-colour mask:**
+**Phase 3 — Per-unit painted diffuse + team-colour mask (atlas + painter):** BUILT, NOT ROBUST
 - Procedural per-unit diffuse texture: base faction colour + painted panel lines + rivets + aquila/trim + edge-wear.
 - Per-unit team-colour mask (RGBA, 4 channels) for runtime faction tinting.
 - UV atlas per unit (replace smart-project per-part with a single atlas unwrap).
+- **Blocker**: box-project unwrap (`_remap_obj_uv_to_tile`) scatters cylinder side-faces across tile regions by per-face dominant normal → front/back colour incoherence. Resolved by Phase 3.5.
 
-**Phase 4 — Scale:** Apply to all 34 units, re-render, re-pack atlases, sync to IoA.
+**Phase 3.5 — Deterministic per-primitive UV unwrap + Island-Footprint Manifest (NEXT):**
+
+The architectural flaw: `parametric_unit_generator.py` owns the semantic knowledge of each mesh part (via `_ANCHOR_NAME_MAP`) but abdicates topological layout to generic box projection. The generator *knows* what each primitive is at creation time, so it must enforce a deterministic, predictable UV topology per primitive type before packing into atlas tiles. Five sub-steps:
+
+**3.5.1 Semantic unwrap by primitive type** (replaces `_remap_obj_uv_to_tile` box-project):
+- **Cylindrical limbs** (`upper_arm`, `forearm`, `thigh`, `shin`): select the vertical edge loop furthest back on the −Y axis (away from camera), mark it as a UV seam, then `bpy.ops.uv.unwrap(margin=0.02)`. Produces a flat rectangular island where front/back faces remain continuously connected (back seam = both left & right edges; cylinder front = island horizontal midline).
+- **Domes** (`pauldron`): select the bottom circular edge loop facing inward toward the torso, mark seam, `unwrap()`. Flattens the dome into a disc so the centred chapter insignia stamps into the dome apex.
+- **Faceted helmets / cubes** (`helmet`, `torso` plates): `smart_project(angle_limit=66°)` then uniformly scale islands to fit the tile without arbitrary face rotation.
+- **Dedicated decals** (`aquila` chest plate): unchanged — manual UVs to the `aquila` tile, `atlas_uv_manual=True` skips the general remap.
+
+**3.5.2 UV-Space Island Normaliser** (`normalize_and_map_uv_island` in `parametric_unit_generator.py`):
+- Runs *after* the semantic unwrap, operating on bmesh UV loops (NOT object-space vertex bounds — the current `_remap_obj_uv_to_tile` normalises from vertex `.co`, which double-transforms a real unwrap).
+- **Canonical orientation lock**: compute island U/V variance (PCA or bbox); if the island's longest axis is horizontal but the part is a vertical limb, rotate UVs exactly 90° about the island centre so "top of tile = top of part".
+- **Aspect policies** (matching what `paint_unit_diffuse.py` draws):
+  - `CONTAIN` — fit island inside tile preserving true aspect ratio, centre U+V. Used for pauldrons, helmet, torso.
+  - `ALIGN_BOTTOM` — contain-scale, pin lowest V to tile floor margin. Used for boots, tabards, belt (short/wide parts where pinning matters).
+  - `FILL` — stretch to fill tile. **AVOID for limbs**: causes anisotropic texel stretch (1px vertical line → thick blurry band on mesh). Limbs use `CONTAIN` (tall narrow cylinders fill tile height, centre U) — painter fractions stay correct because the island fills V.
+- Map the normalised island into its atlas tile rect via `_tile_uv_rect` (handles the row-0-is-top / UV-v=1-is-top flip).
+
+**3.5.3 Symmetry overlap (half-texture optimisation):**
+- L/R pairs are created with identical primitives (`for side, x in [("L",-x),("R",+x)]` → same `vertices=48` / `segments=48, ring_count=32`), so vertex/face index counts match → index-matched UV copy is valid.
+- `apply_symmetry_uv_mirror(source_L, target_R)`: copy L's final UV array onto R verbatim. Both sample identical atlas pixels → guaranteed symmetric panel lines, gold trim, insignia. Halves texture real estate.
+- **Validate first**: confirm `len(L.data.vertices)==len(R.data.vertices)` and equal face count before copying; if a per-side deformation broke topology parity, skip mirror and unwrap R independently (warn).
+
+**3.5.4 Island-Footprint Manifest bridge** (Blender → Pillow):
+- The normaliser writes `build/island_manifest.json`. Schema keys on the **full object name** (e.g. `Pauldron_L`) for topology ownership, and routes back to the **collapsed `tile_id`** (e.g. `pauldron`) the painter uses — decoupling mesh identity from texture placement:
+  ```json
+  { "Pauldron_L": {"tile_id":"pauldron","tile_grid":[u0,v0,u1,v1],
+                   "island_uv":[u0,v0,u1,v1],"policy":"CONTAIN",
+                   "orientation":"vertical","mirror_of":null},
+    "Pauldron_R": {"tile_id":"pauldron",...,"mirror_of":"Pauldron_L"} }
+  ```
+- **Option (A) confirmed**: keep ONE shared tile per part type in `TILE_LAYOUT` (no `pauldron_L`/`pauldron_R` split, no dead atlas space). Symmetry is expressed purely as `mirror_of: R→L`; the painter skips `mirror_of != null` parts and they sample L's pixels via UV overlap. This is the DoW1 half-texture optimisation and requires no `TILE_LAYOUT` change.
+
+**3.5.5 Pre-render UV validation gate** (`tools/validate_uv.py` — NEW):
+- Runs headlessly right after the manifest is written, BEFORE AO bake / paint / render. Fails fast to protect Cycles + render compute.
+- Reads `island_manifest.json` + the `.blend` mesh (skips `mirror_of` parts — they share source metrics).
+- Metrics & rules:
+  - **Anisotropy** = U-edge-length / V-edge-length ratio (max of the two). FAIL if > 1.5:1. Catches FILL-on-limbs regressions and box-projection scatter.
+  - **Island coverage** = island_pixel_area / tile_pixel_area. CONTAIN: FAIL if < 30%. ALIGN_BOTTOM: WARN if < 15% (catches layout drift / over-padded pinning).
+  - **Seam integrity** (cylindrical limbs only): confirm the back-seam verts are pinned to the tile's left AND right UV boundaries (tolerance 0.02). FAIL if skewed/rotated — the painter's `mid_x = x0 + footprint_w//2` front-split line depends on this.
+  - **Intra-unit texel density variance** = max/min texel_density across the trooper's parts. FAIL if ratio > 2.5×. Enforces within-unit balance (no one limb hogging the tile). Does NOT enforce cross-unit parity (a warlord's shin legitimately has lower absolute texel density than a cultist's — matches DoW1, preserves aspect policies).
+  - **Unintended UV overlap** = AABB intersection between any two non-mirror `island_uv` rects. FAIL on collision (silent texture bleed). Intentional L/R mirror overlap is excluded (mirrors are skipped).
+  - **Tile-boundary margin violation** = island within 8px (UV `8/atlas_size`) of its tile edge. FAIL — prevents LANCZOS downscale bleed into the adjacent tile.
+  - **UV bounds sanity** = all UVs in [0,1], no NaN/Inf. FAIL on any invalid coordinate (catches a failed unwrap scattering coords outside the atlas).
+  - **Atlas tile occupancy** = every tile in `TILE_LAYOUT` expected to be painted is referenced by ≥1 non-mirror part. FAIL on a blank tile (would render the atlas background colour).
+- Exit code 1 blocks the pipeline; exit 0 proceeds to AO bake.
+- **Integration note**: `validate_uv.py` needs the expected-tile set. The canonical source is `tools/pbr/atlas_layout.py` (`TILE_LAYOUT` dict), NOT a JSON file — either import `atlas_layout.TILE_LAYOUT` directly (dependency-free, already imported by the generator) or export it to `tools/pbr/tile_layout.json` at build time. Do not maintain a second copy of the tile list.
+
+**Phase 3.6 — Headless Ambient Occlusion bake (NEW, replaces normal-map bake):**
+
+DoW1 has no normal maps; depth comes from a baked AO pass. Convert `tools/blender/bake_normal_maps.py` → `tools/blender/bake_ao_maps.py`:
+- Cycles, `bake_type='AO'`, `samples=64`, `denoise_baking=True`, `margin=4`, `use_selected_to_active=False`.
+- One shared 1024×1024 AO image; inject an active `ShaderNodeTexImage` ("AO_Bake_Node") into every material (Cycles writes bake pixels at each object's UV coords; non-overlapping tiles composite correctly).
+- **Isolate master sources**: before baking, hide all `mirror_of != null` objects (`hide_render=True`) so an asymmetric weapon/backpack on one side doesn't overwrite the shared tile via overlapping mirrored UVs. Restore visibility post-bake.
+- Save `<unit>_ao.png` next to the diffuse atlas. (DEPRECATE `bake_normal_maps.py` — its high-poly source is just subsurfed primitives, bakes smoothing not detail; root cause #3.)
+
+**Phase 3.7 — Footprint-aware 3-layer diffuse comp** (`paint_unit_diffuse.py` refactor):
+
+Discard the static-margin `tile_rect` drawing entirely; replace with `FootprintAwarePainter` reading the manifest:
+- `get_island_pixel_rect(part)` converts manifest `island_uv` → atlas pixels (with Blender-V-bottom / Pillow-Y-top flip). Returns `None` for `mirror_of` parts → skip painting (UV overlap samples L).
+- Draw panel lines, rivets, edge highlights, insignia **within the true island footprint**, not the full 256×256 tile. Fixes the `ALIGN_BOTTOM` failure mode where `panel_line_h(...,0.65,...)` landed in empty space above a short boot.
+- Front-centre of a cylinder = tile horizontal midline (CONTAIN centres U; back seam is both left & right edges → front = midline) → the painter's front-split line at `mid_x` is valid.
+- **3-layer comp**: `Final = (Micro-Detail Base) × (AO) + (Procedural Edge/Panel Overlay)`:
+  - Base = uniform gunmetal/gold/under-armour from Phase 2.
+  - AO = `bake_ao_maps.py` output, loaded grayscale, multiplied (darkens under-armour folds, pauldron undersides, visor slit crevices — instant isometric depth).
+  - Edge/panel overlay = UV-island boundary mask, dilated 1–2px, multiplied with bright gold/gunmetal → hand-painted DoW1 edge highlights; dark 1px panel lines offset inward 3–5px from island boundaries; rivet dots along lines.
+- Team-colour mask (`<unit>_teammask.png`): R=primary armour, G=secondary, B=accent/trim, A=emissive/lens, 0=fixed (gold trim, dark lenses). Plates painted neutral mid-grey on diffuse so runtime tinting works; swap channels to test Blood Ravens red / Ultramarines blue without rebuilding assets.
+
+**Phase 4 — Scale:** Apply 3.5–3.7 to all 34 units, re-render, re-pack atlases, sync to IoA. The `validate_uv.py` gate runs per unit before its AO bake; `critic.py` (sprite-only, unchanged) remains the post-render downstream signal — its existing `edge_density` metric is the correct "did the painted detail + AO land coherently" check (target 15%, ideal 30%). No new sprite-side metric needed.
+
+**Locked pipeline execution order (per unit):**
+```
+1. Generate mesh geometry by component (parametric_unit_generator.py)
+2. Semantic seam cuts + orientation lock (per-primitive unwrap)
+3. UV-Space Island Normaliser → write build/island_manifest.json
+3.5. tools/validate_uv.py  → FAIL = stop pipeline + log (protects Cycles/render compute)
+4. tools/blender/bake_ao_maps.py  → isolate/hide mirror targets, bake AO into atlas
+5. tools/pbr/paint_unit_diffuse.py  → FootprintAwarePainter draws within manifest footprints
+6. tools/blender/apply_unit_textures.py  → wire diffuse+AO into materials
+7. render_8dir_v2.py  → 8-direction render
+8. tools/critic.py  → post-render sprite gate (edge_density = coherence signal)
+```
 
 ### 16.5 Phase Status
 
 - [x] Phase 1: Geometry proportion fix — DONE (2026-08-02). Pauldrons r 0.07→0.13, raised to shoulder top, now overhang and read as metal domes with gold trim (verified both N/E views). Helmet reshaped sphere→faceted cube with dark visor slit (mat_lens) + pronounced gold crest — reads as a helmet not a bare sphere.
 - [x] Phase 2: Surface base textures — DONE (2026-08-02). Replaced camo-blot albedos in `tools/pbr/gen_procedural_textures.py`: grimdark_metal (uniform gunmetal, thin rust streaks not blobs), grimdark_leather (uniform brown, fine grain), grimdark_fabric (dark desaturated under-armour, subtle weave). Rebuilt `grimdark_materials.blend`. Visual read transformed from "camo mannequin" → "armoured trooper" (steel plates + gold trim + dark under-armour). NOTE: edge density unchanged at 1.69% — confirmed this metric measures painted-detail density (Phase 3), not geometry; clean uniform surfaces correctly produce few edges.
-- [~] Phase 3: Per-unit painted diffuse + team-colour mask — BUILT, NOT YROBUST (2026-08-02). Built `tools/pbr/paint_unit_diffuse.py` (atlas painter: panel lines, rivets, aquila, chapter insignia, vent slats, gold trim per part-tile), `tools/pbr/atlas_layout.py` (shared tile layout), `tools/blender/apply_unit_textures.py` (wires diffuse atlas into materials, DoW1-style no normal maps). Generator assigns per-part atlas UVs via box-project unwrap + a dedicated chest aquila decal. **Problem**: box-project unwrap scatters cylinder side-faces across tile regions → front/back colour incoherence on the same part. Needs a proper PER-PRIMITIVE unwrap (cube unwrap for cubes, cylinder unwrap for cylinders, sphere unwrap for spheres) — a refactor for next session. Preview saved to `output/v0.5.1_phase3_preview/`. Also fixed lighting: camera-relative orbiting lights (`_orbit_lights_for_direction`) so all 8 directions are evenly lit (DoW-style) instead of the model's front being back-lit.
-- [ ] Phase 3.5 (NEXT): Per-primitive deterministic UV unwrap (cube/cylinder/sphere) so the painted atlas maps coherently per part — unblocks the painted diffuse reading correctly.
-- [ ] Phase 4: Scale to all units — IN PROGRESS (2026-08-02). Overnight render of all 34 units (idle, 8 dirs, fast) with Phase 1+2 (coherent PBR, NO atlas) for review via `tools/overnight_render.sh`. Atlas not applied in the batch (pending Phase 3.5).
+- [~] Phase 3: Per-unit painted diffuse + team-colour mask — BUILT, NOT ROBUST (2026-08-02). Built `tools/pbr/paint_unit_diffuse.py` (atlas painter: panel lines, rivets, aquila, chapter insignia, vent slats, gold trim per part-tile), `tools/pbr/atlas_layout.py` (shared tile layout), `tools/blender/apply_unit_textures.py` (wires diffuse atlas into materials, DoW1-style no normal maps). Generator assigns per-part atlas UVs via box-project unwrap + a dedicated chest aquila decal. **Problem**: box-project unwrap scatters cylinder side-faces across tile regions → front/back colour incoherence on the same part. Preview saved to `output/v0.5.1_phase3_preview/`. Lighting fixed: camera-relative orbiting lights (`_orbit_lights_for_direction`) so all 8 directions are evenly lit (DoW-style). Blocked on Phase 3.5.
+- [ ] Phase 3.5: Deterministic per-primitive UV unwrap + Island-Footprint Manifest — SPECIFIED (2026-08-03), NOT IMPLEMENTED. Five sub-steps: 3.5.1 semantic unwrap by type (cylinder back-seam / dome bottom-seam / cube smart-project), 3.5.2 UV-Space Island Normaliser (CONTAIN/ALIGN_BOTTOM + orientation lock, normalise from UV-space not vertex-space), 3.5.3 symmetry overlap (index-matched L→R UV copy, validate topology parity first), 3.5.4 `build/island_manifest.json` (full-name keys + collapsed tile_id, Option A single shared tile), 3.5.5 `tools/validate_uv.py` pre-render gate (anisotropy <1.5:1, coverage, seam integrity, intra-unit texel variance <2.5×, unintended overlap, tile-margin, UV-bounds sanity, atlas occupancy). Unblocks coherent painted diffuse.
+- [ ] Phase 3.6: Headless AO bake — SPECIFIED (2026-08-03), NOT IMPLEMENTED. New `tools/blender/bake_ao_maps.py` (Cycles AO, 64 samples, isolate master sources). Deprecates `bake_normal_maps.py`.
+- [ ] Phase 3.7: Footprint-aware 3-layer diffuse comp — SPECIFIED (2026-08-03), NOT IMPLEMENTED. `FootprintAwarePainter` reading manifest; 3-layer `Base×AO+EdgeOverlay`; team-colour mask channels.
+- [ ] Phase 4: Scale to all units — IN PROGRESS (2026-08-02). Overnight render of all 34 units (idle, 8 dirs, fast) with Phase 1+2 (coherent PBR, NO atlas) for review via `tools/overnight_render.sh`. Atlas not applied in the batch (pending Phase 3.5–3.7).
