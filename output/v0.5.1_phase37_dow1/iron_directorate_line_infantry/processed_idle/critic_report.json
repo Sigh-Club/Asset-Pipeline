@@ -1,0 +1,350 @@
+{
+  "overall_pass": true,
+  "total_frames": 40,
+  "total_passing": 40,
+  "global_direction_variance": 0.4364,
+  "global_variance_pass": true,
+  "dow_analysis": {
+    "avg_edge_density": 0.1402,
+    "max_edge_density": 0.1548,
+    "min_edge_density": 0.1294,
+    "dow_edge_density_low_target": 0.08,
+    "dow_edge_density_target": 0.14,
+    "dow_edge_density_ideal": 0.26,
+    "edge_density_gap_to_low": 0,
+    "edge_density_gap_to_target": 0,
+    "within_dow_range": true
+  },
+  "direction_sets": {
+    "idle/E": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1446,
+      "avg_brightness": 92.5,
+      "avg_stddev": 104.12,
+      "avg_alpha_coverage": 0.1074,
+      "avg_unique_colors": 5157.0,
+      "dow_edge_density_gap": 0,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1446,
+          "mean_brightness": 92.5,
+          "alpha_coverage": 0.1074,
+          "unique_colors": 5157,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1446,
+          "mean_brightness": 92.5,
+          "alpha_coverage": 0.1074,
+          "unique_colors": 5157,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1446,
+          "mean_brightness": 92.5,
+          "alpha_coverage": 0.1074,
+          "unique_colors": 5157,
+          "pass": true
+        }
+      ]
+    },
+    "idle/N": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1294,
+      "avg_brightness": 119.32,
+      "avg_stddev": 111.5,
+      "avg_alpha_coverage": 0.1772,
+      "avg_unique_colors": 7063.0,
+      "dow_edge_density_gap": 0.0106,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1294,
+          "mean_brightness": 119.32,
+          "alpha_coverage": 0.1772,
+          "unique_colors": 7063,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1294,
+          "mean_brightness": 119.32,
+          "alpha_coverage": 0.1772,
+          "unique_colors": 7063,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1294,
+          "mean_brightness": 119.32,
+          "alpha_coverage": 0.1772,
+          "unique_colors": 7063,
+          "pass": true
+        }
+      ]
+    },
+    "idle/NE": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1385,
+      "avg_brightness": 115.18,
+      "avg_stddev": 107.74,
+      "avg_alpha_coverage": 0.1895,
+      "avg_unique_colors": 9063.0,
+      "dow_edge_density_gap": 0.0015,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1385,
+          "mean_brightness": 115.18,
+          "alpha_coverage": 0.1895,
+          "unique_colors": 9063,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1385,
+          "mean_brightness": 115.18,
+          "alpha_coverage": 0.1895,
+          "unique_colors": 9063,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1385,
+          "mean_brightness": 115.18,
+          "alpha_coverage": 0.1895,
+          "unique_colors": 9062,
+          "pass": true
+        }
+      ]
+    },
+    "idle/NW": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1299,
+      "avg_brightness": 113.23,
+      "avg_stddev": 107.79,
+      "avg_alpha_coverage": 0.1855,
+      "avg_unique_colors": 8528.0,
+      "dow_edge_density_gap": 0.0101,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1299,
+          "mean_brightness": 113.23,
+          "alpha_coverage": 0.1855,
+          "unique_colors": 8527,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1299,
+          "mean_brightness": 113.23,
+          "alpha_coverage": 0.1855,
+          "unique_colors": 8527,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1299,
+          "mean_brightness": 113.23,
+          "alpha_coverage": 0.1855,
+          "unique_colors": 8528,
+          "pass": true
+        }
+      ]
+    },
+    "idle/S": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1394,
+      "avg_brightness": 117.1,
+      "avg_stddev": 108.5,
+      "avg_alpha_coverage": 0.1751,
+      "avg_unique_colors": 7381.0,
+      "dow_edge_density_gap": 0.0006,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1394,
+          "mean_brightness": 117.1,
+          "alpha_coverage": 0.1751,
+          "unique_colors": 7381,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1394,
+          "mean_brightness": 117.1,
+          "alpha_coverage": 0.1751,
+          "unique_colors": 7381,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1394,
+          "mean_brightness": 117.1,
+          "alpha_coverage": 0.1751,
+          "unique_colors": 7381,
+          "pass": true
+        }
+      ]
+    },
+    "idle/SE": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1548,
+      "avg_brightness": 109.15,
+      "avg_stddev": 104.43,
+      "avg_alpha_coverage": 0.1844,
+      "avg_unique_colors": 9822.0,
+      "dow_edge_density_gap": 0,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1548,
+          "mean_brightness": 109.15,
+          "alpha_coverage": 0.1844,
+          "unique_colors": 9822,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1548,
+          "mean_brightness": 109.15,
+          "alpha_coverage": 0.1844,
+          "unique_colors": 9822,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1548,
+          "mean_brightness": 109.15,
+          "alpha_coverage": 0.1844,
+          "unique_colors": 9822,
+          "pass": true
+        }
+      ]
+    },
+    "idle/SW": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1506,
+      "avg_brightness": 112.4,
+      "avg_stddev": 105.03,
+      "avg_alpha_coverage": 0.1854,
+      "avg_unique_colors": 9702.0,
+      "dow_edge_density_gap": 0,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1506,
+          "mean_brightness": 112.4,
+          "alpha_coverage": 0.1854,
+          "unique_colors": 9702,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1506,
+          "mean_brightness": 112.4,
+          "alpha_coverage": 0.1854,
+          "unique_colors": 9702,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1506,
+          "mean_brightness": 112.4,
+          "alpha_coverage": 0.1854,
+          "unique_colors": 9702,
+          "pass": true
+        }
+      ]
+    },
+    "idle/W": {
+      "overall_pass": true,
+      "frames_analyzed": 5,
+      "frames_passing": 5,
+      "direction_variance": 0.0,
+      "direction_variance_pass": true,
+      "avg_edge_density": 0.1343,
+      "avg_brightness": 96.47,
+      "avg_stddev": 106.65,
+      "avg_alpha_coverage": 0.1068,
+      "avg_unique_colors": 4549.0,
+      "dow_edge_density_gap": 0.0057,
+      "frame_samples": [
+        {
+          "file": "frame_01.png",
+          "edge_density": 0.1343,
+          "mean_brightness": 96.47,
+          "alpha_coverage": 0.1068,
+          "unique_colors": 4549,
+          "pass": true
+        },
+        {
+          "file": "frame_02.png",
+          "edge_density": 0.1343,
+          "mean_brightness": 96.47,
+          "alpha_coverage": 0.1068,
+          "unique_colors": 4549,
+          "pass": true
+        },
+        {
+          "file": "frame_03.png",
+          "edge_density": 0.1343,
+          "mean_brightness": 96.47,
+          "alpha_coverage": 0.1068,
+          "unique_colors": 4549,
+          "pass": true
+        }
+      ]
+    }
+  },
+  "animation_summaries": {
+    "idle": {
+      "frames": 40,
+      "passing": 40,
+      "pass_rate": 1.0,
+      "avg_edge_density": 0.1402,
+      "max_edge_density": 0.1548,
+      "min_edge_density": 0.1294,
+      "avg_brightness": 109.42,
+      "avg_unique_colors": 7658.0,
+      "max_unique_colors": 9822,
+      "dow_edge_gap": 0
+    }
+  },
+  "common_failures": {},
+  "suggestions": [
+    "AVG edge density 14.02% (alpha-normalised) \u2014 within DoW target range (14%-26%)."
+  ]
+}

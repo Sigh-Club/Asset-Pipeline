@@ -27,6 +27,10 @@ refs/
 
 # === Build Output ===
 output/*/
+# ...but DO track final versioned render sets (output/v*/) for review/release,
+# per AGENTS.md: "Exported renders tracked ONLY if final outputs in output/<version>/"
+!output/v*/
+!output/v*/**
 output/render_queue.json
 output/render_progress.json
 output/render_queue_scheduled.log
