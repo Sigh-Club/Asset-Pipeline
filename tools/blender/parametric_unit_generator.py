@@ -356,43 +356,43 @@ def _clear_seams(obj):
 
 
 def unwrap_cylinder(obj):
-    """Cylindrical limb: mark the vertical back seam (most-negative Y, away from
-    camera) plus the top/bottom cap loops, then unwrap flat. Produces a clean
-    rectangular side-strip island whose U axis is the circumference (back seam at
-    both U edges, cylinder front at U midline) and whose V axis is the limb height;
-    the two caps unwrap as trivial separate n-gon islands. Box-projection instead
-    splits the side faces by normal into 4 groups and scatters them — this is the
-    fix for that. Marking the cap loops as seams avoids the 'failed to solve' unwrap
-    warning that otherwise leaves caps with stale UVs."""
-    bpy.context.view_layer.objects.active = obj
-    obj.select_set(True)
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='DESELECT')
-    bpy.ops.mesh.select_mode(type='EDGE')
-    bm = bmesh.from_edit_mesh(obj.data)
-    bm.edges.ensure_lookup_table()
-    verts_z = [v.co.z for v in bm.verts]
-    min_z, max_z = min(verts_z), max(verts_z)
-    best, best_y = None, float('inf')
-    for e in bm.edges:
-        v1, v2 = e.verts[0].co, e.verts[1].co
-        is_vertical = abs(v1.z - v2.z) > max(abs(v1.x - v2.x), abs(v1.y - v2.y))
-        if is_vertical:
-            ay = (v1.y + v2.y) * 0.5
-            if ay < best_y:
-                best_y, best = ay, e
-        # Cap boundary loops (horizontal edges at top/bottom Z) — detach caps so the
-        # side strip unwraps as a clean rectangle and caps solve trivially.
-        is_horizontal = abs(v1.z - v2.z) < 1e-4
-        if is_horizontal and (abs(v1.z - max_z) < 1e-4 or abs(v1.z - min_z) < 1e-4):
-            e.select = True
-    if best is not None:
-        best.select = True                       # back vertical seam
-    bpy.ops.mesh.mark_seam(clear=False)
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0.02)
-    bpy.ops.object.mode_set(mode='OBJECT')
-    obj.select_set(False)
+    """Deterministic cylindrical-limb unwrap: map each side face's UVs by (angle around
+    Z, height Z) directly — no bpy.ops.uv.unwrap (which distorts the aspect and fails on
+    cap n-gons). Back seam at -Y (angle -pi/2) -> U=0 and U=1 (both edges = the cut,
+    cylinder front at U=0.5). V = (z - zmin)/height so the limb top = V=1, bottom = V=0.
+    Caps (n-gons at zmin/zmax) map to the tile centre (hidden under joint covers anyway).
+    The island is a unit square encoding circumference x height, so CONTAIN fills the
+    tile and texel density is ~isotropic (circumference ~= height for these limbs)."""
+    mesh = obj.data
+    if not mesh.uv_layers:
+        mesh.uv_layers.new(name="UVMap")
+    uv_layer = mesh.uv_layers.active
+    verts = mesh.vertices
+    zs = [v.co.z for v in verts]
+    zmin, zmax = min(zs), max(zs)
+    height = max(zmax - zmin, 1e-6)
+    back = math.atan2(-1.0, 0.0)        # -pi/2 = back (-Y), away from camera
+    TWO_PI = 2.0 * math.pi
+    for poly in mesh.polygons:
+        # Cap faces: all verts share the same z (zmin or zmax). Map to centre.
+        poly_zs = [verts[vi].co.z for vi in poly.vertices]
+        if all(abs(z - poly_zs[0]) < 1e-5 for z in poly_zs):
+            for li in poly.loop_indices:
+                uv_layer.data[li].uv = (0.5, 0.5)
+            continue
+        # Side face: compute raw U by angle. Detect the wrap face (spans the back seam)
+        # and shift its low-U loops by +1.0 so the seam is a clean cut at U=0 / U=1.
+        raw = []
+        for li in poly.loop_indices:
+            co = verts[mesh.loops[li].vertex_index].co
+            du = (math.atan2(co.y, co.x) - back) % TWO_PI
+            raw.append(du / TWO_PI)
+        if max(raw) - min(raw) > 0.5:            # this face crosses the back seam
+            raw = [u + 1.0 if u < 0.5 else u for u in raw]
+        for li, u in zip(poly.loop_indices, raw):
+            co = verts[mesh.loops[li].vertex_index].co
+            v = (co.z - zmin) / height
+            uv_layer.data[li].uv = (u, v)
 
 
 def _orient_v_to_z(obj):
@@ -512,9 +512,8 @@ def _process_part(obj, tile_key, manifest, mirror_of=None):
     orientation = "vertical"
 
     if tile_key in _CYLINDER_TILES and _is_primary_cylinder(obj):
-        _clear_seams(obj)
-        unwrap_cylinder(obj)
-        _orient_v_to_z(obj)
+        unwrap_cylinder(obj)                      # deterministic manual unwrap (no seams/ops)
+        _orient_v_to_z(obj)                       # safety: ensure V increases with Z
         island_uv = normalize_island_to_tile(obj, tile_grid, policy=policy)
     else:
         # Deterministic box-projection directly into the tile (correct for cubes/domes,
