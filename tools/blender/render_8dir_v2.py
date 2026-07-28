@@ -358,19 +358,29 @@ def setup_render_settings():
         scene.cycles.samples = DEFAULT_SAMPLES
         scene.cycles.use_denoising = True
         scene.cycles.denoiser = 'OPENIMAGEDENOISE'
-        # Try GPU, fall back to CPU if no compute device available
+        # Try GPU (OptiX preferred for RTX, fall back to CUDA then CPU).
         try:
             preferences = bpy.context.preferences.addons['cycles'].preferences
-            preferences.get_devices()
-            # Check whether any GPU device is available
-            has_gpu = any(
-                d.type in ('CUDA', 'OPTIX', 'HIP', 'ONEAPI', 'METAL')
-                and d.use
-                for d in preferences.devices
-            )
+            # Pick the best available compute backend.
+            for ctype in ('OPTIX', 'CUDA', 'HIP', 'ONEAPI', 'METAL'):
+                try:
+                    preferences.compute_device_type = ctype
+                    preferences.get_devices()
+                    if any(d.type in ('OPTIX', 'CUDA', 'HIP', 'ONEAPI', 'METAL') for d in preferences.devices):
+                        break
+                except Exception:
+                    continue
+            # Enable GPU devices, disable CPU (pure GPU render for speed).
+            has_gpu = False
+            for d in preferences.devices:
+                if d.type in ('OPTIX', 'CUDA', 'HIP', 'ONEAPI', 'METAL'):
+                    d.use = True
+                    has_gpu = True
+                else:
+                    d.use = False
             if has_gpu:
                 scene.cycles.device = 'GPU'
-                log("Cycles device: GPU (CUDA/OptiX)")
+                log(f"Cycles device: GPU ({preferences.compute_device_type})")
             else:
                 scene.cycles.device = 'CPU'
                 log("Cycles device: CPU (no GPU compute device found)")

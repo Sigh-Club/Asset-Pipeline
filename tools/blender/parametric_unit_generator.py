@@ -60,6 +60,8 @@ import os
 import sys
 import json
 import math
+import re
+import bmesh
 import mathutils
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -218,7 +220,14 @@ _ANCHOR_NAME_MAP = [
     ("backpack", "backpack"), ("vent", "backpack"),
     ("rifle", "weapon"), ("pistol", "weapon"), ("weapon", "weapon"),
     ("scope", "weapon"), ("magazine", "weapon"), ("barrel", "weapon"), ("sight", "weapon"),
+    ("aquila", "aquila"),
 ]
+
+
+# Primary cylinder-limb name prefixes: only these get the semantic back-seam unwrap.
+# Greebles that merely INHERIT a cylinder tile (kneepad, elbowguard, kneespike) are not
+# clean cylinders, so they fall back to the deterministic box-projection instead.
+_CYLINDER_PRIMARY_PREFIXES = ("upperarm", "forearm", "thigh", "shin")
 
 
 def _anchor_key_for(obj):
@@ -244,6 +253,11 @@ def _remap_obj_uv_to_tile(obj, row, col):
     the UV (+Y front -> X,Z; +X side -> Y,Z; +Z top -> X,Y). This is a deterministic
     cube/cylinder-style unwrap that always places each face inside its tile, unlike
     smart_project whose arbitrary orientation scatters faces across tiles.
+
+    NOTE: kept for cube/dome parts (deterministic, each face coherent). Cylindrical
+    limbs now use the semantic seam-unwrap path (unwrap_cylinder + normalize_island)
+    because box-projection scatters a cylinder's side faces by normal — the root cause
+    of the Phase 3 front/back colour incoherence. See DEVELOPMENT.md §16.4 Phase 3.5.
     """
     if not obj.data.uv_layers:
         obj.data.uv_layers.new(name="UVMap")
@@ -267,26 +281,326 @@ def _remap_obj_uv_to_tile(obj, row, col):
             uv_layer.data[li].uv = (u0 + uu * tw, v0 + vv * th)
 
 
-def remap_uvs_to_atlas(all_parts):
-    """Remap every part's UVs into its atlas tile. Anchor parts by name; small greebles
-    inherit the tile of the nearest anchor by object-origin distance (so rivets/trim/vents
-    sample the same tile as their parent body part)."""
-    if _ATLAS_TILE_LAYOUT is None:
-        print("  [atlas] paint_unit_diffuse unavailable, skipping UV remap")
+# =============================================================================
+# Phase 3.5 — Deterministic per-primitive UV unwrap + Island-Footprint Manifest
+# Replaces box-projection for cylindrical limbs (the front/back incoherence root
+# cause) with a semantic back-seam unwrap, a UV-space island normaliser
+# (CONTAIN/ALIGN_BOTTOM), symmetry overlap (L->R UV copy), and a manifest export
+# consumed by the Pillow painter. See docs/DEVELOPMENT.md §16.4 Phase 3.5.
+# =============================================================================
+
+# Atlas tile keys that are cylindrical limbs (back-seam unwrap). All others fall
+# back to the deterministic box-projection (correct for cubes/domes — each face
+# projects coherently to its dominant axis).
+_CYLINDER_TILES = {"upper_arm", "forearm", "thigh", "shin"}
+
+# Aspect policy per tile key. CONTAIN = fit preserving aspect, centre.
+# ALIGN_BOTTOM = contain-scale, pin lowest V to tile floor (short/wide parts).
+_UV_POLICY = {
+    "upper_arm": "CONTAIN", "forearm": "CONTAIN", "thigh": "CONTAIN", "shin": "CONTAIN",
+    "pauldron": "CONTAIN", "helmet": "CONTAIN", "torso": "CONTAIN",
+    "backpack": "CONTAIN", "weapon": "CONTAIN",
+    "boot": "ALIGN_BOTTOM", "codpiece": "ALIGN_BOTTOM", "belt": "ALIGN_BOTTOM",
+}
+
+MANIFEST_PATH = os.path.join(PROJECT_ROOT, "build", "island_manifest.json")
+
+
+def _side_of(obj):
+    """Return 'L' or 'R' if the object name ends _L/_R, else None."""
+    n = obj.name
+    if re.search(r'_L($|_)', n):
+        return "L"
+    if re.search(r'_R($|_)', n):
+        return "R"
+    return None
+
+
+def _is_primary_cylinder(obj):
+    """True only for the main cylindrical limbs (upperarm/forearm/thigh/shin), not for
+    greebles (kneepad/elbowguard/kneespike) that merely inherit a cylinder tile."""
+    name = obj.name.lower().replace("_", "")
+    return any(name.startswith(p) for p in _CYLINDER_PRIMARY_PREFIXES)
+
+
+# Exact base names of primary body parts (greebles share a prefix but not the base
+# name, so Pauldron_L is primary but PauldronTrim_L / PauldronBlade_L are not).
+_PRIMARY_BASE_NAMES = {
+    "torso", "helmet", "aquila", "beltring", "weaponbody", "backpack", "codpiece",
+    "pauldron", "upperarm", "forearm", "thigh", "shin", "boot",
+}
+
+
+def _is_primary_part(obj):
+    """True for the main body primitives, False for greebles (rivets/trim/vents/panel
+    lines) that inherit a parent tile. Determined by exact base name (side stripped)."""
+    base = re.sub(r'_(L|R)(?=_|$)', '', obj.name)
+    return base.lower() in _PRIMARY_BASE_NAMES
+
+
+def _pair_stem(name):
+    """Strip the _L/_R side token from a name so paired mirrors share a stem.
+    e.g. Pauldron_L -> Pauldron__SIDE ; Rivet_Pauldron_L_0 -> Rivet_Pauldron__SIDE_0"""
+    return re.sub(r'_(L|R)(?=_|$)', '_SIDE', name)
+
+
+def _clear_seams(obj):
+    """Clear all UV seams on an object (edit-mode op)."""
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.mark_seam(clear=True)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    obj.select_set(False)
+
+
+def unwrap_cylinder(obj):
+    """Cylindrical limb: mark the vertical back seam (most-negative Y, away from
+    camera) plus the top/bottom cap loops, then unwrap flat. Produces a clean
+    rectangular side-strip island whose U axis is the circumference (back seam at
+    both U edges, cylinder front at U midline) and whose V axis is the limb height;
+    the two caps unwrap as trivial separate n-gon islands. Box-projection instead
+    splits the side faces by normal into 4 groups and scatters them — this is the
+    fix for that. Marking the cap loops as seams avoids the 'failed to solve' unwrap
+    warning that otherwise leaves caps with stale UVs."""
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.mesh.select_mode(type='EDGE')
+    bm = bmesh.from_edit_mesh(obj.data)
+    bm.edges.ensure_lookup_table()
+    verts_z = [v.co.z for v in bm.verts]
+    min_z, max_z = min(verts_z), max(verts_z)
+    best, best_y = None, float('inf')
+    for e in bm.edges:
+        v1, v2 = e.verts[0].co, e.verts[1].co
+        is_vertical = abs(v1.z - v2.z) > max(abs(v1.x - v2.x), abs(v1.y - v2.y))
+        if is_vertical:
+            ay = (v1.y + v2.y) * 0.5
+            if ay < best_y:
+                best_y, best = ay, e
+        # Cap boundary loops (horizontal edges at top/bottom Z) — detach caps so the
+        # side strip unwraps as a clean rectangle and caps solve trivially.
+        is_horizontal = abs(v1.z - v2.z) < 1e-4
+        if is_horizontal and (abs(v1.z - max_z) < 1e-4 or abs(v1.z - min_z) < 1e-4):
+            e.select = True
+    if best is not None:
+        best.select = True                       # back vertical seam
+    bpy.ops.mesh.mark_seam(clear=False)
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0.02)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    obj.select_set(False)
+
+
+def _orient_v_to_z(obj):
+    """Ensure the island's V coordinate increases with world Z (top of part = high V)
+    so ALIGN_BOTTOM pins the part's bottom (low Z) to the tile floor. Blender's unwrap
+    direction is not guaranteed, so sample the max-Z and min-Z verts and flip if needed."""
+    mesh = obj.data
+    if not mesh.uv_layers or not mesh.vertices:
         return
+    uv_layer = mesh.uv_layers.active
+    # Find a loop whose vertex has max Z and one with min Z.
+    zmax_v = max(mesh.vertices, key=lambda v: v.co.z)
+    zmin_v = min(mesh.vertices, key=lambda v: v.co.z)
+    vmax = vmin = None
+    for poly in mesh.polygons:
+        for li in poly.loop_indices:
+            vi = mesh.loops[li].vertex_index
+            uv = uv_layer.data[li].uv
+            if vi == zmax_v.index and vmax is None:
+                vmax = uv.y
+            if vi == zmin_v.index and vmin is None:
+                vmin = uv.y
+    # If the top vertex has a lower V than the bottom vertex, flip V about the island mid.
+    if vmax is not None and vmin is not None and vmax < vmin:
+        all_v = [uv_layer.data[li].uv.y for p in mesh.polygons for li in p.loop_indices]
+        mid = (min(all_v) + max(all_v)) * 0.5
+        for li in (li for p in mesh.polygons for li in p.loop_indices):
+            uv_layer.data[li].uv.y = 2 * mid - uv_layer.data[li].uv.y
+
+
+def normalize_island_to_tile(obj, tile_rect, policy="CONTAIN", margin=0.05):
+    """UV-space island normaliser: scale the existing island (in 0..1 local UV space)
+    into the atlas tile rect per aspect policy. Operates on UV coords, NOT object-space
+    vertex bounds (the old box-project normalised from vertex .co, which double-transforms
+    a real unwrap). Returns the final island UV bbox (u0,v0,u1,v1) for the manifest."""
+    mesh = obj.data
+    if not mesh.uv_layers:
+        mesh.uv_layers.new(name="UVMap")
+    uv_layer = mesh.uv_layers.active
+    loops = [li for p in mesh.polygons for li in p.loop_indices]
+    if not loops:
+        return None
+    us = [uv_layer.data[li].uv.x for li in loops]
+    vs = [uv_layer.data[li].uv.y for li in loops]
+    min_u, max_u = min(us), max(us)
+    min_v, max_v = min(vs), max(vs)
+    iw, ih = max_u - min_u, max_v - min_v
+    if iw < 1e-6 or ih < 1e-6:
+        return None
+
+    u0, v0, u1, v1 = tile_rect
+    tw, th = u1 - u0, v1 - v0
+    target_w = tw * (1.0 - 2.0 * margin)
+    target_h = th * (1.0 - 2.0 * margin)
+    scale_u = target_w / iw
+    scale_v = target_h / ih
+    if policy == "ALIGN_BOTTOM":
+        s = min(scale_u, scale_v)            # preserve aspect
+        s_u = s_v = s
+    else:                                    # CONTAIN (FILL would stretch — avoided)
+        s = min(scale_u, scale_v)
+        s_u = s_v = s
+    new_w, new_h = iw * s_u, ih * s_v
+    offset_u = u0 + (tw - new_w) * 0.5        # centre horizontally
+    if policy == "ALIGN_BOTTOM":
+        offset_v = v0 + th * margin          # pin to tile floor
+    else:
+        offset_v = v0 + (th - new_h) * 0.5    # centre vertically
+
+    for li in loops:
+        uv = uv_layer.data[li].uv
+        uv.x = offset_u + (uv.x - min_u) * s_u
+        uv.y = offset_v + (uv.y - min_v) * s_v
+
+    return (offset_u, offset_v, offset_u + new_w, offset_v + new_h)
+
+
+def apply_symmetry_uv_mirror(source, target):
+    """Copy source's final UV array onto target verbatim (half-texture optimisation).
+    Requires identical vertex/face/loop topology — validate before relying on this."""
+    if len(source.data.vertices) != len(target.data.vertices):
+        return False
+    if len(source.data.polygons) != len(target.data.polygons):
+        return False
+    if not target.data.uv_layers:
+        target.data.uv_layers.new(name="UVMap")
+    src_uv = source.data.uv_layers.active.data
+    tgt_uv = target.data.uv_layers.active.data
+    if len(src_uv) != len(tgt_uv):
+        return False
+    for i in range(len(src_uv)):
+        tgt_uv[i].uv = src_uv[i].uv
+    return True
+
+
+def _export_island(manifest, obj, tile_id, tile_grid, island_uv, policy, orientation, mirror_of=None):
+    manifest[obj.name] = {
+        "tile_id": tile_id,
+        "tile_grid": [round(c, 6) for c in tile_grid],
+        "island_uv": [round(c, 6) for c in island_uv],
+        "policy": policy,
+        "orientation": orientation,
+        "mirror_of": mirror_of,
+        "primary": _is_primary_part(obj),
+    }
+
+
+def _process_part(obj, tile_key, manifest, mirror_of=None):
+    """Unwrap + normalise one part into its atlas tile and record it in the manifest.
+    Cylindrical limbs use the semantic back-seam unwrap; cubes/domes use the
+    deterministic box-projection (correct for those primitive types)."""
+    if tile_key not in _ATLAS_TILE_LAYOUT:
+        return None
+    row, col = _ATLAS_TILE_LAYOUT[tile_key]
+    tile_grid = _tile_uv_rect(row, col)
+    policy = _UV_POLICY.get(tile_key, "CONTAIN")
+    orientation = "vertical"
+
+    if tile_key in _CYLINDER_TILES and _is_primary_cylinder(obj):
+        _clear_seams(obj)
+        unwrap_cylinder(obj)
+        _orient_v_to_z(obj)
+        island_uv = normalize_island_to_tile(obj, tile_grid, policy=policy)
+    else:
+        # Deterministic box-projection directly into the tile (correct for cubes/domes,
+        # and for greebles that inherit a cylinder tile but aren't clean cylinders).
+        _remap_obj_uv_to_tile(obj, row, col)
+        island_uv = tile_grid
+
+    if island_uv:
+        _export_island(manifest, obj, tile_key, tile_grid, island_uv, policy, orientation, mirror_of=mirror_of)
+    return island_uv
+
+
+def remap_uvs_to_atlas(all_parts):
+    """Phase 3.5: semantic per-primitive UV unwrap + UV-space normalisation + symmetry
+    overlap (L->R UV copy) + Island-Footprint Manifest export. Replaces the box-project-
+    only remap. Cylindrical limbs (the front/back incoherence root cause) now unwrap via
+    a back-seam cut; cubes/domes keep the deterministic box-projection. See DEVELOPMENT.md
+    §16.4 Phase 3.5."""
+    if _ATLAS_TILE_LAYOUT is None:
+        print("  [atlas] atlas_layout unavailable, skipping UV remap")
+        return
+    os.makedirs(os.path.dirname(MANIFEST_PATH), exist_ok=True)
+    manifest = {}
+
+    # Resolve each part's anchor tile key (greebles inherit nearest anchor's tile).
     anchors = [(o, _anchor_key_for(o)) for o in all_parts if _anchor_key_for(o)]
-    for o in all_parts:
-        if o.get("atlas_uv_manual"):
-            continue   # UVs set explicitly (e.g. chest aquila decal)
+
+    def tile_key_for(o):
         k = _anchor_key_for(o)
         if k is None and anchors:
             oc = o.matrix_world.translation
-            best = min(anchors, key=lambda a: (a[0].matrix_world.translation - oc).length_squared)
-            k = best[1]
+            k = min(anchors, key=lambda a: (a[0].matrix_world.translation - oc).length_squared)[1]
+        return k
+
+    # Group parts into L/R pairs (by name stem) and midline (unpaired) parts.
+    pairs = {}      # stem -> {"L": obj, "R": obj}
+    midline = []    # [(obj, tile_key)]
+    for o in all_parts:
+        if o.get("atlas_uv_manual"):
+            continue    # aquila decal — UVs set explicitly at creation
+        k = tile_key_for(o)
         if k is None or k not in _ATLAS_TILE_LAYOUT:
             continue
-        row, col = _ATLAS_TILE_LAYOUT[k]
-        _remap_obj_uv_to_tile(o, row, col)
+        side = _side_of(o)
+        if side:
+            pairs.setdefault(_pair_stem(o.name), {})[side] = o
+        else:
+            midline.append((o, k))
+
+    # Paired parts: unwrap+normalise the L master, then copy its UVs onto the R mirror.
+    for stem, lr in pairs.items():
+        l_obj, r_obj = lr.get("L"), lr.get("R")
+        k = tile_key_for(l_obj or r_obj)
+        if l_obj:
+            l_iu = _process_part(l_obj, k, manifest, mirror_of=None)
+            if r_obj and l_iu is not None and apply_symmetry_uv_mirror(l_obj, r_obj):
+                row, col = _ATLAS_TILE_LAYOUT[k]
+                _export_island(manifest, r_obj, k, _tile_uv_rect(row, col), l_iu,
+                               _UV_POLICY.get(k, "CONTAIN"), "vertical", mirror_of=l_obj.name)
+            elif r_obj:
+                _process_part(r_obj, k, manifest, mirror_of=None)   # topology mismatch — unwrap R independently
+        elif r_obj:
+            _process_part(r_obj, k, manifest, mirror_of=None)
+
+    # Midline parts (torso, helmet, belt, backpack, weapon, codpiece, greebles).
+    for o, k in midline:
+        _process_part(o, k, manifest, mirror_of=None)
+
+    # Manual-UV parts (e.g. chest aquila decal) — UVs set explicitly at creation; record
+    # their footprint in the manifest without re-unwrapping so the painter/validator see them.
+    for o in all_parts:
+        if o.get("atlas_uv_manual") and _anchor_key_for(o) in _ATLAS_TILE_LAYOUT:
+            k = _anchor_key_for(o)
+            row, col = _ATLAS_TILE_LAYOUT[k]
+            tile_grid = _tile_uv_rect(row, col)
+            if o.data.uv_layers:
+                uv_layer = o.data.uv_layers.active
+                us = [uv_layer.data[li].uv.x for p in o.data.polygons for li in p.loop_indices]
+                vs = [uv_layer.data[li].uv.y for p in o.data.polygons for li in p.loop_indices]
+                if us and vs:
+                    iu = (min(us), min(vs), max(us), max(vs))
+                    _export_island(manifest, o, k, tile_grid, iu, "CONTAIN", "vertical", mirror_of=None)
+
+    with open(MANIFEST_PATH, "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"  [atlas] UV manifest: {MANIFEST_PATH} ({len(manifest)} parts)")
 
 
 def clear_scene():
@@ -1996,6 +2310,24 @@ def generate_unit(config_path):
     # Remap every part's UVs into its atlas tile (matches paint_unit_diffuse.py layout),
     # so the per-unit painted diffuse + team mask map correctly onto the model.
     remap_uvs_to_atlas(all_parts)
+
+    # Phase 3.5.5 — Pre-render UV validation gate. Must run BEFORE the join (per-part
+    # objects exist here; after join they become one mesh). Fails fast to protect the
+    # AO bake + render compute. See docs/DEVELOPMENT.md §16.4 / AGENTS.md Critical Rule #3.
+    try:
+        sys.path.insert(0, os.path.join(PROJECT_ROOT, "tools"))          # validate_uv.py lives here
+        sys.path.insert(0, os.path.join(SCRIPT_DIR, "..", "pbr"))        # atlas_layout.py
+        from atlas_layout import TILE_LAYOUT as _V_TILE_LAYOUT
+        from validate_uv import validate_uv as _run_validate_uv
+        with open(MANIFEST_PATH) as _f:
+            _manifest = json.load(_f)
+        if not _run_validate_uv(all_parts, _manifest, set(_V_TILE_LAYOUT.keys())):
+            print("[pipeline] UV validation FAILED — aborting before join/bake/render.", flush=True)
+            sys.exit(1)
+    except ImportError:
+        print("[pipeline] validate_uv unavailable — skipping UV gate (WARNING)")
+    except FileNotFoundError:
+        print("[pipeline] island_manifest.json missing — skipping UV gate (WARNING)")
 
     # Join all meshes into one
     bpy.ops.object.select_all(action='DESELECT')
