@@ -70,10 +70,10 @@ FACTION_LIGHTING = {
         "specular": {"color": (0.95, 0.95, 1.0), "energy": 400, "size": 0.2, "location": (0, 0, 8)},    # Top sparkle
     },
     "cinderborn": {
-        "key": {"color": (1.0, 0.40, 0.70), "energy": 3500, "size": 0.5, "location": (-4, -3, 6)},      # Warm magenta — corrupted ritual
-        "fill": {"color": (0.60, 0.30, 0.80), "energy": 500, "size": 1.0, "location": (3, 2, 2)},       # Deep purple fill
-        "rim": {"color": (1.0, 0.60, 0.20), "energy": 2500, "size": 0.3, "location": (1, 6, 3)},        # Orange rim (magma)
-        "specular": {"color": (1.0, 0.80, 0.90), "energy": 800, "size": 0.2, "location": (0, 0, 8)},    # Pink-white top
+        "key": {"color": (1.0, 0.40, 0.70), "type": "SUN", "energy": 2.5, "size": 0.08, "location": (-4, -3, 6)},    # Warm magenta SUN key — corrupted ritual
+        "fill": {"color": (0.60, 0.30, 0.80), "energy": 600, "size": 1.2, "location": (3, 2, 2)},       # Deep purple AREA fill
+        "rim": {"color": (1.0, 0.60, 0.20), "type": "SUN", "energy": 2.5, "size": 0.02, "location": (1, 6, 3)},        # Orange magma SUN rim
+        "specular": {"color": (1.0, 0.80, 0.90), "energy": 400, "size": 0.2, "location": (0, 0, 8)},    # Pink-white top
     },
     "parasitic_bloom": {
         "key": {"color": (0.65, 0.95, 0.60), "energy": 3000, "size": 0.5, "location": (-4, -3, 6)},     # Sickly green-white
@@ -617,18 +617,38 @@ def render_direction_anim(dlabel: str, dangle: float, anim_name: str,
     os.makedirs(anim_dir, exist_ok=True)
     
     files = []
+    total_frames = frame_end - frame_start + 1
+    import time as _time
+    dir_start = _time.time()
     for frame in range(frame_start, frame_end + 1):
+        # Pause mechanism: check for a pause file between frames. Create it with
+        # `touch /tmp/render_pause` to reclaim GPU; remove it to resume.
+        pause_file = "/tmp/render_pause"
+        if os.path.exists(pause_file):
+            log(f"  PAUSED (remove {pause_file} to resume)...")
+            while os.path.exists(pause_file):
+                _time.sleep(3)
+            log(f"  RESUMED.")
+        
         scene.frame_set(frame)
         rel_frame = frame - frame_start + 1
         filename = f"frame_{rel_frame:02d}.png"
         filepath = os.path.join(anim_dir, filename)
         scene.render.filepath = filepath
         
+        frame_start_time = _time.time()
         bpy.ops.render.render(write_still=True)
+        frame_elapsed = _time.time() - frame_start_time
         files.append(filepath)
+        
+        # Per-frame progress (flushed so it appears immediately in terminal)
+        dir_elapsed = _time.time() - dir_start
+        print(f"  [{rel_frame}/{total_frames}] {anim_name}/{dlabel} {filename} "
+              f"({frame_elapsed:.1f}s) — dir elapsed: {dir_elapsed:.0f}s", flush=True)
     
     total = frame_end - frame_start + 1
-    log(f"Rendered {anim_name}/{dlabel}: {total} frames @ {RENDER_W}x{RENDER_H} -> {anim_dir}")
+    dir_total = _time.time() - dir_start
+    log(f"Rendered {anim_name}/{dlabel}: {total} frames in {dir_total:.0f}s @ {RENDER_W}x{RENDER_H} -> {anim_dir}")
     return files
 
 # =============================================================================
@@ -732,6 +752,21 @@ def main():
     setup_lighting(faction=CURRENT_FACTION, size_factor=bbox_diagonal / 1.5)
     
     animations = scan_animations()
+    
+    # Calculate total frames for progress reporting
+    total_render_frames = 0
+    for anim_name, anim_info in animations.items():
+        if ANIM_FILTER and anim_name not in ANIM_FILTER:
+            continue
+        fs, fe = anim_info["frames"]
+        total_render_frames += (fe - fs + 1) * len(DIRECTIONS)
+    active_anims = [n for n in animations if (not ANIM_FILTER or n in ANIM_FILTER)]
+    log(f"Render queue: {len(active_anims)} anims × {len(DIRECTIONS)} dirs = {total_render_frames} frames total")
+    log(f"Pause mechanism: touch /tmp/render_pause to pause, rm to resume")
+    
+    import time as _time
+    render_start = _time.time()
+    frame_counter = 0
     all_rendered_files = []
     for anim_name, anim_info in animations.items():
         if ANIM_FILTER and anim_name not in ANIM_FILTER:
@@ -741,12 +776,26 @@ def main():
         armature = anim_info.get("armature")
         action = anim_info.get("action")
         nla_strip = anim_info.get("nla_strip")
+        anim_frame_count = (frame_end - frame_start + 1) * len(DIRECTIONS)
+        log(f"Starting anim '{anim_name}': {anim_frame_count} frames across {len(DIRECTIONS)} directions")
         for dlabel, dangle in DIRECTIONS:
             files = render_direction_anim(dlabel, dangle, anim_name, 
                                           frame_start, frame_end, out_dir,
                                           armature_obj=armature, action=action,
                                           nla_strip=nla_strip)
             all_rendered_files.extend(files)
+            frame_counter += len(files)
+            elapsed = _time.time() - render_start
+            remaining_frames = total_render_frames - frame_counter
+            est_per_frame = elapsed / max(frame_counter, 1)
+            est_remaining = est_per_frame * remaining_frames
+            log(f"Progress: {frame_counter}/{total_render_frames} frames done "
+                f"({frame_counter*100//max(total_render_frames,1)}%) — "
+                f"elapsed: {elapsed:.0f}s, est remaining: {est_remaining:.0f}s")
+    
+    total_elapsed = _time.time() - render_start
+    log(f"All rendering complete: {frame_counter} frames in {total_elapsed:.0f}s "
+        f"({total_elapsed/max(frame_counter,1):.1f}s/frame average)")
     
     # Downscale in-place (if PIL available in Blender's Python)
     downscale_all_renders(out_dir)
