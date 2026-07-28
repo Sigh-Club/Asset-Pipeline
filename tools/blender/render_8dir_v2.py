@@ -619,16 +619,19 @@ def render_direction_anim(dlabel: str, dangle: float, anim_name: str,
     files = []
     total_frames = frame_end - frame_start + 1
     import time as _time
+    import sys as _sys
     dir_start = _time.time()
     for frame in range(frame_start, frame_end + 1):
         # Pause mechanism: check for a pause file between frames. Create it with
         # `touch /tmp/render_pause` to reclaim GPU; remove it to resume.
         pause_file = "/tmp/render_pause"
         if os.path.exists(pause_file):
-            log(f"  PAUSED (remove {pause_file} to resume)...")
+            _sys.stderr.write(f"  [PAUSED] touch {pause_file} created — waiting (rm to resume)...\n")
+            _sys.stderr.flush()
             while os.path.exists(pause_file):
                 _time.sleep(3)
-            log(f"  RESUMED.")
+            _sys.stderr.write(f"  [RESUMED]\n")
+            _sys.stderr.flush()
         
         scene.frame_set(frame)
         rel_frame = frame - frame_start + 1
@@ -636,15 +639,20 @@ def render_direction_anim(dlabel: str, dangle: float, anim_name: str,
         filepath = os.path.join(anim_dir, filename)
         scene.render.filepath = filepath
         
+        # Print BEFORE render so user sees what's happening during the (blocking) render
+        _sys.stderr.write(f"  [{rel_frame}/{total_frames}] Rendering {anim_name}/{dlabel} {filename}...\n")
+        _sys.stderr.flush()
+        
         frame_start_time = _time.time()
         bpy.ops.render.render(write_still=True)
         frame_elapsed = _time.time() - frame_start_time
         files.append(filepath)
         
-        # Per-frame progress (flushed so it appears immediately in terminal)
+        # Print AFTER render with timing
         dir_elapsed = _time.time() - dir_start
-        print(f"  [{rel_frame}/{total_frames}] {anim_name}/{dlabel} {filename} "
-              f"({frame_elapsed:.1f}s) — dir elapsed: {dir_elapsed:.0f}s", flush=True)
+        _sys.stderr.write(f"  [{rel_frame}/{total_frames}] DONE {filename} in {frame_elapsed:.1f}s "
+                          f"(dir: {dir_elapsed:.0f}s total)\n")
+        _sys.stderr.flush()
     
     total = frame_end - frame_start + 1
     dir_total = _time.time() - dir_start
