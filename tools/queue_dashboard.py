@@ -11,7 +11,7 @@ Provides a simple browser-based UI to:
 
 Usage:
     python3 tools/queue_dashboard.py
-    # Opens http://localhost:8080 in your browser
+    # Opens http://localhost:8083 in your browser
 
     # Custom port
     python3 tools/queue_dashboard.py --port 9090
@@ -1069,7 +1069,7 @@ fetchQueue();
 # SERVER
 # =============================================================================
 
-def find_free_port(start=8080, max_attempts=20):
+def find_free_port(start=8083, max_attempts=20):
     """Find a free port starting from start."""
     for port in range(start, start + max_attempts):
         try:
@@ -1130,7 +1130,7 @@ Examples:
         """
     )
     parser.add_argument("--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=None, help="Port (default: auto-detect from 8080)")
+    parser.add_argument("--port", type=int, default=8083, help="Port (default: 8083)")
     args = parser.parse_args()
 
     run_server(host=args.host, port=args.port)

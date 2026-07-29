@@ -731,6 +731,27 @@ def main():
         log("ERROR: Save your .blend file before running this script.")
         sys.exit(1)
     
+    # Auto-launch the web dashboard on port 8083 if not already running
+    import socket as _socket
+    import subprocess as _subproc
+    _dash_port = 8083
+    _dash_running = False
+    try:
+        _s = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+        _s.settimeout(0.5)
+        _s.connect(("127.0.0.1", _dash_port))
+        _s.close()
+        _dash_running = True
+    except:
+        _dash_running = False
+    if not _dash_running:
+        _dash_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__)))), "queue_dashboard.py")
+        if os.path.exists(_dash_script):
+            _subproc.Popen(["python3", _dash_script, "--port", str(_dash_port)],
+                          stdout=_subproc.DEVNULL, stderr=_subproc.DEVNULL)
+            log(f"Dashboard launched on http://localhost:{_dash_port}")
+    
     out_dir = ensure_output_dir(blend_path)
     log(f"Output directory: {out_dir}")
     

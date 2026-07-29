@@ -65,6 +65,27 @@ LOG_DIR = os.path.join(QUEUE_DIR, "render_logs")
 # BLENDER PROCESS MANAGEMENT
 # =============================================================================
 
+def _ensure_dashboard(port=8083):
+    """Auto-launch the web dashboard on port 8083 if not already running."""
+    import socket as _sock
+    import subprocess as _sub
+    running = False
+    try:
+        s = _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM)
+        s.settimeout(0.5)
+        s.connect(("127.0.0.1", port))
+        s.close()
+        running = True
+    except:
+        running = False
+    if not running:
+        dash = os.path.join(SCRIPT_DIR, "queue_dashboard.py")
+        if os.path.exists(dash):
+            _sub.Popen(["python3", dash, "--port", str(port)],
+                       stdout=_sub.DEVNULL, stderr=_sub.DEVNULL)
+            print(f"  Dashboard launched on http://localhost:{port}")
+
+
 def kill_blender_processes(include_gui: bool = False):
     """Force-kill all stale Blender processes before starting a new render.
 
@@ -809,6 +830,9 @@ def cmd_run(args):
     """Process all queued render jobs."""
     # Kill any stale Blender processes before starting queue processing
     kill_blender_processes()
+
+    # Auto-launch the web dashboard on port 8083 if not already running
+    _ensure_dashboard()
 
     queue = _load_queue()
     engine = args.engine or "CYCLES"
