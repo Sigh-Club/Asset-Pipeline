@@ -299,7 +299,7 @@ def emit_js(path):
 def main():
     import argparse
     ap = argparse.ArgumentParser(description="MTC icon forge")
-    ap.add_argument("mode", nargs="?", choices=["sheet", "single", "occupations"])
+    ap.add_argument("mode", nargs="?", choices=["sheet", "single", "occupations", "manifest"])
     ap.add_argument("--count", type=int, default=12)
     ap.add_argument("--palette", default=None)
     ap.add_argument("--seed", type=int, default=None)
@@ -308,6 +308,10 @@ def main():
                     help="sheet of seeds for one occupation")
     ap.add_argument("--emit-js", dest="emit_js", default=None,
                     help="write icon_forge_data.js for the HTML forge")
+    ap.add_argument("--check", action="store_true",
+                    help="with manifest: verify shipped PNGs match their specs")
+    ap.add_argument("--manifest", dest="manifest", default=None,
+                    help="icon manifest JSON (name -> spec) to render/verify")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     if args.emit_js:
@@ -316,6 +320,32 @@ def main():
             return
     if not args.out:
         ap.error("--out required")
+    if args.mode == "manifest":
+        import json, sys
+        manifest = json.load(open(args.manifest))
+        entries = manifest["icons"] if isinstance(manifest, dict) else manifest
+        os.makedirs(args.out, exist_ok=True)
+        bad = []
+        for name, spec in sorted(entries.items()):
+            want = render(spec)
+            out = os.path.join(args.out, name + ".png")
+            if args.check or "--check" in sys.argv:
+                if not os.path.exists(out):
+                    bad.append(name + " missing")
+                    continue
+                with Image.open(out) as im:
+                    if im.size != (32, 32) or im.tobytes() != want.tobytes():
+                        bad.append(name + " differs from spec")
+                continue
+            want.save(out)
+            print("wrote", os.path.normpath(out))
+        if bad:
+            for b in bad:
+                print("FAIL:", b)
+            return 1
+        print("manifest OK:", len(entries), "icons verified" if (args.check or "--check" in sys.argv)
+              else "written to " + os.path.normpath(args.out))
+        return
     if args.mode == "occupations":
         specs = []
         for pid, (hat, torso) in sorted(OCCUPATIONS.items()):
