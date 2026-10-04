@@ -319,3 +319,19 @@ For complex multi-step tasks (e.g., "regenerate all 34 units with new geometry")
 - Exported renders (PNG) tracked ONLY if they are final outputs in `output/<version>/`
 - Raw render outputs (per-frame PNGs) in `assets/<unit>/render/` — add to `.gitignore` (regenerable from .blend)
 - Never commit AI-generated concept art (temporary refs, keep outside repo or in `refs/`)
+
+## Project Zomboid Sub-Pipeline (PZ — not IoA)
+
+`tools/icon_forge.py` / `icon_forge.html` generate pixel icons for the
+**Project Zomboid** mod MTCDeathsExpanded (in-house tooling housed here for
+convenience). Rules:
+
+- **PZ outputs never enter IoA paths**: do not write PZ icons into `assets/`,
+  `configs/` or `output/` — they go to the PZ mod repo
+  (`~/.local/share/Steam/steamapps/common/ProjectZomboid/Workshop/MTCDeathsExpanded/`,
+  `media/ui/...`) and are committed in the MOD repo.
+- Icons are 16x16 blueprints scaled x2 (32x32), chunky moodlet style, PZ
+  palettes. `icon_forge_data.js` is GENERATED (`icon_forge.py --emit-js`) —
+  edit the Python tables, never the JS.
+- Keep generation outputs in explicit `--out` paths (or `~/Downloads/` for
+  review) — no rogue files in the repo.

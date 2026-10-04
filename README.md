@@ -4,6 +4,29 @@
 
 Built for **Imperium of Ash** (IoA), a Warhammer 40K-inspired tactical combat game. Generates characters, tiles, UI elements, and props — all deterministic, all in-house, zero budget.
 
+## Project Zomboid Icon Forge (PZ — not IoA)
+
+`tools/icon_forge.py` (+ `icon_forge.html` and its generated
+`icon_forge_data.js`) is an in-house generator for **Project Zomboid** mod
+icons (MTCDeathsExpanded). It lives in this pipeline's `tools/` for
+convenience, but **nothing it produces belongs to IoA** — outputs go to the
+PZ mod repo, never into `assets/`, `configs/` or `output/`.
+
+```bash
+# one icon per vanilla occupation (policeoff, fireoff, burgerflipper, ...)
+python3 tools/icon_forge.py occupations --out ~/Downloads/mtcde_occupations.png
+
+# contact sheet of random seeded variants
+python3 tools/icon_forge.py sheet --count 12 --out ~/Downloads/forge_sheet.png
+
+# refresh the HTML app's data, then open tools/icon_forge.html in a browser:
+python3 tools/icon_forge.py --emit-js tools/icon_forge_data.js
+```
+
+Styles are parametric: palette, eyes, mouth, hair, headwear, service or
+occupation uniform, prop, wound streak, seed. The HTML app exports 32x32 PNGs
+(and 8x previews) straight from the browser.
+
 ## Quick Start
 
 ```bash
