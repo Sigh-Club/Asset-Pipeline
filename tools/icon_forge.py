@@ -340,10 +340,10 @@ def _overlay_heart(rows):
 
 
 MITTEN = [
-    ".OO.",
-    "OWWO",
-    "OWWO",
-    ".OO.",
+    ".OOO.",
+    "OWWWO",
+    "OWWWO",
+    ".OOO.",
 ]
 
 
@@ -360,8 +360,9 @@ def _overlay_wave(rows):
     def put(x, y, ch):
         if 0 <= x < 16 and 0 <= y < 16:
             grid[y][x] = ch
-    _stamp(grid, MITTEN, 12, 0)              # raised glove above the head
-    put(13, 4, "G"); put(13, 5, "G")         # arm
+    _stamp(grid, MITTEN, 11, 0)              # raised glove above the head
+    put(13, 4, "W"); put(13, 5, "G")         # arm
+    put(9, 1, "W"); put(15, 2, "W")          # motion arcs
     return ["".join(r) for r in grid]
 
 
@@ -428,8 +429,8 @@ def _overlay_salute(rows):
     def put(x, y, ch):
         if 0 <= x < 16 and 0 <= y < 16:
             grid[y][x] = ch
-    _stamp(grid, MITTEN, 12, 1)              # gloved hand at the brow
-    put(14, 4, "G"); put(14, 5, "G"); put(14, 6, "G")    # arm
+    _stamp(grid, MITTEN, 11, 1)              # gloved hand at the brow
+    put(14, 5, "G"); put(14, 6, "G"); put(14, 7, "G")    # arm
     return ["".join(r) for r in grid]
 
 
@@ -461,18 +462,67 @@ def _overlay_bandage(rows):
     return ["".join(r) for r in grid]
 
 
+# "HI!" speech bubble: 5-row box (cols 7-15) with 3-row pixel letters
+# H I ! in dark-on-white, tail pointing at the speaker
+_HI_GLYPHS = {
+    "H": ["E.E", "E.E", "EEE", "E.E"],
+    "I": ["E.", "E.", "E.", "E."],
+    "!": ["E.", "E.", ".", "E"],
+}
+
+
+def _overlay_hibubble(rows):
+    # banner across the top (rows 0-3): white fill, dark border, "HI!" in
+    # 3-tall dark letters - big enough to read at chat size. The zombie
+    # peeks out from under it, face fully visible below.
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16:
+            grid[y][x] = ch
+    for y in range(0, 4):
+        for x in range(2, 14):
+            put(x, y, "W")
+    for x in range(1, 15):
+        put(x, 0, "O"); put(x, 3, "O")
+    for y in range(0, 4):
+        put(1, y, "O"); put(14, y, "O")
+    # H (cols 3-5), I (col 7-8), ! (col 10-11), 3 rows starting at row 1... rows 1-3
+    Hg = ["E.E", "E.E", "EEE"]
+    Ig = ["EE", "E.", "E."]
+    Xg = ["E.", "E.", "E."]
+    for dy in range(3):
+        for dx, g in enumerate(Hg[dy]):
+            if g == "E":
+                put(3 + dx, 1 + dy, "E")
+        for dx, g in enumerate(Ig[dy]):
+            if g == "E":
+                put(7 + dx, 1 + dy, "E")
+        for dx, g in enumerate(Xg[dy]):
+            if g == "E":
+                put(10 + dx, 1 + dy, "E")
+    put(8, 4, "W"); put(7, 5, "W")       # tail toward the speaker
+    return ["".join(r) for r in grid]
+
+
 OVERLAYS = {
     "heart": _overlay_heart, "wave": _overlay_wave, "zzz": _overlay_zzz,
     "drool": _overlay_drool, "brows": _overlay_brows, "shades": _overlay_shades,
     "tears": _overlay_tears, "salute": _overlay_salute, "party": _overlay_party,
-    "bandage": _overlay_bandage,
+    "bandage": _overlay_bandage, "hibubble": _overlay_hibubble,
 }
 
 EMOJIS = {
     "zlove":   {"palette": "rot", "eyes": "red", "mouth": "blood", "hair": "messy",
                 "wound": False, "overlay": "heart"},
-    "zwave":   {"palette": "human", "eyes": "alive", "mouth": "grin", "hair": "messy",
+    "zwave":   {"palette": "rot", "eyes": "alive", "mouth": "grin", "hair": "messy",
                 "wound": False, "overlay": "wave"},
+    "swave":   {"palette": "human", "eyes": "alive", "mouth": "grin", "hair": "messy",
+                "wound": False, "overlay": "wave"},
+    "zhi":     {"palette": "rot", "eyes": "alive", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "hibubble"},
+    "sshi":    {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "hibubble"},
     "zdead":   {"palette": "rot", "eyes": "dead", "mouth": "blood", "hair": "messy",
                 "wound": True},
     "zbite":   {"palette": "rot", "eyes": "red", "mouth": "fangs", "hair": "messy",
@@ -491,8 +541,6 @@ EMOJIS = {
                 "wound": False},
     "zcry":    {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
                 "wound": False, "overlay": "tears"},
-    "zsalute": {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "bald",
-                "wound": False, "overlay": "salute"},
     "zparty":  {"palette": "toxic", "eyes": "alive", "mouth": "grin", "hair": "bald",
                 "wound": False, "overlay": "party"},
     "zheal":   {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
