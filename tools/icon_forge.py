@@ -230,7 +230,7 @@ def rows_for(spec):
     rows += TORSOS[torso]
     overlay = spec.get("overlay")
     if overlay in OVERLAYS:
-        rows = OVERLAYS[overlay](rows)
+        rows = OVERLAYS[overlay](rows, spec)
     return rows
 
 
@@ -335,41 +335,57 @@ TOM_BOLD = {
 }
 
 
-def _microtext_bubble(rows, text, glyphs=None):
-    """Speech bubble hugging a Tom Thumb text line, anchored top-right with an
-    open bottom (the standard pixel-bubble form - it reads as speech, not a
-    floating sign). Dark glyphs on white, face fully visible below. A 1px
-    white halo separates the bubble border from the face, so dark-on-dark
-    edges never merge."""
+def _microtext_bubble(rows, text, glyphs=None, pal="rot", tears=False):
+    """The character peeking over the top of a speech bubble: hair and eyes
+    above the bubble's top edge, bubble hugging the text with it centred
+    (white contained by the outline stroke, dark text inside)."""
     glyphs = glyphs or TOM
-    grid = [list(r) for r in rows]
+    g, l, d = PALETTES[pal]
+    grid = [["."] * 16 for _ in range(16)]
 
     def put(x, y, ch):
         if 0 <= x < 16 and 0 <= y < 16:
             grid[y][x] = ch
-    text_w = sum(len(glyphs[ch][0]) + 1 for ch in text) - 1
-    box_w = text_w + 2                          # 1px padding each side
-    x0 = 16 - box_w - 1                         # hug the right edge + 1px halo
-    # white halo + fill: the halo column at x0-1 keeps 1px white between the
-    # border and whatever is behind (the face)
-    for y in range(0, 7):
-        for x in range(max(0, x0 - 1), 16):
+
+    # -- the peek: hair and eyes above the bubble (rows 0-1)
+    for x in range(3, 13):
+        put(x, 0, "G" if x % 2 else "L")
+    for x in (5, 6, 10, 11):
+        put(x, 1, "E")
+    for x in (4, 7, 8, 9, 12):
+        put(x, 1, "G")
+    put(2, 1, "O"); put(13, 1, "O")          # temples
+
+    # -- the bubble: rows 2-13, cols 2-14; white fill inside an O stroke
+    for y in range(2, 14):
+        for x in range(2, 15):
             put(x, y, "W")
-    for x in range(x0, 16):
-        put(x, 0, "O")
-    for y in range(0, 7):
-        put(x0, y, "O"); put(15, y, "O")
-    cx = x0 + 1
+    for x in range(2, 15):
+        put(x, 2, "O"); put(x, 13, "O")
+    for y in range(2, 14):
+        put(2, y, "O"); put(14, y, "O")
+    put(5, 14, "W"); put(4, 15, "W")         # tail
+
+    # -- the text, centred in the bubble (dark on white)
+    text_w = sum(len(glyphs[ch][0]) + 1 for ch in text) - 1
+    text_h = len(next(iter(glyphs.values())))
+    tx = 3 + (11 - text_w) // 2
+    ty = 3 + (10 - text_h) // 2
     for ch in text:
         for dy, glyph_row in enumerate(glyphs[ch]):
             for dx, g in enumerate(glyph_row):
-                if g in "xO":
-                    put(cx + dx, 1 + dy, "O")
-        cx += len(glyphs[ch][0]) + 1
+                if g == "x":
+                    put(tx + dx, ty + dy, "O")
+        tx += len(glyphs[ch][0]) + 1
+
+    # -- tears flow from the peeking eyes down the bubble's face (zcry/scry)
+    if tears:
+        for x, y in ((4, 3), (4, 4), (11, 3), (11, 4)):
+            put(x, y, "U")
     return ["".join(r) for r in grid]
 
 
-def _overlay_heart(rows):
+def _overlay_heart(rows, spec=None):
     import math
     grid = [list(r) for r in rows]
 
@@ -403,7 +419,7 @@ def _stamp(grid, blueprint, x0, y0):
             if 0 <= x < 16 and 0 <= y < 16 and ch != ".":
                 grid[y][x] = ch
 
-def _overlay_wave(rows):
+def _overlay_wave(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -415,7 +431,7 @@ def _overlay_wave(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_zzz(rows):
+def _overlay_zzz(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -426,7 +442,7 @@ def _overlay_zzz(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_drool(rows):
+def _overlay_drool(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -437,7 +453,7 @@ def _overlay_drool(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_brows(rows):
+def _overlay_brows(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -449,7 +465,7 @@ def _overlay_brows(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_shades(rows):
+def _overlay_shades(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -461,7 +477,7 @@ def _overlay_shades(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_tears(rows):
+def _overlay_tears(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -472,7 +488,7 @@ def _overlay_tears(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_salute(rows):
+def _overlay_salute(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -483,7 +499,7 @@ def _overlay_salute(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_party(rows):
+def _overlay_party(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch, force=False):
@@ -499,7 +515,7 @@ def _overlay_party(rows):
     return ["".join(r) for r in grid]
 
 
-def _overlay_bandage(rows):
+def _overlay_bandage(rows, spec=None):
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
@@ -571,12 +587,12 @@ def _bubble(rows, glyphs, box_cols):
     return ["".join(r) for r in grid]
 
 
-def _overlay_hibubble(rows):
-    return _microtext_bubble(rows, "HI!")
+def _overlay_hibubble(rows, spec):
+    return _microtext_bubble(rows, "HI!", pal=spec.get("palette", "rot"))
 
 
-def _overlay_o7bubble(rows):
-    return _microtext_bubble(rows, "o7", glyphs=TOM_BOLD)
+def _overlay_o7bubble(rows, spec):
+    return _microtext_bubble(rows, "o7", glyphs=TOM_BOLD, pal=spec.get("palette", "rot"))
 
 
 OVERLAYS = {
