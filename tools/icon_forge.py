@@ -329,23 +329,31 @@ TOM = {
     "o": [".x.", "x.x", "x.x", "x.x", ".x."],
     "7": ["xxx", "..x", ".x.", ".x.", ".x."],
 }
+TOM_BOLD = {
+    "o": [".OO.", "O..O", "O..O", ".OO."],
+    "7": ["OOOO", "...O", "..O.", ".O.."],
+}
 
 
-def _microtext_bubble(rows, text):
+def _microtext_bubble(rows, text, glyphs=None):
     """Speech bubble hugging a Tom Thumb text line, anchored top-right with an
     open bottom (the standard pixel-bubble form - it reads as speech, not a
-    floating sign). Dark glyphs on white, face fully visible below."""
+    floating sign). Dark glyphs on white, face fully visible below. A 1px
+    white halo separates the bubble border from the face, so dark-on-dark
+    edges never merge."""
+    glyphs = glyphs or TOM
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
         if 0 <= x < 16 and 0 <= y < 16:
             grid[y][x] = ch
-    text_w = sum(len(TOM[ch][0]) + 1 for ch in text) - 1
+    text_w = sum(len(glyphs[ch][0]) + 1 for ch in text) - 1
     box_w = text_w + 2                          # 1px padding each side
-    x0 = 16 - box_w                             # hug the right edge
-    # box: top border r0, text rows 1-5, side borders, open bottom
+    x0 = 16 - box_w - 1                         # hug the right edge + 1px halo
+    # white halo + fill: the halo column at x0-1 keeps 1px white between the
+    # border and whatever is behind (the face)
     for y in range(0, 7):
-        for x in range(x0, 16):
+        for x in range(max(0, x0 - 1), 16):
             put(x, y, "W")
     for x in range(x0, 16):
         put(x, 0, "O")
@@ -353,11 +361,11 @@ def _microtext_bubble(rows, text):
         put(x0, y, "O"); put(15, y, "O")
     cx = x0 + 1
     for ch in text:
-        for dy, glyph_row in enumerate(TOM[ch]):
+        for dy, glyph_row in enumerate(glyphs[ch]):
             for dx, g in enumerate(glyph_row):
-                if g == "x":
+                if g in "xO":
                     put(cx + dx, 1 + dy, "O")
-        cx += len(TOM[ch][0]) + 1
+        cx += len(glyphs[ch][0]) + 1
     return ["".join(r) for r in grid]
 
 
@@ -568,7 +576,7 @@ def _overlay_hibubble(rows):
 
 
 def _overlay_o7bubble(rows):
-    return _microtext_bubble(rows, "o7")
+    return _microtext_bubble(rows, "o7", glyphs=TOM_BOLD)
 
 
 OVERLAYS = {
