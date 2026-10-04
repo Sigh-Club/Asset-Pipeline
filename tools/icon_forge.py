@@ -320,6 +320,47 @@ BLUE = (100, 140, 210, 255)
 HEART = (200, 40, 60, 255)
 
 
+# Tom Thumb 3x5 micro pixel font (public domain, the standard for tiny
+# sprite text) - legible at exactly this scale, unlike hand-rolled glyphs.
+TOM = {
+    "H": ["x.x", "x.x", "xxx", "x.x", "x.x"],
+    "I": ["xxx", ".x.", ".x.", ".x.", "xxx"],
+    "!": [".x.", ".x.", ".x.", "...", ".x."],
+    "o": [".x.", "x.x", "x.x", "x.x", ".x."],
+    "7": ["xxx", "..x", ".x.", ".x.", ".x."],
+}
+
+
+def _microtext_bubble(rows, text):
+    """Speech bubble hugging a Tom Thumb text line, anchored top-right with an
+    open bottom (the standard pixel-bubble form - it reads as speech, not a
+    floating sign). Dark glyphs on white, face fully visible below."""
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16:
+            grid[y][x] = ch
+    text_w = sum(len(TOM[ch][0]) + 1 for ch in text) - 1
+    box_w = text_w + 2                          # 1px padding each side
+    x0 = 16 - box_w                             # hug the right edge
+    # box: top border r0, text rows 1-5, side borders, open bottom
+    for y in range(0, 7):
+        for x in range(x0, 16):
+            put(x, y, "W")
+    for x in range(x0, 16):
+        put(x, 0, "O")
+    for y in range(0, 7):
+        put(x0, y, "O"); put(15, y, "O")
+    cx = x0 + 1
+    for ch in text:
+        for dy, glyph_row in enumerate(TOM[ch]):
+            for dx, g in enumerate(glyph_row):
+                if g == "x":
+                    put(cx + dx, 1 + dy, "O")
+        cx += len(TOM[ch][0]) + 1
+    return ["".join(r) for r in grid]
+
+
 def _overlay_heart(rows):
     import math
     grid = [list(r) for r in rows]
@@ -464,45 +505,70 @@ def _overlay_bandage(rows):
 
 # "HI!" speech bubble: 5-row box (cols 7-15) with 3-row pixel letters
 # H I ! in dark-on-white, tail pointing at the speaker
-_HI_GLYPHS = {
-    "H": ["E.E", "E.E", "EEE", "E.E"],
-    "I": ["E.", "E.", "E.", "E."],
-    "!": ["E.", "E.", ".", "E"],
-}
-
-
-def _overlay_hibubble(rows):
-    # banner across the top (rows 0-3): white fill, dark border, "HI!" in
-    # 3-tall dark letters - big enough to read at chat size. The zombie
-    # peeks out from under it, face fully visible below.
+def _bubble(rows, glyphs, width_cols):
+    """Speech bubble hugging its text: rows 0-5, box cols (16 - width_cols*?)...
+    glyphs: list of (col_offset, letter_rows). Box: border O, fill W."""
     grid = [list(r) for r in rows]
 
     def put(x, y, ch):
         if 0 <= x < 16 and 0 <= y < 16:
             grid[y][x] = ch
-    for y in range(0, 4):
-        for x in range(2, 14):
+    x0 = 16 - width_cols                       # hug the right edge
+    for y in range(0, 6):
+        for x in range(x0, 16):
             put(x, y, "W")
-    for x in range(1, 15):
-        put(x, 0, "O"); put(x, 3, "O")
-    for y in range(0, 4):
-        put(1, y, "O"); put(14, y, "O")
-    # H (cols 3-5), I (col 7-8), ! (col 10-11), 3 rows starting at row 1... rows 1-3
-    Hg = ["E.E", "E.E", "EEE"]
-    Ig = ["EE", "E.", "E."]
-    Xg = ["E.", "E.", "E."]
-    for dy in range(3):
-        for dx, g in enumerate(Hg[dy]):
-            if g == "E":
-                put(3 + dx, 1 + dy, "E")
-        for dx, g in enumerate(Ig[dy]):
-            if g == "E":
-                put(7 + dx, 1 + dy, "E")
-        for dx, g in enumerate(Xg[dy]):
-            if g == "E":
-                put(10 + dx, 1 + dy, "E")
-    put(8, 4, "W"); put(7, 5, "W")       # tail toward the speaker
+    for x in range(x0, 16):
+        put(x, 0, "O"); put(x, 5, "O")
+    for y in range(0, 6):
+        put(x0, y, "O"); put(15, y, "O")
+    for col_off, letter in glyphs:
+        for dy, glyph_row in enumerate(letter):
+            for dx, g in enumerate(glyph_row):
+                if g == "E":
+                    put(x0 + 1 + col_off + dx, 1 + dy, "E")
+    put(x0 + 2, 6, "W"); put(x0 + 1, 6, "W")   # tail toward the speaker
     return ["".join(r) for r in grid]
+
+
+# letter glyphs, 4 tall, bold 2px strokes (legible at emoji size)
+_G_H = ["OO.OO", "OO.OO", "OOOOO", "OO.OO"]
+_G_I = ["OO", "OO", "OO", "OO"]
+_G_X = ["OO", "OO", "OO", ".."]
+_G_O = [".OO.", "O..O", "O..O", ".OO."]
+_G_7 = ["OOOO", "...O", "..O.", "..O."]
+
+
+def _bubble(rows, glyphs, box_cols):
+    """Speech bubble hugging its text: rows 0-5, box of box_cols width hugged
+    against the right edge, border O, fill W, dark letters, tail below."""
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16:
+            grid[y][x] = ch
+    x0 = 16 - box_cols
+    for y in range(0, 6):
+        for x in range(x0, 16):
+            put(x, y, "W")
+    for x in range(x0, 16):
+        put(x, 0, "O"); put(x, 5, "O")
+    for y in range(0, 6):
+        put(x0, y, "O"); put(15, y, "O")
+    for col_off, letter in glyphs:
+        for dy, glyph_row in enumerate(letter):
+            for dx, g in enumerate(glyph_row):
+                if g == "O":
+                    put(x0 + 1 + col_off + dx, 1 + dy, "O")
+    put(x0 + 2, 6, "W"); put(x0 + 1, 6, "W")   # tail toward the speaker
+    return ["".join(r) for r in grid]
+
+
+def _overlay_hibubble(rows):
+    return _microtext_bubble(rows, "HI!")
+
+
+def _overlay_o7bubble(rows):
+    return _microtext_bubble(rows, "o7")
 
 
 OVERLAYS = {
@@ -510,6 +576,7 @@ OVERLAYS = {
     "drool": _overlay_drool, "brows": _overlay_brows, "shades": _overlay_shades,
     "tears": _overlay_tears, "salute": _overlay_salute, "party": _overlay_party,
     "bandage": _overlay_bandage, "hibubble": _overlay_hibubble,
+    "o7bubble": _overlay_o7bubble,
 }
 
 EMOJIS = {
@@ -539,7 +606,9 @@ EMOJIS = {
                 "wound": False, "overlay": "shades"},
     "zlol":    {"palette": "human", "eyes": "dead", "mouth": "blood", "hair": "messy",
                 "wound": False},
-    "zcry":    {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
+    "zcry":    {"palette": "rot", "eyes": "hollow", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "tears"},
+    "scry":    {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
                 "wound": False, "overlay": "tears"},
     "zparty":  {"palette": "toxic", "eyes": "alive", "mouth": "grin", "hair": "bald",
                 "wound": False, "overlay": "party"},
@@ -559,6 +628,8 @@ EMOJIS = {
     "zspiffo": {"palette": "human", "eyes": "alive", "mouth": "grin", "wound": False,
                 "hat": "paper", "torso": "apron", "main": (222, 226, 210),
                 "dark": (170, 60, 50)},
+    "zsalute": {"palette": "rot", "eyes": "alive", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "o7bubble"},
 }
 
 
