@@ -210,9 +210,8 @@ def _prop_rows(prop):
     return _rows((3, "OSSSSSS", 4), (2, "OSSSSTSSS", 2), (2, "OSTTTTTTT", 2))
 
 
-def render(spec):
+def rows_for(spec):
     pal = spec.get("palette", "rot")
-    g, l, d = PALETTES.get(pal, PALETTES["rot"])
     eyes = spec.get("eyes", "red")
     mouth = spec.get("mouth", "blood")
     hair = spec.get("hair", "messy")
@@ -221,19 +220,34 @@ def render(spec):
     occupation = spec.get("occupation")
     hat = spec.get("hat")
     torso = spec.get("torso")
-    main = spec.get("main")
-    dark = spec.get("dark")
     if occupation in OCCUPATIONS:
         hat, torso = OCCUPATIONS[occupation]
-        main, dark = TORSO_COLOURS[torso]
     if not torso:
         torso = "none"
-    if not main or not dark:
-        main, dark = TORSO_COLOURS[torso]
     rng = random.Random(spec.get("seed", 1))
 
     rows = _head_rows(pal, eyes, mouth, hair, wound, rng, hat or "none")
     rows += TORSOS[torso]
+    overlay = spec.get("overlay")
+    if overlay in OVERLAYS:
+        rows = OVERLAYS[overlay](rows)
+    return rows
+
+
+def render(spec):
+    rows = rows_for(spec)
+    pal = spec.get("palette", "rot")
+    g, l, d = PALETTES.get(pal, PALETTES["rot"])
+    main = spec.get("main")
+    dark = spec.get("dark")
+    if not main or not dark:
+        occupation = spec.get("occupation")
+        if occupation in OCCUPATIONS:
+            _, torso = OCCUPATIONS[occupation]
+            main, dark = TORSO_COLOURS[torso]
+        else:
+            torso = spec.get("torso", "none")
+            main, dark = TORSO_COLOURS[torso]
 
     img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
     px = img.load()
@@ -241,7 +255,7 @@ def render(spec):
             "B": B, "P": P, "K": K, "N": N, "Y": Y, "M": M, "H": H,
             "G": g + (255,), "L": l + (255,), "D": d + (255,),
             "C": main + (255,), "F": dark + (255,), "A": (170, 60, 60, 255),
-            "D2": (66, 76, 50, 255), "M2": (86, 98, 66, 255)}
+            "U": (100, 140, 210, 255)}
     for y, row in enumerate(rows):
         assert len(row) == 16, "row %d is %d wide: %r" % (y, len(row), row)
         for x, ch in enumerate(row):
@@ -296,10 +310,234 @@ def emit_js(path):
 
 
 
+
+
+# ------------------------------------------------------------- emoji pack --
+# Discord emotes (128x128 = the 32x32 art x4, nearest-neighbour): the zombie
+# family acting out chat. Each entry is a spec plus an optional overlay
+# painter; overlays only paint over skin/shirt/hair pixels, never the outline.
+BLUE = (100, 140, 210, 255)
+HEART = (200, 40, 60, 255)
+
+
+def _overlay_heart(rows):
+    import math
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16 and grid[y][x] not in "OE":
+            grid[y][x] = ch
+    for y in range(9, 16):
+        for x in range(2, 14):
+            d1 = (x - 5.5) ** 2 + (y - 11.0) ** 2
+            d2 = (x - 10.5) ** 2 + (y - 11.0) ** 2
+            tri = y >= 11 and abs(x - 8) <= (15.5 - y) * 0.85
+            if d1 <= 7.5 or d2 <= 7.5 or tri:
+                put(x, y, "R")
+    put(4, 10, "W"); put(5, 10, "W")
+    return ["".join(r) for r in grid]
+
+
+
+MITTEN = [
+    ".OO.",
+    "OWWO",
+    "OWWO",
+    ".OO.",
+]
+
+
+def _stamp(grid, blueprint, x0, y0):
+    for dy, row in enumerate(blueprint):
+        for dx, ch in enumerate(row):
+            x, y = x0 + dx, y0 + dy
+            if 0 <= x < 16 and 0 <= y < 16 and ch != ".":
+                grid[y][x] = ch
+
+def _overlay_wave(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16:
+            grid[y][x] = ch
+    _stamp(grid, MITTEN, 12, 0)              # raised glove above the head
+    put(13, 4, "G"); put(13, 5, "G")         # arm
+    return ["".join(r) for r in grid]
+
+
+def _overlay_zzz(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16 and grid[y][x] in ".GLD":
+            grid[y][x] = ch
+    for x, y in ((12, 0), (13, 0), (13, 1), (12, 2), (13, 2)):
+        put(x, y, "W")
+    return ["".join(r) for r in grid]
+
+
+def _overlay_drool(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16 and grid[y][x] in "GLDSCF":
+            grid[y][x] = ch
+    for x, y in ((11, 11), (11, 12), (11, 13), (12, 12), (12, 13), (12, 14)):
+        put(x, y, "R")
+    return ["".join(r) for r in grid]
+
+
+def _overlay_brows(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16 and grid[y][x] in "GLD":
+            grid[y][x] = ch
+    for x in (3, 4, 10, 11):
+        put(x, 5, "R")
+        put(x, 6, "D")
+    return ["".join(r) for r in grid]
+
+
+def _overlay_shades(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16:
+            grid[y][x] = ch
+    for x in range(2, 14):
+        put(x, 5, "D"); put(x, 6, "D")
+    put(4, 6, "W"); put(11, 6, "W")
+    return ["".join(r) for r in grid]
+
+
+def _overlay_tears(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16 and grid[y][x] in "GLDSCF":
+            grid[y][x] = ch
+    for x, y in ((3, 8), (3, 9), (4, 10), (12, 8), (12, 9), (11, 10)):
+        put(x, y, "U")
+    return ["".join(r) for r in grid]
+
+
+def _overlay_salute(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16:
+            grid[y][x] = ch
+    _stamp(grid, MITTEN, 12, 1)              # gloved hand at the brow
+    put(14, 4, "G"); put(14, 5, "G"); put(14, 6, "G")    # arm
+    return ["".join(r) for r in grid]
+
+
+def _overlay_party(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch, force=False):
+        if 0 <= x < 16 and 0 <= y < 16 and (force or grid[y][x] in ".GLD"):
+            grid[y][x] = ch
+    put(7, 0, "R", True); put(8, 0, "Y", True)
+    put(6, 1, "Y", True); put(7, 1, "R", True); put(8, 1, "Y", True); put(9, 1, "R", True)
+    for x in range(5, 11):
+        put(x, 2, "R" if x % 2 else "Y", True)
+    for x in range(4, 12):
+        put(x, 3, "R", True)                             # brim
+    put(2, 2, "Y"); put(13, 2, "W"); put(3, 6, "Y")      # confetti
+    return ["".join(r) for r in grid]
+
+
+def _overlay_bandage(rows):
+    grid = [list(r) for r in rows]
+
+    def put(x, y, ch):
+        if 0 <= x < 16 and 0 <= y < 16 and grid[y][x] not in "O":
+            grid[y][x] = ch
+    for x in range(3, 13):
+        put(x, 2, "W"); put(x, 3, "W")
+    put(7, 3, "R")                                       # the scrape showing through
+    return ["".join(r) for r in grid]
+
+
+OVERLAYS = {
+    "heart": _overlay_heart, "wave": _overlay_wave, "zzz": _overlay_zzz,
+    "drool": _overlay_drool, "brows": _overlay_brows, "shades": _overlay_shades,
+    "tears": _overlay_tears, "salute": _overlay_salute, "party": _overlay_party,
+    "bandage": _overlay_bandage,
+}
+
+EMOJIS = {
+    "zlove":   {"palette": "rot", "eyes": "red", "mouth": "blood", "hair": "messy",
+                "wound": False, "overlay": "heart"},
+    "zwave":   {"palette": "human", "eyes": "alive", "mouth": "grin", "hair": "messy",
+                "wound": False, "overlay": "wave"},
+    "zdead":   {"palette": "rot", "eyes": "dead", "mouth": "blood", "hair": "messy",
+                "wound": True},
+    "zbite":   {"palette": "rot", "eyes": "red", "mouth": "fangs", "hair": "messy",
+                "wound": True},
+    "zdrool":  {"palette": "toxic", "eyes": "hollow", "mouth": "fangs", "hair": "bald",
+                "wound": False, "overlay": "drool"},
+    "zangry":  {"palette": "rot", "eyes": "red", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "brows"},
+    "zscared": {"palette": "pale", "eyes": "hollow", "mouth": "blood", "hair": "messy",
+                "wound": False},
+    "zsleep":  {"palette": "ghoul", "eyes": "dead", "mouth": "flat", "hair": "bald",
+                "wound": False, "overlay": "zzz"},
+    "zcool":   {"palette": "rot", "eyes": "dead", "mouth": "grin", "hair": "bald",
+                "wound": False, "overlay": "shades"},
+    "zlol":    {"palette": "human", "eyes": "dead", "mouth": "blood", "hair": "messy",
+                "wound": False},
+    "zcry":    {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "tears"},
+    "zsalute": {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "bald",
+                "wound": False, "overlay": "salute"},
+    "zparty":  {"palette": "toxic", "eyes": "alive", "mouth": "grin", "hair": "bald",
+                "wound": False, "overlay": "party"},
+    "zheal":   {"palette": "human", "eyes": "alive", "mouth": "flat", "hair": "messy",
+                "wound": False, "overlay": "bandage"},
+    "zcop":    {"palette": "human", "eyes": "alive", "mouth": "flat", "wound": False,
+                "occupation": "policeoff"},
+    "zfire":   {"palette": "human", "eyes": "red", "mouth": "grin", "wound": True,
+                "occupation": "fireoff"},
+    "zarmy":   {"palette": "rot", "eyes": "dead", "mouth": "flat", "wound": False,
+                "occupation": "veteran"},
+    "zswat":   {"palette": "rot", "eyes": "hollow", "mouth": "flat", "wound": False,
+                "hat": "swat", "torso": "dark", "main": (52, 58, 66),
+                "dark": (38, 42, 50)},
+    "zmedic":  {"palette": "human", "eyes": "alive", "mouth": "flat", "wound": False,
+                "occupation": "doctor"},
+    "zspiffo": {"palette": "human", "eyes": "alive", "mouth": "grin", "wound": False,
+                "hat": "paper", "torso": "apron", "main": (222, 226, 210),
+                "dark": (170, 60, 50)},
+}
+
+
+def render_emoji(name, size=128):
+    """Render one emote at `size` (square)."""
+    entry = EMOJIS[name]
+    img = render(entry)
+    return img.resize((size, size), Image.NEAREST)
+
+
+def emoji_pack(out_dir):
+    os.makedirs(out_dir, exist_ok=True)
+    for name in EMOJIS:
+        render_emoji(name).save(os.path.join(out_dir, name + ".png"))
+    strip = Image.new("RGBA", (len(EMOJIS) * 138 + 8, 144), (30, 30, 30, 255))
+    x = 8
+    for name in EMOJIS:
+        strip.alpha_composite(render_emoji(name, 128), (x, 8))
+        x += 138
+    strip.save(os.path.join(out_dir, "_contact_sheet.png"))
+    print("wrote %d emojis + contact sheet to %s" % (len(EMOJIS), os.path.normpath(out_dir)))
+
+
 def main():
     import argparse
     ap = argparse.ArgumentParser(description="MTC icon forge")
-    ap.add_argument("mode", nargs="?", choices=["sheet", "single", "occupations", "manifest"])
+    ap.add_argument("mode", nargs="?", choices=["sheet", "single", "occupations", "manifest", "emoji"])
     ap.add_argument("--count", type=int, default=12)
     ap.add_argument("--palette", default=None)
     ap.add_argument("--seed", type=int, default=None)
@@ -320,6 +558,9 @@ def main():
             return
     if not args.out:
         ap.error("--out required")
+    if args.mode == "emoji":
+        emoji_pack(args.out)
+        return
     if args.mode == "manifest":
         import json, sys
         manifest = json.load(open(args.manifest))
