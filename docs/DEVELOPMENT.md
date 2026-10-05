@@ -960,3 +960,44 @@ Discard the static-margin `tile_rect` drawing entirely; replace with `FootprintA
 - [x] Phase 3.6: Headless AO bake — DONE (2026-08-03). `tools/blender/bake_ao_maps.py` (Cycles AO, 64 samples, OptiX GPU, shared 1024 image into atlas UVs, temporary active image-texture node per material). Outputs `<unit_name>_ao.png`. Naming fixed to unit-name (mesh name) so the painter finds it.
 - [x] Phase 3.7: Footprint-aware 3-layer diffuse comp — DONE (2026-08-03). GATE PASSED: `tools/critic.py` 40/40 idle frames PASS, edge density **14.02% alpha-normalised** (DoW1 band 12-16%, target 14%, DoW gap 0.00%). Three fixes from research: (a) high-contrast AO remap `clip((ao-0.2)/0.6,0,1)**2` (isolates darkening to crevices, not raw multiply which crushed mid-tones — edge density 3.47%→14%); (b) Bilinear + UnsharpMask(radius=1,150%,threshold=3) downscale replacing LANCZOS (LANCZOS turned 1px painted lines into muddy gradients); (c) per-tile Phase-2 grain overlay. Critic metric fixed: edge density now alpha-normalised (edge_pixels_in_alpha / visible_pixels), thresholds recalibrated (DoW1 12-16%, DoW2 22-30%). Downscale runs via system-Python PIL (Blender's bundled Python lacks PIL). Pixel stats confirm rich content (1722 unique colours, full 0-255 range). OPEN refinements: painted markings read subtle at sprite scale (bolder/thicker panel lines + brighter gold trim would improve readability); visor/lens material still rewired to atlas (Issue 5 — needs dedicated lens material or skip-list).
 - [ ] Phase 4: Scale to all units — IN PROGRESS (2026-08-02). Overnight render of all 34 units (idle, 8 dirs, fast) with Phase 1+2 (coherent PBR, NO atlas) for review via `tools/overnight_render.sh`. Atlas not applied in the batch (pending Phase 3.5–3.7).
+
+## 17. DoW Asset Import — authentic Relic models into the pipeline
+
+Added 2026-10-05. Imports authentic Dawn of War assets (SGA v2 archives,
+Definitive Edition) as geometry + material sources: proven end-to-end with the
+ork roster (Slugga Boy `boyz.whm`, Shoota Boy `boyz_shoota.whm` extracted,
+rendered front-facing textured from the game's own `boyz_unit_page` atlas,
+klan-tinted, and pixelised via the PZ pixel stack).
+
+- `tools/dow/whm_v4_patch.py` — Definitive WHM (RSGM chunk v4) compatibility
+  shims over `relic.chunky_formats.dow.whm` v3 reader: version gate, STXT
+  unknown-chunk tolerance, MSLC v4 non-zero reserved header + extra children,
+  relaxed child-count asserts. Import before converting any Definitive WHM.
+- `tools/dow/rsh_extract.py` — RSH ("Relic Chunky") material-atlas decoder:
+  `FOLDSHRF → FOLDTXTR → DATAATTR/DATADATA` raw DXT mip chains wrapped in a
+  synthetic DDS header and decoded with Pillow (fmt 8 = DXT1). MTL material
+  names map 1:1 to atlas stems. Force 8-bit RGBA (16-bit breaks Blender GPU
+  texture upload).
+- `tools/dow/blender_ork_import.py` — OBJ import + atlas texturing
+  (`Closest`, `alpha_mode="NONE"`, `blend_method="OPAQUE"` — DXT1 1-bit alpha
+  blanks renders otherwise) + ortho front camera auto-framed from bounds +
+  key/fill/rim lights with `view_transform="Standard"` (AgX washes colour) +
+  klan tint (MULTIPLY 0.45 on cloth parts by name). Atlas dir override via
+  `DOW_ATLAS_DIR`.
+- Pixel variant: `pz/pixel/` (`pixelise.py` Oklab fixed-palette quantiser,
+  `verify_pixel_asset.py` QC, `styles.py`/`palette.py` presets) — the PZ
+  sub-pipeline palette-locked path.
+- Full reference: `docs/DOW_IMPORT.md`.
+
+Status:
+- [x] SGA v2 extraction via `relic-tool-sga-v2` fs opener (monolith
+  `relic-tool-sga` 2.0.1 mis-reads DowI file data — do not use).
+- [x] WHM v4 shims — boyz.whm/boyz_shoota.whm convert to OBJ+MTL+bones.
+- [x] Atlas decode — 43 ork atlases from texture_share (DXT1/5 → PNG).
+- [x] Blender render + pixelise + QC — Slugga/Shoota proven end-to-end.
+- [ ] Roster batch: nobz, nob_leader, warboss, big_mek, grots, stormboyz,
+  stormboy_nob, mega_armoured_nobz, grotbomb, warboss_tgd (same chain).
+- [ ] W40kData.sga (unit selection icons + WTP team-colour patterns) —
+  pending from owner; unlocks authentic unit portraits + full team colour.
+- [ ] Load-out filtering: Slugga/Shoota share one body mesh; per-load-out OBJ
+  object filtering if plain variants are wanted.

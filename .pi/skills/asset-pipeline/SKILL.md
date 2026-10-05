@@ -441,6 +441,29 @@ The queue is crash-safe — all state is on disk. If a render is interrupted:
 
 ---
 
+## DoW Asset Import (external game assets)
+
+Authentic Relic Dawn of War assets (SGA v2 archives, Definitive Edition)
+import as geometry + material sources — proven with the ork roster (Slugga/
+Shoota Boyz rendered textured + klan-tinted + pixelised 2026-10-05).
+
+- Tools: `tools/dow/` — `whm_v4_patch.py` (Definitive RSGM v4 shims over the
+  v3 WHM reader: version gate, STXT tolerance, MSLC v4 reserved fields),
+  `rsh_extract.py` (RSH atlas decoder: raw DXT mip chains wrapped in synthetic
+  DDS), `blender_ork_import.py` (OBJ import + atlas texturing + klan tint +
+  ortho front render; `DOW_ATLAS_DIR` overrides the atlas dir).
+- Pixel variant: `pz/pixel/` — `pixelise.py`/`verify_pixel_asset.py`/
+  `styles.py`/`palette.py` (Oklab fixed-palette quantisation, QC gates).
+- Full reference: `docs/DOW_IMPORT.md`; replication guide (with all gotchas:
+  split relic packages not the 2.0.1 monolith, 8-bit RGBA atlases only,
+  `Standard` view transform not AgX, DXT1 alpha blanks renders):
+  `~/Downloads/mtcde_masters/PIPELINE_GUIDE.md`.
+- Sources: Definitive archives have doubled path components; unit models at
+  `art\...\races\orks\troops\*.whm`, atlases at
+  `art\ebps\races\orks\texture_share\*.rsh`; W40kData.sga (unit icons +
+  WTP team patterns) pending. Slugga/Shoota are load-out part sets inside one
+  WHM — filter OBJ objects per load-out if a plain boy is wanted.
+
 ## Known Technical Debt
 
 Tracked issues that need attention. See `docs/DEVELOPMENT.md` section 14 for full tracking.

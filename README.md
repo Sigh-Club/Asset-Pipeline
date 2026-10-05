@@ -314,6 +314,24 @@ The queue system is resilient:
 | Materials available | 10 sets | — | ✅ |
 | Animation frame diffs | 15+ px | 15+ px | ✅ |
 
+## DoW Asset Import (external game assets)
+
+Authentic Relic Dawn of War models (SGA v2 archives, Definitive Edition) import
+into the pipeline as geometry + material sources:
+
+```bash
+# extract + convert a WHM model to OBJ (shims the Definitive RSGM v4 format)
+python3 tools/dow/whm_v4_patch.py /path/to/boyz.whm
+# decode material atlases from RSH containers
+python3 tools/dow/rsh_extract.py ork_textures ork_pngs
+# texture, klan-tint, render facing camera (DOW_ATLAS_DIR overrides atlas dir)
+DOW_ATLAS_DIR=ork_pngs blender -b -P tools/dow/blender_ork_import.py -- \
+    --obj boyz.obj --out render.png --tint "0.55,0.10,0.08"
+```
+
+Pixel variant (PZ sub-pipeline): `pz/pixel/pixelise.py --style rotbile --size 128`
++ `pz/pixel/verify_pixel_asset.py`. Full reference: `docs/DOW_IMPORT.md`.
+
 ## Documentation
 
 | Document | Purpose |
@@ -324,6 +342,7 @@ The queue system is resilient:
 | `docs/BLENDER_WORKFLOW.md` | Blender setup, camera rig, PBR materials, render workflow |
 | `docs/PARAMETRIC_CONFIG.md` | JSON config schema, all fields, example configs |
 | `docs/STYLE_GUIDE.md` | Visual identity, resolution tables, palette specs |
+| `docs/DOW_IMPORT.md` | Dawn of War asset import: SGA v2 archives, WHM v4 (Definitive) → OBJ, RSH atlases, klan-tinted renders, pixel variant |
 | `docs/AI_GENERATION.md` | AI prompting guide |
 | `development.md` | Development log: issues, decisions, metrics, session notes |
 
