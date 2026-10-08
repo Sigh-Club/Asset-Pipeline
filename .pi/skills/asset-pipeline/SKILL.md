@@ -292,6 +292,10 @@ After critic passes, visual inspection is still required. Compare against tablet
 
 ## Faction Coding Reference
 
+> Identity authority: `Imperium-of-Ash/docs/game-design/FACTION_IDENTITY.md` — 40K-role lineage
+> (Iron Directorate=Guard, Sons of Cinder=`cinderborn`=Chaos, Parasitic Bloom=Tyranid,
+> Harmonic=T'au, Revenants=Necron, Wreckstorm=Ork, Corsairs=Eldar) with our own silhouettes,
+> weapon language and palettes. One silhouette idea per faction; muted world, saturated units.\n
 | Faction | Playable | Theme | Visual Signature | Materials | Lighting Profile |
 |---------|----------|-------|------------------|-----------|-----------------|
 | Iron Directorate | Yes | Order & Tech | Gold/blue, clean lines, industrial | grimdark_metal, imperial_gold, grimdark_fabric, grimdark_leather | Cool key (5500K), neutral fill — ordered militaristic |
