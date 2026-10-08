@@ -60,22 +60,53 @@ def world_chain(bones, overrides):
     return world
 
 
-def pose_overrides(anim, frame):
-    """Nearest-keyed local pos/quat per bone at `frame`."""
+def _interp(keys, u):
+    """Sample sparse key dict {"u":[...]} at normalised time u."""
+    if not keys:
+        return None
+    frames = sorted(float(k) for k in keys)
+    if u <= frames[0]:
+        return keys[str(round(frames[0], 4))]
+    if u >= frames[-1]:
+        return keys[str(round(frames[-1], 4))]
+    import math
+    a = max(f for f in frames if f <= u)
+    b = min(f for f in frames if f >= u)
+    va = np.asarray(keys[str(round(a, 4))], np.float64)
+    vb = np.asarray(keys[str(round(b, 4))], np.float64)
+    t = (u - a) / max(b - a, 1e-9)
+    if len(va) == 4 and len(vb) == 4:  # quaternion slerp
+        dot = float(np.dot(va, vb))
+        if dot > 0.9995:
+            v = va + (vb - va) * t
+        else:
+            theta_0 = math.acos(min(1.0, abs(dot)))
+            sin_0 = math.sin(theta_0)
+            w1 = math.sin((1 - t) * theta_0) / sin_0
+            w2 = math.sin(t * theta_0) / sin_0
+            if dot < 0:
+                w2 = -w2
+            v = w1 * va + w2 * vb
+        return list(v / (np.linalg.norm(v) or 1.0))
+    return list(va + (vb - va) * t)
+
+
+def sample(anim, frame):
+    """Frame index -> normalised time -> posed locals. `frame` may wrap."""
+    n = max(int(anim["frames"]) - 1, 1)
+    u = (frame % n) / n  # loops; pass frame<n for a single clamp
+    return pose_overrides(anim, u)
+
+
+def pose_overrides(anim, u):
+    """Interpolated local pos/quat per bone at normalised time u in [0,1]."""
     pose = {}
     for name, track in anim["bones"].items():
-        pos = _nearest(track["pos"], frame)
-        rot = _nearest(track["rot"], frame)
+        pos = _interp(track["pos"], u)
+        rot = _interp(track["rot"], u)
         if pos and rot:
             pose[name] = (pos, rot)
     return pose
-
-
-def _nearest(keys, frame):
-    if not keys:
-        return None
-    best = min((int(k) for k in keys), key=lambda f: abs(f - frame))
-    return keys[str(best)]
 
 
 def _walk(node):
@@ -188,8 +219,8 @@ def main(argv):
     anim = doc["animations"][anim_name]
     # EMPIRICAL: the mesh bind == the animation's frame 0 (frame 0 skinning is
     # the identity, later frames stay coherent); SKEL-rest bind tears limbs off.
-    bind = world_chain(bones, pose_overrides(anim, 0))
-    world_pose = world_chain(bones, pose_overrides(anim, int(frame)))
+    bind = world_chain(bones, pose_overrides(anim, 0.0))
+    world_pose = world_chain(bones, sample(anim, int(frame)))
     posed = skin(parts, bones, bind, world_pose)
     write_obj(out, posed)
     n_verts = sum(len(v) for v, _, _, _ in posed.values())

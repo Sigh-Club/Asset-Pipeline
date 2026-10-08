@@ -95,15 +95,15 @@ def parse_anims(rsgm, filters):
             "bones": {
                 b.name: {
                     # dict keyed by frame index -> [x,y,z] / [x,y,z,w]
-                    "pos": {str(int(k)): list(v[1:]) for k, v in b.positions.items()},
-                    "rot": {str(int(k)): list(v[1:]) for k, v in b.rotations.items()},
+                    "pos": {str(round(float(k), 4)): list(v[1:]) for k, v in b.positions.items()},
+                    "rot": {str(round(float(k), 4)): list(v[1:]) for k, v in b.rotations.items()},
                     "stale": b.stale,
                 } for b in anim.bones
             },
             "meshes": [
                 {
                     "name": m.name, "mode": m.mode,
-                    "visibility": {str(int(k)): v for k, v in
+                    "visibility": {str(round(float(k), 4)): v for k, v in
                                    ((f, val) for f, val in
                                     ((int(k), v[1]) for k, v in m.visibility.items()))},
                 } for m in anim.meshes
@@ -111,8 +111,8 @@ def parse_anims(rsgm, filters):
             "tracks": [] if not anim.unks else [
                 {
                     "name": u.name,
-                    "pos": {str(k): list(v[1:]) for k, v in u.positions.items()},
-                    "rot": {str(k): list(v[1:]) for k, v in u.rotations.items()},
+                    "pos": {str(round(float(k), 4)): list(v[1:]) for k, v in u.positions.items()},
+                    "rot": {str(round(float(k), 4)): list(v[1:]) for k, v in u.rotations.items()},
                 } for u in anim.unks
             ],
         }

@@ -46,6 +46,17 @@ STYLES = {
         "prompt": ("thick bold black outlines, flat cel shading, rich detail, "
                    "modern indie pixel art style"),
     },
+    # high-detail pixel art: large canvas, subtle dither, soft ink
+    "hd": {
+        "palette": palette_list(),
+        "size": 256,
+        "dither": "bayer2",
+        "ink": (18, 16, 26),
+        "outline": 0.5,
+        "ink_luma": 0.3,
+        "prompt": ("high-detail pixel art, rich hue-shifted shading, fine "
+                   "detail, clean silhouette, modern HD pixel technique"),
+    },
     # the canonical "proper indie" look: DawnBringer 16
     "db16": {
         "palette": DB16,

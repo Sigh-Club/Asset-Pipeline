@@ -211,3 +211,28 @@ included → unit selection icons in `art\ui\...ingame\*_icons`, WTPs, badges).
 `~/.local/lib/python3.13/site-packages/pillow.libs/`. Symptom:
 `ImportError: libtiff-….so` inside blender, which kills `import os` in
 scripts that import PIL first.
+
+## 7. Retarget bridge — our assets playing DoW animations (2026-10-08)
+
+The pipeline for original characters at DoW motion quality:
+
+1. **Bind to `bip01` names.** Author/parametrically-build the mesh bound to
+   the DoW bone set (rigid per part is authentic — DoW props are single-bone;
+   add weights later for cloth). `mannequin.py` generates the proof rig
+   (parts JSON: name/bone/verts/tris) directly from a whm_animdata skeleton.
+2. **`pose_rig.py parts.json rig.json ANIM FRAME out.obj`** — skins our parts
+   with any clip: `v' = Σ w M(f) M(bind)⁻¹ v`, bind = rig rest. Same math as
+   pose_whm, generalised to arbitrary bound meshes (per-part "weights" list
+   for smooth skinning).
+3. **Keys are NORMALISED 0..1** (N = the ANIM frames field, float keys
+   1/N apart). `pose_whm.sample(anim, frame)` wraps/interpolates: pos lerp,
+ quat slerp, and `pose_overrides(anim, u)` takes u∈[0,1] directly. Frame
+   N-1 = end; loops via modulo. Earlier int-truncation of keys collapsed
+   49-key runs to 2 — always sample, never truncate.
+4. Result: the whole 122-clip library (incl. sync-kills, per-weapon aim
+   overlays) plays on any conforming mesh; render posed OBJs through
+   `blender_ork_import.py` → 8-dir/style post (`pz/pixel/`, `hd` preset for
+   high-detail pixel).
+
+Exemplars: `tools/dow/mannequin.py` (capsule mannequin, rigid-bound) — its
+run cycle renders coherent; `output/dow_decompile_smoke/`.
