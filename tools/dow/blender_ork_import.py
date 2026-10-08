@@ -5,6 +5,7 @@
 #           --out render_boyz_authentic.png [--tint "0.55,0.10,0.08"]
 import argparse
 import glob
+import os
 import sys
 
 import bpy
@@ -17,7 +18,7 @@ ATLAS_DIR = os.environ.get("DOW_ATLAS_DIR",
 
 def find_atlas(stem):
     hits = glob.glob(ATLAS_DIR + "/%s__*mip0.png" % stem)
-    return hits[0] if hits else None
+    return sorted(hits)[0] if hits else None  # page 0 = diffuse
 
 
 def texture_material(mat, atlas_path):

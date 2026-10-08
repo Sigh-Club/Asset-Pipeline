@@ -114,3 +114,100 @@ orphans, rim contrast). Style presets in `pz/pixel/styles.py`; palettes in
 - 16-bit PNG atlases break Blender GPU texture upload.
 - Slugga/Shoota/etc. are load-out part sets inside one WHM, not separate
   models — filter OBJ objects per load-out if a plain boy is wanted.
+
+## 6. Skeleton, animation, markers (2026-10-08 decompile)
+
+Full WHM chunk anatomy is documented in the docstring of
+`tools/dow/whm_animdata.py` (RSGM → STXT/SHDR/SKEL/MSGR(MSLC)/MARK/CAMS/ANIM).
+Headline facts:
+
+- **Skeleton** (`SKEL`): per bone `name, parent idx, local pos(xyz),
+  rot quat(xyzw)` — a standard 3ds Max Biped hierarchy (`bip01 pelvis …`),
+  plus prop bones (`boyz_rokkit`, `ork_flag_pole`) and cloth bones
+  (`bone_ork_plume_*`).
+- **Animations** are embedded in the model WHM as named `ANIM` folders —
+  122 clips on boyz.whm (`idle_1`, `run_1`, `melee_1`, `sync_kill_*`,
+  `die_*`, per-weapon variants, and `vis_*` = mesh-visibility tracks that
+  switch load-out parts). Each track: sparse keys `frame → pos(xyz)` /
+  `frame → quat(xyzw)`, local to the parent bone, same convention as SKEL.
+  Mesh visibility sub-tracks hide/show parts per frame.
+- **Skinning**: MSLC verts are model-space bind pose; 48-byte vertex =
+  `pos3f + weights3f + idx4B + normal3f + uv2f` (32-byte = no skinning).
+  Weight indices are GLOBAL skeleton ids; `255` = unweighted padding.
+- **Markers** (`MARK`): attachment points (muzzle, blade, sync-kill, icon)
+  — `name`, optional parent-bone ref, 48-byte basis+pos transform.
+- **Cameras** (`CAMS`): `army_painter_camera` etc., same 48B transform.
+- **Materials** (`SHDR`): one shader per material; `CHAN` channels =
+  `{index, flags, rgba tint, atlas path}` — tint `808080ff` = neutral.
+  The RSH atlas is multi-page: page 0 diffuse, then glow / specular /
+ normal (verified on `boyz_unit_page`); `rsh_extract.py` now suffixes
+  pages _0.._3 and the Blender importer picks page 0.
+
+### Bind-pose finding (important, empirical)
+
+The SKEL rest pose is NOT the mesh bind in Definitive assets — skinning with
+`M(f)·M(skel)⁻¹` tears limbs off. The bind that works: **the animation's own
+frame 0** (`M(f)·M(f0)⁻¹`; frame 0 renders identical to the stored mesh,
+later frames stay a coherent single unit). `pose_whm.py` implements this;
+`--bind-rest` kept for debugging.
+
+### Tools
+
+```bash
+# skeleton + all animations + markers + cams → JSON
+python tools/dow/whm_animdata.py model.whm anims.json [name_filter …]
+
+# skin any anim frame to OBJ (submesh names = atlas stems; feeds
+# blender_ork_import.py unchanged) — the sprite-sheet workhorse:
+python tools/dow/pose_whm.py model.whm anims.json run_1 20 posed.obj
+#   [--bind-rest] for the (broken-on-Definitive) skel-rest bind
+```
+
+Verified: rest-pose skinning is exact to 1e-7; `run_1` frames render as a
+coherent textured ork (see `output/` smoke runs). Frame rate: key frames are
+integer indices; 30 fps is the working assumption for clip length.
+
+### Team colour (WTP) — `tools/dow/wtp_tint.py`
+
+- `<atlas>_default.wtp` lives beside the RSH in
+  `W40kData-SharedTextures-Definitive.sga` under
+  `art\ebps\<race>\texture_share\`. TPAT = INFO dims + IMAG (default atlas) +
+  PTLD per-layer masks + PTBD badge uv-rect.
+- PTLD mask = raw W×H **single-byte soft blend weight** per pixel
+  (Primary/Secondary/Trim/Weapon/Eyes/Dirt), UV-aligned to the atlas, not
+  row-flipped. Values are soft (anti-aliased edges), not binary.
+- `.teamcolour` lua files (W40kData.sga `art\team_colours\<race>\`) give
+  per-layer RGB + badge/banner names; `teamcolourdefaults.lua` maps race →
+  default scheme (orks = Evil Sunz).
+- Blend: `out = diff·(1−m) + diff·colour·m` (multiplicative tint inside the
+  mask — the classic DoW team shader).
+- Badge/banner: PTBD/PTBN give the uv rect on the atlas where the race badge
+  PNG (also in W40kData.sga) is stamped.
+
+### Replication recipe (our own assets, DoW conventions)
+
+1. One skinned mesh per body, 3ds-Max-Biped-style bone set; rest pose stored
+   in SKEL, all animation clips embedded in the model file as named tracks
+   (pos+quat, sparse keys, local space).
+2. Vertex format 48B with 3 weights + 4 indices; static props 32B no skin.
+3. Texture: one diffuse atlas per material + glow/spec/normal pages; team
+   areas tinted via soft grayscale masks + per-layer RGB; badge uv-rect.
+4. Attachments via named markers bound to bones; load-outs switched by
+   visibility tracks (`vis_*`) — no separate meshes per variant.
+
+### GOG installer extraction (full source archives)
+
+`innoextract` on the setup exe: the `-I '*.sga'` glob does NOT match (its
+path matcher is per-component) — extract everything
+(`innoextract -s -m -d OUT setup*.exe`, ~20 GB) and take the `W40k/ DX?P2/
+DX?P3/ WXP/` SGA trees. The `.bin` data slices must sit next to the exe.
+Full set now at `/run/media/talzanar/games/dow-definitive/` (W40kData.sga
+included → unit selection icons in `art\ui\...ingame\*_icons`, WTPs, badges).
+
+### Blender addon PIL breakage (system-upgrade collateral)
+
+`~/.config/blender/5.1/scripts/addons/modules/PIL` needs its bundled
+`PIL.libs/*` beside it; if missing, copy from
+`~/.local/lib/python3.13/site-packages/pillow.libs/`. Symptom:
+`ImportError: libtiff-….so` inside blender, which kills `import os` in
+scripts that import PIL first.

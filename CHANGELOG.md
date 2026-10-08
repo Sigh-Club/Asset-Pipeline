@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-10-08
+
+### Added — DoW decompile: animation / skeleton / team-colour pipeline
+
+- `tools/dow/whm_animdata.py` — WHM skeleton/animation/marker/camera
+  extractor → JSON; full RSGM v4 chunk anatomy documented (SKEL biped,
+  embedded named ANIM clips with local pos/quat keys, MARK attachment
+  markers, CAMS, SHDR material channels, 48-byte skinned vertex layout).
+- `tools/dow/pose_whm.py` — skin any animation frame to OBJ (bind pose =
+  anim frame 0, empirical; SKEL-rest bind tears limbs on Definitive assets).
+  Feeds `blender_ork_import.py` unchanged — the sprite-sheet workhorse.
+- `tools/dow/wtp_tint.py` — WTP team-colour compositor (PTLD soft masks ×
+  `.teamcolour` RGB, multiplicative blend; PTBD badge rect decoded).
+- `docs/DOW_IMPORT.md` §6 — full decompile writeup, replication recipe
+  (authoring assets in DoW convention), GOG extraction runbook.
+- Full GOG archive set extracted to `/run/media/talzanar/games/dow-definitive/`
+  (W40kData.sga: unit icons, WTP masks, badges, teamcolour lua).
+
+### Fixed
+
+- `rsh_extract.py`: multi-page RSH output collisions (pages suffixed
+  `_0.._3`, page 0 = diffuse); `blender_ork_import.py` picks page 0 and
+  imports `os` (previous NameError).
+
 ## [v0.4.0] — 2026-07-26
 
 ### Added

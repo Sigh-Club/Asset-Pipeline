@@ -93,7 +93,8 @@ def dxt_payload_to_dds(w, h, mips, payload, fmt):
 def rsh_to_pngs(rsh_path, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     written = []
-    for name, fmt, w, h, payload, mips in rsh_images(rsh_path):
+    images = rsh_images(rsh_path)
+    for page_i, (name, fmt, w, h, payload, mips) in enumerate(images):
         try:
             dds = dxt_payload_to_dds(w, h, mips, payload, fmt)
             import io
@@ -103,7 +104,11 @@ def rsh_to_pngs(rsh_path, out_dir):
             print("  decode fail %s fmt=%d: %s" % (name, fmt, e), file=sys.stderr)
             continue
         base = os.path.splitext(os.path.basename(rsh_path))[0]
-        out = os.path.join(out_dir, "%s__%s_mip0.png" % (base, name))
+        stem = name[: -len(".dds")]
+        # page index suffix when the rsh carries multiple pages (diffuse is 0:
+        # verified on boyz_unit_page = diffuse, glow, spec, normal)
+        suffix = "" if len(images) == 1 else f"_{page_i}"
+        out = os.path.join(out_dir, "%s__%s%s_mip0.png" % (base, stem, suffix))
         img.convert("RGBA").save(out)
         written.append(out)
     return written
