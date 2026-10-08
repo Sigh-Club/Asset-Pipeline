@@ -464,6 +464,30 @@ Shoota Boyz rendered textured + klan-tinted + pixelised 2026-10-05).
   WTP team patterns) pending. Slugga/Shoota are load-out part sets inside one
   WHM — filter OBJ objects per load-out if a plain boy is wanted.
 
+## XCOM: Enemy Unknown reference (environment & prop grammar)
+
+XCOM:EU is the readability benchmark our tile/prop work emulates (IoA side:
+`Imperium-of-Ash/docs/skills/xcomcombatskill.md` — combat rules; here: what it means for
+assets). Non-negotiables for generators, keyed to the game's actual env rules:
+
+1. **One tile = one decision.** Every tile must read as one of: open / half-cover /
+   full-cover / blocked / elevated. Props are cover-shaped (waist-high half pieces,
+   shoulder-high full pieces) — bake this into `tile_generator.py` prop vocabulary.
+2. **Damage states are mandatory, not decorative.** XCOM destructibles carry HP and every
+   shot deals `environmentDamage` (pistol 10 → grenades 250). Any cover prop we ship needs
+   intact → damaged → destroyed frames or a shatter-to-rubble variant. (See Known Technical
+   Debt #9 — tile animation/destructible states.) Prioritise cover props, walls, vehicles.
+3. **Silhouette over detail. XCOM mutes the world, saturates the units** — the level is
+   grey/brown/blue-grey; the most saturated object on screen must always be a unit. Our
+   faction palettes already do this; enforce it in tile material albedo (low-chroma base,
+   accent only on interactables).
+4. **Elevation is geometry, not texture.** Distinct walkable strata (ground/roof) with
+   readable edges and drop shadows; props that enable climbing read differently.
+5. **Diorama lighting.** Fixed 45° iso, key from upper-left, unit-contrast priority —
+   matches our existing 4-point miniature rig; keep tile lighting quieter than unit lighting.
+6. **Sound stingers per outcome, not per weapon** (hit/crit/miss/death + UI confirm) —
+   audio layer is outcome-classed (see xcomcombatskill §11).
+
 ## Known Technical Debt
 
 Tracked issues that need attention. See `docs/DEVELOPMENT.md` section 14 for full tracking.
