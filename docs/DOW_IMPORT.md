@@ -236,3 +236,14 @@ The pipeline for original characters at DoW motion quality:
 
 Exemplars: `tools/dow/mannequin.py` (capsule mannequin, rigid-bound) — its
 run cycle renders coherent; `output/dow_decompile_smoke/`.
+
+### Pose-fidelity resolution (same session, later)
+
+The arm-detachment quirk is the **stale flag**: ~24/31 bones per clip are
+marked stale and their keys are placeholders — applying them detaches limbs.
+`--respect-stale` (pose_whm/pose_rig) skips stale bones to rest: aim/idle
+render PERFECTLY (verified textured). Run cycles: legs are stale-flagged in
+run clips, so respect-stable keeps them neutral — the stride likely lives in
+the engine's locomotion layering; open question for sprite-quality runs
+(candidates: per-clip layering, DXP shared anims, or stale semantics
+variation). Evidence trail in git; next session starts here.

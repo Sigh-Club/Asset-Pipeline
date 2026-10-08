@@ -91,11 +91,11 @@ def _interp(keys, u):
     return list(va + (vb - va) * t)
 
 
-def sample(anim, frame):
+def sample(anim, frame, skip_stale=False):
     """Frame index -> normalised time -> posed locals. `frame` may wrap."""
     n = max(int(anim["frames"]) - 1, 1)
     u = (frame % n) / n  # loops; pass frame<n for a single clamp
-    return pose_overrides(anim, u)
+    return pose_overrides(anim, u, skip_stale)
 
 
 def pose_overrides(anim, u):
@@ -219,8 +219,9 @@ def main(argv):
     anim = doc["animations"][anim_name]
     # EMPIRICAL: the mesh bind == the animation's frame 0 (frame 0 skinning is
     # the identity, later frames stay coherent); SKEL-rest bind tears limbs off.
-    bind = world_chain(bones, pose_overrides(anim, 0.0))
-    world_pose = world_chain(bones, sample(anim, int(frame)))
+    skip = "--respect-stale" in flags
+    bind = world_chain(bones, pose_overrides(anim, 0.0, skip))
+    world_pose = world_chain(bones, sample(anim, int(frame), skip))
     posed = skin(parts, bones, bind, world_pose)
     write_obj(out, posed)
     n_verts = sum(len(v) for v, _, _, _ in posed.values())

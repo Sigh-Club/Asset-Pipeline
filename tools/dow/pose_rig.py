@@ -50,7 +50,10 @@ def pose_part(verts, binding, world_bind, world_pose):
 
 
 def main(argv):
-    parts_path, rig_path, anim, frame, out = argv[1:6]
+    flags = [a for a in argv if a.startswith("--")]
+    args = [a for a in argv[1:] if not a.startswith("--")]
+    parts_path, rig_path, anim, frame, out = args[:5]
+    skip_stale = "--respect-stale" in flags
     parts_doc = load_parts(parts_path)
     rig = json.loads(Path(rig_path).read_text())
     bones = rig["skeleton"]
@@ -60,7 +63,7 @@ def main(argv):
         print(f"anim {anim!r} not in rig animations")
         return 2
     world_bind = P.world_chain(bones, {})  # our bind = rest
-    world_pose = P.world_chain(bones, P.sample(rig["animations"][anim], int(frame)))
+    world_pose = P.world_chain(bones, P.sample(rig["animations"][anim], int(frame), skip_stale))
 
     lines, base = [], 1  # OBJ indices cumulative across objects
     for part in parts_doc["parts"]:
