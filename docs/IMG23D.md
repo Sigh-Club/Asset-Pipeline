@@ -82,3 +82,21 @@ skip rembg entirely (`--no-rembg` trusts alpha); RGB images go through rembg
 Hunyuan weights: Tencent Hunyuan Community License — check
 `Hunyuan3D-2/LICENSE` before shipping game assets built from it commercially;
 TripoSR is MIT. For IoA-internal sprites either is fine.
+
+## Printer prep — Creality CR-200B (200³ enclosed)
+
+`tiles.py` cuts any reconstruction/plate into bed-sized watertight tiles
+(heightfield-level cut → relief continuous across seams; butt-glue + optional
+6 mm dowels, `dowel_6x8.stl`). Machine limits, verified faults and fixes, and
+the slicer profile live in the agent skill `~/.pi/agent/skills/cr200b/SKILL.md`
+(CR-200B: 200³, 0.4 nozzle, PTFE hotend ≤250 °C, poor stock adhesion — glue
+stick mandatory, bowden extruder — ≤60 mm/s, 0.12 mm layers for detail).
+
+```bash
+tools/img23d/.venv/bin/python tools/img23d/tiles.py <mesh.glb> --width 628 --bed 190
+# → <name>_tiles/: 16 × ~157 mm tiles + manifest + dowels, all pre-checked
+#   watertight/single-component; reject any tile the slicer flags
+```
+Detail floor: heightfield must come from ≥384 MC resolution + ≥960 grid
+(`--resolution 384` on img23d.py); below that, 2 mm features print as blobs on
+the 0.4 nozzle.
