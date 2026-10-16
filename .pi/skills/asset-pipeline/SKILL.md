@@ -206,7 +206,7 @@ Procedural PBR texture generation + Blender material library management.
 - `imperial_gold`: Warm gold, tarnish, engraved detail — Iron Directorate officers
 - `chaos_rust`: Heavy corrosion, blood stains, deep pitting — Cinderborn
 - `bio_flesh`: Sickly green organic, vein network, spore spots — Parasitic Bloom
-- `chrome_white`: Bright white-chrome, panel lines, minimal wear — Harmonic Collective
+- `chrome_white`: Bright white-chrome, panel lines, minimal wear — Radiant Concord
 - `cyan_bone`: Cyan-tinted bone, porous, temporal cracks — Chrono Revenants
 - `red_rust`: Hot red-orange rusted metal, heat scoring, battle wear — Wreckstorm Clans
 - `black_silver`: Dark grey-black tactical, silver edge wear, matte — Void Corsairs
@@ -301,7 +301,7 @@ After critic passes, visual inspection is still required. Compare against tablet
 | Iron Directorate | Yes | Order & Tech | Gold/blue, clean lines, industrial | grimdark_metal, imperial_gold, grimdark_fabric, grimdark_leather | Cool key (5500K), neutral fill — ordered militaristic |
 | Cinderborn | Yes | Occult & Sacrifice | Purple/orange, ritual markings, asymmetrical | chaos_rust, grimdark_metal, grimdark_leather | Warm magenta key, purple fill — corrupted ritual |
 | Parasitic Bloom | No | Bio horror | Green/flesh, swarm behaviour | bio_flesh, grimdark_leather | Sickly green key, pink fill — fleshy horror |
-| Harmonic Collective | No | AI precision | White/chrome, precise geometry | chrome_white, grimdark_metal | Cool blue key, white rim — sleek machine |
+| Radiant Concord | No | AI precision | White/chrome, precise geometry | chrome_white, grimdark_metal | Cool blue key, white rim — sleek machine |
 | Chrono Revenants | No | Time-warped undead | Cyan/bone, temporal effects | cyan_bone, grimdark_metal | Warm gold/bronze key, teal fill — aged temporal |
 | Wreckstorm Clans | No | Speed & fury | Red/rust, aggressive | red_rust, grimdark_metal, grimdark_leather | Rusty orange key, minimal fill — scrap heat |
 | Void Corsairs | No | Mercenary pirates | Black/silver, tactical | black_silver, grimdark_leather | Cool purple key, deep shadows — stealth |
@@ -509,3 +509,29 @@ Tracked issues that need attention. See `docs/DEVELOPMENT.md` section 14 for ful
 11. **Render timeout**: Cycles at 128 samples/1152×1536 takes ~3 hours for 248 frames (full unit). Use `--fast` (64 samples at 1152×1536) for iteration, full quality for final. The CLI's 120s timeout is too short — run Blender directly for full renders. The render queue handles this automatically in background mode.
 12. **Codpiece/tabard geometry**: Added but minimal E/W silhouette impact. Consider adding over-shoulder weapon sling, cape, or larger backpack for more dramatic side-profile volume.
 
+
+## Image-to-3D detail standard & multi-pass loop (mandatory for panel/prop meshes)
+
+**The standard (user-set, gate on every delivery):** the mesh must survive a
+side-by-side against the reference artwork at PRINT SCALE (one tile, 157mm
+zoom) — forms, proportions, mid-relief crisp; no visible sand/stipple; and the
+render-edge audit ≥85% capture on the final pass, judged per-region via the
+residual map (red=lost/green=spurious overlay, code pattern in session logs
+and `tools/img23d/verify.py`). "Structurally right" is NOT passing; surface
+fidelity is the deliverable.
+
+**The loop (one-to-one is reached by passes, never one-shot):**
+1. reconstruct (best model that fits VRAM — see quality ladder in
+   `~/.pi/skills/cr200b/SKILL.md`; full Hunyuan3D-2 ≥ octree 384 minimum)
+2. smooth (Humphrey ~30 it) → carve artwork high-pass (multi-band 24/12/6/3)
+3. render-audit vs artwork → residual miss-map → carve ONLY the missing
+   regions/bands (pass 3 pattern)
+4. pose-registered side-view carving (homography from silhouette) for
+   vertical walls; hero-element anatomy is Blender sculpt work against the
+   reference render — no pipeline pass substitutes
+5. iterate 3→4 until capture plateaus AND visual sign-off at tile zoom;
+   then plate/tiles via `plate.py`/`tiles.py`, verify, print-prep per cr200b
+
+Full state, pass ledger, blockers: `HANDOFF_IMG23D.md` (repo root). Multiview
+capture prompts: `docs/IMG23D.md`. Never ship a mesh whose verify <85 or
+whose sand pass was skipped.
