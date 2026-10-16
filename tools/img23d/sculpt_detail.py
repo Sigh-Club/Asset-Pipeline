@@ -45,10 +45,14 @@ def main():
     p.add_argument("--strength", type=float, default=0.05,
                    help="max displacement, model units (0.05 = ~15mm at 628mm panel)")
     p.add_argument("--nz", type=float, default=0.35, help="min face-normal z to displace")
+    p.add_argument("--smooth", type=int, default=0, metavar="N",
+                   help="Humphrey smoothing iterations BEFORE carving — kills voxel sand, keep detail via carve. Default 30 for AI raw meshes.")
     p.add_argument("--blur", type=int, default=9)
     a = p.parse_args()
 
     m = trimesh.load(a.mesh, force="mesh", process=True)
+    if a.smooth:
+        trimesh.smoothing.filter_humphrey(m, alpha=0.1, beta=0.6, iterations=a.smooth)
     v = m.vertices
     x, y = v[:, 0], v[:, 1]
     nx, ny = 960, int(960 * (y.max() - y.min()) / (x.max() - x.min()))
