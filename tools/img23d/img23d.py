@@ -63,7 +63,8 @@ def run_hunyuan(image_path: Path, out_dir: Path, args) -> None:
     sys.path.insert(0, str(HUNYUAN_REPO))
     from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline  # noqa: E402
 
-    views = {k: Path(p) for k, p in args.views.items() if p}
+    views = dict(args.views) if getattr(args, "views", None) else {}
+    views = {k: Path(p) for k, p in views.items() if p}
     if views:  # multiview (Hunyuan3D-2mv): dict of named views
         image = {k: _maybe_remove_bg(p, args.no_rembg) for k, p in views.items()}
     else:
