@@ -63,14 +63,22 @@ def run_hunyuan(image_path: Path, out_dir: Path, args) -> None:
     sys.path.insert(0, str(HUNYUAN_REPO))
     from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline  # noqa: E402
 
-    image = _maybe_remove_bg(image_path, args.no_rembg)
+    views = {k: Path(p) for k, p in args.views.items() if p}
+    if views:  # multiview (Hunyuan3D-2mv): dict of named views
+        image = {k: _maybe_remove_bg(p, args.no_rembg) for k, p in views.items()}
+    else:
+        image = _maybe_remove_bg(image_path, args.no_rembg)
     model = args.hunyuan_model
     if args.hunyuan_subfolder:
         subfolder = args.hunyuan_subfolder
+    elif "mv" in model:
+        subfolder = "hunyuan3d-dit-v2-mv"
+    elif "mini" in model:
+        subfolder = "hunyuan3d-dit-v2-mini-turbo"
     else:
-        subfolder = ("hunyuan3d-dit-v2-mini-turbo" if "mini" in model
-                     else "hunyuan3d-dit-v2-0-turbo")
-    print(f"[img23d] hunyuan: loading {model} [{subfolder}]")
+        subfolder = "hunyuan3d-dit-v2-0-turbo"
+    print(f"[img23d] hunyuan: loading {model} [{subfolder}]"
+          + (f" views={sorted(views)}" if views else ""))
     pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
         model, subfolder=subfolder)
 
@@ -143,7 +151,8 @@ def main() -> None:
     _ensure_venv()  # no-op when already running under .venv
 
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("image", nargs="+", type=Path, help="concept image(s)")
+    p.add_argument("image", nargs="*", type=Path,
+                   help="concept image(s); optional in multiview mode")
     p.add_argument("--engine", choices=["hunyuan", "triposr"], default="hunyuan")
     p.add_argument("--out", type=Path, default=None,
                    help="output dir (default: output/img23d/<image stem>)")
@@ -151,24 +160,36 @@ def main() -> None:
                    help=f"marching-cubes resolution (default {MC_RESOLUTION_DEFAULT})")
     p.add_argument("--steps", type=int, default=None, help="diffusion steps (hunyuan)")
     p.add_argument("--seed", type=int, default=None)
-    p.add_argument("--hunyuan-model", default="tencent/Hunyuan3D-2mini",
-                   help="HF repo id")
+    p.add_argument("--hunyuan-model", default=None,
+                   help="HF repo id (default: 2mini single-view, 2mv with --front etc)")
     p.add_argument("--hunyuan-subfolder", default=None,
-                   help="shape-model subfolder (default: hunyuan3d-dit-v2-mini-turbo "
-                        "for the -mini repo, hunyuan3d-dit-v2-0-turbo otherwise)")
+                   help="shape-model subfolder override")
+    p.add_argument("--front", dest="views", action="append",
+                   type=lambda kv: (kv.split("=", 1)[0].strip(), kv.split("=", 1)[1].strip()),
+                   metavar="NAME=PATH",
+                   help="multiview mode: --front= --back= --left= --right=; "
+                        "uses Hunyuan3D-2mv unless --hunyuan-model given")
     p.add_argument("--formats", nargs="+", default=["glb", "obj", "stl"],
                    choices=["glb", "obj", "stl"])
     p.add_argument("--no-rembg", action="store_true",
                    help="trust image alpha / skip background removal")
     p.add_argument("--quiet", action="store_true", help="suppress repair hints")
     args = p.parse_args()
+    args.views = dict(args.views) if args.views else None
+    if args.views and not args.hunyuan_model:
+        args.hunyuan_model = "tencent/Hunyuan3D-2mv"
+    elif not args.hunyuan_model:
+        args.hunyuan_model = "tencent/Hunyuan3D-2mini"
 
     if not (HERE / ".venv").exists():
         sys.exit("missing tools/img23d/.venv — run: "
                  "python3.12 -m venv .venv && .venv/bin/pip install ... "
                  "(see docs/IMG23D.md)")
 
-    for image in args.image:
+    images = args.image or ([Path(list(args.views.values())[0])] if args.views else [])
+    if not images:
+        sys.exit("provide an IMAGE or --front=/--back=/--left=/--right= views")
+    for image in images:
         if not image.exists():
             sys.exit(f"no such image: {image}")
         out_dir = args.out or (HERE.parent.parent / "output" / "img23d" / f"{image.stem}-{args.engine}")
