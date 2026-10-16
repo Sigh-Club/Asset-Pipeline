@@ -32,7 +32,10 @@ os.chdir(R)
 from hy3dshape.pipelines import Hunyuan3DDiTFlowMatchingPipeline
 
 OOM_LADDER = (384, 320, 256, 192)
-NEED_MB = 6300  # dit + context + activations headroom
+NEED_MB = 6900   # task process total incl cuda context: dit 5GB + activations
+# VRAM the desktop keeps for itself (youtube); the GPU ladder only fires when
+# this fits alongside the task, else CPU fallback keeps the GPU all yours.
+DESKTOP_RESERVE_MB = int(os.environ.get("GPU_DESKTOP_RESERVE_MB", "1300"))
 
 
 def gpu_free_mb() -> int:
@@ -40,24 +43,24 @@ def gpu_free_mb() -> int:
     return free >> 20
 
 
-def wait_for_free(need_mb: int, tag: str, poll_s: int = 20, timeout_s: int = 0) -> None:
-    """Block until free >= need minus what this process already holds.
+def wait_for_free(need_mb: int, tag: str, poll_s: int = 20, timeout_s: int = 0,
+                  reserve_mb: int = 0) -> None:
+    """Block until free >= need + desktop reserve, minus what we hold.
 
-    The desktop is never touched; need_mb is the stage's TOTAL footprint and
-    our own cuda reservation is subtracted, else we'd wait on ourselves.
+    The desktop is never touched. If the budget never frees up, the caller
+    falls back to CPU (which leaves the entire GPU to the desktop).
     """
     t0 = time.time()
     while True:
         held = torch.cuda.memory_reserved() >> 20
-        short = need_mb - held - gpu_free_mb()
+        short = need_mb + reserve_mb - held - gpu_free_mb()
         if short <= 0:
             return
         if timeout_s and time.time() - t0 > timeout_s:
-            print(f"[wait] timeout waiting for {need_mb}MiB at {tag}; best effort",
-                  flush=True)
-            return
-        print(f"[wait] {tag}: need {need_mb}MiB, held {held}MiB, "
-              f"free {gpu_free_mb()}MiB; retry in {poll_s}s (desktop untouched)",
+            print(f"[wait] budget never freed at {tag}; falling back", flush=True)
+            raise TimeoutError(tag)
+        print(f"[wait] {tag}: need {need_mb}+{reserve_mb} desktop reserve, "
+              f"held {held}MiB, free {gpu_free_mb()}MiB; retry in {poll_s}s",
               flush=True)
         time.sleep(poll_s)
 
@@ -109,11 +112,10 @@ def cpu_fallback(res, out):
     print("OK", out, flush=True)
 
 
-def main():
-    res = int(sys.argv[1]) if len(sys.argv) > 1 else 384
-    out = sys.argv[2] if len(sys.argv) > 2 else None
+def gpu_phase(res, out):
+    """GPU ladder. Returns exported path or None; frees its VRAM on return
+    (all cuda tensors are locals of this frame)."""
     img_path = IMG_PATH
-
     t0 = time.time()
     pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(
         "tencent/Hunyuan3D-2.1", use_safetensors=False, device="cpu")
@@ -159,7 +161,7 @@ def main():
         for attempt in (1, 2):
             try:
                 wait_for_free(NEED_MB, f"gen res{attempt_res} try{attempt}",
-                              timeout_s=1800)
+                              timeout_s=90, reserve_mb=DESKTOP_RESERVE_MB)
                 t0 = time.time()
                 mesh = generate(attempt_res)
                 print(f"[t] res{attempt_res} gen {time.time()-t0:.0f}s "
@@ -167,14 +169,31 @@ def main():
                       flush=True)
                 out = out or f"/tmp/full21_{attempt_res}.glb"
                 mesh.export(out)
-                print("OK", out, flush=True)
-                return 0
-            except torch.OutOfMemoryError as e:
-                print(f"[oom] res{attempt_res} try{attempt}: {e}", flush=True)
+                return out
+            except (torch.OutOfMemoryError, TimeoutError) as e:
+                print(f"[{type(e).__name__}] res{attempt_res} try{attempt}: "
+                      f"{str(e)[:200]}", flush=True)
+                if isinstance(e, TimeoutError):
+                    return None  # desktop budget stable; GPU tier won't fit -- CPU
                 torch.cuda.empty_cache()
                 gc.collect()
                 time.sleep(30)
-    cpu_fallback(min(ladder), out)
+    return None
+
+
+def main():
+    res = int(sys.argv[1]) if len(sys.argv) > 1 else 384
+    out = sys.argv[2] if len(sys.argv) > 2 else None
+
+    got = gpu_phase(res, out)
+    gc.collect()
+    torch.cuda.empty_cache() if torch.cuda.is_initialized() else None
+    if got:
+        print("OK", got, flush=True)
+        return 0
+    print("[main] GPU ladder exhausted or budget too tight with desktop "
+          "co-resident -- CPU fallback (GPU left to the desktop)", flush=True)
+    cpu_fallback(res, out)
     return 0
 
 
