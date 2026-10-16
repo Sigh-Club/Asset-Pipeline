@@ -100,3 +100,29 @@ tools/img23d/.venv/bin/python tools/img23d/tiles.py <mesh.glb> --width 628 --bed
 Detail floor: heightfield must come from ≥384 MC resolution + ≥960 grid
 (`--resolution 384` on img23d.py); below that, 2 mm features print as blobs on
 the 0.4 nozzle.
+
+## Multiview capture — prompt templates (the 100%-3D path)
+
+Hunyuan3D-2mv wants front/left/right/back, camera level, object 70–80% of frame,
+identical light, plain background. Generate as EDITS of the approved front
+render (upload it with each prompt) — never fresh generations, or identity
+drifts and the fusion smears.
+
+Template (swap the bracketed view; run once per view):
+
+    Using the attached image as the exact reference: the identical object —
+    every book, same colours, same damage, same positions — photographed
+    rotated to show its [LEFT SIDE 90° | RIGHT SIDE 90° | BACK], as if the
+    object turned on a turntable. Camera at the same height and distance as the
+    reference, straight-on orthographic view, no perspective. Same soft even
+    lighting, same plain light-grey seamless background, object centred and
+    filling the same fraction of frame. Nothing else in frame.
+
+Notes:
+- left/right are the money views: page blocks, overhang depths, how far the
+  dragon stands off the wall — the geometry a relief cannot encode.
+- back is optional (plain surfaces reconstruct fine from front+2 sides).
+- one view per generation; verify each against the front (same books, same
+  order) before running the batch:
+
+    img23d.py --front front.png --left left.png --right right.png --seed 7 --steps 30 --resolution 384
