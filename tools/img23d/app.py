@@ -35,6 +35,73 @@ def venv_py():
     return str(VENV_PY) if VENV_PY.exists() else sys.executable if (sys := __import__("sys")) else "python3"
 
 
+
+
+class MeshViewer(ttk.Frame):
+    """Embedded orbitable 3D view. Decimates big meshes for display speed;
+    the files on disk are untouched."""
+
+    def __init__(self, master, log):
+        import matplotlib
+        matplotlib.use("TkAgg")
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        super().__init__(master)
+        self.log = log
+        self.fig = Figure(figsize=(6, 4), dpi=96, facecolor="#202020")
+        self.ax = self.fig.add_subplot(111, projection="3d", facecolor="#202020")
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+        self._empty = True
+
+    def load(self, path, faces_target=60000):
+        import numpy as np, trimesh
+        from PIL import Image
+        m = trimesh.load(path, force="mesh", process=True)
+        if len(m.faces) > faces_target:
+            try:
+                m = m.simplify_quadric_decimation(faces_target)
+            except Exception as e:  # noqa: BLE001
+                self.log(f"[viewer] decimation failed ({e}); subsampling instead")
+                idx = np.random.default_rng(0).choice(len(m.faces), faces_target, replace=False)
+                m = trimesh.Trimesh(vertices=m.vertices, faces=m.faces[idx], process=False)
+        self.ax.clear()
+        self.ax.set_facecolor("#202020")
+        try:
+            self.ax.plot_trisurf(m.vertices[:, 0], m.vertices[:, 1], m.vertices[:, 2],
+                                 triangles=m.faces, color="#d7dee2", shade=True,
+                                 linewidth=0)
+        except Exception as e:  # noqa: BLE001
+            self.log(f"[viewer] render error: {e}")
+            return
+        self.ax.set_axis_off()
+        lo, hi = m.bounds[0], m.bounds[1]
+        pad = 0.06 * (hi - lo).max()
+        self.ax.set_xlim(lo[0] - pad, hi[0] + pad)
+        self.ax.set_ylim(lo[1] - pad, hi[1] + pad)
+        self.ax.set_zlim(lo[2] - pad, hi[2] + pad)
+        try:
+            self.ax.set_box_aspect((hi - lo) / (hi - lo).max())
+        except Exception:
+            pass
+        self.ax.view_init(elev=32, azim=-55)
+        self._empty = False
+        self.canvas.draw()
+        self.path = path
+
+    def show_png(self, path):
+        from PIL import Image
+        import numpy as np
+        self.ax.clear(); self.ax.set_axis_off(); self.ax.set_facecolor("#202020")
+        im = np.asarray(Image.open(path).convert("RGB").resize((640, 480)))
+        self.ax.imshow(im, extent=[0, 1, 0, 1])
+        self._empty = False
+        self.canvas.draw()
+
+    def is_empty(self):
+        return self._empty
+
+
 class Runner:
     """Background job runner: one at a time, streamed to a queue."""
 
@@ -97,6 +164,7 @@ class App(tk.Tk):
         self.img_label = ttk.Label(top, text="no image loaded")
         self.img_label.pack(side="left", padx=8, pady=4)
         ttk.Button(top, text="Import image…", command=self.pick_image).pack(side="left", padx=4)
+        ttk.Button(top, text="Import STL…", command=self.pick_stl).pack(side="left", padx=2)
         self.src_short = tk.StringVar(value="")
         ttk.Button(top, text="Open containing folder", command=lambda: self.reveal(self.image)).pack(side="right", padx=4)
 
@@ -136,8 +204,8 @@ class App(tk.Tk):
         right = ttk.Notebook(main)
         main.add(left, weight=3); main.add(right, weight=2)
 
-        self.canvas = tk.Canvas(left, bg="#222")
-        self.canvas.pack(fill="both", expand=True, padx=4, pady=4)
+        self.viewer = MeshViewer(left, self.log)
+        self.viewer.pack(fill="both", expand=True, padx=4, pady=4)
         self._photo = None
 
         logf = ttk.Frame(right)
@@ -168,6 +236,27 @@ class App(tk.Tk):
     def pump_loop(self):
         self.runner.pump()
         self.after(200, self.pump_loop)
+
+    def pick_stl(self):
+        p = filedialog.askopenfilename(filetypes=[("Meshes", "*.stl *.glb *.obj"), ("All", "*.*")])
+        if not p:
+            return
+        f = Path(p)
+        self.outdir = f.parent
+        self.status.set(f"loaded {f.name}")
+        try:
+            self.viewer.load(f)
+            self.log(f"[viewer] {f.name} — drag to orbit, scroll to zoom")
+        except Exception as e:  # noqa: BLE001
+            self.log(f"[viewer] failed: {e}")
+        self.refresh_files_from(f.parent)
+
+    def refresh_files_from(self, d: Path):
+        self.files.delete(0, "end")
+        for f in sorted(Path(d).rglob("*")):
+            if f.suffix in {".stl", ".glb", ".obj", ".png", ".json"}:
+                self.files.insert("end", str(f.relative_to(d)))
+        self._files_root = d
 
     def need_image(self):
         if not self.image:
@@ -239,10 +328,11 @@ class App(tk.Tk):
         if not target:
             self.log("[app] nothing rendered yet")
             return
-        png = self.outdir / "preview.png"
-        subprocess.run([F3D, str(target), "--output", str(png),
-                        "--resolution", "1000,720", "--up", "+Z"], capture_output=True)
-        self.show_image(png)
+        try:
+            self.viewer.load(target)
+            self.log(f"[viewer] interactive 3D: {target.name} (drag to orbit, scroll to zoom)")
+        except Exception as e:  # noqa: BLE001
+            self.log(f"[viewer] failed: {e}")
         self.refresh_outputs()
 
     def latest_mesh(self):
@@ -252,17 +342,17 @@ class App(tk.Tk):
         return None
 
     def show_image(self, path: Path):
-        if not Path(path).exists():
-            return
-        im = Image.open(path); im.thumbnail((760, 560))
-        self._photo = ImageTk.PhotoImage(im)
-        self.canvas.delete("all")
-        self.canvas.create_image(self.canvas.winfo_width() // 2, self.canvas.winfo_height() // 2,
-                                 image=self._photo, anchor="center")
+        if Path(path).exists():
+            self.viewer.show_png(path)
 
     def refresh_outputs(self):
         if self.outdir and (self.outdir / "plate.stl").exists() and self.image:
             self._prune_raw()
+        if self.glb and Path(self.glb).exists() and getattr(self, "viewer", None) and self.viewer.is_empty():
+            try:
+                self.viewer.load(self.glb)
+            except Exception:
+                pass
         self.files.delete(0, "end")
         if self.outdir and self.outdir.exists():
             for f in sorted(self.outdir.rglob("*")):
@@ -275,11 +365,19 @@ class App(tk.Tk):
         sel = self.files.curselection()
         if not sel:
             return
-        f = self.outdir / self.files.get(sel)
-        if f.suffix == ".stl":
-            subprocess.Popen([F3D, str(f)])
+        root = getattr(self, "_files_root", self.outdir)
+        f = Path(root) / self.files.get(sel)
+        if f.suffix in {".stl", ".glb", ".obj"}:
+            try:
+                self.viewer.load(f)
+                self.log(f"[viewer] {f.name} loaded")
+            except Exception as e:  # noqa: BLE001
+                self.log(f"[viewer] failed: {e}")
+            r = subprocess.run([F3D, str(f)], capture_output=True, text=True)
+            if r.returncode != 0:
+                self.log(f"[f3d] external viewer failed: {r.stderr.strip()[:200]}")
         elif f.suffix == ".png":
-            self.show_image(f)
+            self.viewer.show_png(f)
         else:
             webbrowser.open(f.as_uri())
 
