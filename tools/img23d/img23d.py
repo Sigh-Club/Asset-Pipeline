@@ -165,7 +165,7 @@ def main() -> None:
                    help="HF repo id (default: 2mini single-view, 2mv with --front etc)")
     p.add_argument("--hunyuan-subfolder", default=None,
                    help="shape-model subfolder override")
-    p.add_argument("--front", dest="views", action="append",
+    p.add_argument("--front", "--left", "--right", "--back", dest="views", action="append",
                    type=lambda kv: (kv.split("=", 1)[0].strip(), kv.split("=", 1)[1].strip()),
                    metavar="NAME=PATH",
                    help="multiview mode: --front= --back= --left= --right=; "
