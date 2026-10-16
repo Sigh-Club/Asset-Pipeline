@@ -42,6 +42,11 @@ output/.render_pause
 output/.gitkeep
 !output/render_logs/.gitkeep
 
+# === Image-to-3D stage ===
+tools/img23d/.venv/
+tools/img23d/Hunyuan3D-2/
+tools/img23d/TripoSR/
+
 # === Runtime / Temp ===
 .backend_pid
 test_metal.zip

@@ -1001,3 +1001,24 @@ Status:
   pending from owner; unlocks authentic unit portraits + full team colour.
 - [ ] Load-out filtering: Slugga/Shoota share one body mesh; per-load-out OBJ
   object filtering if plain variants are wanted.
+
+---
+
+## 18. Image-to-3D Concept-Mesh Stage (2026-10-16)
+
+Concept art → master mesh via local image-to-3D models, feeding the sprite
+pipeline (rig/pose/8-dir render) or 3D printing. Full reference:
+`docs/IMG23D.md`. Runner: `tools/img23d/img23d.py` (Hunyuan3D-2mini shape-only
+default, TripoSR fallback; shared python3.12 venv, RTX 3070 Ti 8 GB).
+
+Status:
+- [x] Environment — torch 2.14 cu126, pinned AI stack (`transformers==4.46.3`,
+  `diffusers==0.35.1`, `huggingface_hub==0.36.2`), torchmcubes built against
+  venv torch (system `cuda` pkg for nvcc).
+- [x] Wrapper CLI — batch, seed/steps/resolution control, glb+obj+stl export,
+  per-mesh QC stats (watertight/components/bounds), engine-split output dirs.
+- [x] Certification run — hunyuan mini-turbo: 87 s, 418 362 verts, watertight,
+  1 component (`output/img23d/test_tome-hunyuan/`); triposr: 100 711 verts,
+  8 components, repair-before-print (`output/img23d/test_tome-triposr/`).
+- [ ] First real concept-to-asset run (unit or prop) through critic gate.
+- [ ] Decide Hunyuan Community License posture for shipped game assets.
