@@ -261,6 +261,8 @@ class App(tk.Tk):
                                  image=self._photo, anchor="center")
 
     def refresh_outputs(self):
+        if self.outdir and (self.outdir / "plate.stl").exists() and self.image:
+            self._prune_raw()
         self.files.delete(0, "end")
         if self.outdir and self.outdir.exists():
             for f in sorted(self.outdir.rglob("*")):
