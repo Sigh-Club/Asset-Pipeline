@@ -112,8 +112,12 @@ def highpass(img, blur):
 
 
 def carve(mesh: trimesh.Trimesh, ref_img: np.ndarray, cell_mask: np.ndarray,
-          amp: float, blur: int = 6) -> trimesh.Trimesh:
-    """Normal-directed hp carve limited to cell_mask (feathered), amp units."""
+          amp: float, cell_amp: np.ndarray = None, blur: int = 6) -> trimesh.Trimesh:
+    """Normal-directed hp carve limited to cell_mask (feathered), amp units.
+
+    cell_amp: optional per-cell multiplier map (ty,tx) -- cells near target
+    get ~0 amplitude so healthy surface is never re-chiselled (the sand fix).
+    """
     v = mesh.vertices.copy()
     x, y = v[:, 0], v[:, 1]
     R = 1920
@@ -125,12 +129,17 @@ def carve(mesh: trimesh.Trimesh, ref_img: np.ndarray, cell_mask: np.ndarray,
 
     msk = np.kron(cell_mask, np.ones((ny // RES + 1, nx // RES + 1)))[:ny, :nx]
     msk = np.array(Image.fromarray((msk * 255).astype(np.uint8)).resize((nx, ny))) / 255
+    if cell_amp is not None:
+        am = np.kron(cell_amp, np.ones((ny // RES + 1, nx // RES + 1)))[:ny, :nx]
+        am = np.array(Image.fromarray((am * 255).astype(np.uint8)).resize((nx, ny))) / 255
+    else:
+        am = np.ones_like(msk)
 
     col = ((x - x.min()) / (x.max() - x.min()) * (nx - 1)).astype(int).clip(0, nx - 1)
     row = (ny - 1 - ((y - y.min()) / (y.max() - y.min()) * (ny - 1)).astype(int).clip(0, ny - 1))
     n = np.asarray(mesh.vertex_normals)
     w = np.clip((n[:, 2] - 0.1) / 0.4, 0, 1)
-    disp = amp * hp[row, col] * msk[row, col] * w
+    disp = amp * (hp[row, col] * msk[row, col] * am[row, col]) * w
     v += n * disp[:, None]
     out = mesh.copy()
     out.vertices = v
@@ -178,16 +187,20 @@ def main():
                 print("[loop] all cells pass -- converged", flush=True)
                 break
 
-            # repair: union of failing cells, amp scaled by worst deficit
+            # repair: failing cells masked; per-cell amplitude ~ deficit so
+            # near-target cells get ~0.15x (anti-sand: no blanket re-chisel)
             cell_mask = np.zeros((RES, RES), bool)
+            amap = np.zeros((ty, tx))
+            dmax = max((a.target - cap).max(), 1e-6)
             for r in range(ty):
                 for c in range(tx):
-                    if fail[r, c]:
+                    if cap[r, c] < a.target:
                         cell_mask[int(RES * r / ty):int(RES * (r + 1) / ty),
                                   int(RES * c / tx):int(RES * (c + 1) / tx)] = True
+                    amap[r, c] = 0.15 + 0.85 * ((a.target - cap[r, c]) / dmax)
             deficit = np.clip((a.target - cap[fail].mean()) / 100 * 2, 0.3, 1.0)
             cand = carve(trimesh.load(cur, force="mesh", process=True), ref,
-                         cell_mask, amp * deficit)
+                         cell_mask, amp * deficit, cell_amp=amap)
 
             cand_path = tdp / "cand.glb"
             cand.export(cand_path)
