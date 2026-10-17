@@ -492,6 +492,46 @@ assets). Non-negotiables for generators, keyed to the game's actual env rules:
 6. **Sound stingers per outcome, not per weapon** (hit/crit/miss/death + UI confirm) —
    audio layer is outcome-classed (see xcomcombatskill §11).
 
+
+### Surface quality & the printer band-pass (researched 2026-10-17, panel project)
+
+**The governing principle: the pipeline is a band-pass filter tuned to the
+printer.** FDM at 0.12mm layers / 0.4mm nozzle reproduces: lateral features
+>=~0.8mm, relief >=~0.25mm (2 layers). Everything below is invisible or paint:
+
+- **Geometry band**: keep form + features 0.8mm and coarser, relief >=0.3mm.
+- **Sub-floor detail** (photo grain, paper texture, jpeg mush, mc shimmer):
+  SMOOTH AWAY, never carve. The carve must be band-limited (>=2mm wavelength)
+  and >=0.3mm amplitude -- sub-layer displacement is invisible but reads as
+  sand under print lighting.
+- **Texture (wood grain, leather, text)**: paint, not geometry. Geometry only
+  carries the raised bands/borders. The user paints the print.
+
+Measured root causes of grain (panel project):
+1. stacked carve passes at 6-15mm amplitude -> scribble (fixed: detail_loop
+   per-cell deficit weighting, single-band, <=1.6mm)
+2. marching-cubes staircase + mc noise: the dc remesh (cumesh
+   remesh_narrow_band_dc_quad, the ComfyUI node chain's "Voxel to Mesh")
+   removes staircase by construction but only -4% roughness -- it inherits
+   the mc surface noise through the SDF.
+3. The principled fix (IMPLEMENTED NEXT): **bilateral normal filtering**
+   (Zheng et al., TVCG 2010; feature-preserving: filter normals with
+   spatial+normal-distance weights, then refit vertices) -- the standard for
+   exactly this. Fallback: trimesh filter_taubin (lambda|mu, no shrinkage) --
+   NEVER plain Laplacian (shrinks features).
+4. Roughness metric for gates: mean angle between adjacent-face normals
+   (printprep.py::roughness). Track it per loop iteration; the loop's
+   spurious guard plus a roughness-nonincrease guard = the balance the
+   95%-loop needs.
+
+Pipeline order (printer-band): generate -> dc remesh -> bilateral smooth ->
+band-limited carve -> detail_loop -> printprep (floater/simplify/holes) ->
+tiles3d -> slicer. Never carve before smoothing.
+
+Multi-image endgame: the loop + band-pass are input-agnostic; mv variants
+(Pixal3D-MV in ComfyUI-Trellis2) slot in at step 1 for 3-4-image runs.
+
+
 ## Known Technical Debt
 
 Tracked issues that need attention. See `docs/DEVELOPMENT.md` section 14 for full tracking.
