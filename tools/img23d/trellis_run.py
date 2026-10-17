@@ -18,6 +18,7 @@ Usage:
 """
 import gc
 import os
+import numpy as np
 import sys
 import time
 
@@ -118,14 +119,21 @@ def main():
                     fill_holes=True, hole_iterations=1,
                     hole_fill_algorithm="flood_fill", keep_only_shell=True,
                 )
-                if not a.texture:
-                    kw["pbar"] = None
+                class _PB:
+                    def update(self, *a, **k): pass
+                    def close(self): pass
+                kw["pbar"] = _PB()
                 ret = pipeline.run(**kw)
                 mesh = ret[0]
                 print(f"[t] {ptype} gen {time.time()-t0:.0f}s verts "
                       f"{len(mesh.vertices)} faces {len(mesh.faces)}", flush=True)
+                import trimesh
                 o = out.replace(".glb", f"_{ptype}.glb")
-                mesh.export(o)
+                tm = trimesh.Trimesh(
+                    mesh.vertices.cpu().numpy().astype(np.float64),
+                    mesh.faces.cpu().numpy().astype(np.int64),
+                    process=False)
+                tm.export(o)
                 print("OK", o, flush=True)
                 return 0
             except torch.OutOfMemoryError as e:

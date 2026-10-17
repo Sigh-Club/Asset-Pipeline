@@ -165,18 +165,23 @@ def main() -> None:
                    help="HF repo id (default: 2mini single-view, 2mv with --front etc)")
     p.add_argument("--hunyuan-subfolder", default=None,
                    help="shape-model subfolder override")
-    p.add_argument("--front", "--left", "--right", "--back", dest="views", action="append",
-                   type=lambda kv: (kv.split("=", 1)[0].strip(), kv.split("=", 1)[1].strip()),
-                   metavar="NAME=PATH",
-                   help="multiview mode: --front= --back= --left= --right=; "
-                        "uses Hunyuan3D-2mv unless --hunyuan-model given")
+    p.add_argument("--front", dest="front", type=Path, default=None,
+                   help="front view image (multiview mode)")
+    p.add_argument("--left", dest="left", type=Path, default=None,
+                   help="left view image (multiview mode)")
+    p.add_argument("--right", dest="right", type=Path, default=None,
+                   help="right view image (multiview mode)")
+    p.add_argument("--back", dest="back", type=Path, default=None,
+                   help="back view image (multiview, optional)")
     p.add_argument("--formats", nargs="+", default=["glb", "obj", "stl"],
                    choices=["glb", "obj", "stl"])
     p.add_argument("--no-rembg", action="store_true",
                    help="trust image alpha / skip background removal")
     p.add_argument("--quiet", action="store_true", help="suppress repair hints")
     args = p.parse_args()
-    args.views = dict(args.views) if args.views else None
+    args.views = {k: v for k, v in
+                  dict(front=args.front, left=args.left,
+                       right=args.right, back=args.back).items() if v}
     if args.views and not args.hunyuan_model:
         args.hunyuan_model = "tencent/Hunyuan3D-2mv"
     elif not args.hunyuan_model:
