@@ -225,3 +225,21 @@ plate gets embossed with background noise.
 
 Helper: /tmp/normals.py pattern (normalise, 3-light product). VRAM: unload
 pipe (del + empty_cache) before the next stage.
+
+### Multi-scale carve (PROVEN 2026-10-21 crow-panel v3) — default for relief plates
+
+Single-pass carve (one blur) cannot carry both the ~20mm inter-bird grooves AND
+2mm barbs. Cumulative passes on the DC mesh, smooth 0, strongest first:
+
+    sculpt_detail s0 blur 30 str 0.025   # macro separation grooves
+    sculpt_detail s1 blur 12 str 0.020   # feather layer
+    sculpt_detail s2 blur 5  str 0.012   # barbs
+    side_carve str 0.012 (audit; v3: L 55->66, R 83->89)
+
+Then finalise. Total added relief up to ~10mm on a 696mm panel; raise/lower
+strengths proportionally with panel scale. NEVER rely on hy3d raw relief: the
+mv latent decoder flattens; the carve IS the detail.
+
+Blender glb import rotates axes (Y-up->Z-up): after import, recompute extents
+and sort axes [widest,second,thinnest] before any scale-by-height, else the
+scale factor uses the depth axis and the print is 3x oversize (hit twice).
