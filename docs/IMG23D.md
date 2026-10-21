@@ -205,3 +205,23 @@ DC-first chain → crisp feather relief, capture 67% sides / 36% front
   subsampled faces, shaded by `n·light` (see session/proven in crow-panel).
 - STL units are silent: decide the convention (1 unit = 1 mm) and apply
   `apply_scale(1000)` from model-space before export, then re-verify extents.
+
+## Normal-bridge carve (PROVEN 2026-10-21, crow-panel v2) — the detail tier upgrade
+
+Adopted from bytedance/Hi3DGen (MIT, arXiv 2503.22236): detail must come from a
+PREDICTED NORMAL MAP, never from photo luminance.
+
+1. `MarigoldNormalsPipeline` (diffusers, prs-eth/marigold-normals-v1-1, fp16 ~3GB)
+   on each view, square-padded, ensemble 3, res 768 -> normals [-1,1].
+2. Relight the normal map under 3 fixed raking lights, multiply the shadings,
+   normalise -> grain-free detail image; mask background to neutral 128.
+3. Feed as the carve reference (sculpt_detail --smooth 0 --strength 0.02;
+   side_carve --strength 0.012; detail_loop target 70).
+
+Results vs photo-carve (same mesh): front audit capture 36.2% -> 69.9%,
+side 53/72 -> 57/78, spurious 22.5 (guarded). Registration is bbox-stretch:
+crop the relight to the panel bbox of the PADDED canvas and flatten bg, or the
+plate gets embossed with background noise.
+
+Helper: /tmp/normals.py pattern (normalise, 3-light product). VRAM: unload
+pipe (del + empty_cache) before the next stage.
