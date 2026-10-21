@@ -32,9 +32,48 @@ TRIPOSR_REPO = HERE / "TripoSR"
 
 MC_RESOLUTION_DEFAULT = 256  # marching-cubes grid; 256 fits 8 GB, 320/384 tighter
 
+# GPU-sharing policy (chrome/discord stay open): defrag the caching allocator
+# before torch is imported anywhere; cuts OOMs on a shared 8 GB card.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
+# Linux has no Windows-style VRAM->RAM spill; this LD_PRELOAD shim replicates it
+# via CUDA VMM split allocations (AmeerJ97/cuda-vmm-sysmem-fallback, MIT).
+# Cap spill: CUDA_VMM_FALLBACK_MAX_SYSMEM. Disable: CUDA_VMM_DISABLE=1.
+VMM_SHIM = Path("~/.local/lib/libcuda_vmm_fallback.so").expanduser()
+
+
+def _preload_vmm_shim() -> None:
+    if os.environ.get("CUDA_VMM_DISABLE") == "1" or not VMM_SHIM.exists():
+        return
+    ld = os.environ.get("LD_PRELOAD", "")
+    if "libcuda_vmm" not in ld:
+        os.environ["LD_PRELOAD"] = (ld + " " if ld else "") + str(VMM_SHIM)
+
+
+def _free_vram_mb() -> int | None:
+    """Free VRAM across ALL processes, incl. chrome/discord."""
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10).stdout.split()
+        return int(out[0])
+    except Exception:
+        return None
+
+
+def wait_for_vram(min_free_mb: int = 4500, timeout_s: float = 600) -> int | None:
+    """Desktop apps keep their VRAM; wait our turn instead of failing."""
+    deadline = time.time() + timeout_s
+    while True:
+        free = _free_vram_mb()
+        if free is None or free >= min_free_mb or time.time() > deadline:
+            return free
+        time.sleep(5)
+
 
 def _ensure_venv() -> None:
     """Re-exec under the stage venv if we are not already in it."""
+    _preload_vmm_shim()
     venv_python = HERE / ".venv" / "bin" / "python"
     if Path(sys.executable).resolve() != venv_python.resolve() and venv_python.exists():
         os.execv(str(venv_python), [str(venv_python), __file__, *sys.argv[1:]])
@@ -90,8 +129,25 @@ def run_hunyuan(image_path: Path, out_dir: Path, args) -> None:
         kwargs["seed"] = args.seed
     if args.resolution:
         kwargs["resolution"] = args.resolution
+    wait_for_vram()
     t0 = time.time()
-    mesh = pipe(image=image, **kwargs)[0]
+    for attempt in range(3):
+        try:
+            import torch  # noqa: E402 -- venv guaranteed by _ensure_venv
+            mesh = pipe(image=image, **kwargs)[0]
+            break
+        except RuntimeError as err:  # OOM under shared-GPU load: wait, flush, degrade
+            if "out of memory" not in str(err).lower() or attempt == 2:
+                raise
+            print(f"[img23d] CUDA OOM (attempt {attempt + 1}/3): "
+                  "flushing cache, waiting for VRAM, degrading quality")
+            torch.cuda.empty_cache()
+            import gc; gc.collect()
+            wait_for_vram(min_free_mb=3800, timeout_s=900)
+            if args.resolution and args.resolution > 256:
+                kwargs["resolution"] = max(256, args.resolution - 64)
+            if args.steps and args.steps > 20:
+                kwargs["steps"] = max(20, args.steps - 10)
     print(f"[img23d] shape generated in {time.time() - t0:.1f}s")
 
     _export(mesh, out_dir, image_path.stem, args.formats, args.quiet)

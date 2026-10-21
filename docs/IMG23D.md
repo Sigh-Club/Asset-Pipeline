@@ -126,3 +126,82 @@ Notes:
   order) before running the batch:
 
     img23d.py --front front.png --left left.png --right right.png --seed 7 --steps 30 --resolution 384
+
+## Low-VRAM operation (shared-GPU desktop, 8 GB card)
+
+The GPU is shared with chrome/discord by policy — they are never killed. Four
+defence layers, all wired into `img23d.py` (2026-10-21):
+
+1. **Allocator defrag**: `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` set
+   by the wrapper before torch imports. Kills fragmentation OOMs.
+2. **VRAM wait**: `wait_for_vram()` polls `nvidia-smi` and holds until ≥4.5 GB
+   free (600 s cap) before loading the model.
+3. **OOM retry with step-down**: on `CUDA out of memory` — empty cache, gc,
+   wait, then `-64` resolution / `-10` steps, up to 3 attempts.
+4. **Sysmem fallback shim** (`~/.local/lib/libcuda_vmm_fallback.so`, MIT, from
+   `AmeerJ97/cuda-vmm-sysmem-fallback`): LD_PRELOAD'd automatically by the
+   wrapper. Linux has no Windows-style VRAM→RAM spill; the shim intercepts
+   driver-level allocs on OOM and splits them VRAM+RAM via CUDA VMM. Verified:
+   7.2 GB alloc on 6.2 GB-free card → 5.7 VRAM + 1.0 RAM. Cap spill with
+   `CUDA_VMM_FALLBACK_MAX_SYSMEM` (default 50 % RAM); disable with
+   `CUDA_VMM_FALLBACK_DISABLE=1` (per-process) or `CUDA_VMM_DISABLE=1`
+   (wrapper).
+
+Ad-hoc blocking from scripts: `gpu-wait [min_free_mb] [timeout_s]`
+(`~/.pi/agent/bin/gpu-wait`).
+
+Desktop-side the two big cheap wins: Discord → Settings → Advanced →
+Hardware Acceleration **off** (frees 0.5–1 GB permanently), and Chrome →
+Settings → System → "Use graphics acceleration when available" **off** if
+browser VRAM pressure is chronic (pages render on CPU; fine for browsing).
+
+## Anti-grain / detail-retention chain (PROVEN 2026-10-21, crow-panel)
+
+Order matters. Smooth-last melts detail; smooth-first via DC is lossless:
+
+1. mv shape (`img23d.py --front/--left/--right --seed 7 --steps 50 --resolution 384`)
+2. **printprep DC remesh FIRST** (`printprep.py in.glb out.stl --dc-res 1024`)
+   — dual contouring re-positions vertices on the true iso-surface: kills MC
+   staircase/voxel-sand with **zero vertex relaxation** (Warren DMC paper: thin
+   features without MC's smoothing). This replaces heavy smoothing, not
+   complements it.
+3. `sculpt_detail.py dc.stl artwork.jpg --strength 0.025 --smooth 6` — token
+   smooth only. **Do NOT use the default smooth=30**: Humphrey
+   (alpha .1/beta .6) at 30 iters rounds feather-scale edges faster than the
+   carve restores them (Garland smoothing notes; Laplacian-family shrinks,
+   Taubin λ/μ is the near-lossless variant if smoothing must be heavier —
+   `trimesh.smoothing.filter_taubin(lamb=.5,nu=-.53)`).
+4. `side_carve.py --left l --right r --strength 0.012` (audit-gated)
+5. `detail_loop.py --target 60 --max-iters 2` — keep only capture-positive passes
+6. hole boolean / float purge / boundary fill / centre + ×1000 mm last.
+
+Empirically (crow-panel): Humphrey-30-first chain → visible detail erosion;
+DC-first chain → crisp feather relief, capture 67% sides / 36% front
+(render-edge ceiling ~43% per quality ladder).
+
+## Blender 5.1 headless — verified API traps (all hit 2026-10-21)
+
+- `bpy.ops.wm.stl_import` / `wm.stl_export` (NOT import_mesh/export_mesh).
+  GLB: `bpy.ops.export_scene.gltf(export_format='GLB')`; there is NO
+  `bpy.ops.wm.export`.
+- `mesh.vertices` prop arrays are NOT sliceable (`vs[::step]` TypeError) —
+  use `foreach_get('co', np.empty(n*3))`.
+- `bpy.ops.object.voxel_remesh` takes NO kwargs in 5.1 and `object.remesh_mode`
+  doesn't exist; mesh-level attrs also absent — plain `bpy.ops.object.voxel_remesh()`
+  after setting nothing works (defaults), else avoid voxel entirely.
+- After `bpy.data.objects.remove()`, re-set `view_layer.objects.active` before
+  any mode_set, else "Context missing active object".
+- Edit-mode bmesh needs an explicit `mode_set('EDIT')` first (poll fails
+  silently otherwise in background).
+- User addons break background runs when their PIL is broken:
+  `LD_LIBRARY_PATH=~/.config/blender/5.1/scripts/addons/modules/PIL.libs`.
+- hy3d/Blender mesh is a FLAT SLAB: thickness on Z, front +z, up +y. Any camera
+  on ±Y sees an edge-on sliver unless you rotX ±90 first. Blank grey renders =
+  this, every time.
+- f3d 3.5: comma-separated option values (`--resolution 900x920` warns; still
+  renders 300² default), `--camera-view-up 0,1,0` comma-form; HUD/grid show
+  even in "background" renders — fine for QC, never for deliverables.
+- Reliable artifact QC without any renderer: matplotlib PolyCollection of
+  subsampled faces, shaded by `n·light` (see session/proven in crow-panel).
+- STL units are silent: decide the convention (1 unit = 1 mm) and apply
+  `apply_scale(1000)` from model-space before export, then re-verify extents.
