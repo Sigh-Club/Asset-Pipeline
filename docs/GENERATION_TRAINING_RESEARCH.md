@@ -265,3 +265,39 @@ reserved for hero anchors.
 - wd-eva02-large-tagger-v3 (3.8GB): https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3
 - fal Multiple-Angles LoRA (0.30GB): https://huggingface.co/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA
 - Z-Image LoRA engineering notes (low_vram, 5090 baseline): https://huggingface.co/blog/content-and-code/training-a-lora-for-z-image-turbo
+
+### 10.7 Environment audit + trainer landscape (2026-10-23 pm, all verified from primaries)
+
+**Have**: GPU 8GB + driver 615.71 (cu13x-capable), CUDA toolkit 13.4 (`/opt/cuda`), python
+3.12 + 3.14, `uv`, `hf` CLI, git, 1.6T combined free (games 670G + samsung 931G), HF cache
+40G (SD1.5 family, IP-Adapter, ControlNet, Hunyuan, Trellis, **facebook/dino-vitb16 — reuse
+as the similarity-eval backbone**), `gemini-img` live. ComfyUI cloned, stale/empty.
+
+**Missing (the entire setup gap)**: no trainer repos or venvs; no SDXL/Qwen/Z-Image weights;
+no captioner models. The `.venv-assets` venv in Imperium-of-Ash has no torch (img23d venv
+must be rebuilt or relocated — do not assume it works).
+
+**Trainer landscape (verified from each repo's own docs, 2026-10-23)**:
+
+| Trainer | Qwen-Edit | Z-Image | Notes |
+|---|---|---|---|
+| musubi-tuner 0.3.6 | edit-2511 yes (12GB documented floor) | yes (`zimage/`) | py>=3.10, torch>=2.6; `--resume`; Apache-friendly |
+| ai-toolkit (MIT, 12.4k stars) | Edit-2511 yes; **Qwen-Image-2.1/-Turbo yes (unified t2i+edit!)** | yes + low_vram | pins torch 2.13 cu130 in README |
+| diffusion-pipe (tdrussell) | **yes + LoRA directly on fp8_scaled quantised weights** | yes | DeepSpeed hard req (Linux OK); offloading = best 8GB hope for Qwen |
+| SimpleTuner (bghira) | Qwen Image + edit paths ("reference-input training ... Qwen Edit") | yes | widest model table; licence per-model |
+| OneTrainer | not verified this pass — check before use | ? | |
+
+**New model fact — licence change**: Qwen-Image-2.1 / 2.1-Turbo (7B visual DiT! transformer
+14.3GB, total ~33GB bf16) are **Qwen Research Licence — commercial use needs a separate
+licence** (LICENSE §2b). The older Qwen-Image / Edit-2511 remain Apache-2.0. For shipped game
+assets: prefer Apache bases (Edit-2511, Z-Image, SDXL) or secure the 2.1 commercial licence.
+2.1-Turbo's unified t2i+edit would simplify the stack to ONE base — worth a licence email.
+
+**Stage-0 install order (all free, ~60 min + download time)**:
+1. `uv venv` per trainer on `games`; torch per repo pin (musubi: any>=2.6 cu128/cu130;
+   ai-toolkit: 2.13 cu130) — driver 615.71 supports both.
+2. Clone musubi-tuner + ai-toolkit (+ diffusion-pipe for the fp8-weights experiment).
+3. Weights to `/mnt/samsung`: SDXL 6.9G, Z-Image-Turbo 32.8G, qwen_edit_2511_bf16 40.9G +
+   Qwen2.5-VL-7B 16.6G (only if the Qwen path survives testing; fp8_scaled via diffusion-pipe
+   would halve it — UNVERIFIED).
+4. Run the two 8GB empirics; record nvidia-smi + RAM peaks in this doc.
