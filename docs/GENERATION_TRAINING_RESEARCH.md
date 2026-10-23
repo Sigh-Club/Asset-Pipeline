@@ -1,6 +1,6 @@
 # Generation-Model Training: Data Requirements & Local Fine-Tuning Research
 
-**IoA asset-pipeline — research report, 2026-02-27**
+**IoA asset-pipeline — research report, 2026-10-23**
 **Scope**: what training data local LoRA fine-tuning requires to reach hosted-model quality for game, web and marketing art — on one RTX 3070 Ti 8 GB, time-unlimited.
 
 ---
@@ -153,6 +153,87 @@ All three trainers checkpoint and **resume**: musubi-tuner/sd-scripts `--resume 
 
 ---
 
+## 10. Requirements & staged plan — hardware-verified (2026-10-23)
+
+Every number below was checked against the primary source on 2026-10-23. Claims that could
+not be verified are marked **UNVERIFIED — stage-0 experiment**; none are assumed.
+
+### 10.0 Machine state (measured)
+
+- GPU: RTX 3070 Ti, 8192 MiB, driver 615.71.09. RAM 32 GiB, 16 threads.
+- `/home` (nvme): 83 GiB free of 930G — too small for the full model set; see 10.2.
+- `games` drive: mounted, 670G free -> models/datasets/checkpoints live here.
+  (`games2` is a separate, currently unmounted volume — do not confuse the two.)
+- `~/ComfyUI`: present, near-empty (SD1.5 only). `~/.cache/huggingface`: 40G already.
+- `gemini-img`: LIVE, auth installed, proven 2048px generation (skill: Gemini section).
+
+### 10.1 Verified capability matrix (8 GB training)
+
+| Model | Trainer | Verified status | Evidence |
+|---|---|---|---|
+| Qwen-Image-Edit-2511 LoRA | musubi-tuner `--model_version edit-2511` | Documented floor **12 GB** (fp8_base + swap 45, 1024px, bs1). 8 GB UNVERIFIED. Swap >45 raises RAM sharply; 64 GB RAM recommended — we have 32. | musubi docs/qwen_image.md VRAM table |
+| Z-Image-Turbo LoRA | ai-toolkit (`low_vram: true`) | 8 GB UNVERIFIED (5090 ~1 h/3k steps documented; lower cards "enable Low VRAM"); musubi also ships zimage support | ai-toolkit README; HF blog engineering notes |
+| SDXL LoRA | any | 8 GB comfortable, widely documented | sanj.dev tiers; kohya guides |
+| FLUX.1-dev LoRA 8 GB | sd-scripts fp8 + split, 512px | Verified by maintainer in-issue; licence = non-commercial + paid synthetic-data clause | sd-scripts #1595; bfl.ai/licensing |
+| FLUX.1-schnell | — | Apache-2.0 licence-safe FLUX fallback | HF tags |
+
+Empirical stage-0 tests required (the two UNVERIFIED rows are cheap and gate the model
+choice): (a) musubi Qwen-Edit swap>=45 on 8GB VRAM / 32GB RAM — watch RAM, not just VRAM;
+(b) ai-toolkit Z-Image low_vram on 8GB. Until then the proven 8 GB path is SDXL, then Z-Image.
+
+### 10.2 Disk budget (sizes verified via HF API) — host on `games`, not /home
+
+| Item | Size | Note |
+|---|---|---|
+| qwen_image_edit_2511_bf16.safetensors | 40.9 GB | musubi: fp8_e4m3fn single-file "cannot be used" for Edit; a 2511 fp8mixed 20.5GB exists — musubi compat UNVERIFIED |
+| Qwen2.5-VL-7B text encoder | 16.6 GB | shared with Qwen-Image |
+| Z-Image-Turbo repo (bf16) | 32.8 GB | 24.7 transformer + 8.1 text enc + 0.2 vae |
+| SDXL base 1.0 | 6.94 GB | |
+| wd-eva02-large-tagger-v3 | 3.8 GB | captioner |
+| fal Multiple-Angles LoRA | 0.30 GB | Apache-2.0, 66k downloads |
+| Total core stack | ~101 GB | + checkpoints/datasets; /home has 83G so HF_HOME/model dirs on `games` (670G free) |
+
+### 10.3 Pause / resume (verified)
+
+- musubi-tuner: `--resume <state>` (src/musubi_tuner/training/parser_common.py:622) plus
+  `--resume_from_huggingface`.
+- ai-toolkit: ctrl+c anytime, restart resumes from last checkpoint — caveat: interrupting
+  during a checkpoint save can corrupt it (README). Queue wrapper must wait for
+  save-complete before signalling stop.
+
+### 10.4 Corpus requirements (quantities; rationale in section 3)
+
+Sprite-swap pairs 150-300 + 20 held-out (render factory); faction anchors 20-30 + exemplars
+20-40 + regularisation 10-20 per faction (Gemini harvest + curated); icons 100-300
+(game-icons.net CC-BY + own); turnaround: none needed (fal pretrained). Gemini quota:
+30-40 gens/day, sheet-multiplier cropping gives ~300-500 crops/day ceiling; Pro model
+reserved for hero anchors.
+
+### 10.5 Staged gates (verified-first ordering)
+
+0. Env and empirics: install trainers in pinned venvs on `games`; run the two 10.1 tests;
+   verify gemini cookie; choose primary model FROM TEST RESULTS, not preference.
+1. Pair factory: (ref, sheet, mask, metadata) from existing units; 100 percent critic-pass;
+   at least 5 unit-types x 3 anims.
+2. Gemini harvest (parallel from day 1): 3-4 windows/day; 600+ banked crops before stage 4.
+3. Caption/QC/bucket + MANIFESTs; critic gate on every synthetic frame.
+4. Style LoRA on the stage-0 winning base; blind side-by-side at LOD2 vs anchors.
+5. Sprite-swap LoRA; unseen-character consistency at least hand-render variance.
+6. img23d turnaround integration; re-run img23d gate (verify >= 85).
+7. Icons/UI/marketing + train jobs in queue dashboard; prove pause/resume incl. the
+   save-window caveat from 10.3.
+
+### 10.6 Standing risks (operational; none assumed away)
+
+1. 8 GB Qwen-Edit training may not fit in 32 GB RAM — fallback chain: Z-Image -> SDXL
+   style/sprite via img2img templates, Chroma / FLUX-schnell (Apache) thereafter.
+2. PSIDTS cookie rot stalls harvest silently — add gemini-img auth check to morning queue.
+3. ai-toolkit checkpoint corruption on interrupt-during-save — wrapper waits for save.
+4. /home disk pressure — heavy artifacts on `games`; audit before stage 2.
+5. docs/AI_GENERATION.md still contradicts this strategy — refresh at stage 4 sign-off.
+
+---
+
 ## Source index
 
 - sd-scripts 8 GB FLUX: https://github.com/kohya-ss/sd-scripts/issues/1595
@@ -166,3 +247,17 @@ All three trainers checkpoint and **resume**: musubi-tuner/sd-scripts `--resume 
 - Gemini API terms (train-on clause scope): https://ai.google.dev/gemini-api/terms
 - Dataset QC tooling: https://github.com/akalavol/LoRA-Dataset-Coach; captioner comparison https://artificialguy.com/blog/captioning-tools-2026-joycaption-wd-tagger/
 - VRAM calculators / tiers: https://www.bestfreewebresources.com/lora-training-vram-requirements-2026 ; https://sanj.dev/post/lora-training-2025-ultimate-guide/
+
+### Additional primary sources (verified 2026-10-23)
+
+- musubi-tuner Qwen-Image docs (VRAM table, Edit-2511, fp8 notes): https://github.com/kohya-ss/musubi-tuner/blob/main/docs/qwen_image.md
+- musubi-tuner `--resume`: https://github.com/kohya-ss/musubi-tuner/blob/main/src/musubi_tuner/training/parser_common.py (line 622)
+- musubi-tuner Z-Image support: `src/musubi_tuner/zimage/` in repo tree
+- ai-toolkit (MIT, 12.4k stars; resume behaviour + checkpoint-save caveat): https://github.com/ostris/ai-toolkit/blob/main/README.md
+- Z-Image-Turbo file sizes: https://huggingface.co/Tongyi-MAI/Z-Image-Turbo/tree/main
+- Qwen-Image-Edit ComfyUI splits (2511 bf16 40.9GB / fp8mixed 20.5GB): https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models
+- Qwen2.5-VL-7B-Instruct (16.6GB): https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/tree/main
+- SDXL base 1.0 (6.94GB): https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/tree/main
+- wd-eva02-large-tagger-v3 (3.8GB): https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3
+- fal Multiple-Angles LoRA (0.30GB): https://huggingface.co/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA
+- Z-Image LoRA engineering notes (low_vram, 5090 baseline): https://huggingface.co/blog/content-and-code/training-a-lora-for-z-image-turbo
