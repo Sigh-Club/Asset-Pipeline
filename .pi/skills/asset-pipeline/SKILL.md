@@ -575,3 +575,30 @@ fidelity is the deliverable.
 Full state, pass ledger, blockers: `HANDOFF_IMG23D.md` (repo root). Multiview
 capture prompts: `docs/IMG23D.md`. Never ship a mesh whose verify <85 or
 whose sand pass was skipped.
+
+## Gemini web image generation — agent-driven (gemini-img, LIVE 2026-10-23 pending first cookie auth)
+
+Consumer Gemini Pro (Nano Banana) driven programmatically — no API key, no AI Studio.
+Wrapper: `~/.pi/agent/bin/gemini-img` (venv `~/.venvs/gemini`, pkg `gemini_webapi`,
+reverse-engineered web client, 3.6★ repo HanaokaYuzu/Gemini-API).
+
+- **One-time auth (owner)**: fresh PRIVATE browser window → gemini.google.com → F12 →
+  Network → any request → copy `__Secure-1PSID` + `__Secure-1PSIDTS` → then EITHER
+  `gemini-img --set-cookie <PSID> <PSIDTS>` OR fill `~/.config/gemini/cookies.env`
+  (template beside it). Close the private window after. The lib auto-refreshes the TS
+  cookie while the process runs.
+- **Generate**: `gemini-img "<prompt from IoA Imperium-of-Ash
+  docs/game-design/UI_ART_PROMPTS.md>" --out ~/Downloads/gemini --name <asset>` →
+  JSON `{text, images[], out}` on stdout; images land on disk for agent review
+  (agent reads the PNGs and iterates).
+- **Edit chain (identity preservation — the entire game)**: `gemini-img "same object
+  rotated 90 degrees, keep everything identical except ..." --edit <winner.png>`.
+  The wrapper prefixes "Using the attached image:" automatically. NEVER reroll a
+  winner from scratch; derive.
+- **Agent loop**: prompt (from the art contract) → run → READ the saved PNG →
+  compare against the contract/prior winner → next edit prompt → repeat until
+  sign-off → post (`rembg`, nearest-neighbour downscale) → repo `assets/`/mod dir
+  per the destination rules at the top of this skill.
+- **Status**: wrapper + venv installed and smoke-checked (arg/cookie paths); first
+  live generation pending the owner's cookies — flip this line to confirmed after
+  the first successful `gemini-img` run returns images.
