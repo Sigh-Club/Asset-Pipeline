@@ -39,6 +39,12 @@ DEFAULT_SAMPLES = 128  # high-quality Cycles PBR samples
 MAX_SAMPLES = 256      # absolute max for final renders
 FAST_SAMPLES = 64      # fast iteration mode
 RENDER_ENGINE = "CYCLES"
+
+# =============================================================================
+# VRAM GOVERNOR (review 2026-10-23): shared-desktop courtesy -- renders adapt to
+# whatever the desktop leaves free instead of fighting the compositor.
+VRAM_RESERVE_MIB = 2048
+RENDER_META = {}  # reproducibility fingerprint (standards D4), written to the manifest
 COLOR_MODE = "RGBA"
 FILE_FORMAT = "PNG"
 COLOR_DEPTH = "16"    # 16-bit for full PBR material depth
@@ -162,6 +168,38 @@ def parse_args():
 # =============================================================================
 # LOGGING
 # =============================================================================
+
+
+def _query_free_vram_mib():
+    """Best-effort free VRAM probe (NVIDIA via nvidia-smi). None = unknown."""
+    try:
+        import subprocess
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5)
+        if out.returncode == 0 and out.stdout.strip():
+            return int(out.stdout.strip().splitlines()[0])
+    except Exception:
+        pass
+    return None
+
+
+def adaptive_samples(requested: int) -> int:
+    """Halve samples while the desktop headroom is tight (VRAM governor)."""
+    free = _query_free_vram_mib()
+    if free is None:
+        return requested
+    need = VRAM_RESERVE_MIB + 1024  # working set estimate for these small scenes
+    samples = requested
+    while free < need and samples > 32:
+        samples = max(32, samples // 2)
+        need -= 512
+    if samples != requested:
+        log(f"VRAM governor: free={free}MiB reserve={VRAM_RESERVE_MIB}MiB -> samples {requested} -> {samples}")
+    else:
+        log(f"VRAM governor: free={free}MiB reserve={VRAM_RESERVE_MIB}MiB -> samples {requested} unchanged")
+    return samples
+
 
 def log(msg: str):
     print(f"[render_8dir_v2] {msg}")
@@ -406,9 +444,16 @@ def setup_render_settings():
     
     if RENDER_ENGINE == "CYCLES":
         # Cycles settings for quality + reasonable speed
-        scene.cycles.samples = DEFAULT_SAMPLES
+        _req = DEFAULT_SAMPLES
+        if os.environ.get("IOA_VRAM_RESERVE_MIB"):
+            try: globals()['VRAM_RESERVE_MIB'] = int(os.environ["IOA_VRAM_RESERVE_MIB"])
+            except ValueError: pass
+        scene.cycles.samples = adaptive_samples(DEFAULT_SAMPLES)
         scene.cycles.use_denoising = True
         scene.cycles.denoiser = 'OPENIMAGEDENOISE'
+        RENDER_META["view_transform"] = scene.view_settings.view_transform
+        RENDER_META["samples"] = scene.cycles.samples
+        RENDER_META["denoiser"] = "OPENIMAGEDENOISE"
         # Try GPU (OptiX preferred for RTX, fall back to CUDA then CPU).
         try:
             preferences = bpy.context.preferences.addons['cycles'].preferences
@@ -644,7 +689,14 @@ def render_direction_anim(dlabel: str, dangle: float, anim_name: str,
         _sys.stderr.flush()
         
         frame_start_time = _time.time()
-        bpy.ops.render.render(write_still=True)
+        try:
+            bpy.ops.render.render(write_still=True)
+        except RuntimeError as rend_err:
+            # Transient desktop VRM spikes (browser, video) -- retry once at half
+            # samples before giving up; recorded in the log for the QC trail.
+            log(f"Render failed ({rendErr}); retrying at half samples")
+            scene.cycles.samples = max(32, scene.cycles.samples // 2)
+            bpy.ops.render.render(write_still=True)
         frame_elapsed = _time.time() - frame_start_time
         files.append(filepath)
         
@@ -707,6 +759,10 @@ def generate_manifest(out_dir: str, animations: dict, all_files: list):
         "render_size": {"w": RENDER_W, "h": RENDER_H},
         "super_sample": SUPER_SAMPLE,
         "engine": RENDER_ENGINE,
+        # Reproducibility contract (rendering standards D4): the exact look/tech
+        # fingerprint of this run. A manifest without these is not re-runnable.
+        "vram_reserve_mib": VRAM_RESERVE_MIB,
+        "render_meta": dict(RENDER_META),
         "directions": [d[0] for d in DIRECTIONS],
         "animations": {},
         "files": all_files,

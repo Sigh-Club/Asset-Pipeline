@@ -748,12 +748,28 @@ def _render_job(job: dict, engine: str, fast: bool) -> dict:
         monitor_thread.start()
 
         try:
+            # Desktop courtesy: below-normal scheduling priority so compositing,
+            # video and browsers stay smooth during overnight burns. The VRAM
+            # governor inside render_8dir_v2 additionally adapts samples to the
+            # free VRAM the desktop leaves (IOA_VRAM_RESERVE_MIB).
+            import os as _os
+            _env = dict(_os.environ)
+            _env.setdefault('IOA_VRAM_RESERVE_MIB', '2048')
+
+            def _polite():
+                try:
+                    _os.nice(5)
+                except Exception:
+                    pass
+
             proc = subprocess.Popen(
                 render_args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,  # line-buffered
+                env=_env,
+                preexec_fn=_polite,
             )
 
             # Read output line by line — we log everything but progress

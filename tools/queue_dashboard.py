@@ -169,12 +169,17 @@ def run_render_background(fast=True):
             cmd.append("--fast")
         with render_lock:
             render_start_time = time.time()
+            import os as _os
+            env = dict(_os.environ)
+            env.setdefault('IOA_VRAM_RESERVE_MIB', '2048')
             render_process = subprocess.Popen(
                 cmd,
                 cwd=PROJECT_ROOT,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True
+                text=True,
+                env=env,
+                preexec_fn=None,
             )
         render_process.wait()
         with render_lock:
