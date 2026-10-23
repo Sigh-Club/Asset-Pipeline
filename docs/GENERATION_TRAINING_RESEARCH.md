@@ -161,9 +161,11 @@ not be verified are marked **UNVERIFIED — stage-0 experiment**; none are assum
 ### 10.0 Machine state (measured)
 
 - GPU: RTX 3070 Ti, 8192 MiB, driver 615.71.09. RAM 32 GiB, 16 threads.
-- `/home` (nvme): 83 GiB free of 930G — too small for the full model set; see 10.2.
-- `games` drive: mounted, 670G free -> models/datasets/checkpoints live here.
-  (`games2` is a separate, currently unmounted volume — do not confuse the two.)
+- `/home` (nvme): 83 GiB free of 930G — too small for the model set; see 10.2.
+- `games` (sdb, btrfs): 670G free — datasets, checkpoints, trainer venvs (small-file IO + snapshots).
+- `SAMSUNG-1TB` (sdc, NTFS): mounted `/mnt/samsung`, **931G free, empty, user-writable** —
+  verified 2026-10-23. Hosts model weights / HF cache (large sequential files; NTFS fine).
+  (`games2` referenced in older docs is a different, currently absent volume.)
 - `~/ComfyUI`: present, near-empty (SD1.5 only). `~/.cache/huggingface`: 40G already.
 - `gemini-img`: LIVE, auth installed, proven 2048px generation (skill: Gemini section).
 
@@ -191,7 +193,7 @@ choice): (a) musubi Qwen-Edit swap>=45 on 8GB VRAM / 32GB RAM — watch RAM, not
 | SDXL base 1.0 | 6.94 GB | |
 | wd-eva02-large-tagger-v3 | 3.8 GB | captioner |
 | fal Multiple-Angles LoRA | 0.30 GB | Apache-2.0, 66k downloads |
-| Total core stack | ~101 GB | + checkpoints/datasets; /home has 83G so HF_HOME/model dirs on `games` (670G free) |
+| Total core stack | ~101 GB | + checkpoints/datasets; split: weights + HF cache on `/mnt/samsung` (931G), datasets/checkpoints on `games`, nothing heavy on /home (83G) |
 
 ### 10.3 Pause / resume (verified)
 
@@ -229,8 +231,10 @@ reserved for hero anchors.
    style/sprite via img2img templates, Chroma / FLUX-schnell (Apache) thereafter.
 2. PSIDTS cookie rot stalls harvest silently — add gemini-img auth check to morning queue.
 3. ai-toolkit checkpoint corruption on interrupt-during-save — wrapper waits for save.
-4. /home disk pressure — heavy artifacts on `games`; audit before stage 2.
-5. docs/AI_GENERATION.md still contradicts this strategy — refresh at stage 4 sign-off.
+4. /home disk pressure — weights on `/mnt/samsung`, datasets on `games`; audit before stage 2.
+5. NTFS on Linux: no symlinks/permissions — keep venvs and anything symlinked on btrfs/ext4,
+   only plain weights/caches on the Samsung. Mount is not in fstab — verify at boot or add entry.
+6. docs/AI_GENERATION.md still contradicts this strategy — refresh at stage 4 sign-off.
 
 ---
 
