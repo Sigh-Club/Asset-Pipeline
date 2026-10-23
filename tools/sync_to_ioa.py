@@ -148,3 +148,75 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# =============================================================================
+# H1 full-state sync (review 2026-10-23): deliver EVERY animation state to the
+# game, renamed to the game's contract (idle/walk/attack/hit/death — the
+# pipeline renders `hurt`/`die`). Rewrites the frame KEYS in the atlas JSON and
+# copies the pair into the game's atlases dir. The atlas PNG is untouched.
+GAME_STATE_MAP = {"hurt": "hit", "die": "death"}
+
+
+def sync_full_atlas(atlas_png: Path, atlas_json: Path, game_atlases_dir: Path) -> int:
+    """Copy a packed atlas into the game with combat states mapped. Returns the
+    number of frames written."""
+    meta = json.loads(atlas_json.read_text())
+    frames = meta.get("frames", {})
+    renamed = {}
+    for key, entry in frames.items():
+        # key shape: <state>_<DIR>_frame_NN
+        parts = key.split("_")
+        if not parts:
+            renamed[key] = entry
+            continue
+        state = parts[0]
+        state = GAME_STATE_MAP.get(state, state)
+        renamed["_".join([state] + parts[1:])] = entry
+    meta["frames"] = renamed
+
+    out_dir = Path(game_atlases_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / atlas_json.name).write_text(json.dumps(meta, indent=2))
+    shutil.copy2(atlas_png, out_dir / atlas_png.name)
+
+    # LOD companions: same key treatment so the lod1 primary sheet carries the
+    # combat states too (the boot-perf programme loads lod1 as primary).
+    for lod in ("lod1", "lod2"):
+        lod_json = atlas_json.parent / (atlas_json.name.replace("_atlas.json", f"_atlas_{lod}.json"))
+        lod_png = atlas_png.parent / (atlas_png.name.replace("_atlas.png", f"_atlas_{lod}.png"))
+        if lod_json.exists() and lod_png.exists():
+            lmeta = json.loads(lod_json.read_text())
+            lframes = lmeta.get("frames", {})
+            lrenamed = {}
+            for key, entry in lframes.items():
+                parts = key.split("_")
+                st = parts[0] if parts else ""
+                st = GAME_STATE_MAP.get(st, st)
+                lrenamed["_".join([st] + parts[1:])] = entry
+            lmeta["frames"] = lrenamed
+            (out_dir / lod_json.name).write_text(json.dumps(lmeta, indent=2))
+            shutil.copy2(lod_png, out_dir / lod_png.name)
+    return len(renamed)
+
+
+def sync_all_processed(units_root: Path, game_root: Path, only_slugs=None) -> dict:
+    """Walk processed/ trees, pack nothing new: for every unit with a packed
+    atlas already present, sync full states. Returns a per-unit report."""
+    report = {}
+    atlases = units_root.parent.glob("**/*_atlas.png")  # not used; kept explicit below
+    for packed in Path(units_root).rglob("*_atlas.json"):
+        unit_dir = packed.parent
+        # derive the game slug from the unit dir name two levels up
+        if "processed" not in str(packed):
+            continue
+        slug = unit_dir.name.replace("_final", "")
+        png = unit_dir / (unit_dir.name + "_atlas.png")
+        if not png.exists():
+            continue
+        if only_slugs and slug not in only_slugs:
+            continue
+        game_atlases = game_root / "frontend" / "public" / "assets" / "atlases"
+        n = sync_full_atlas(png, packed, game_atlases)
+        report[slug] = n
+    return report

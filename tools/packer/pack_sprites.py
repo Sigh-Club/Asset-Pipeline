@@ -30,7 +30,10 @@ from PIL import Image
 # CONFIGURATION
 # =============================================================================
 
-ATLAS_MAX_SIZE = 8192       # Max texture dimension — 384×512 frames need larger atlases
+ATLAS_MAX_SIZE = 8192       # Default max texture dimension (safe on all GPUs)
+# H1: units with extended animation sets (576-frame walkers, swarm extras) need the
+# 16k tier — 16384 is the safe maximum on every desktop GPU the game targets.
+ATLAS_MAX_SIZE_WIDE = 16384
 PADDING = 4                 # Pixels between frames (prevent bleeding, larger for 4K frames)
 
 # LOD scales
@@ -142,10 +145,12 @@ def pack_unit(source_dir: str, output_dir: str, unit_name: str):
 
     print(f"  Found {len(images)} frames. Packing...")
 
-    # Pack LOD0
+    # Pack LOD0 — retry on the wide tier before giving up (H1: 576-frame units).
     atlas, meta = shelf_pack(images)
     if atlas is None:
-        print(f"  ERROR: Could not pack into {ATLAS_MAX_SIZE}x{ATLAS_MAX_SIZE}. Increase limit or split animations.")
+        atlas, meta = shelf_pack(images, max_width=ATLAS_MAX_SIZE_WIDE)
+    if atlas is None:
+        print(f"  ERROR: Could not pack into {ATLAS_MAX_SIZE_WIDE}x{ATLAS_MAX_SIZE_WIDE}. Split animations.")
         return
 
     out = Path(output_dir)
