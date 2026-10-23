@@ -599,4 +599,10 @@ reverse-engineered web client, 3.6★ repo HanaokaYuzu/Gemini-API).
   compare against the contract/prior winner → next edit prompt → repeat until
   sign-off → post (`rembg`, nearest-neighbour downscale) → repo `assets/`/mod dir
   per the destination rules at the top of this skill.
-- **Status: CONFIRMED LIVE 2026-10-23.** Auth installed (`~/.config/gemini/cookies.env`, PSID+PSIDTS pair; PSIDTS is REQUIRED — PSID alone authenticates-unverified). Proven end-to-end: text turn (`AUTH OK`) and a 2048px portrait generation from the IoA UI art contract saved via the wrapper (`~/Downloads/ioa-ui/line_infantry/line_infantry_v1_0.png`). Iterate via `--edit <winner>`; the wrapper's auto 'Using the attached image:' prefix matches the edit-chain discipline above. If auth expires: re-copy BOTH cookies from a fresh logged-in window (Chromium TS cookies rot fast; Firefox alternative per lib README).
+- **Governing queue**: before ANY generation, read
+`Imperium-of-Ash/docs/game-design/ASSET_LEDGER.md` (phases, per-asset status
+NEED→SHIPPED, approval law, quota burn log) and the art contract
+`Imperium-of-Ash/docs/game-design/UI_ART_PROMPTS.md` + `ASSET_DIRECTION.md §8`
+(faction hex/silhouette law). Never generate an asset the ledger does not list.
+
+**Status: CONFIRMED LIVE 2026-10-23.** Auth installed (`~/.config/gemini/cookies.env`, PSID+PSIDTS pair; PSIDTS is REQUIRED — PSID alone authenticates-unverified). Proven end-to-end: text turn (`AUTH OK`) and a 2048px portrait generation from the IoA UI art contract saved via the wrapper (`~/Downloads/ioa-ui/line_infantry/line_infantry_v1_0.png`). Iterate via `--edit <winner>`; the wrapper's auto 'Using the attached image:' prefix matches the edit-chain discipline above. If auth expires: re-copy BOTH cookies from a fresh logged-in window (Chromium TS cookies rot fast; Firefox alternative per lib README).
