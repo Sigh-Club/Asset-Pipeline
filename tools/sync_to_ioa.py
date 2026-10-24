@@ -155,7 +155,10 @@ if __name__ == "__main__":
 # game, renamed to the game's contract (idle/walk/attack/hit/death — the
 # pipeline renders `hurt`/`die`). Rewrites the frame KEYS in the atlas JSON and
 # copies the pair into the game's atlases dir. The atlas PNG is untouched.
-GAME_STATE_MAP = {"hurt": "hit", "die": "death"}
+GAME_STATE_MAP = {"hurt": "hit", "die": "death",
+                  # legacy walk/death state names (2026-10-24: the wide-5 pack
+                  # and the pre-rename bakes use pipeline-native verbs)
+                  "scuttle": "walk", "move": "walk", "destroy": "death"}
 
 
 def sync_full_atlas(atlas_png: Path, atlas_json: Path, game_atlases_dir: Path) -> int:
