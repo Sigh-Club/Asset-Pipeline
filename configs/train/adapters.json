@@ -33,7 +33,23 @@
       "eval_report": "output/eval/materials_v2_800/eval.json",
       "status": "adopted",
       "notes": "First clean corpus (patterns/decals excluded, 168 tiles). 800 steps, 384 px, LR 5e-5. Gate: tiling 0.958 (mean ratio 0.996), material 1.0, style 1.0, regression 1.0.",
-      "in_pipeline_proof": "output/gen/unit_proof/three_quarter.png (iron_directorate, 4 slots on line-infantry proof mesh)"
+      "in_pipeline_proof": "output/gen/unit_proof/three_quarter.png (iron_directorate, 4 slots on line-infantry proof mesh)",
+      "role": "generic surfaces (worn metal, rust, cloth, concrete, bone)"
+    },
+    {
+      "id": "materials_v3_800",
+      "base": "flux2_klein_4b",
+      "path": "output/train/materials_v3/checkpoint-800",
+      "adapter_sha256_16": "355834015f2573e5",
+      "dataset": "datasets/materials_v2/manifest.json",
+      "dataset_sha256_16": "7b16c0ca15a5d3a3",
+      "config": "tools/train/config_v3/config.json",
+      "config_sha256_16": "c9c8a10f75d329ad",
+      "eval_report": "output/eval/materials_v3_800/eval.json",
+      "status": "adopted",
+      "role": "panelled armour, trim and detail surfaces at 512 px",
+      "in_pipeline_proof": "output/gen/unit_proof_v3/three_quarter.png (iron_directorate, 4 slots on line-infantry proof mesh)",
+      "notes": "512 px, 800 steps, LR 5e-5. Gate: tiling 0.917 (mean ratio 1.369), material 1.0, style 1.0, regression 1.0. Two high-frequency scrap tiles keep a visible wrap edge (ratio 1.56/1.77, seam > 0.02); prefer materials_v2_800 for those. Trade-off: v3 reproduces large panel structures, v2 produces generic surface detail."
     }
   ]
 }

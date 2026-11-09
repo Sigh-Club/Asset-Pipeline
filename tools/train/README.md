@@ -138,7 +138,11 @@ The old gate used absolute wrap-edge difference ≤ 0.02. That number is not a s
 measurement: a correct periodic texture has a wrap edge with the same difference as
 any interior adjacent-pixel edge, so high-frequency materials fail while tiling
 perfectly. The gate now measures `wrap-edge difference / interior-edge difference`
-and requires ≤ 1.5 on ≥ 80 % of samples. `derive_maps.py` and `ingest_generated.py`
+and accepts a tile when the ratio is ≤ 1.5 **or** the absolute border step is
+≤ 0.02. The disjunction matters: the ratio explodes on near-flat materials because
+its denominator is near zero, which is a metric degeneracy, not a bad tile.
+A textured tile must look like its own interior; a flat tile must be imperceptibly
+stepped. `derive_maps.py` and `ingest_generated.py`
 use the same ratio as the repair trigger (repair only when ratio > 1.5), so a
 correct high-frequency tile is never blended into a worse one.
 
@@ -169,7 +173,8 @@ code — always by registry id.
 | id | dataset | steps / res / LR | gate | status |
 |---|---|---|---|---|
 | `materials_v1_750` | 112 tiles incl. 28 trim patterns | 750 / 512 / 1e-4 | tiling 0.833, material 1.0, style 1.0, regression 1.0 | experimental — pattern motifs leak onto surfaces |
-| `materials_v2_800` | 168 tiles, material only | 800 / 384 / 5e-5 | tiling 0.958 (mean ratio 0.996), material 1.0, style 1.0, regression 1.0 | **adopted** |
+| `materials_v2_800` | 168 tiles, material only | 800 / 384 / 5e-5 | tiling 0.958 (mean ratio 0.996), material 1.0, style 1.0, regression 1.0 | **adopted** — generic surfaces |
+| `materials_v3_800` | 168 tiles, material only | 800 / 512 / 5e-5 | tiling 0.917 (mean ratio 1.369), material 1.0, style 1.0, regression 1.0 | **adopted** — panelled armour/trim |
 
 The v1→v2 quality change came from dataset hygiene, not hyperparameters. See
 `docs/GENERATION_TRAINING_RESEARCH.md` §10b.

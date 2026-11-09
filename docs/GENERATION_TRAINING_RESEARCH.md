@@ -400,3 +400,18 @@ tiles were ingested into a copy of the library and box-projected onto the
 line-infantry proof mesh, then rendered (`output/gen/unit_proof/`). The navy enamel
 and gold pinstriping survive derivation, projection and lighting. This is the only
 gate that actually decides adoption; the tile grid alone is not enough.
+
+## 10c. 512 px run and the tiling-metric degeneracy (2026-11-09, same session)
+
+| Fact | Measured |
+|---|---|
+| Training | 800 steps at 512 px, LR 5e-5, 1.39 s/step, 18 min 28 s. Fits with the desktop at ~0.1 GB spare; no OOM. |
+| Gate | tiling 0.917 (mean ratio 1.369), material 1.0, style 1.0, regression 1.0. |
+| Failure mode | Two high-frequency scrap tiles keep a visible wrap edge (ratio 1.56, 1.77; seam 0.033, 0.039 after repair). The 384 px adapter tiled those correctly. |
+| Metric bug found | The ratio gate falsely failed six near-flat void-corsair tiles (flatness 0.004–0.021) because the interior denominator is near zero. Correct rule is a disjunction: ratio ≤ 1.5 (textured) **or** absolute seam ≤ 0.02 (imperceptibly flat). Applied to `eval_grid.py`, `evaluate.py`, `generate.py`, `derive_maps.py` and `ingest_generated.py`. |
+| In-pipeline proof | v3's four Iron Directorate slots ingested and rendered on the line-infantry mesh (`output/gen/unit_proof_v3/`). |
+| Trade-off | v3 reproduces large panel structures (navy plate with gold trim); v2 produces cleaner generic surface detail and better tiling. Both are registered as adopted with different roles, not as one winner. |
+
+Lesson: a gate that uses a ratio must floor or disjunct its denominator. The first
+version of the corrected metric passed high-frequency tiles and failed flat ones —
+exactly inverted from the original bug.

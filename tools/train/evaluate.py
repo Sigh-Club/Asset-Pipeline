@@ -119,7 +119,7 @@ def main():
     # gate: repaired seam, because that is what the material pipeline applies
     # Gate on the corrected seam metric (ratio <= 1.5). Kept in step with
     # eval_grid.py; the 0.02 threshold remains derive_maps.py's repair trigger.
-    passing = [s for s in scored if s["seam_ratio"] <= 1.5]
+    passing = [s for s in scored if s["seam_ratio"] <= 1.5 or s["seam"] <= SEAM_LIMIT]
     contact_sheet([p for _, p in found], out / "contact_sheet.png")
 
     adapters = sorted(run.rglob("*.safetensors"))

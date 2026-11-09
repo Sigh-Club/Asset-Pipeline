@@ -79,12 +79,18 @@ def delta_e(a: np.ndarray, b: np.ndarray) -> float:
 # ------------------------------------------------------------------ metrics ---
 
 def seam_metrics(arr: np.ndarray) -> dict:
+    """A tile is seam-correct when either the wrap edge is indistinguishable from
+    an interior edge (ratio criterion, textured materials) or the absolute border
+    step is imperceptible (<= 0.02, near-flat materials). The ratio alone explodes
+    on flat tiles because the denominator is near zero — that is a metric
+    degeneracy, not a bad tile."""
     a = arr.astype(np.float32)
     border = (np.abs(a[:, 0] - a[:, -1]).mean() + np.abs(a[0] - a[-1]).mean()) / 2 / 255
     interior = (np.abs(a[:, 1:] - a[:, :-1]).mean() + np.abs(a[1:] - a[:-1]).mean()) / 2 / 255
     ratio = float(border / max(interior, 1e-6))
+    ok = ratio <= SEAM_RATIO_LIMIT or border <= G.SEAM_LIMIT
     return {"seam": round(float(border), 4), "interior": round(float(interior), 4),
-            "ratio": round(ratio, 3)}
+            "ratio": round(ratio, 3), "seam_ok": bool(ok)}
 
 
 def flatness(arr: np.ndarray) -> float:
@@ -341,7 +347,7 @@ def main():
         scored = data["scored"]
 
     n = len(scored) or 1
-    tiling = sum(1 for s in scored if s["ratio"] <= SEAM_RATIO_LIMIT) / n
+    tiling = sum(1 for s in scored if s.get("seam_ok", s["ratio"] <= SEAM_RATIO_LIMIT)) / n
     material = sum(1 for s in scored if s["flatness"] <= FLATNESS_LIMIT) / n
     palette = sum(1 for s in scored if s["style_dist"] <= s["style_tol"]) / n
     retained = ([r["retained"] for r in reg if r["retained"] is not None] or [1.0])

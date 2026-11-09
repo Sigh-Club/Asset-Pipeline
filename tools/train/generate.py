@@ -232,8 +232,8 @@ def main():
                 fh.write(json.dumps(row) + "\n")
             print(f"{name}: seam {before:.3f} -> {after:.3f}, ratio {ratio:.2f}")
 
-    gate_pass = sum(1 for r in rows if r["seam_ratio"] <= 1.5)
-    print(f"{gate_pass}/{len(rows)} tiles wrap/interior ratio <= 1.5 -> {out}")
+    gate_pass = sum(1 for r in rows if r["seam_ratio"] <= 1.5 or r["seam_repaired"] <= SEAM_LIMIT)
+    print(f"{gate_pass}/{len(rows)} tiles seam-correct (ratio <= 1.5 or absolute <= {SEAM_LIMIT}) -> {out}")
 
 
 if __name__ == "__main__":

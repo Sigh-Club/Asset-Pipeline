@@ -85,7 +85,7 @@ def main():
         before = dm.seam_score(arr)
         before_ratio = dm.seam_ratio(arr)
         arr = dm.flatten_lighting(arr)
-        if before_ratio > 1.5:
+        if before_ratio > 1.5 and before > 0.02:
             arr = dm.seamless(arr)
         albedo = np.asarray(
             Image.fromarray(arr.clip(0, 255).astype(np.uint8)).resize((OUT_SIZE, OUT_SIZE), Image.LANCZOS),

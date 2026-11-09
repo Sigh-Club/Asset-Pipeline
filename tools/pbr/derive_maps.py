@@ -235,7 +235,7 @@ def build_item(patch: np.ndarray, item: dict, out_dir: Path, tile: bool):
     # only repair a genuinely broken seam; the criterion is the wrap/interior
     # ratio, not the absolute border difference (a high-frequency tile has a
     # large and correct border difference; blending it makes the wrap worse)
-    if tile and before_ratio > 1.5:
+    if tile and before_ratio > 1.5 and before > 0.02:
         patch = seamless(patch)
     after = seam_score(patch)
 
