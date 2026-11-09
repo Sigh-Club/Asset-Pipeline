@@ -1,0 +1,1237 @@
+{
+  "seed": 7,
+  "size": 512,
+  "per_item": 2,
+  "holdout_factions": [
+    "void_corsairs",
+    "wreckstorm_clans"
+  ],
+  "source_library": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi",
+  "caption_prefix": "grimdark science-fiction material, seamless tileable texture",
+  "items": [
+    {
+      "file": "train/asphalt_cracked_0.png",
+      "split": "train",
+      "id": "asphalt_cracked",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "c09af0d670210e76"
+    },
+    {
+      "file": "train/asphalt_cracked_1.png",
+      "split": "train",
+      "id": "asphalt_cracked",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "ab85c480d235c06e"
+    },
+    {
+      "file": "train/black_polymer_0.png",
+      "split": "train",
+      "id": "black_polymer",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "16c0f24c677f7b3b"
+    },
+    {
+      "file": "train/black_polymer_1.png",
+      "split": "train",
+      "id": "black_polymer",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "ccdf9e14a90bb13f"
+    },
+    {
+      "file": "train/bone_chitin_0.png",
+      "split": "train",
+      "id": "bone_chitin",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "c949c4adbdca10d3"
+    },
+    {
+      "file": "train/bone_chitin_1.png",
+      "split": "train",
+      "id": "bone_chitin",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "29fbe5dfdc6e2a19"
+    },
+    {
+      "file": "train/brass_tarnished_0.png",
+      "split": "train",
+      "id": "brass_tarnished",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "efcb7d08b6e6c41d"
+    },
+    {
+      "file": "train/brass_tarnished_1.png",
+      "split": "train",
+      "id": "brass_tarnished",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "983b097488b7f444"
+    },
+    {
+      "file": "train/chrono_revenants__accent_emissive_0.png",
+      "split": "train",
+      "id": "chrono_revenants__accent_emissive",
+      "faction": "chrono_revenants",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "e8ef3f29f5bd2264"
+    },
+    {
+      "file": "train/chrono_revenants__accent_emissive_1.png",
+      "split": "train",
+      "id": "chrono_revenants__accent_emissive",
+      "faction": "chrono_revenants",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "872f46900293efb2"
+    },
+    {
+      "file": "train/chrono_revenants__armour_primary_0.png",
+      "split": "train",
+      "id": "chrono_revenants__armour_primary",
+      "faction": "chrono_revenants",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "d1b8cfab40daa194"
+    },
+    {
+      "file": "train/chrono_revenants__armour_primary_1.png",
+      "split": "train",
+      "id": "chrono_revenants__armour_primary",
+      "faction": "chrono_revenants",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "5eb3a476267b1625"
+    },
+    {
+      "file": "train/chrono_revenants__armour_secondary_0.png",
+      "split": "train",
+      "id": "chrono_revenants__armour_secondary",
+      "faction": "chrono_revenants",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "434f67505b2eb506"
+    },
+    {
+      "file": "train/chrono_revenants__armour_secondary_1.png",
+      "split": "train",
+      "id": "chrono_revenants__armour_secondary",
+      "faction": "chrono_revenants",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "a6b56171c8dc2819"
+    },
+    {
+      "file": "train/chrono_revenants__metal_trim_0.png",
+      "split": "train",
+      "id": "chrono_revenants__metal_trim",
+      "faction": "chrono_revenants",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "44352d4f4c21a9e9"
+    },
+    {
+      "file": "train/chrono_revenants__metal_trim_1.png",
+      "split": "train",
+      "id": "chrono_revenants__metal_trim",
+      "faction": "chrono_revenants",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "ce07c1cf8fa2c0d7"
+    },
+    {
+      "file": "train/chrono_revenants__underlayer_0.png",
+      "split": "train",
+      "id": "chrono_revenants__underlayer",
+      "faction": "chrono_revenants",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "2d32b150b1cd747a"
+    },
+    {
+      "file": "train/chrono_revenants__underlayer_1.png",
+      "split": "train",
+      "id": "chrono_revenants__underlayer",
+      "faction": "chrono_revenants",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "4fc5c4486041b774"
+    },
+    {
+      "file": "train/cinderborn__accent_emissive_0.png",
+      "split": "train",
+      "id": "cinderborn__accent_emissive",
+      "faction": "cinderborn",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "11e690146ccc7edf"
+    },
+    {
+      "file": "train/cinderborn__accent_emissive_1.png",
+      "split": "train",
+      "id": "cinderborn__accent_emissive",
+      "faction": "cinderborn",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "bde3d0cb41746d45"
+    },
+    {
+      "file": "train/cinderborn__armour_primary_0.png",
+      "split": "train",
+      "id": "cinderborn__armour_primary",
+      "faction": "cinderborn",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "c7c6db32d4914702"
+    },
+    {
+      "file": "train/cinderborn__armour_primary_1.png",
+      "split": "train",
+      "id": "cinderborn__armour_primary",
+      "faction": "cinderborn",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "12623959ef889b1d"
+    },
+    {
+      "file": "train/cinderborn__armour_secondary_0.png",
+      "split": "train",
+      "id": "cinderborn__armour_secondary",
+      "faction": "cinderborn",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "41d73e5f2d884650"
+    },
+    {
+      "file": "train/cinderborn__armour_secondary_1.png",
+      "split": "train",
+      "id": "cinderborn__armour_secondary",
+      "faction": "cinderborn",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "1a516731fa9e9209"
+    },
+    {
+      "file": "train/cinderborn__metal_trim_0.png",
+      "split": "train",
+      "id": "cinderborn__metal_trim",
+      "faction": "cinderborn",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "065408d0bbb1ad33"
+    },
+    {
+      "file": "train/cinderborn__metal_trim_1.png",
+      "split": "train",
+      "id": "cinderborn__metal_trim",
+      "faction": "cinderborn",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "6fa610453dba51ad"
+    },
+    {
+      "file": "train/cinderborn__underlayer_0.png",
+      "split": "train",
+      "id": "cinderborn__underlayer",
+      "faction": "cinderborn",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "012d3e05fbc55696"
+    },
+    {
+      "file": "train/cinderborn__underlayer_1.png",
+      "split": "train",
+      "id": "cinderborn__underlayer",
+      "faction": "cinderborn",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "7910f3b49d74d808"
+    },
+    {
+      "file": "train/cloth_canvas_0.png",
+      "split": "train",
+      "id": "cloth_canvas",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "999c10e221f01256"
+    },
+    {
+      "file": "train/cloth_canvas_1.png",
+      "split": "train",
+      "id": "cloth_canvas",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "b645b5f7ef95f6f6"
+    },
+    {
+      "file": "train/concrete_scorched_0.png",
+      "split": "train",
+      "id": "concrete_scorched",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "1bb122cd0e0b5447"
+    },
+    {
+      "file": "train/concrete_scorched_1.png",
+      "split": "train",
+      "id": "concrete_scorched",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "6029c9c81c979ddc"
+    },
+    {
+      "file": "train/concrete_urban_0.png",
+      "split": "train",
+      "id": "concrete_urban",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "b6ef03f18fb687f0"
+    },
+    {
+      "file": "train/concrete_urban_1.png",
+      "split": "train",
+      "id": "concrete_urban",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "637b7489faa1c7f0"
+    },
+    {
+      "file": "train/flesh_organic_0.png",
+      "split": "train",
+      "id": "flesh_organic",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "b8efc210e17a206a"
+    },
+    {
+      "file": "train/flesh_organic_1.png",
+      "split": "train",
+      "id": "flesh_organic",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "7c1b25f75ad5c183"
+    },
+    {
+      "file": "train/glass_dirty_0.png",
+      "split": "train",
+      "id": "glass_dirty",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "e21dd5bb045c088c"
+    },
+    {
+      "file": "train/glass_dirty_1.png",
+      "split": "train",
+      "id": "glass_dirty",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "68f9264e982a2aa1"
+    },
+    {
+      "file": "train/gunmetal_worn_0.png",
+      "split": "train",
+      "id": "gunmetal_worn",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "b091f377b9c48e36"
+    },
+    {
+      "file": "train/gunmetal_worn_1.png",
+      "split": "train",
+      "id": "gunmetal_worn",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "bd33347d340ecdd1"
+    },
+    {
+      "file": "train/iron_directorate__accent_emissive_0.png",
+      "split": "train",
+      "id": "iron_directorate__accent_emissive",
+      "faction": "iron_directorate",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "726174768c185d86"
+    },
+    {
+      "file": "train/iron_directorate__accent_emissive_1.png",
+      "split": "train",
+      "id": "iron_directorate__accent_emissive",
+      "faction": "iron_directorate",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "b11edc5c6807fd22"
+    },
+    {
+      "file": "train/iron_directorate__armour_primary_0.png",
+      "split": "train",
+      "id": "iron_directorate__armour_primary",
+      "faction": "iron_directorate",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "b4b8afdc5318d6c9"
+    },
+    {
+      "file": "train/iron_directorate__armour_primary_1.png",
+      "split": "train",
+      "id": "iron_directorate__armour_primary",
+      "faction": "iron_directorate",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "803a437610182918"
+    },
+    {
+      "file": "train/iron_directorate__armour_secondary_0.png",
+      "split": "train",
+      "id": "iron_directorate__armour_secondary",
+      "faction": "iron_directorate",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "939739c6970142f4"
+    },
+    {
+      "file": "train/iron_directorate__armour_secondary_1.png",
+      "split": "train",
+      "id": "iron_directorate__armour_secondary",
+      "faction": "iron_directorate",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "abb9a8ae8c013809"
+    },
+    {
+      "file": "train/iron_directorate__metal_trim_0.png",
+      "split": "train",
+      "id": "iron_directorate__metal_trim",
+      "faction": "iron_directorate",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "25b915ccac20ac02"
+    },
+    {
+      "file": "train/iron_directorate__metal_trim_1.png",
+      "split": "train",
+      "id": "iron_directorate__metal_trim",
+      "faction": "iron_directorate",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "44e1011715fbebc3"
+    },
+    {
+      "file": "train/iron_directorate__underlayer_0.png",
+      "split": "train",
+      "id": "iron_directorate__underlayer",
+      "faction": "iron_directorate",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "7973d83824ea8deb"
+    },
+    {
+      "file": "train/iron_directorate__underlayer_1.png",
+      "split": "train",
+      "id": "iron_directorate__underlayer",
+      "faction": "iron_directorate",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "06bb8d141d40fd46"
+    },
+    {
+      "file": "train/leather_tan_0.png",
+      "split": "train",
+      "id": "leather_tan",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "be27ca116d795428"
+    },
+    {
+      "file": "train/leather_tan_1.png",
+      "split": "train",
+      "id": "leather_tan",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "0223e05289c68df5"
+    },
+    {
+      "file": "train/metal_grate_0.png",
+      "split": "train",
+      "id": "metal_grate",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "1d518edd0904736c"
+    },
+    {
+      "file": "train/metal_grate_1.png",
+      "split": "train",
+      "id": "metal_grate",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "95b27def88831eb1"
+    },
+    {
+      "file": "train/parasitic_bloom__accent_emissive_0.png",
+      "split": "train",
+      "id": "parasitic_bloom__accent_emissive",
+      "faction": "parasitic_bloom",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "b67d525200505e3c"
+    },
+    {
+      "file": "train/parasitic_bloom__accent_emissive_1.png",
+      "split": "train",
+      "id": "parasitic_bloom__accent_emissive",
+      "faction": "parasitic_bloom",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "5ce359532e2aed02"
+    },
+    {
+      "file": "train/parasitic_bloom__armour_primary_0.png",
+      "split": "train",
+      "id": "parasitic_bloom__armour_primary",
+      "faction": "parasitic_bloom",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "feccec0bd1535801"
+    },
+    {
+      "file": "train/parasitic_bloom__armour_primary_1.png",
+      "split": "train",
+      "id": "parasitic_bloom__armour_primary",
+      "faction": "parasitic_bloom",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "5a2a025058fb8802"
+    },
+    {
+      "file": "train/parasitic_bloom__armour_secondary_0.png",
+      "split": "train",
+      "id": "parasitic_bloom__armour_secondary",
+      "faction": "parasitic_bloom",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "0b8521f794133adf"
+    },
+    {
+      "file": "train/parasitic_bloom__armour_secondary_1.png",
+      "split": "train",
+      "id": "parasitic_bloom__armour_secondary",
+      "faction": "parasitic_bloom",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "5785750b56a2d45f"
+    },
+    {
+      "file": "train/parasitic_bloom__metal_trim_0.png",
+      "split": "train",
+      "id": "parasitic_bloom__metal_trim",
+      "faction": "parasitic_bloom",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "92005a9922af976d"
+    },
+    {
+      "file": "train/parasitic_bloom__metal_trim_1.png",
+      "split": "train",
+      "id": "parasitic_bloom__metal_trim",
+      "faction": "parasitic_bloom",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "9d8450f234a5f57d"
+    },
+    {
+      "file": "train/parasitic_bloom__underlayer_0.png",
+      "split": "train",
+      "id": "parasitic_bloom__underlayer",
+      "faction": "parasitic_bloom",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "1dcf758d0fdd96e6"
+    },
+    {
+      "file": "train/parasitic_bloom__underlayer_1.png",
+      "split": "train",
+      "id": "parasitic_bloom__underlayer",
+      "faction": "parasitic_bloom",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "7c84dedbd8c3e19b"
+    },
+    {
+      "file": "train/pattern_arcane_band_0.png",
+      "split": "train",
+      "id": "pattern_arcane_band",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.7,
+      "sha256": "5504d9011961201d"
+    },
+    {
+      "file": "train/pattern_arcane_band_1.png",
+      "split": "train",
+      "id": "pattern_arcane_band",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.7,
+      "sha256": "80e7d454dcda0fc5"
+    },
+    {
+      "file": "train/pattern_bone_weave_0.png",
+      "split": "train",
+      "id": "pattern_bone_weave",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.6,
+      "sha256": "198eb1ed347f4f16"
+    },
+    {
+      "file": "train/pattern_bone_weave_1.png",
+      "split": "train",
+      "id": "pattern_bone_weave",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.6,
+      "sha256": "a4c374c1a33f8f35"
+    },
+    {
+      "file": "train/pattern_cable_bundle_0.png",
+      "split": "train",
+      "id": "pattern_cable_bundle",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.6,
+      "sha256": "3407ad786d51e9e1"
+    },
+    {
+      "file": "train/pattern_cable_bundle_1.png",
+      "split": "train",
+      "id": "pattern_cable_bundle",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.6,
+      "sha256": "8128dc666eaeac1e"
+    },
+    {
+      "file": "train/pattern_carapace_scale_0.png",
+      "split": "train",
+      "id": "pattern_carapace_scale",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.5,
+      "sha256": "901e1e86bd2bb595"
+    },
+    {
+      "file": "train/pattern_carapace_scale_1.png",
+      "split": "train",
+      "id": "pattern_carapace_scale",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.5,
+      "sha256": "9a36398ca85099fc"
+    },
+    {
+      "file": "train/pattern_chainmail_0.png",
+      "split": "train",
+      "id": "pattern_chainmail",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.3,
+      "sha256": "1d2edebe14a300ae"
+    },
+    {
+      "file": "train/pattern_chainmail_1.png",
+      "split": "train",
+      "id": "pattern_chainmail",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.3,
+      "sha256": "afbb2e83dcf8adee"
+    },
+    {
+      "file": "train/pattern_circuit_tracery_0.png",
+      "split": "train",
+      "id": "pattern_circuit_tracery",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.5,
+      "sha256": "912516a76f4dbcc5"
+    },
+    {
+      "file": "train/pattern_circuit_tracery_1.png",
+      "split": "train",
+      "id": "pattern_circuit_tracery",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.5,
+      "sha256": "3bd06ddafd99c2e1"
+    },
+    {
+      "file": "train/pattern_dazzle_camo_0.png",
+      "split": "train",
+      "id": "pattern_dazzle_camo",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 2.0,
+      "sha256": "f879efd145788a75"
+    },
+    {
+      "file": "train/pattern_dazzle_camo_1.png",
+      "split": "train",
+      "id": "pattern_dazzle_camo",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 2.0,
+      "sha256": "6dacf1e987367b13"
+    },
+    {
+      "file": "train/pattern_edge_wear_0.png",
+      "split": "train",
+      "id": "pattern_edge_wear",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.5,
+      "sha256": "5102bdcc90a4300e"
+    },
+    {
+      "file": "train/pattern_edge_wear_1.png",
+      "split": "train",
+      "id": "pattern_edge_wear",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.5,
+      "sha256": "1cdbf83d12ca70ce"
+    },
+    {
+      "file": "train/pattern_gothic_filigree_0.png",
+      "split": "train",
+      "id": "pattern_gothic_filigree",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.6,
+      "sha256": "2add6db963552146"
+    },
+    {
+      "file": "train/pattern_gothic_filigree_1.png",
+      "split": "train",
+      "id": "pattern_gothic_filigree",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.6,
+      "sha256": "5349e853c4cba9a9"
+    },
+    {
+      "file": "train/pattern_hazard_chevrons_0.png",
+      "split": "train",
+      "id": "pattern_hazard_chevrons",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.8,
+      "sha256": "5cecd1cdc275739c"
+    },
+    {
+      "file": "train/pattern_hazard_chevrons_1.png",
+      "split": "train",
+      "id": "pattern_hazard_chevrons",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.8,
+      "sha256": "a226901bc1d72d5d"
+    },
+    {
+      "file": "train/pattern_hex_mesh_0.png",
+      "split": "train",
+      "id": "pattern_hex_mesh",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.25,
+      "sha256": "155f46215f013165"
+    },
+    {
+      "file": "train/pattern_hex_mesh_1.png",
+      "split": "train",
+      "id": "pattern_hex_mesh",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.25,
+      "sha256": "fce169a74d60be80"
+    },
+    {
+      "file": "train/pattern_panel_seams_0.png",
+      "split": "train",
+      "id": "pattern_panel_seams",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 1.0,
+      "sha256": "22ec609b73170440"
+    },
+    {
+      "file": "train/pattern_panel_seams_1.png",
+      "split": "train",
+      "id": "pattern_panel_seams",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 1.0,
+      "sha256": "6c30f03c21cad782"
+    },
+    {
+      "file": "train/pattern_rivet_rows_0.png",
+      "split": "train",
+      "id": "pattern_rivet_rows",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.4,
+      "sha256": "b3d4838b7077d9ff"
+    },
+    {
+      "file": "train/pattern_rivet_rows_1.png",
+      "split": "train",
+      "id": "pattern_rivet_rows",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.4,
+      "sha256": "e48c7b1a6b5ebe14"
+    },
+    {
+      "file": "train/pattern_stencil_marks_0.png",
+      "split": "train",
+      "id": "pattern_stencil_marks",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.9,
+      "sha256": "a4631b280e39d755"
+    },
+    {
+      "file": "train/pattern_stencil_marks_1.png",
+      "split": "train",
+      "id": "pattern_stencil_marks",
+      "faction": "shared",
+      "slot": "pattern",
+      "kind": "pattern",
+      "tile_m": 0.9,
+      "sha256": "8b735d9d55bd740c"
+    },
+    {
+      "file": "train/radiant_concord__accent_emissive_0.png",
+      "split": "train",
+      "id": "radiant_concord__accent_emissive",
+      "faction": "radiant_concord",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "7754ce56b1772360"
+    },
+    {
+      "file": "train/radiant_concord__accent_emissive_1.png",
+      "split": "train",
+      "id": "radiant_concord__accent_emissive",
+      "faction": "radiant_concord",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "34593819fe6fd254"
+    },
+    {
+      "file": "train/radiant_concord__armour_primary_0.png",
+      "split": "train",
+      "id": "radiant_concord__armour_primary",
+      "faction": "radiant_concord",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "8945643a3f6f3305"
+    },
+    {
+      "file": "train/radiant_concord__armour_primary_1.png",
+      "split": "train",
+      "id": "radiant_concord__armour_primary",
+      "faction": "radiant_concord",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "b8108ba4008419f6"
+    },
+    {
+      "file": "train/radiant_concord__armour_secondary_0.png",
+      "split": "train",
+      "id": "radiant_concord__armour_secondary",
+      "faction": "radiant_concord",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "911a22b4273d82be"
+    },
+    {
+      "file": "train/radiant_concord__armour_secondary_1.png",
+      "split": "train",
+      "id": "radiant_concord__armour_secondary",
+      "faction": "radiant_concord",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "aadc656a91c43dcc"
+    },
+    {
+      "file": "train/radiant_concord__metal_trim_0.png",
+      "split": "train",
+      "id": "radiant_concord__metal_trim",
+      "faction": "radiant_concord",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "996bf61ed3484c13"
+    },
+    {
+      "file": "train/radiant_concord__metal_trim_1.png",
+      "split": "train",
+      "id": "radiant_concord__metal_trim",
+      "faction": "radiant_concord",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "1c65ccc2681a21a6"
+    },
+    {
+      "file": "train/radiant_concord__underlayer_0.png",
+      "split": "train",
+      "id": "radiant_concord__underlayer",
+      "faction": "radiant_concord",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "5bca5f3f448006af"
+    },
+    {
+      "file": "train/radiant_concord__underlayer_1.png",
+      "split": "train",
+      "id": "radiant_concord__underlayer",
+      "faction": "radiant_concord",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "130e28997658b2be"
+    },
+    {
+      "file": "train/rubber_worn_0.png",
+      "split": "train",
+      "id": "rubber_worn",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "dbb016a9e196eb5c"
+    },
+    {
+      "file": "train/rubber_worn_1.png",
+      "split": "train",
+      "id": "rubber_worn",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "034c82c9908f8d86"
+    },
+    {
+      "file": "train/sand_rubble_0.png",
+      "split": "train",
+      "id": "sand_rubble",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "40d37c7ab9efb998"
+    },
+    {
+      "file": "train/sand_rubble_1.png",
+      "split": "train",
+      "id": "sand_rubble",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "d711a91a6c7e790b"
+    },
+    {
+      "file": "train/steel_painted_green_0.png",
+      "split": "train",
+      "id": "steel_painted_green",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "32e393c9cd96e7b8"
+    },
+    {
+      "file": "train/steel_painted_green_1.png",
+      "split": "train",
+      "id": "steel_painted_green",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "77b91c9a8814356a"
+    },
+    {
+      "file": "train/steel_rusted_0.png",
+      "split": "train",
+      "id": "steel_rusted",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "a0d064487484d806"
+    },
+    {
+      "file": "train/steel_rusted_1.png",
+      "split": "train",
+      "id": "steel_rusted",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "b55ba097821d73ef"
+    },
+    {
+      "file": "eval/void_corsairs__accent_emissive.png",
+      "split": "eval",
+      "id": "void_corsairs__accent_emissive",
+      "faction": "void_corsairs",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "49af2ecee8d93018"
+    },
+    {
+      "file": "eval/void_corsairs__armour_primary.png",
+      "split": "eval",
+      "id": "void_corsairs__armour_primary",
+      "faction": "void_corsairs",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "0811f5a29ee2bb3f"
+    },
+    {
+      "file": "eval/void_corsairs__armour_secondary.png",
+      "split": "eval",
+      "id": "void_corsairs__armour_secondary",
+      "faction": "void_corsairs",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "7955db66d92d2aee"
+    },
+    {
+      "file": "eval/void_corsairs__metal_trim.png",
+      "split": "eval",
+      "id": "void_corsairs__metal_trim",
+      "faction": "void_corsairs",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "d77a76a82f25c96b"
+    },
+    {
+      "file": "eval/void_corsairs__underlayer.png",
+      "split": "eval",
+      "id": "void_corsairs__underlayer",
+      "faction": "void_corsairs",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "8480d9f7aa1b9bcf"
+    },
+    {
+      "file": "train/wood_plank_0.png",
+      "split": "train",
+      "id": "wood_plank",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "fde4a750b5d37442"
+    },
+    {
+      "file": "train/wood_plank_1.png",
+      "split": "train",
+      "id": "wood_plank",
+      "faction": "shared",
+      "slot": "shared",
+      "kind": "material",
+      "tile_m": 1.0,
+      "sha256": "7b2c540b29cae047"
+    },
+    {
+      "file": "eval/wreckstorm_clans__accent_emissive.png",
+      "split": "eval",
+      "id": "wreckstorm_clans__accent_emissive",
+      "faction": "wreckstorm_clans",
+      "slot": "accent_emissive",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "8279c177fb46987f"
+    },
+    {
+      "file": "eval/wreckstorm_clans__armour_primary.png",
+      "split": "eval",
+      "id": "wreckstorm_clans__armour_primary",
+      "faction": "wreckstorm_clans",
+      "slot": "armour_primary",
+      "kind": "material",
+      "tile_m": 0.5,
+      "sha256": "f4811e3332788f6f"
+    },
+    {
+      "file": "eval/wreckstorm_clans__armour_secondary.png",
+      "split": "eval",
+      "id": "wreckstorm_clans__armour_secondary",
+      "faction": "wreckstorm_clans",
+      "slot": "armour_secondary",
+      "kind": "material",
+      "tile_m": 0.35,
+      "sha256": "df9db632f2f15088"
+    },
+    {
+      "file": "eval/wreckstorm_clans__metal_trim.png",
+      "split": "eval",
+      "id": "wreckstorm_clans__metal_trim",
+      "faction": "wreckstorm_clans",
+      "slot": "metal_trim",
+      "kind": "material",
+      "tile_m": 0.3,
+      "sha256": "5e46a94cacfd1458"
+    },
+    {
+      "file": "eval/wreckstorm_clans__underlayer.png",
+      "split": "eval",
+      "id": "wreckstorm_clans__underlayer",
+      "faction": "wreckstorm_clans",
+      "slot": "underlayer",
+      "kind": "material",
+      "tile_m": 0.22,
+      "sha256": "95c71753be9a74b9"
+    }
+  ],
+  "counts": {
+    "train": 112,
+    "eval": 10
+  }
+}

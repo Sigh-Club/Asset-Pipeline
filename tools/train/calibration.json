@@ -1,0 +1,16 @@
+{
+  "measured_at": "2026-11-09T02:38:22",
+  "job": "flux2 klein-4b LoRA",
+  "config": "tools/train/config/config.json",
+  "steps": 50,
+  "wall_seconds": 158,
+  "seconds_per_step": 3.17,
+  "extrapolation": {
+    "600_steps_min": 32,
+    "1200_steps_min": 63,
+    "1500_steps_min": 79,
+    "2000_steps_min": 106
+  },
+  "vram_note": "fits with base int8-sdnq + text_encoder_1 int8-sdnq + startup offload + attention-gc offload; ohne diese: OOM at 5.88GB",
+  "dataset": "datasets/materials_v1 train=112 eval=10 holdout=void_corsairs,wreckstorm_clans"
+}

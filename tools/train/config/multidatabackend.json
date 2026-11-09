@@ -1,0 +1,24 @@
+[
+  {
+    "id": "materials_v1",
+    "type": "local",
+    "instance_data_dir": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/datasets/materials_v1/train",
+    "caption_strategy": "textfile",
+    "resolution": 512,
+    "resolution_type": "pixel",
+    "crop": true,
+    "crop_style": "random",
+    "crop_aspect": "square",
+    "minimum_image_size": 256,
+    "maximum_image_size": 512,
+    "target_downsample_size": 512,
+    "cache_dir_vae": "cache/vae/{model_family}/materials_v1"
+  },
+  {
+    "id": "text-embeds",
+    "dataset_type": "text_embeds",
+    "type": "local",
+    "default": true,
+    "cache_dir": "cache/text/{model_family}"
+  }
+]

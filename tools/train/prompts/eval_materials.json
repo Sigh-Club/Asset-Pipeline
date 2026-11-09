@@ -1,0 +1,114 @@
+[
+  {
+    "id": "void_corsairs_armour_primary",
+    "kind": "in_domain",
+    "faction": "void_corsairs",
+    "prompt": "seamless tileable texture, pale bone-white hull plating, swept fin edges, hard-light seams, immaculate"
+  },
+  {
+    "id": "void_corsairs_armour_secondary",
+    "kind": "in_domain",
+    "faction": "void_corsairs",
+    "prompt": "seamless tileable texture, deep teal lacquered panels with hairline silver inlay"
+  },
+  {
+    "id": "void_corsairs_metal_trim",
+    "kind": "in_domain",
+    "faction": "void_corsairs",
+    "prompt": "seamless tileable texture, pale chrome edging, holographic sheen, cold"
+  },
+  {
+    "id": "wreckstorm_clans_armour_primary",
+    "kind": "in_domain",
+    "faction": "wreckstorm_clans",
+    "prompt": "seamless tileable texture, bolted scrap armour, rust-orange and mismatched plates, weld beads, dents, painted glyphs"
+  },
+  {
+    "id": "wreckstorm_clans_armour_secondary",
+    "kind": "in_domain",
+    "faction": "wreckstorm_clans",
+    "prompt": "seamless tileable texture, stacked scrap metal patchwork, exposed rivets, grease"
+  },
+  {
+    "id": "wreckstorm_clans_metal_trim",
+    "kind": "in_domain",
+    "faction": "wreckstorm_clans",
+    "prompt": "seamless tileable texture, crude iron spikes and reinforcement bar, hammer marks"
+  },
+  {
+    "id": "gunmetal_worn",
+    "kind": "in_domain",
+    "faction": "shared",
+    "prompt": "seamless tileable texture, worn gunmetal steel, fine scratches, oil sheen, dark charcoal grey"
+  },
+  {
+    "id": "steel_rusted",
+    "kind": "in_domain",
+    "faction": "shared",
+    "prompt": "seamless tileable texture, heavily rusted steel plate, orange-brown corrosion, pitting, flaking paint edges"
+  },
+  {
+    "id": "cloth_canvas",
+    "kind": "in_domain",
+    "faction": "shared",
+    "prompt": "seamless tileable texture, coarse olive canvas weave, frayed threads, dust"
+  },
+  {
+    "id": "concrete_scorched",
+    "kind": "in_domain",
+    "faction": "shared",
+    "prompt": "seamless tileable texture, scorched concrete, soot staining, hairline cracks"
+  },
+  {
+    "id": "bone_chitin",
+    "kind": "in_domain",
+    "faction": "shared",
+    "prompt": "seamless tileable texture, pale bone chitin, ridged growth lines, matte, slight translucency at edges"
+  },
+  {
+    "id": "iron_directorate_armour_primary",
+    "kind": "in_domain",
+    "faction": "iron_directorate",
+    "prompt": "seamless tileable texture, disciplined industrial armour plate, deep navy-blue enamel over steel, gold pinstripe edging, rivets, parade-ground wear"
+  },
+  {
+    "id": "regression_knight",
+    "kind": "regression",
+    "prompt": "a knight in full plate armour standing in a stone courtyard, cinematic lighting"
+  },
+  {
+    "id": "regression_landscape",
+    "kind": "regression",
+    "prompt": "a windswept ash desert under a bruised sky, distant ruins"
+  },
+  {
+    "id": "regression_creature",
+    "kind": "regression",
+    "prompt": "a hunched armoured alien creature with four arms, studio lighting, full body"
+  },
+  {
+    "id": "regression_vehicle",
+    "kind": "regression",
+    "prompt": "a tracked armoured personnel carrier, three-quarter view, overcast daylight"
+  },
+  {
+    "id": "regression_portrait",
+    "kind": "regression",
+    "prompt": "portrait of a scarred veteran soldier, grim expression, rim light"
+  },
+  {
+    "id": "regression_scene",
+    "kind": "regression",
+    "prompt": "an industrial hangar interior with catwalks and cranes, volumetric light"
+  },
+  {
+    "id": "regression_icon",
+    "kind": "regression",
+    "prompt": "a single brass grenade icon on a flat black background, centred, clean silhouette"
+  },
+  {
+    "id": "regression_architecture",
+    "kind": "regression",
+    "prompt": "a brutalist cathedral facade, deep shadows, symmetrical composition"
+  }
+]

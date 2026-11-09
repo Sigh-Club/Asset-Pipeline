@@ -67,3 +67,11 @@ imperial_guardsman.blend
 Thumbs.db
 AGENTSUMMARY.md
 HANDOFF_IMG23D.md
+
+# === Training corpora and caches (rebuildable from manifest + scripts) ===
+cache/
+datasets/*/train/
+datasets/*/eval/
+
+# training venv is a local install, not source
+.venv/

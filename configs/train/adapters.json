@@ -1,0 +1,38 @@
+{
+  "//": "Adapter registry. Pipeline code references an adapter by id only. An entry is usable when status=adopted and its eval report exists. Adapter files live under output/train/ (gitignored); provenance is the base model + config + dataset manifest hashes, so a run is reproducible without committing weights.",
+  "base_models": {
+    "flux2_klein_4b": {
+      "repo": "black-forest-labs/FLUX.2-klein-base-4B",
+      "licence": "Apache-2.0",
+      "commercial_use": true
+    }
+  },
+  "adapters": [
+    {
+      "id": "materials_v1_750",
+      "base": "flux2_klein_4b",
+      "path": "output/train/materials_v1/checkpoint-750",
+      "adapter_sha256_16": "0e0473e8b330006a",
+      "dataset": "datasets/materials_v1/manifest.json",
+      "dataset_sha256_16": "8c904a8909b469be",
+      "config": "tools/train/config/config.json",
+      "config_sha256_16": "5cf653ccc438aae5",
+      "eval_report": "output/eval/materials_v1_750/eval.json",
+      "status": "experimental",
+      "notes": "Pilot adapter. Passes the corrected gate, but the corpus contained 28 pattern (trim-sheet) tiles, so it draws chevrons/grids onto surfaces. Superseded by materials_v2. Kept for A/B comparison."
+    },
+    {
+      "id": "materials_v2_800",
+      "base": "flux2_klein_4b",
+      "path": "output/train/materials_v2/checkpoint-800",
+      "adapter_sha256_16": "c7cbdc495f2e3821",
+      "dataset": "datasets/materials_v2/manifest.json",
+      "dataset_sha256_16": "7b16c0ca15a5d3a3",
+      "config": "tools/train/config_v2/config.json",
+      "config_sha256_16": "dd9a47082e857906",
+      "eval_report": "output/eval/materials_v2_800/eval.json",
+      "status": "adopted",
+      "notes": "First clean corpus (patterns/decals excluded, 168 tiles). 800 steps, 384 px, LR 5e-5. Gate: tiling 0.958 (mean ratio 0.996), material 1.0, style 1.0, regression 1.0."
+    }
+  ]
+}
