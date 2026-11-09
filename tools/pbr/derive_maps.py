@@ -303,7 +303,29 @@ def main():
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--sheet", help="override sheet path")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--atlas", help="single UV atlas image to derive maps from")
+    ap.add_argument("--out", help="output dir for --atlas mode")
     args = ap.parse_args()
+
+    if args.atlas:
+        src = Path(args.atlas)
+        out = Path(args.out or src.parent)
+        out.mkdir(parents=True, exist_ok=True)
+        arr = np.asarray(Image.open(src).convert("RGB"), dtype=np.float32)
+        before, before_ratio = seam_score(arr), seam_ratio(arr)
+        arr = flatten_lighting(arr)
+        # an atlas is not a tile: never seam-repair it, only flatten lighting
+        Image.fromarray(arr.clip(0, 255).astype(np.uint8)).save(out / "atlas_albedo.png")
+        Image.fromarray(normal_map(arr, 1.3)).save(out / "atlas_normal.png")
+        Image.fromarray(roughness_map(arr, 0.0, False)).save(out / "atlas_roughness.png")
+        Image.fromarray(np.full((OUT_SIZE, OUT_SIZE), 128, dtype=np.uint8)).save(out / "atlas_metallic.png")
+        meta = {"atlas": str(src), "size": OUT_SIZE,
+                "tileable_before": round(before, 4), "tileable_after": round(seam_score(arr), 4),
+                "ratio_before": round(before_ratio, 3), "ratio_after": round(seam_ratio(arr), 3),
+                "derived": "normal/roughness from albedo; metallic is a material factor"}
+        (out / "atlas_meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+        print(f"derived atlas maps -> {out}")
+        return 0
 
     manifest = json.loads(MANIFEST.read_text())
     items = {i["id"]: i for i in manifest["items"]}

@@ -66,6 +66,8 @@ def parse_args():
     p.add_argument("--glb", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--render", action="store_true")
+    p.add_argument("--clips", default="all", choices=("all", "proof"),
+                   help="all = the 9 contract clips; proof = idle/walk/aim only")
     p.add_argument("--samples", type=int, default=16)
     return p.parse_args(argv)
 
@@ -269,6 +271,16 @@ def key_loc(arm, bone, frame):
     pb.keyframe_insert(data_path="location", frame=frame)
 
 
+def pose(arm, bone, rx=0.0, ry=0.0, rz=0.0):
+    """Compose a rotation; set_rot() overwrites, which is fine for single-axis
+    limbs but loses information for spine/hip combinations."""
+    from mathutils import Euler
+    pb = arm.pose.bones[bone]
+    pb.rotation_mode = "QUATERNION"
+    pb.rotation_quaternion = Euler(
+        (math.radians(rx), math.radians(ry), math.radians(rz)), "XYZ").to_quaternion()
+
+
 def reset_pose(arm):
     for pb in arm.pose.bones:
         pb.rotation_mode = "QUATERNION"
@@ -356,6 +368,178 @@ def author_aim(arm, fps):
                      "LeftUpLeg", "RightUpLeg"):
             key_rot(arm, bone, frame)
         key_loc(arm, "Hips", frame)
+    return action
+
+
+
+def author_run(arm, fps):
+    """Faster, longer stride, forward lean, stronger arm swing. 24 frames."""
+    action = new_action(arm, "run")
+    keys = [
+        (1, 38, 8, -34, 14),
+        (6, 10, 48, 8, -12),
+        (12, -34, 10, 38, 14),
+        (18, 8, 48, 10, -12),
+        (24, 38, 8, -34, 14),
+    ]
+    for frame, lswing, lknee, rswing, foot in keys:
+        reset_pose(arm)
+        pose(arm, "LeftUpLeg", rx=lswing)
+        pose(arm, "LeftLeg", rx=-lknee)
+        pose(arm, "LeftFoot", rx=foot)
+        pose(arm, "RightUpLeg", rx=rswing)
+        pose(arm, "RightLeg", rx=-max(0.0, -lknee * 0.2))
+        pose(arm, "RightFoot", rx=-foot)
+        pose(arm, "Spine", rx=12.0)
+        pose(arm, "Spine2", rx=4.0, rz=4.0 if lswing > 0 else -4.0)
+        pose(arm, "Hips", rz=-3.0 if lswing > 0 else 3.0)
+        pose(arm, "LeftArm", rx=-rswing * 0.9)
+        pose(arm, "RightArm", rx=-lswing * 0.9)
+        arm.pose.bones["Hips"].location = (0, 0, 0.045 if abs(lswing) < 15 else -0.02)
+        for b in ("LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg",
+                  "RightFoot", "Spine", "Spine2", "Hips", "LeftArm", "RightArm"):
+            key_rot(arm, b, frame)
+        key_loc(arm, "Hips", frame)
+    return action
+
+
+def author_fire(arm, fps):
+    """Shoulder the weapon, one recoil beat, settle. 20 frames."""
+    action = new_action(arm, "fire")
+    poses = [
+        (1, 0.0, 0.0, 0.0),
+        (3, 5.0, -8.0, 1.0),    # recoil: torso back, weapon up
+        (7, 2.0, -3.0, 0.4),
+        (14, 0.5, -1.0, 0.1),
+        (20, 0.0, 0.0, 0.0),
+    ]
+    for frame, back, lift, jitter in poses:
+        reset_pose(arm)
+        pose(arm, "Spine", rx=-back)
+        pose(arm, "Spine2", rx=-back * 0.5, rz=jitter)
+        pose(arm, "Neck", rx=back * 0.4)
+        pose(arm, "Head", rx=back * 0.3)
+        pose(arm, "LeftArm", rx=lift)
+        pose(arm, "RightArm", rx=lift)
+        pose(arm, "LeftForeArm", rx=lift * 0.6)
+        pose(arm, "RightForeArm", rx=lift * 0.6)
+        for b in ("Spine", "Spine2", "Neck", "Head", "LeftArm", "RightArm",
+                  "LeftForeArm", "RightForeArm"):
+            key_rot(arm, b, frame)
+    return action
+
+
+def author_reload(arm, fps):
+    """Drop the muzzle, magazine-out beat, seat, re-shoulder. 40 frames."""
+    action = new_action(arm, "reload")
+    poses = [
+        (1, 0, 0, 0, 0),
+        (8, -12, 10, 55, -8),
+        (16, -14, 16, 85, -14),   # magazine out
+        (24, -10, 8, 45, -6),     # magazine in
+        (32, -3, 2, 12, -1),
+        (40, 0, 0, 0, 0),
+    ]
+    for frame, muzzle, elbow, right_lift, tilt in poses:
+        reset_pose(arm)
+        pose(arm, "Spine", rx=muzzle * 0.4, rz=tilt * 0.5)
+        pose(arm, "Spine2", rx=muzzle * 0.3, rz=tilt * 0.5)
+        pose(arm, "Neck", rx=-muzzle * 0.4)
+        pose(arm, "LeftArm", rx=muzzle)
+        pose(arm, "LeftForeArm", rx=elbow)
+        pose(arm, "RightArm", rx=muzzle + right_lift * 0.25)
+        pose(arm, "RightForeArm", rx=right_lift)
+        pose(arm, "RightHand", rx=right_lift * 0.4)
+        for b in ("Spine", "Spine2", "Neck", "LeftArm", "LeftForeArm",
+                  "RightArm", "RightForeArm", "RightHand"):
+            key_rot(arm, b, frame)
+    return action
+
+
+def author_hit(arm, fps):
+    """Impact recoil: torso and head snap back, arms open, one stagger step."""
+    action = new_action(arm, "hit")
+    poses = [
+        (1, 0.0, 0.0, 0.0),
+        (3, -18.0, 10.0, -0.03),
+        (7, -10.0, 6.0, -0.015),
+        (12, 4.0, -2.0, 0.005),
+        (18, 0.0, 0.0, 0.0),
+    ]
+    for frame, back, arms, hip_y in poses:
+        reset_pose(arm)
+        pose(arm, "Spine", rx=back)
+        pose(arm, "Spine2", rx=back * 0.6)
+        pose(arm, "Neck", rx=back * 0.5)
+        pose(arm, "Head", rx=back * 0.8)
+        pose(arm, "LeftArm", rz=-arms)
+        pose(arm, "RightArm", rz=arms)
+        pose(arm, "LeftUpLeg", rx=-arms * 0.4)
+        pose(arm, "RightUpLeg", rx=arms * 0.2)
+        arm.pose.bones["Hips"].location = (0, hip_y, 0)
+        for b in ("Spine", "Spine2", "Neck", "Head", "LeftArm", "RightArm",
+                  "LeftUpLeg", "RightUpLeg"):
+            key_rot(arm, b, frame)
+        key_loc(arm, "Hips", frame)
+    return action
+
+
+def author_death(arm, fps):
+    """Stagger, knees buckle, fall back to the ground. 45 frames, in place."""
+    action = new_action(arm, "death")
+    poses = [
+        # frame, hips_z, hips_rx, spine_rx, knee, head_rx
+        (1, 0.00, 0.0, 0.0, 0, 0.0),
+        (8, -0.06, -6.0, -10.0, 18, -8.0),
+        (18, -0.30, 18.0, -18.0, 55, -12.0),
+        (30, -0.62, 55.0, -10.0, 70, -6.0),
+        (39, -0.82, 82.0, 6.0, 40, 4.0),
+        (45, -0.86, 88.0, 8.0, 28, 6.0),
+    ]
+    for frame, hz, hrx, srx, knee, head in poses:
+        reset_pose(arm)
+        arm.pose.bones["Hips"].location = (0, 0, hz)
+        pose(arm, "Hips", rx=hrx)
+        pose(arm, "Spine", rx=srx)
+        pose(arm, "Spine2", rx=srx * 0.5)
+        pose(arm, "Neck", rx=head * 0.4)
+        pose(arm, "Head", rx=head)
+        pose(arm, "LeftUpLeg", rx=-knee * 0.5)
+        pose(arm, "RightUpLeg", rx=-knee * 0.5)
+        pose(arm, "LeftLeg", rx=knee)
+        pose(arm, "RightLeg", rx=knee)
+        pose(arm, "LeftArm", rx=-20.0)
+        pose(arm, "RightArm", rx=-20.0)
+        for b in ("Hips", "Spine", "Spine2", "Neck", "Head", "LeftUpLeg",
+                  "RightUpLeg", "LeftLeg", "RightLeg", "LeftArm", "RightArm"):
+            key_rot(arm, b, frame)
+        key_loc(arm, "Hips", frame)
+    return action
+
+
+def author_melee(arm, fps):
+    """Wind-up, swing across the body, recover. 30 frames."""
+    action = new_action(arm, "melee")
+    poses = [
+        (1, 0, 0, 0, 0),
+        (7, -55, 22, -14, 8),     # wind-up: arm back, torso twisted
+        (14, 35, -26, 26, -6),    # swing through
+        (20, 12, -14, 14, -3),
+        (30, 0, 0, 0, 0),
+    ]
+    for frame, rarm, twist, forward, hips in poses:
+        reset_pose(arm)
+        pose(arm, "Spine", rx=forward * 0.5, rz=twist)
+        pose(arm, "Spine2", rx=forward * 0.5, rz=twist)
+        pose(arm, "Hips", rz=hips)
+        pose(arm, "RightArm", rx=rarm, rz=-twist * 0.6)
+        pose(arm, "RightForeArm", rx=-abs(rarm) * 0.3)
+        pose(arm, "LeftArm", rx=-rarm * 0.4)
+        pose(arm, "LeftUpLeg", rx=-forward * 0.4)
+        pose(arm, "RightUpLeg", rx=forward * 0.4)
+        for b in ("Spine", "Spine2", "Hips", "RightArm", "RightForeArm",
+                  "LeftArm", "LeftUpLeg", "RightUpLeg"):
+            key_rot(arm, b, frame)
     return action
 
 
@@ -447,16 +631,24 @@ def main():
 
     scene = bpy.context.scene
     scene.render.fps = 30
-    author_idle(arm, 30)
-    author_walk(arm, 30)
-    author_aim(arm, 30)
-    actions = [bpy.data.actions.get(n) for n in ("idle", "walk", "aim")]
+    clip_builders = {
+        "idle": author_idle, "walk": author_walk, "run": author_run,
+        "aim": author_aim, "fire": author_fire, "reload": author_reload,
+        "hit": author_hit, "death": author_death, "melee": author_melee,
+    }
+    if args.clips == "proof":
+        clip_builders = {k: clip_builders[k] for k in ("idle", "walk", "aim")}
+    for builder in clip_builders.values():
+        builder(arm, 30)
+    actions = [bpy.data.actions.get(n) for n in clip_builders]
 
     if args.render:
         setup_render(out / "frames", args.samples)
-        render_clip_frames(arm, actions[0], out / "frames", 60, 4)
-        render_clip_frames(arm, actions[1], out / "frames", 30, 2)
-        render_clip_frames(arm, actions[2], out / "frames", 30, 2)
+        for action in actions:
+            if action is None:
+                continue
+            end = int(action.frame_range[1])
+            render_clip_frames(arm, action, out / "frames" / action.name, end, max(1, end // 8))
 
     for action in actions:
         stash_to_nla(arm, action)
