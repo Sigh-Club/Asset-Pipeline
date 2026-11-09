@@ -138,8 +138,9 @@ The old gate used absolute wrap-edge difference ≤ 0.02. That number is not a s
 measurement: a correct periodic texture has a wrap edge with the same difference as
 any interior adjacent-pixel edge, so high-frequency materials fail while tiling
 perfectly. The gate now measures `wrap-edge difference / interior-edge difference`
-and requires ≤ 1.5 on ≥ 80 % of samples. The 0.02 threshold remains where it belongs:
-inside `derive_maps.py` as the trigger for whether to apply the repair.
+and requires ≤ 1.5 on ≥ 80 % of samples. `derive_maps.py` and `ingest_generated.py`
+use the same ratio as the repair trigger (repair only when ratio > 1.5), so a
+correct high-frequency tile is never blended into a worse one.
 
 ### Palette metric
 
@@ -179,3 +180,34 @@ Training needs ~6.2 GB resident; the box OOMs at 448/512 px when a browser plus 
 1 GB Wine game hold the card. 384 px runs at 1.42 s/step with ~0.1–0.5 GB spare.
 Close GPU consumers before a run (`python3 tools/gpu_policy.py status`), and sample
 at 448 px afterwards — the 384 px adapter samples cleanly above its training size.
+
+## In-pipeline proof (2026-11-09)
+
+`tools/pbr/ingest_generated.py` is the bridge from adapter output to the material
+library: it flattens lighting, applies the ratio-based repair and derives
+normal/roughness/metallic exactly as `derive_maps.py` does, then writes the item
+layout the Blender library builder expects.
+
+```bash
+# 1. generate the four Iron Directorate slots with the adopted adapter
+tools/train/.venv/bin/python tools/train/generate.py \
+    --adapter output/train/materials_v2/checkpoint-800 \
+    --prompts /tmp/iron_directorate_prompts.json --seeds 11 \
+    --out output/gen/iron_directorate --size 448 --steps 16
+# 2. ingest into a copy of the library (never mutate the shipped tree)
+python3 tools/pbr/ingest_generated.py --gen output/gen/iron_directorate \
+    --library assets/materials/grimdark_scifi --out output/gen/adapted_library \
+    --items iron_directorate__armour_primary,iron_directorate__armour_secondary,iron_directorate__underlayer,iron_directorate__metal_trim
+# 3. build a preview .blend and render it on the real unit mesh
+tools/blender_run.sh --job render -- -b -P tools/pbr/build_blender_library.py -- \
+    --library "$PWD/output/gen/adapted_library" --only iron_directorate
+tools/blender_run.sh --job render -- -b -P tools/blender/preview_unit_materials.py -- \
+    --glb output/img23d/line_infantry_mv/uv/lod0_uv.glb \
+    --library "$PWD/output/gen/adapted_library/grimdark_scifi.blend" \
+    --faction iron_directorate --out output/gen/unit_proof --samples 32
+```
+
+Result: `output/gen/unit_proof/{front,three_quarter}.png` — navy enamel with gold
+pinstripe edging on the line-infantry proof mesh, all four slots box-projected from
+adapter tiles. The crude zone heuristic leaves the boots grey; that is the known
+preview limitation, not a texture defect.

@@ -32,7 +32,8 @@
       "config_sha256_16": "dd9a47082e857906",
       "eval_report": "output/eval/materials_v2_800/eval.json",
       "status": "adopted",
-      "notes": "First clean corpus (patterns/decals excluded, 168 tiles). 800 steps, 384 px, LR 5e-5. Gate: tiling 0.958 (mean ratio 0.996), material 1.0, style 1.0, regression 1.0."
+      "notes": "First clean corpus (patterns/decals excluded, 168 tiles). 800 steps, 384 px, LR 5e-5. Gate: tiling 0.958 (mean ratio 0.996), material 1.0, style 1.0, regression 1.0.",
+      "in_pipeline_proof": "output/gen/unit_proof/three_quarter.png (iron_directorate, 4 slots on line-infantry proof mesh)"
     }
   ]
 }
