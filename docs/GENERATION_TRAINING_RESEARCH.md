@@ -387,10 +387,16 @@ feeds the material library that the game needs *now*.
 | Training | 800 steps at 384 px, LR 5e-5, 1.42 s/step steady, 18 min 52 s wall. Checkpoints every 200. No OOM once the 1 GB Wine game was closed, but the box ran with ~0.1–0.5 GB free; 448 px and 512 px both OOM'd while desktop GPU consumers held 0.9–1.0 GB. |
 | Sampling | `generate.py` (FLUX.2 klein + adapter, sequential CPU offload, ~40 s per 448 px / 16-step tile). Model-level offload OOMs with a browser holding 3 GB; sequential offload fits in ~2 GB. |
 | Tiling | Latent-space periodic blending (unpack → border cross-fade → repack every denoising step) cut raw wrap-edge difference from 0.104 to 0.035 on the same prompt and seed. Production repair still runs afterwards. |
-| Metric correction | Absolute wrap-edge difference is not a seam metric: a correct high-frequency tile has a large border difference. The gate now uses wrap-edge / interior-edge ratio ≤ 1.5 (measured 0.56–2.08 on real samples). `derive_maps.py` keeps 0.02 as the repair trigger, not as a quality score. |
+| Metric correction | Absolute wrap-edge difference is not a seam metric: a correct high-frequency tile has a large border difference. The gate now uses wrap-edge / interior-edge ratio ≤ 1.5 (measured 0.56–2.08 on real samples). `derive_maps.py` and `ingest_generated.py` now use the same ratio as the repair trigger (repair only above 1.5), so a correct high-frequency tile is no longer blended into a worse one. |
 | Style gate | Mean-colour dE cannot judge a multi-colour material and falsely rejected 15/24 correct tiles. Replaced with a 4×4 colour-layout + chroma-histogram descriptor against the faction's reference set, tolerance = that set's leave-one-out p95. |
 | Regression gate | 8 out-of-domain prompts, base vs adapter at the same seed, scene-structure score. All retained ≥ 50 % of base structure (no capability collapse at 800 steps). |
 
 Consequence: the dataset is the product. The single largest quality change between
 v1 and v2 was removing 28 trim-sheet tiles from the corpus, not changing any
 hyperparameter. Do not add pattern/decal art to a surface-material corpus.
+
+In-pipeline proof (same session): the adopted adapter's four Iron Directorate slot
+tiles were ingested into a copy of the library and box-projected onto the
+line-infantry proof mesh, then rendered (`output/gen/unit_proof/`). The navy enamel
+and gold pinstriping survive derivation, projection and lighting. This is the only
+gate that actually decides adoption; the tile grid alone is not enough.
