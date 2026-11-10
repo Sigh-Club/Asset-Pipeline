@@ -1,0 +1,90 @@
+{
+  "//": "Asset request examples. One request produces one asset through one production route. Stage tools read these; nothing here is style-specific code. See docs/STYLE_PROFILES.md for the profile fields and docs/STYLE_RESEARCH.md for the look.",
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "iron_directorate_barrel_a",
+      "kind": "prop",
+      "route": "parametric_hard_surface",
+      "profile": "pixel_3d",
+      "params": {
+        "height_m": 0.88, "diameter_m": 0.58, "ribs": 3, "bevel_m": 0.012,
+        "variants": ["intact", "dented", "open"]
+      },
+      "materials": {"body": "iron_directorate__metal_trim", "band": "iron_directorate__accent_emissive"},
+      "gates": ["texel_grid", "palette_compliance", "readability"]
+    },
+    {
+      "id": "iron_directorate_lasrifle",
+      "kind": "weapon",
+      "route": "parametric_hard_surface",
+      "profile": "pixel_3d",
+      "params": {
+        "length_m": 1.05, "receiver_w_m": 0.07, "barrel_len_m": 0.46,
+        "stock": "folding", "magazine": "drum", "rail": true
+      },
+      "materials": {"body": "iron_directorate__armour_primary", "trim": "iron_directorate__metal_trim"},
+      "gates": ["texel_grid", "palette_compliance", "readability"]
+    },
+    {
+      "id": "ash_tree_dead_a",
+      "kind": "foliage",
+      "route": "procedural_organic",
+      "profile": "pixel_3d",
+      "params": {
+        "height_m": 4.2, "trunk_radius_m": 0.16, "branch_levels": 4,
+        "branch_angle_deg": 38, "leaf_cards": 24, "lean_deg": 6
+      },
+      "materials": {"bark": "iron_directorate__underlayer", "leaves": "parasitic_bloom__armour_primary"},
+      "gates": ["texel_grid", "palette_compliance", "readability"]
+    },
+    {
+      "id": "hab_block_b1",
+      "kind": "building",
+      "route": "parametric_modular",
+      "profile": "pixel_3d",
+      "params": {
+        "footprint_m": [6, 4], "storeys": 2, "module": "hab",
+        "door": "roller", "damage_states": ["intact", "breached", "ruined"]
+      },
+      "materials": {"walls": "iron_directorate__armour_secondary", "roof": "iron_directorate__metal_trim"},
+      "gates": ["texel_grid", "palette_compliance", "readability"]
+    },
+    {
+      "id": "unit_line_infantry_a",
+      "kind": "unit",
+      "route": "image_to_3d",
+      "profile": "pixel_3d",
+      "params": {
+        "height_m": 1.9, "base": "line_infantry", "weapon": "parametric:iron_directorate_lasrifle",
+        "clips": ["idle", "walk", "run", "aim", "fire", "reload", "hit", "death", "melee"]
+      },
+      "references": {
+        "orthos": ["output/img23d/line_infantry_mv/front.png",
+                    "output/img23d/line_infantry_mv/left.png",
+                    "output/img23d/line_infantry_mv/right.png"],
+        "style_sheet": "assets/units/iron_directorate_line_infantry/concept.png"
+      },
+      "materials": {"armour": "iron_directorate__armour_primary", "trim": "iron_directorate__metal_trim"},
+      "gates": ["glb_contract", "texel_grid", "palette_compliance", "timing", "readability"]
+    },
+    {
+      "id": "squad_roster_icon_vet",
+      "kind": "ui_icon",
+      "route": "pixel_ui",
+      "profile": "hd_pixel_sprite",
+      "params": {"canvas_px": [64, 64], "motif": "veteran chevron + skull", "outline": 0.5},
+      "materials": {"palette": "grimdark_64"},
+      "gates": ["palette_compliance", "silhouette"]
+    },
+    {
+      "id": "tile_floor_industrial_a",
+      "kind": "tile",
+      "route": "parametric_modular",
+      "profile": "pixel_3d",
+      "params": {"tile_m": 2.0, "surface": "deck_plate", "edges": "raised", "damage_states": 3},
+      "materials": {"floor": "iron_directorate__underlayer"},
+      "gates": ["texel_grid", "seam", "palette_compliance"]
+    }
+  ]
+}

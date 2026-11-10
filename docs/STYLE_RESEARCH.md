@@ -308,3 +308,24 @@ texel-grid UV stage and the palette-locked material build.
 
 *Retrieved 2026-11-09. Re-check when a style profile ships, or when a reference
 sprite fails the readability gate.*
+
+## 13. Where image generation helps (Gemini)
+
+Four roles, none of them "generate the final sprite":
+
+1. **Concepts and orthographic references** for units and creatures — the route
+   img23d needs, and the only practical source for organic silhouettes.
+2. **Texture and material albedo** — already how the 79-item library was made;
+   derivation of normal/roughness stays local.
+3. **Training corpora** — 30–80 curated images per style seeds a style adapter at
+   our cost; caption from the prompt, not a captioning model.
+4. **Guidance and review targets** — a pixel style sheet per faction supplies the
+   palette, outline weight and cluster density the readability gate compares to,
+   and the prompt fragments already live in `pz/pixel/styles.py`.
+
+It cannot give geometry, topology, alpha, or consistency at volume (use a LoRA).
+Prompts must carry the profile: canvas size, palette, pixel density, outline,
+dither. For 3D sources ask for **flat, high-contrast concepts and orthos**, not
+finished pixel art; ask for pixel art when the output *is* the target sheet or an
+icon. Non-grimdark factions (Orks, aliens, Bloom) benefit most: same pipeline,
+different profile palette and shading.

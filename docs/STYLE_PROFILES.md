@@ -65,6 +65,25 @@ python3 tools/style/profiles.py gates pixel_sprite
 
 Exit code 1 with `ERROR <path>: <reason>` lines on any invalid profile.
 
+## Asset requests
+
+A profile is selected by an asset request (`configs/assets/*.json`): `id`, `kind`,
+`route`, `profile`, `params`, `materials`, optional `references`, and the gates to
+run. Routes are `parametric_hard_surface`, `parametric_modular`,
+`procedural_organic`, `image_to_3d`, `pixel_ui`. Weapons, props, buildings and
+tiles must use a parametric route — image-to-3D fuses parts and loses dimensions.
+
+```bash
+# hard-surface prop from a request, rendered at the profile canvas
+tools/blender_run.sh --job render -- -b -P tools/blender/parametric_prop.py -- \
+    --request configs/assets/examples.json --id iron_directorate_barrel_a \
+    --out output/props/barrel --render --library <library.blend>
+
+# pixel gate: palette drift + silhouette integrity
+python3 tools/style/check_pixel_asset.py output/props/barrel/render/<file>.png \
+    --profile pixel_3d --kind prop
+```
+
 ## Stage wiring
 
 Current: `retopo_unit.py --profile <id>` takes the LOD0 tri budget and

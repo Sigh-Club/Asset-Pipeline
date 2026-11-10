@@ -5,13 +5,32 @@ description: Guides AI agents working on IoA's multi-asset-type 3D-to-2D sprite 
 
 # Asset-Pipeline Skill
 
+## 3D assets first (2026-11-09)
+
+The combat loop moved to **Three.js with skinned GLB units**. If the task is 3D
+art — unit models, materials, environments — read
+`docs/3D_ASSETS.md` in this repo and load the global `ioa-3d-assets` skill. The
+rules in the sections below (8 directions, LANCZOS, palette lock, atlas packing)
+apply to the **2D sprite** path only.
+
+Model training (optional, not yet active) is covered by
+`docs/GENERATION_TRAINING_RESEARCH.md` and the global `generative-training` skill:
+small Apache bases only, image/material LoRAs only, and a manufactured dataset.
+
+New in this repo: `tools/glb_contract.py` (acceptance gate),
+`tools/blender/uv_prepare.py`, `tools/blender/preview_unit_materials.py`,
+`tools/pbr/build_material_manifest.py`, `tools/pbr/derive_maps.py`,
+`tools/pbr/build_blender_library.py`, `tools/gpu_policy.py`,
+`tools/blender_run.sh` (VRAM-guarded launcher), and the
+`assets/materials/grimdark_scifi/` library.
+
 This skill enforces quality standards, code conventions, and project rules for the Imperium of Ash automated asset generation pipeline. Load this whenever working on pipeline scripts, Blender generators, render tools, UI elements, or game asset output.
 
 ---
 
 ## Project Identity
 
-**Repository**: `asset-pipeline` (in `/run/media/talzanar/games2/Projects/IoA/asset-pipeline/`)
+**Repository**: `asset-pipeline` (in `/run/media/talzanar/games/Projects/IoA/asset-pipeline/`)
 **Purpose**: Multi-asset-type generation pipeline for Imperium of Ash — characters, tiles, UI, props — all grimdark isometric.
 **Method**: Automated sub-pipelines routed through a unified CLI. Batch-mode Blender (--background) for renders. MCP bridge planned for Phase 1 of engine roadmap.
 **Target Quality**: Dawn of War 1/2 calibre — hard-surface modelling, heroic proportions, baked normal maps, team-colour masking.
@@ -606,3 +625,12 @@ NEED→SHIPPED, approval law, quota burn log) and the art contract
 (faction hex/silhouette law). Never generate an asset the ledger does not list.
 
 **Status: CONFIRMED LIVE 2026-10-23.** Auth installed (`~/.config/gemini/cookies.env`, PSID+PSIDTS pair; PSIDTS is REQUIRED — PSID alone authenticates-unverified). Proven end-to-end: text turn (`AUTH OK`) and a 2048px portrait generation from the IoA UI art contract saved via the wrapper (`~/Downloads/ioa-ui/line_infantry/line_infantry_v1_0.png`). Iterate via `--edit <winner>`; the wrapper's auto 'Using the attached image:' prefix matches the edit-chain discipline above. If auth expires: re-copy BOTH cookies from a fresh logged-in window (Chromium TS cookies rot fast; Firefox alternative per lib README).
+
+
+## Style profiles (2026-11-09)
+
+Pixel tiers are selected by profile, not by editing the pixeliser:
+`configs/styles/profiles.json` + `tools/style/profiles.py` (see
+`docs/STYLE_PROFILES.md`). The 2D pixel path is the `pixel_sprite` /
+`hd_pixel_sprite` profile; assets are requested from `configs/assets/*.json` with
+a route, and the pixel gate is `tools/style/check_pixel_asset.py`.

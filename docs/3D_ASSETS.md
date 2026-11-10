@@ -212,3 +212,32 @@ Known limits, recorded:
   Tune per faction before the next unit.
 - Atlas UV utilisation is ~25 % (Smart UV Project on a remeshed shell). A proper
   pack would allow 4K detail; 2K is sufficient at the isometric camera distance.
+
+## 8. Style profiles, asset requests and the pixel gate (2026-11-09)
+
+Style is selectable, not hard-coded. `configs/styles/profiles.json` defines
+`aaa_3d`, `lowpoly_3d`, `pixel_3d`, `pixel_sprite` and `hd_pixel_sprite`, each
+with geometry/texture/render/animation budgets and the gate set that accepts the
+asset. `tools/style/profiles.py` validates them (unknown keys, cycles, palette
+ids, budgets); `docs/STYLE_PROFILES.md` is the schema reference.
+
+Assets are requested, not improvised: `configs/assets/examples.json` holds one
+request per asset with a **route**:
+
+| Route | Used for | Tool |
+|---|---|---|
+| `parametric_hard_surface` | weapons, barrels, crates, machinery | `tools/blender/parametric_prop.py` |
+| `parametric_modular` | buildings, base modules, tiles | same, recipes `block`/`tile` |
+| `procedural_organic` | foliage, simple organics | branch generator (Phase 5) |
+| `image_to_3d` | units and creatures | `tools/img23d` + retopo |
+| `pixel_ui` | icons, portraits, panels | `pz/pixel` |
+
+Proof run (2026-11-09): `iron_directorate_barrel_a`, `iron_directorate_lasrifle`
+and `tile_floor_industrial_a` built from requests at `pixel_3d`, rendered 256²
+without antialiasing, palette-checked (`tools/style/check_pixel_asset.py`: drift
+0.022–0.034, one component, fill in range). Outputs under `output/props/<id>/`.
+
+The pixel gate measures palette drift in Oklab and silhouette integrity (component
+count, bounding-box fill per asset kind). It is the pixel-tier counterpart to
+`glb_contract.py`: PBR seam/flatness gates are meaningless for a palette-locked
+asset. Human readability review is still required.
