@@ -305,7 +305,31 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--atlas", help="single UV atlas image to derive maps from")
     ap.add_argument("--out", help="output dir for --atlas mode")
+    ap.add_argument("--image",
+                    help="single full-bleed tileable image to ingest as one library item "
+                         "(no 2x2 quadrant split)")
+    ap.add_argument("--id", help="library item id for --image")
+    ap.add_argument("--slot", default="shared", help="slot name for --image")
+    ap.add_argument("--faction", default="shared", help="faction for --image")
+    ap.add_argument("--tile-m", type=float, default=1.0,
+                    help="world size of one texture tile in metres for --image")
+    ap.add_argument("--metal", type=float, default=0.0,
+                    help="metallic constant 0..1 for --image")
+    ap.add_argument("--prompt", default="", help="provenance prompt for --image")
     args = ap.parse_args()
+
+    if args.image:
+        if not args.id:
+            raise SystemExit("--image requires --id")
+        src = Path(args.image)
+        patch = np.asarray(Image.open(src).convert("RGB"), dtype=np.float32)
+        item = {"id": args.id, "kind": "material", "faction": args.faction,
+                "slot": args.slot, "prompt": args.prompt, "tile_m": args.tile_m,
+                "metal": args.metal, "emissive": False}
+        meta = build_item(patch, item, LIB / args.id, tile=True)
+        print(f"ingested {args.id} -> {LIB / args.id} "
+              f"(seam {meta['tileable_before']} -> {meta['tileable_after']})")
+        return 0
 
     if args.atlas:
         src = Path(args.atlas)

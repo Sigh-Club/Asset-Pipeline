@@ -1,0 +1,78 @@
+GIMP Palette
+Name: Grimdark 3D (grimdark_64 + completed neutral/metal ramp)
+Columns: 8
+#
+ 10  10  10 Void Black
+ 20  20  20 Soot
+ 30  30  30 Gunmetal Dark
+ 40  40  40 Gunmetal Mid
+ 74  74  74 Battle Grey
+ 70  60  50 Leather Dark
+ 90  74  60 Leather Mid
+110  94  76 Leather Light
+139  45  45 Blood Red
+166  58  58 Blood Mid
+193  71  71 Blood Light
+212 160  36 Imperial Gold
+232 200  72 Gold Highlight
+240 232 160 Gold Shine
+140 112  56 Bronze Dark
+168 132  72 Bronze Mid
+196 160  88 Bronze Light
+ 26  47  26 Deep Green
+ 78 120  78 Fatigue Mid
+ 96 150  96 Fatigue Light
+ 42  42  60 Navy Dark
+ 60  60  84 Navy Mid
+ 78  78 108 Navy Light
+ 92  64  52 Rust Dark
+120  84  60 Rust Mid
+148 104  72 Rust Light
+176 124  84 Rust Highlight
+232 224 212 Bone
+200 192 180 Bone Shadow
+168 160 148 Bone Dark
+232 208   0 Hazard Yellow
+184 168   0 Hazard Dark
+ 76  42  92 Bruise Purple
+100  58 120 Purple Mid
+124  74 148 Purple Light
+ 36  58  76 Steel Blue Dark
+ 52  90 120 Steel Blue Mid
+ 74 122 156 Steel Blue Light
+ 92 140 176 Steel Blue Highlight
+ 74  56  40 Dirt Dark
+100  80  60 Dirt Mid
+126 104  80 Dirt Light
+152 128 112 Dirt Highlight
+108 108  90 Concrete Dark
+138 138 120 Concrete Mid
+168 168 150 Concrete Highlight
+198 198 180 Concrete Highlight
+252  76   4 Plasma Orange
+255 120   0 Plasma Mid
+255 164  32 Plasma Light
+  0 184   0 Toxic Green
+  0 224   0 Toxic Mid
+ 64 255  64 Toxic Light
+ 26  26  36 Void Blue
+ 46  46  62 Void Blue Mid
+ 68  68  90 Void Blue Light
+ 92  92 120 Void Blue Highlight
+128   0   0 Gore Dark
+160   0   0 Gore Mid
+192  32  32 Gore Light
+ 60  42  30 Wood Dark
+ 92  66  48 Wood Mid
+124  90  68 Wood Light
+255   0   0 Pure Red
+ 52  52  52 Steel Dark
+ 63  63  63 Steel Mid
+ 88  88  88 Steel Light
+104 104 104 Steel Highlight
+ 58  66  78 Cold Steel Dark
+ 84  94 110 Cold Steel Light
+120 120 120 Steel Bright
+150 150 150 Steel Hot
+138 138 138 Steel Bright 2
+170 170 170 Steel Hot 2

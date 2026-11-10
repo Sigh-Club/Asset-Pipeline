@@ -241,3 +241,76 @@ The pixel gate measures palette drift in Oklab and silhouette integrity (compone
 count, bounding-box fill per asset kind). It is the pixel-tier counterpart to
 `glb_contract.py`: PBR seam/flatness gates are meaningless for a palette-locked
 asset. Human readability review is still required.
+
+### 8a. The pixel-master route (2026-11-10) — `pixel_3d` end to end
+
+The 2026-11-09 proof produced *smooth-shaded* masters with palette drift 0.02–0.04:
+correct geometry, wrong tier. The pixel look needs a texel grid, a band-limited
+material source and a palette lock, and those are now stages with gates rather
+than intentions. Two drivers run the whole route:
+
+```bash
+tools/build_pixel_asset.sh <out-name> <request-id> <prop|weapon|tile>
+tools/build_pixel_unit.sh  <out-name> <unit-id> <textured-unit.glb>
+```
+
+| Stage | Tool | What it enforces |
+|---|---|---|
+| texel grid | `tools/blender/pixel_uv.py` (via `bake_pixel_atlas.py --stage texel`) | uniform `texel_world_m` density per island, UVs snapped to the atlas texel lattice, density contract ±25 % |
+| material source | `tools/pbr/build_pixel_variants.py` → `build_blender_library.py --pixel` | albedo band-limited to `2 × tile_m / texel_m` px so one texel samples an averaged texel, not a random sub-texel value |
+| bake | `bake_pixel_atlas.py --stage albedo` | albedo via a base-colour→emission reroute (a metallic material has no diffuse component, so `DIFFUSE` bakes black), plus an emission atlas |
+| palette lock | `tools/style/palette_lock.py` | Oklab nearest-palette with ordered dither, binary alpha, despeckle; every opaque pixel must be an exact palette entry |
+| final GLB | `bake_pixel_atlas.py --stage final` | one palette material, `Closest` filtering, no PBR maps, flat shading |
+| master | `tools/blender/render_pixel_master.py` + `master_render.py` | 8 directions at the profile canvas, no AA, one constant scale across the set, pose chosen explicitly, normal/AO/emission masks in Raw |
+| gates | `check_texel_grid.py`, `check_pixel_asset.py`, `check_master.py`, `glb_contract.py` | see below |
+
+Certified 2026-11-10 (all four green, negative controls recorded in §8b):
+
+| Asset | `<out>` | tris | density vs profile | atlas | off-palette | masks |
+|---|---|---|---|---|---|---|
+| line infantry (aim pose) | `output/gen/unit8` | 4,080 | +0.26 % | 256² | 0 | 8×3 |
+| lasrifle | `output/gen/weapon8` | 460 | +7.5 % | 256² | 0 | 8×3 |
+| deck tile | `output/gen/tile8` | 380 | +1.7 % | 256² | 0 | 8×3 |
+| barrel | `output/gen/barrel8` | 460 | −0.27 % | 256² | 0 | 8×3 |
+
+`glb_contract.py` PASS on all four; the unit keeps 22 joints, one skin and the
+9-clip set (the pixel tier re-authors mesh budget, texel grid and material model,
+not the rig).
+
+Mask passes zero the scene view transform **and the exposure**: a −0.65 EV studio
+grade is applied even under Raw, and it decayed every normal mask to a 0.64×
+multiply (decoded lengths 0.58–0.75) until `pass_materials.py` reset it. That is
+the third instance of the same class of bug; the module now owns the discipline for
+every renderer.
+
+**Material-source changes made to reach that bar** (recorded, not silent):
+`iron_directorate__metal_trim` retuned to neutral gunmetal (chroma 26.6 → 14.0)
+and `gunmetal_worn` value-stretched (luma std 6.46 → 59.3) by
+`tools/pbr/retune_material.py` with the reason attached in
+`configs/materials/retune.json`; two sheets were generated to fill real gaps
+(`deck_plate_industrial`, `gunmetal_polished`); the pixel variants apply a
+0.5 contrast retention so micro-wear does not read as noise after
+box-projection onto a coarse mesh.
+
+### 8b. Gate negative controls (evidence, not claims)
+
+| Gate | Negative controls exercised |
+|---|---|
+| `check_master.py --selftest` | flat normals, antialiased alpha, identical views, wrong resolution, uniform AO → each rejected; correct set accepted |
+| `check_texel_grid.py --selftest` | wrong density, off-lattice UVs, off-palette atlas, wrong atlas size → each rejected; correct GLB accepted |
+| `palette_lock.py --selftest` | off-palette input flagged, single hand-edited pixel flagged after locking, soft alpha rejected; locked output is exact |
+| `check_pixel_asset.py --selftest` | off-palette render, two-component silhouette, stringy silhouette, empty canvas → each rejected; palette-locked single shape accepted |
+
+Run them all before trusting a green run:
+
+```bash
+python3 tools/style/check_master.py --selftest
+python3 tools/style/check_texel_grid.py --selftest
+python3 tools/style/palette_lock.py --selftest
+python3 tools/style/check_pixel_asset.py --selftest
+```
+
+Known limits of this tier, recorded in `docs/KNOWN-ISSUES.md`: the automated
+retopo silhouette is still soft, the unit's emissive mask is empty (no emissive
+slot is authored on the unit), and atlas utilisation is 1.8–49 % because the
+islands come from smart projection rather than an artist pack.

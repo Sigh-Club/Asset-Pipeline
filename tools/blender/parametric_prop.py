@@ -31,6 +31,9 @@ import bmesh
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pass_materials  # noqa: E402
+import master_render  # noqa: E402
 
 
 def parse_args():
@@ -122,33 +125,108 @@ def build_crate(bm, p):
 
 
 def build_tile(bm, p):
+    """Industrial deck module.
+
+    A single box renders as a featureless slab (the 2026-11-09 review's finding).
+    A deck reads because of its module seams, tread ribs and corner fixings, and
+    those are 4-6 cm features: visible at a 2 cm texel grid, invisible in a
+    smooth render. Geometry, not texture, is what carries them.
+    """
     t = float(p.get("tile_m", 2.0))
-    _box(bm, (t, t, 0.12), (0, 0, -0.06))
+    slab = 0.12
+    gap = float(p.get("seam_gap_m", 0.04))
+    panels = max(1, int(p.get("panels", 2)))
+    panel = (t - gap * (panels - 1)) / panels
+    bolts = bool(p.get("bolts", True))
+    ribs = int(p.get("tread_ribs", 3))
+    # the panel gap is a recessed weld seam, not a hole through the deck: a
+    # narrow filler under the gap, not a second full slab (a full base plate
+    # doubles the tile's surface area and bursts the 256 texel budget)
+    for i in range(1, panels):
+        x = -t / 2 + i * panel + (i - 0.5) * gap
+        _box(bm, (gap + 0.05, t, slab * 0.5), (x, 0, -slab * 0.42))
+    for i in range(panels):
+        x = -t / 2 + panel / 2 + i * (panel + gap)
+        _box(bm, (panel, t, slab), (x, 0, -slab / 2))
+        for k in range(ribs):
+            y = -t / 2 + t * (k + 0.5) / ribs
+            _box(bm, (panel * 0.78, 0.045, 0.022), (x, y, 0.011))
+        if bolts:
+            for sx in (-1, 1):
+                for sy in (-1, 1):
+                    bx = x + sx * (panel / 2 - 0.09)
+                    by = sy * (t / 2 - 0.09)
+                    _cyl(bm, 0.032, 0.03, (bx, by, 0.015), 8)
     lip = 0.05
-    _box(bm, (t, lip, 0.1), (0, t / 2 - lip / 2, 0.05))
-    _box(bm, (t, lip, 0.1), (0, -t / 2 + lip / 2, 0.05))
-    _box(bm, (lip, t, 0.1), (t / 2 - lip / 2, 0, 0.05))
-    _box(bm, (lip, t, 0.1), (-t / 2 + lip / 2, 0, 0.05))
+    if p.get("edges", "raised") == "raised":
+        _box(bm, (t, lip, 0.1), (0, t / 2 - lip / 2, 0.05))
+        _box(bm, (t, lip, 0.1), (0, -t / 2 + lip / 2, 0.05))
+        _box(bm, (lip, t, 0.1), (t / 2 - lip / 2, 0, 0.05))
+        _box(bm, (lip, t, 0.1), (-t / 2 + lip / 2, 0, 0.05))
+
+
+def _rot_y(verts, deg, pivot):
+    from mathutils import Matrix
+    piv = Vector(pivot)
+    m = Matrix.Rotation(math.radians(deg), 4, "Y")
+    for v in verts:
+        v.co = piv + m @ (v.co - piv)
+    return verts
 
 
 def build_weapon(bm, p):
-    length = float(p.get("length_m", 1.05))
-    body_w = float(p.get("receiver_w_m", 0.07))
+    """Lasrifle from named parts.
+
+    A receiver box with a barrel reads as a stick at 256 px. What makes a weapon
+    legible in a pixel master is the *silhouette vocabulary*: stock, pistol grip,
+    trigger guard, magazine, sight, muzzle device, and a fore-end that steps away
+    from the receiver line. Each is 2-6 cm, i.e. 1-3 texels on the 2 cm grid.
+    """
+    L = float(p.get("length_m", 1.05))
+    w = float(p.get("receiver_w_m", 0.07))
     barrel = float(p.get("barrel_len_m", 0.46))
-    # receiver
-    _box(bm, (length * 0.45, body_w, 0.09), (0, 0, 0.05))
-    # barrel
-    _cyl(bm, 0.018, barrel, (length * 0.35, 0, 0.06), 12, axis="x")
-    # stock
-    _box(bm, (length * 0.28, body_w * 0.8, 0.06), (-length * 0.36, 0, 0.04))
-    # magazine
-    if p.get("magazine", "drum") == "drum":
-        _cyl(bm, 0.06, 0.05, (0, 0, -0.03), 16)
-    else:
-        _box(bm, (0.05, 0.03, 0.14), (0, 0, -0.05))
-    # rail
+
+    # receiver + top rail
+    _box(bm, (L * 0.30, w, 0.10), (L * 0.02, 0, 0.06))
     if p.get("rail", True):
-        _box(bm, (length * 0.3, 0.03, 0.02), (0, 0, 0.105))
+        _box(bm, (L * 0.26, w * 0.5, 0.022), (L * 0.02, 0, 0.121))
+        for i in range(5):
+            _box(bm, (0.012, w * 0.5, 0.012),
+                 (L * 0.02 - L * 0.10 + i * L * 0.05, 0, 0.132))
+
+    # handguard with vent slots
+    _box(bm, (L * 0.20, w * 0.85, 0.065), (L * 0.27, 0, 0.052))
+    for i in range(3):
+        _box(bm, (0.016, w * 0.95, 0.05), (L * 0.22 + i * 0.045, 0, 0.052))
+
+    # barrel + muzzle device
+    _cyl(bm, 0.013, barrel, (L * 0.47, 0, 0.055), 10, axis="x")
+    _cyl(bm, 0.024, 0.05, (L * 0.47 + barrel * 0.5 - 0.02, 0, 0.055), 10, axis="x")
+    for i in range(3):
+        _cyl(bm, 0.026, 0.008, (L * 0.47 + barrel * 0.5 - 0.035 + i * 0.012, 0, 0.055),
+             10, axis="x")
+
+    # stock with buttplate
+    _box(bm, (L * 0.17, w * 0.7, 0.085), (-L * 0.21, 0, 0.045))
+    _box(bm, (L * 0.06, w * 0.55, 0.05), (-L * 0.32, 0, 0.03))
+    _box(bm, (0.02, w * 0.75, 0.115), (-L * 0.355, 0, 0.05))
+
+    # pistol grip (raked back 16 deg) and trigger guard
+    grip = _box(bm, (0.042, w * 0.62, 0.135), (-L * 0.10, 0, -0.035))
+    _rot_y(grip, 16.0, (-L * 0.10, 0, 0.0))
+    _box(bm, (0.05, w * 0.5, 0.012), (-L * 0.045, 0, -0.028))
+    _box(bm, (0.012, w * 0.5, 0.05), (-L * 0.022, 0, -0.052))
+
+    # magazine well + curved magazine
+    _box(bm, (0.07, w * 0.8, 0.045), (-L * 0.015, 0, 0.0))
+    if p.get("magazine", "drum") == "drum":
+        _cyl(bm, 0.062, 0.052, (-L * 0.02, 0, -0.04), 14, axis="y")
+    else:
+        mag = _box(bm, (0.045, w * 0.55, 0.14), (-L * 0.02, 0, -0.085))
+        _rot_y(mag, 10.0, (-L * 0.02, 0, -0.02))
+
+    # sight block
+    _box(bm, (0.055, 0.022, 0.045), (L * 0.09, 0, 0.155))
 
 
 def build_block(bm, p):
@@ -233,11 +311,16 @@ def assign_slots(obj, req, recipe, slot_count):
         n = poly.normal
         slot = 0
         if recipe == "barrel":
-            h = float(p.get("height_m", 0.88))
             r = float(p.get("diameter_m", 0.58)) / 2
             radial = (c.x ** 2 + c.y ** 2) ** 0.5
-            if c.z > h * 0.94 or radial > r * 1.02:
+            # rib band = accent (slot 1), lid rim + cap = rim metal (slot 2).
+            # A single-material drum reads as a grey cylinder at 256 px; the rim
+            # is the value break that says "drum".
+            h = float(p.get("height_m", 0.88))
+            if radial > r * 1.02:
                 slot = 1
+            elif c.z > h * 0.94:
+                slot = 2
         elif recipe == "weapon":
             if c.x > float(p.get("length_m", 1.05)) * 0.20 or c.z < 0.0:
                 slot = 1
@@ -264,149 +347,6 @@ def unwrap(obj, texel_world_m: float):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def _emission_material(name: str):
-    mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
-    nt = mat.node_tree
-    for n in list(nt.nodes):
-        nt.nodes.remove(n)
-    out = nt.nodes.new("ShaderNodeOutputMaterial")
-    em = nt.nodes.new("ShaderNodeEmission")
-    nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
-    return mat, nt, em
-
-
-def normal_material():
-    mat, nt, em = _emission_material("pass_normal")
-    geo = nt.nodes.new("ShaderNodeNewGeometry")
-    mul = nt.nodes.new("ShaderNodeVectorMath"); mul.operation = "MULTIPLY"
-    mul.inputs[1].default_value = (0.5, 0.5, 0.5)
-    add = nt.nodes.new("ShaderNodeVectorMath"); add.operation = "ADD"
-    add.inputs[1].default_value = (0.5, 0.5, 0.5)
-    nt.links.new(geo.outputs["Normal"], mul.inputs[0])
-    nt.links.new(mul.outputs["Vector"], add.inputs[0])
-    nt.links.new(add.outputs["Vector"], em.inputs["Color"])
-    em.inputs["Strength"].default_value = 1.0
-    return mat
-
-
-def ao_material(distance: float = 0.35):
-    mat, nt, em = _emission_material("pass_ao")
-    ao = nt.nodes.new("ShaderNodeAmbientOcclusion")
-    ao.inputs["Distance"].default_value = distance
-    ao.only_local = True
-    nt.links.new(ao.outputs["Color"], em.inputs["Color"])
-    em.inputs["Strength"].default_value = 1.0
-    return mat
-
-
-def emission_material(slot_mats):
-    """Emission-only pass: sample any emissive texture the library material has."""
-    mat, nt, em = _emission_material("pass_emission")
-    tex = None
-    for m in slot_mats:
-        if not (m and m.use_nodes):
-            continue
-        for n in m.node_tree.nodes:
-            if n.type == "TEX_IMAGE" and n.image and "emissive" in n.image.name.lower():
-                tex = n.image
-                break
-        if tex:
-            break
-    if tex:
-        node = nt.nodes.new("ShaderNodeTexImage")
-        node.image = tex
-        node.interpolation = "Closest"
-        nt.links.new(node.outputs["Color"], em.inputs["Color"])
-    else:
-        em.inputs["Color"].default_value = (0, 0, 0, 1)
-    return mat
-
-
-def setup_render(out_dir: Path, size, samples: int, extent: float = 1.0):
-    scene = bpy.context.scene
-    scene.render.engine = "BLENDER_EEVEE"
-    scene.render.resolution_x, scene.render.resolution_y = size
-    scene.render.resolution_percentage = 100
-    scene.render.film_transparent = True
-    scene.eevee.taa_render_samples = max(1, samples)
-    scene.render.filter_size = 0.01 if samples <= 1 else 1.5
-    world = bpy.data.worlds.new("W")
-    world.use_nodes = True
-    world.node_tree.nodes["Background"].inputs[0].default_value = (0.03, 0.035, 0.045, 1)
-    world.node_tree.nodes["Background"].inputs[1].default_value = 1.1
-    scene.world = world
-    key = bpy.data.lights.new("key", "AREA")
-    key.energy = 1600
-    key.size = 4
-    ko = bpy.data.objects.new("key", key)
-    ko.location = (3, -4, 5)
-    ko.rotation_euler = (math.radians(45), 0, math.radians(35))
-    scene.collection.objects.link(ko)
-    fill = bpy.data.lights.new("fill", "AREA")
-    fill.energy = 800
-    fill.size = 6
-    fo = bpy.data.objects.new("fill", fill)
-    fo.location = (-4, -2, 2.5)
-    fo.rotation_euler = (math.radians(70), 0, math.radians(-60))
-    scene.collection.objects.link(fo)
-    cam = bpy.data.cameras.new("cam")
-    cam.type = "ORTHO"
-    cam.ortho_scale = max(1.2, extent * 1.6)
-    co = bpy.data.objects.new("cam", cam)
-    co.location = (extent * 2.6, -extent * 2.9, extent * 2.6)
-    co.rotation_euler = (math.radians(60), 0, math.radians(42))
-    co.name = "review_cam"
-    scene.collection.objects.link(co)
-    scene.camera = co
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-
-def render_to(path: Path):
-    bpy.context.scene.render.filepath = str(path)
-    bpy.ops.render.render(write_still=True)
-
-
-def orbit_camera(azimuth_deg: float, elevation_deg: float, extent: float):
-    """Place the review camera on an orbit around the object origin."""
-    cam = bpy.data.objects["review_cam"]
-    az = math.radians(azimuth_deg)
-    el = math.radians(elevation_deg)
-    r = max(1.4, extent * 3.4)
-    cam.location = (r * math.cos(el) * math.sin(az),
-                    -r * math.cos(el) * math.cos(az),
-                    r * math.sin(el))
-    # look at the object centre (origin) — Blender cameras look down -Z
-    from mathutils import Euler
-    direction = -cam.location
-    rot = direction.to_track_quat("-Z", "Y").to_euler()
-    cam.rotation_euler = rot
-
-
-def render_mask(obj, kind: str, slot_mats, path: Path):
-    """Data passes are saved with the Raw view transform: a normal map must store
-    0.5*N+0.5 as bytes, not an artistically tone-mapped colour."""
-    saved = [m for m in obj.data.materials]
-    mat = {"normal": normal_material, "ao": ao_material,
-           "emission": lambda: emission_material(slot_mats)}[kind]()
-    for i in range(len(obj.data.materials)):
-        obj.data.materials[i] = mat
-    scene = bpy.context.scene
-    prev = (scene.view_settings.view_transform, scene.view_settings.look)
-    try:
-        scene.view_settings.view_transform = "Raw"
-    except TypeError:
-        scene.view_settings.view_transform = "Standard"
-    scene.view_settings.look = "None"
-    try:
-        render_to(path)
-    finally:
-        scene.view_settings.view_transform = prev[0]
-        scene.view_settings.look = prev[1]
-    for i, m in enumerate(saved):
-        obj.data.materials[i] = m
-
-
 def main():
     args = parse_args()
     req = load_request(Path(args.request).resolve(), args.id)
@@ -424,26 +364,12 @@ def main():
     size = prof.get("render", {}).get("size_px") or [256, 256]
     rendered = {"directions": 0, "beauty": [], "masks": []}
     if args.render:
-        corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
-        extent = max(max(c[i] for c in corners) - min(c[i] for c in corners)
-                     for i in range(3))
-        setup_render(out / "render", size, args.samples, extent)
-        slot_mats = list(obj.data.materials)
-        n = max(1, args.directions)
-        for i in range(n):
-            az = 0.0 if n == 1 else (i * 360.0 / n)
-            orbit_camera(az, 35.0, extent)
-            suffix = f"_az{int(az):03d}" if n > 1 else "_3q"
-            beauty = out / "render" / f"{args.id}{suffix}.png"
-            render_to(beauty)
-            rendered["beauty"].append(str(beauty))
-            if args.masks:
-                (out / "masks").mkdir(exist_ok=True)
-                for kind in ("normal", "ao", "emission"):
-                    mp = out / "masks" / f"{args.id}{suffix}_{kind}.png"
-                    render_mask(obj, kind, slot_mats, mp)
-                    rendered["masks"].append(str(mp))
-        rendered["directions"] = n
+        # framing is derived from the projected geometry, not from the origin
+        # and a guessed ortho scale (see master_render.py)
+        anchor = "bottom" if req.get("kind") == "unit" else "centre"
+        rendered = master_render.render_master_set(
+            [obj], out, args.id, size, args.directions, args.masks,
+            anchor=anchor, samples=args.samples)
 
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)

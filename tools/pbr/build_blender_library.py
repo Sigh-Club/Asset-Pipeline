@@ -41,6 +41,10 @@ def parse_args():
     ap.add_argument("--only", help="build only items whose id contains this")
     ap.add_argument("--library", default=str(LIB),
                     help="library tree to build from (default: the shipped library)")
+    ap.add_argument("--pixel", action="store_true",
+                    help="build the pixel-tier library from the band-limited "
+                         "albedo_pixel/emissive_pixel variants (no PBR maps)")
+    ap.add_argument("--out-name", default="grimdark_scifi.blend")
     return ap.parse_args(argv)
 
 
@@ -57,7 +61,7 @@ def load_image(path: Path, non_colour: bool):
     return img
 
 
-def build_material(item_dir: Path, meta: dict, scale: float):
+def build_material(item_dir: Path, meta: dict, scale: float, pixel: bool = False):
     # one texture tile spans tile_m metres on the model; mapping scale is the
     # reciprocal, so the material has a real-world physical size
     tile_m = float(meta.get("tile_m") or 1.0)
@@ -82,6 +86,10 @@ def build_material(item_dir: Path, meta: dict, scale: float):
     nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
 
     def tex_node(filename, non_colour, y):
+        if pixel:
+            stem = Path(filename).stem
+            if (item_dir / f"{stem}_pixel.png").exists():
+                filename = f"{stem}_pixel.png"
         path = item_dir / filename
         if not path.exists():
             return None
@@ -96,16 +104,16 @@ def build_material(item_dir: Path, meta: dict, scale: float):
     albedo = tex_node("albedo.png", False, 300)
     if albedo:
         nt.links.new(albedo.outputs["Color"], bsdf.inputs["Base Color"])
-    normal = tex_node("normal.png", True, 60)
+    normal = None if pixel else tex_node("normal.png", True, 60)
     if normal:
         nmap = nt.nodes.new("ShaderNodeNormalMap")
         nmap.location = (-150, 60)
         nt.links.new(normal.outputs["Color"], nmap.inputs["Color"])
         nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
-    rough = tex_node("roughness.png", True, -180)
+    rough = None if pixel else tex_node("roughness.png", True, -180)
     if rough:
         nt.links.new(rough.outputs["Color"], bsdf.inputs["Roughness"])
-    metal = tex_node("metallic.png", True, -420)
+    metal = None if pixel else tex_node("metallic.png", True, -420)
     if metal:
         nt.links.new(metal.outputs["Color"], bsdf.inputs["Metallic"])
     emissive = tex_node("emissive.png", False, -660)
@@ -145,11 +153,17 @@ def main():
             continue
         meta_path = item_dir / "meta.json"
         meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
-        mat = build_material(item_dir, meta, args.scale)
+        if args.pixel:
+            variant = item_dir / "pixel_variant.json"
+            if not variant.exists():
+                continue
+            meta = {**meta, **json.loads(variant.read_text())}
+        mat = build_material(item_dir, meta, args.scale,
+                             pixel=args.pixel)
         built += 1
         print(f"  {mat.name}")
 
-    out = lib / "grimdark_scifi.blend"
+    out = lib / args.out_name
     bpy.ops.wm.save_as_mainfile(filepath=str(out), compress=True)
     # now that the file has a location, relative image paths resolve on any box
     bpy.ops.file.make_paths_relative()

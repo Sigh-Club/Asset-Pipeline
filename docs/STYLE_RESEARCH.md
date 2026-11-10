@@ -329,3 +329,67 @@ dither. For 3D sources ask for **flat, high-contrast concepts and orthos**, not
 finished pixel art; ask for pixel art when the output *is* the target sheet or an
 icon. Non-grimdark factions (Orks, aliens, Bloom) benefit most: same pipeline,
 different profile palette and shading.
+
+## 14. Measured pixel-tier findings (2026-11-10)
+
+The first full `pixel_3d` run produced four certified masters (§8a of
+`3D_ASSETS.md`). What follows is measured on those runs, not inferred from the
+shipped games; it refines the technique standard where the plan above was
+optimistic.
+
+1. **A 1024 px material on a 2 cm texel grid is a 50:1 downscale, and point
+   sampling a downscale is not a filter.** Baking the photo-derived library
+   straight onto the texel grid produced blue/grey camouflage on the barrel
+   (measured: the metal-trim atlas read as noise at 2 texels per buckle feature).
+   The fix that worked is a delivered mip level: `build_pixel_variants.py` writes
+   each material at `2 × tile_m / texel_m` px (32–100 px here) with LANCZOS, and
+   the bake samples that. This is the texture-side equivalent of Boltgun's
+   "detail too fine is reduced to an impression of the object".
+2. **Contrast retention is the noise dial.** Even band-limited, photo albedo keeps
+   scratch-level contrast that reads as noise once box-projected facet by facet on
+   a decimated mesh. A contrast compression toward the material median (0.5 here)
+   made the masters read as surfaces instead of static, at the cost of micro-wear
+   detail. Recorded as a trade-off, not a free win.
+3. **The palette, not the asset, was the brown-rectangle bug.** `grimdark_64` has
+   a hole in its neutral ramp (40 → 74) and a saturated `Leather Mid` (70,60,50)
+   that wins the Oklab nearest-colour contest for any mid-grey: 8,845 neutral
+   pixels on one floor tile. A 3D-tier palette with the ramp completed
+   (`grimdark_3d.gpl`) is now the profile palette. The sprite tier is unchanged.
+4. **Albedo bakes of a metallic library must not use the `DIFFUSE` pass.** Every
+   material in the library is authored `metallic = 1`, and a metal has no diffuse
+   component, so the first atlas bake was uniformly black. Routing base colour
+   through an emission shader and baking `EMIT` is the correct albedo extraction.
+5. **Framing has to be derived from posed geometry.** The first 8-direction master
+   aimed at the world origin with a guessed ortho scale: the barrel was cut off and
+   the rifle filled a third of the canvas. Deriving the ortho extent from the
+   projected geometry, with one constant scale across the set and an explicit
+   anchor, fixed it. The unit asset also carries an `Icosphere` helper that is not
+   visible but *is* in the geometry: framing on it halved the character. Exclude
+   helper meshes and choose the pose explicitly.
+6. **A bright side-back light is what makes faceted low-poly read.** A rim light
+   placed behind the camera does nothing on flat-shaded facets, because it lights
+   the hidden back faces. A 55°-off-axis, 45°-elevation sun gives the value break
+   that separates planes. Boltgun's edge highlights are the same idea, painted.
+7. **Exposure is a grade, and grades leak into data passes.** Calibrating the
+   studio to −0.65 EV so a lit facet lands on the palette's 74–120 steel steps
+   (median render luma: unit 88, barrel 104, tile 88, weapon 67) silently multiplied
+   every normal mask by 0.64, because Blender applies exposure under the Raw view
+   transform too. Mask passes must zero exposure, look and transform.
+8. **Gate negative controls are cheap and changed the result three times.** Building a
+   deliberately broken GLB for `check_texel_grid.py` and a broken frame for
+   `check_pixel_asset.py` caught two checker bugs before they could certify a bad
+   asset (a UV-layer reference invalidated by a Blender operator reported
+   1e56 m²/texel; a palette loaded as 0..1 floats produced an all-black control;
+   a reused variable name silently disabled the UV-lattice check until the
+   negative control failed).
+
+**What this means for the standard:** the "high detail" of the pixel tier is
+information density per texel at the *material* level, and that density has a hard
+ceiling at the texel grid. Detail below 2–3 texels cannot survive and must be
+converted into a value break (geometry, lighting, or a deliberate flat plane), not
+left in the albedo. Read §2 of this document with that constraint: abstraction is
+done by the grid whether or not the artist intends it.
+
+**Still not done, in priority order:** authored edge highlights and selout from the
+normal/AO masks (P3.5), a hue-shifted ramp generator (P3.1), sub-pixel and impact
+frames (P3.3/3.4), and an artist-quality retopo for the unit silhouette.

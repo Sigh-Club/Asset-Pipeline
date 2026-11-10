@@ -1,0 +1,514 @@
+{
+  "_comment": "Material demand for IoA 3D assets. Colours are the ratified faction palettes from docs/game-design/FACTION_IDENTITY.md; hex values are the pipeline's working swatches and may be tuned. 'derive' maps are generated locally from albedo (tools/pbr/derive_maps.py) - never asked from an image model.",
+  "derived_maps": [
+    "normal",
+    "roughness",
+    "metallic",
+    "ao"
+  ],
+  "sheet": {
+    "cols": 2,
+    "rows": 2,
+    "size": 2048,
+    "note": "one generation yields 4 croppable tiles; quadrants are separated by a 24px neutral gutter"
+  },
+  "shared_materials": [
+    {
+      "id": "gunmetal_worn",
+      "prompt": "worn gunmetal steel, fine scratches, oil sheen, dark charcoal grey",
+      "metal": 1.0
+    },
+    {
+      "id": "steel_rusted",
+      "prompt": "heavily rusted steel plate, orange-brown corrosion, pitting, flaking paint edges",
+      "metal": 0.8
+    },
+    {
+      "id": "steel_painted_green",
+      "prompt": "chipped military green painted steel, exposed primer, edge wear",
+      "metal": 0.3
+    },
+    {
+      "id": "brass_tarnished",
+      "prompt": "tarnished brass, verdigris in recesses, brushed highlights",
+      "metal": 1.0
+    },
+    {
+      "id": "black_polymer",
+      "prompt": "matte black injection-moulded polymer, mould texture, faint scuffs",
+      "metal": 0.0
+    },
+    {
+      "id": "rubber_worn",
+      "prompt": "worn black rubber, fine crazing, dust in the grooves",
+      "metal": 0.0
+    },
+    {
+      "id": "leather_tan",
+      "prompt": "tan leather straps, creased, stitched seams, sweat staining",
+      "metal": 0.0
+    },
+    {
+      "id": "cloth_canvas",
+      "prompt": "coarse olive canvas weave, frayed threads, dust",
+      "metal": 0.0
+    },
+    {
+      "id": "bone_chitin",
+      "prompt": "pale bone chitin, ridged growth lines, matte, slight translucency at edges",
+      "metal": 0.0
+    },
+    {
+      "id": "flesh_organic",
+      "prompt": "pale organic flesh, fine pores, veins under the surface, slightly wet",
+      "metal": 0.0
+    },
+    {
+      "id": "concrete_urban",
+      "prompt": "grey urban concrete, aggregate showing, hairline cracks, soot",
+      "metal": 0.0
+    },
+    {
+      "id": "concrete_scorched",
+      "prompt": "concrete blackened by fire, ash film, heat crazing",
+      "metal": 0.0
+    },
+    {
+      "id": "metal_grate",
+      "prompt": "steel floor grating, diamond plate, worn edges, grime in the recesses",
+      "metal": 1.0
+    },
+    {
+      "id": "asphalt_cracked",
+      "prompt": "cracked asphalt, tar patches, gravel, faded road paint",
+      "metal": 0.0
+    },
+    {
+      "id": "sand_rubble",
+      "prompt": "grey-brown rubble and sand, stones of mixed size, dust",
+      "metal": 0.0
+    },
+    {
+      "id": "glass_dirty",
+      "prompt": "dirty industrial glass, smudges, fine scratches, faint green tint",
+      "metal": 0.0
+    },
+    {
+      "id": "wood_plank",
+      "prompt": "weathered timber planks, split grain, nail stains",
+      "metal": 0.0
+    }
+  ],
+  "factions": [
+    {
+      "id": "iron_directorate",
+      "palette": {
+        "primary": "#2f4f7a",
+        "secondary": "#c8a44a",
+        "accent": "#7fd4ff",
+        "neutral": "#3a3d42"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "disciplined industrial armour plate, deep navy-blue enamel over steel, gold pinstripe edging, rivets, parade-ground wear",
+          "metal": 0.15
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "bright gold-trimmed armour panels, brushed gold leaf over gunmetal, tiny dents",
+          "metal": 1.0
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "charcoal military fatigues, tight weave, sweat and dust, reinforced knees",
+          "metal": 0.0
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "polished gunmetal fittings and buckles, cold blue sheen, fingerprints",
+          "metal": 1.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "cool cyan lens and rail-coil glow, concentric rings, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    },
+    {
+      "id": "cinderborn",
+      "palette": {
+        "primary": "#3a2438",
+        "secondary": "#b0478f",
+        "accent": "#ff8a3d",
+        "neutral": "#1e1a1f"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "warped ceramite plates, ash-black with purple-pink witchfire heat staining, brands and rivets, cracked enamel",
+          "metal": 0.3
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "burnished bronze trim on blackened armour, soot in the engraving",
+          "metal": 1.0
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "ash-stained crimson cloth and chain, scorched hems, ember burns",
+          "metal": 0.1
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "blackened iron chains and hooks, heat discolouration, cinder dust",
+          "metal": 1.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "orange witchfire embers embedded in cracked armour, glowing fissures, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    },
+    {
+      "id": "parasitic_bloom",
+      "palette": {
+        "primary": "#7d6b5a",
+        "secondary": "#3f6f52",
+        "accent": "#c9f27a",
+        "neutral": "#2a2320"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "coral-bone carapace plating, ridged and layered, dull ivory with green algae in the seams",
+          "metal": 0.0
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "dense chitin scale plates, mottled brown-green, wet sheen",
+          "metal": 0.0
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "exposed sinew and membrane, pink-grey, veined, glistening",
+          "metal": 0.0
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "thorned living bone spurs, ivory tips, dark root ends",
+          "metal": 0.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "spore bulbs glowing acid yellow-green, translucent membranes, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    },
+    {
+      "id": "radiant_concord",
+      "palette": {
+        "primary": "#e8eef2",
+        "secondary": "#9fb6c4",
+        "accent": "#39e0f0",
+        "neutral": "#5a6670"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "pristine white ceramic composite armour, razor-clean panel lines, faint iridescence",
+          "metal": 0.1
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "mirror-chrome trim, perfect reflective edges, micro-scratches only",
+          "metal": 1.0
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "smooth grey bodysuit fabric, seamless, subtle hexagonal weave",
+          "metal": 0.0
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "anodised silver mechanism housings, precision machined, no rust",
+          "metal": 1.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "cyan targeting light strips, crisp glowing rectangles, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    },
+    {
+      "id": "chrono_revenants",
+      "palette": {
+        "primary": "#1d2b24",
+        "secondary": "#3d6b52",
+        "accent": "#7cff9e",
+        "neutral": "#11150f"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "green-black living metal slab armour, seamless necrodermis, faint vertical striations",
+          "metal": 0.95
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "bronze-green engraved funerary plate, hieroglyph grooves, patina",
+          "metal": 0.9
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "dark metallic mesh joints, no cloth, oiled black",
+          "metal": 0.8
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "aged gold inlay on black stone, chipped edges",
+          "metal": 1.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "sickly green gauss energy seams, sharp glowing lines, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    },
+    {
+      "id": "wreckstorm_clans",
+      "palette": {
+        "primary": "#8a4a24",
+        "secondary": "#5a5a52",
+        "accent": "#e0b02a",
+        "neutral": "#2e2a25"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "bolted scrap armour, rust-orange and mismatched plates, weld beads, dents, painted glyphs",
+          "metal": 0.55
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "stacked scrap metal patchwork, exposed rivets, grease",
+          "metal": 0.9
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "filthy leather and hide scraps, crude stitching, oil stains",
+          "metal": 0.0
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "crude iron spikes and reinforcement bar, hammer marks",
+          "metal": 1.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "yellow warning paint and hot exhaust glow through slats, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    },
+    {
+      "id": "void_corsairs",
+      "palette": {
+        "primary": "#cfd6d2",
+        "secondary": "#2a3f4a",
+        "accent": "#8ef2ff",
+        "neutral": "#1a2226"
+      },
+      "families": [
+        {
+          "slot": "armour_primary",
+          "prompt": "pale bone-white hull plating, swept fin edges, hard-light seams, immaculate",
+          "metal": 0.35
+        },
+        {
+          "slot": "armour_secondary",
+          "prompt": "deep teal lacquered panels with hairline silver inlay",
+          "metal": 0.5
+        },
+        {
+          "slot": "underlayer",
+          "prompt": "fine dark bodysuit weave, faint reflective thread",
+          "metal": 0.1
+        },
+        {
+          "slot": "metal_trim",
+          "prompt": "pale chrome edging, holographic sheen, cold",
+          "metal": 1.0
+        },
+        {
+          "slot": "accent_emissive",
+          "prompt": "hard-light blade edges, pale cyan plasma, razor thin, no bloom",
+          "metal": 0.0,
+          "emissive": true
+        }
+      ]
+    }
+  ],
+  "patterns": [
+    {
+      "id": "pattern_panel_seams",
+      "prompt": "tileable armour panel seams and rivet rows, dark recessed grooves, worn edges",
+      "scale_m": 1.0,
+      "metal": 0.8
+    },
+    {
+      "id": "pattern_rivet_rows",
+      "prompt": "rows of dome rivets on brushed metal, even spacing, grime in the recesses",
+      "scale_m": 0.4,
+      "metal": 1.0
+    },
+    {
+      "id": "pattern_hex_mesh",
+      "prompt": "tileable hexagonal grip mesh, raised hexagons, oil in the grooves",
+      "scale_m": 0.25,
+      "metal": 0.9
+    },
+    {
+      "id": "pattern_gothic_filigree",
+      "prompt": "tileable gothic filigree band, ornate pressed-metal scrollwork, aged gold",
+      "scale_m": 0.6,
+      "metal": 1.0
+    },
+    {
+      "id": "pattern_circuit_tracery",
+      "prompt": "tileable etched circuit tracery, thin silver traces on dark substrate, tiny vias",
+      "scale_m": 0.5,
+      "metal": 0.6
+    },
+    {
+      "id": "pattern_carapace_scale",
+      "prompt": "tileable overlapping carapace scales, bone-brown, ridged growth lines",
+      "scale_m": 0.5,
+      "metal": 0.0
+    },
+    {
+      "id": "pattern_chainmail",
+      "prompt": "tileable heavy chainmail rings, blackened iron, oiled, interlocked",
+      "scale_m": 0.3,
+      "metal": 1.0
+    },
+    {
+      "id": "pattern_dazzle_camo",
+      "prompt": "tileable naval dazzle camouflage, hard-edged navy and grey geometric shapes",
+      "scale_m": 2.0,
+      "metal": 0.2
+    },
+    {
+      "id": "pattern_hazard_chevrons",
+      "prompt": "tileable worn hazard chevrons, yellow and black paint chipped to primer",
+      "scale_m": 0.8,
+      "metal": 0.2
+    },
+    {
+      "id": "pattern_edge_wear",
+      "prompt": "tileable rust and paint edge-wear gradient, chipped rims, bare metal beneath",
+      "scale_m": 0.5,
+      "metal": 0.8
+    },
+    {
+      "id": "pattern_cable_bundle",
+      "prompt": "tileable bundle of ribbed cables and conduits, black rubber and steel braid",
+      "scale_m": 0.6,
+      "metal": 0.4
+    },
+    {
+      "id": "pattern_arcane_band",
+      "prompt": "tileable band of carved arcane glyphs, glowing recesses, dark stone",
+      "scale_m": 0.7,
+      "metal": 0.1
+    },
+    {
+      "id": "pattern_stencil_marks",
+      "prompt": "tileable military stencil block lettering and numbering, worn white paint",
+      "scale_m": 0.9,
+      "metal": 0.1
+    },
+    {
+      "id": "pattern_bone_weave",
+      "prompt": "tileable woven bone lattice, interlaced ribs, ivory with dried tissue",
+      "scale_m": 0.6,
+      "metal": 0.0
+    }
+  ],
+  "decals": [
+    {
+      "id": "insignia_iron_directorate",
+      "prompt": "stamped gold cog-and-bayonet emblem, flat graphic, single colour on transparent"
+    },
+    {
+      "id": "insignia_cinderborn",
+      "prompt": "branded flame-and-chain sigil, glowing edges, flat graphic"
+    },
+    {
+      "id": "insignia_parasitic_bloom",
+      "prompt": "radial spore-bloom sigil, organic linework, flat graphic"
+    },
+    {
+      "id": "insignia_radiant_concord",
+      "prompt": "geometric resonance choir glyph, thin cyan lines, flat graphic"
+    },
+    {
+      "id": "insignia_chrono_revenants",
+      "prompt": "segmented hourglass cartouche, engraved, flat graphic"
+    },
+    {
+      "id": "insignia_wreckstorm_clans",
+      "prompt": "crude riveted jaw sigil, spray-stencil edges, flat graphic"
+    },
+    {
+      "id": "insignia_void_corsairs",
+      "prompt": "swept fin-and-star sigil, hard-light outline, flat graphic"
+    },
+    {
+      "id": "decal_scorch",
+      "prompt": "black scorch blast mark, radial soot, alpha fade at edges"
+    },
+    {
+      "id": "decal_bullet_holes",
+      "prompt": "cluster of bullet impact holes with chipped rims and soot rings"
+    },
+    {
+      "id": "decal_blood",
+      "prompt": "dried blood spatter, dark maroon, irregular droplets"
+    },
+    {
+      "id": "decal_rust_streaks",
+      "prompt": "vertical rust weeping streaks from fixings, transparent"
+    },
+    {
+      "id": "decal_hazard_stripes",
+      "prompt": "worn yellow-black hazard diagonal stripes, chipped paint",
+      "full_bleed": true
+    },
+    {
+      "id": "decal_warning_stencil",
+      "prompt": "military stencil lettering block, worn white paint, generic marks only"
+    }
+  ],
+  "slot_tile_m": {
+    "armour_primary": 0.5,
+    "armour_secondary": 0.35,
+    "underlayer": 0.22,
+    "metal_trim": 0.3,
+    "accent_emissive": 0.3,
+    "pattern": 1.0,
+    "shared": 1.0,
+    "decal": 1.0
+  }
+}

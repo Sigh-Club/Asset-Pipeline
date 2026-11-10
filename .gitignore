@@ -55,6 +55,11 @@ render/
 tile_set_library.blend
 imperial_guardsman.blend
 
+# === Agent-facing docs (see AGENTS.md "documentation & git tracking") ===
+TODO.md
+docs/KNOWN-ISSUES.md
+FACTS.md
+
 # === IDE ===
 .vscode/
 .idea/

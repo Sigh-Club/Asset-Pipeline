@@ -155,6 +155,57 @@ def quantise(rgb: np.ndarray, palette: np.ndarray) -> np.ndarray:
 
 # ----------------------------------------------------------------------- main ---
 
+def _selftest() -> int:
+    """Every failure mode gets an input built to trigger it, plus a positive
+    control. A gate that has never failed is not evidence."""
+    import tempfile
+    d = Path(tempfile.mkdtemp(prefix="pixel_asset_selftest_"))
+    palette = (load_palette("grimdark_3d") * 255.0).round().astype(np.uint8)
+    cases = []
+
+    def write(name, arr):
+        path = d / f"{name}.png"
+        Image.fromarray(arr, "RGBA").save(path)
+        return path
+
+    base = np.zeros((64, 64, 4), dtype=np.uint8)
+    base[8:56, 8:56, :3] = palette[3]
+    base[8:56, 8:56, 3] = 255
+    r = check(write("good", base), "pixel_3d", False, "tile")
+    cases.append(("palette-locked single shape accepted", r["verdict"] == "PASS"))
+
+    far = base.copy()
+    far[8:56, 8:56, :3] = (255, 0, 255)
+    r = check(write("drift", far), "pixel_3d", False, "prop")
+    cases.append(("off-palette render rejected for drift",
+                  any("palette drift" in f for f in r["failures"])))
+
+    split = base.copy()
+    split[8:56, 30:34, :3] = 0
+    split[8:56, 30:34, 3] = 0
+    r = check(write("split", split), "pixel_3d", False, "prop")
+    cases.append(("two-component silhouette rejected",
+                  any("components" in f for f in r["failures"])))
+
+    thin = np.zeros((64, 64, 4), dtype=np.uint8)
+    thin[30:34, 2:62, :3] = palette[3]
+    thin[30:34, 2:62, 3] = 255
+    r = check(write("thin", thin), "pixel_3d", False, "prop")
+    cases.append(("stringy silhouette (low bbox fill) rejected",
+                  any("bbox fill" in f for f in r["failures"])))
+
+    empty = np.zeros((64, 64, 4), dtype=np.uint8)
+    r = check(write("empty", empty), "pixel_3d", False, "prop")
+    cases.append(("empty canvas rejected",
+                  any("covers <1%" in f for f in r["failures"])))
+
+    ok = True
+    for name, passed in cases:
+        print(f"{'PASS' if passed else 'FAIL'}  selftest: {name}")
+        ok = ok and passed
+    return 0 if ok else 1
+
+
 def check(path: Path, profile_id: str, write_preview: bool, kind: str = "prop") -> dict:
     cfg = profiles.load_config()
     resolved = profiles.resolve(profile_id, cfg)
@@ -213,13 +264,19 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("image", nargs="?")
     ap.add_argument("--dir", help="check every PNG in a directory")
-    ap.add_argument("--profile", required=True)
+    ap.add_argument("--profile")
     ap.add_argument("--kind", default="prop",
                     choices=sorted(KIND_FILL))
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--no-preview", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
 
+    if args.selftest:
+        return _selftest()
+
+    if not args.profile:
+        raise SystemExit("--profile is required")
     if not args.image and not args.dir:
         raise SystemExit("give an image or --dir")
     paths = ([Path(args.image)] if args.image

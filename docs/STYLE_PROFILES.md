@@ -15,7 +15,7 @@ AAA, low-poly, pixel-3D and HD pixel selectable without four parallel pipelines.
 |---|---|---|---|
 | `aaa_3d` | 3D mesh | ≤25k tris, 2K PBR, 1 direction | contract, seam, flatness, style |
 | `lowpoly_3d` | 3D mesh | ≤3k tris, 512 palette, cel | contract, palette, readability |
-| `pixel_3d` | 3D mesh | ≤1.2k tris, 256, texel grid 2 cm | contract, texel grid, palette, readability, timing |
+| `pixel_3d` | 3D mesh | ≤4k tris, 256, texel grid 2 cm | contract, texel grid, palette, readability, timing |
 | `pixel_sprite` | 8-direction sprite | 96×128, rotbile palette, bayer4 | palette, silhouette, directions, timing, sheet |
 | `hd_pixel_sprite` | 8-direction sprite | 192×256, bayer2, 5-step ramps | as above + readability |
 
@@ -86,13 +86,45 @@ python3 tools/style/check_pixel_asset.py output/props/barrel/render/<file>.png \
 
 ## Stage wiring
 
-Current: `retopo_unit.py --profile <id>` takes the LOD0 tri budget and
-`bake_unit_atlas.py --profile <id>` takes the atlas size. Explicit CLI flags still
-override.
+Implemented (2026-11-10):
 
-Planned (Phase 5): the profile's `uv`, `material_model` and `pixel` blocks drive the
-texel-grid stage, the palette-locked material build and the pixeliser parameters;
-`render.directions`/`size_px` drive the 8-direction capture.
+| Stage | Reads from the profile |
+|---|---|
+| `retopo_unit.py --profile` | `geometry.tris_max` (LOD0 budget) |
+| `decimate_unit.py --profile` | `geometry.tris_max` (pixel-tier LOD) |
+| `bake_unit_atlas.py --profile` | `texture.atlas_px` (AAA atlas) |
+| `bake_pixel_atlas.py --stage texel --profile` | `texture.texel_world_m`, `texture.atlas_px`; raises if the surface area does not fit the atlas at that density |
+| `bake_pixel_atlas.py --stage final --profile` | `texture.atlas_px`, `material_model: palette` (one palette material, `Closest` filtering, no PBR maps) |
+| `palette_lock.py --profile` | `pixel.palette_id` (and refuses an unregistered palette) |
+| `render_pixel_master.py` / `master_render.py` | canvas size and direction count are passed by the driver from the profile |
+
+`render.directions`/`size_px` still come from the driver because `pixel_3d`
+declares `directions: 1` (the in-engine mesh needs no turnaround); the master set
+is a render product, so `--directions 8` is explicit at the capture stage.
+
+Explicit CLI flags still override every profile value.
+
+## pixel_3d budget change (2026-11-10)
+
+`geometry.tris_max` moved from 1200 to 4000. Choice (not Rejected: 1200, the PSX
+figure) — Because: `tools/glb_contract.py` floors a unit at 4000 tris, so a
+pixel-tier unit below that cannot pass the engine contract, and the contract is the
+engine's authority, not the art tier's. Weapon/prop recipes stay far below the
+budget (barrel and lasrifle are 460 tris each).
+
+## pixel_3d palette (2026-11-10)
+
+`pixel.palette_id` is now `grimdark_3d` (`assets/palettes/grimdark_3d.gpl`):
+`grimdark_64` plus a completed neutral/steel ramp. Measured cause: `grimdark_64`
+jumps from 40 to 74 in the neutral ramp, so every mid-grey between them quantised
+to `Leather Mid` (70,60,50) — 8,845 atlas pixels of neutral steel became brown on
+the first floor tile. The sprite tier keeps `grimdark_64` unchanged; the 3D tier
+gets the completed ramp. Adding entries to a locked palette would silently move
+sprite colours, which is why this is a second palette and not an edit.
+
+The tick-list gates are unchanged; the two new checks that make them verifiable are
+`tools/style/check_texel_grid.py` (density, UV lattice, atlas size, atlas palette)
+and `tools/style/palette_lock.py --selftest` (palette exactness).
 
 ## Adding a profile
 

@@ -1,5 +1,6 @@
 {
   "//": "Style profiles. One profile selects the representation, budgets, shading model, pixel treatment and gate set for a whole asset. Stage tools read a profile; they never hard-code a style. Keys beginning with // are comments and are ignored by the validator.",
+  "//tris": "pixel_3d allows 4000 tris, not the 1200 typical of PSX props: tools/glb_contract.py floors a unit at 4000, so a pixel-tier unit below that cannot pass the engine contract. Prop recipes stay far under (barrel and lasrifle are 460).",
   "schema_version": 1,
   "defaults": {
     "render": {"aa": false, "per_asset_resolution": true},
@@ -42,11 +43,11 @@
     "pixel_3d": {
       "label": "Pixel-textured 3D (PSX/retro 3D, fixed texel grid)",
       "representation": "mesh_3d",
-      "geometry": {"tris_max": 1200, "tris_min": 100, "shading": "flat", "uv": "texel_grid"},
+      "geometry": {"tris_max": 4000, "tris_min": 100, "shading": "flat", "uv": "texel_grid"},
       "texture": {"atlas_px": 256, "material_model": "palette", "normal_map": false,
                    "ao": false, "emission": true, "texel_world_m": 0.02},
       "render": {"directions": 1},
-      "pixel": {"palette_id": "grimdark_64", "dither": "bayer4", "outline": 0.0, "selout": true},
+      "pixel": {"palette_id": "grimdark_3d", "dither": "bayer4", "outline": 0.0, "selout": true},
       "animation": {"fps_authored": 12, "clips": {
         "idle": {"frames": [2, 6]}, "walk": {"frames": [4, 8]}, "run": {"frames": [4, 8]},
         "aim": {"frames": [2, 4]}, "fire": {"frames": [2, 4]}, "reload": {"frames": [6, 10]},

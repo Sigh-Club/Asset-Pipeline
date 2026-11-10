@@ -1,0 +1,86 @@
+{
+  "//": "Art-direction retunes applied on top of a derived library item. Each entry names the defect it fixes (from the 2026-11-09 output/gen review) and the exact operation. Maps are re-derived from the retuned albedo so normal/roughness stay consistent. No model retraining.",
+  "schema_version": 1,
+  "retunes": {
+    "iron_directorate__metal_trim": {
+      "because": "review: glossy blue padded blocks; wrong surface language for polished gunmetal",
+      "ops": [
+        {
+          "op": "level_stretch",
+          "low_pct": 2.0,
+          "high_pct": 98.0,
+          "out_low": 12.0,
+          "out_high": 232.0
+        },
+        {
+          "op": "desaturate",
+          "to_luma": 0.72
+        }
+      ],
+      "meta": {
+        "tile_m": 0.3,
+        "surface": "polished gunmetal"
+      }
+    },
+    "gunmetal_worn": {
+      "because": "review: flat and low-contrast; needs value separation",
+      "ops": [
+        {
+          "op": "level_stretch",
+          "low_pct": 5.0,
+          "high_pct": 95.0,
+          "out_low": 6.0,
+          "out_high": 214.0
+        },
+        {
+          "op": "desaturate",
+          "to_luma": 0.5
+        }
+      ],
+      "meta": {
+        "tile_m": 1.0
+      }
+    },
+    "iron_directorate__armour_secondary": {
+      "because": "review: gold chevron reads as an insignia, motif too large for a 256 tile. Measured at the pixel tier this is not a sheet fault: at a 0.35 m texture tile and a 2 cm texel grid the gold band is ~2 texels, so it reads as trim. The source tile size is left physically correct and the texel grid performs the abstraction.",
+      "ops": [],
+      "meta": {
+        "tile_m": 0.35
+      }
+    },
+    "deck_plate_industrial": {
+      "because": "review: the floor tile reads as a plain slab. The generated sheet carries a warm oil/rust cast across most of its area, which at a 2 cm texel grid and a 64-colour palette locks to leather-brown instead of industrial steel. Neutralise the alloy and keep the wear as value, not hue. Second fault found at 256 px: one 2 m texture tile put the diamond tread at ~3.5 texels, which locks to noise. The world size of one tile is doubled, so the tread reads at ~7 texels and the geometric panel seam carries the deck module.",
+      "ops": [
+        {
+          "op": "level_stretch",
+          "low_pct": 4.0,
+          "high_pct": 96.0,
+          "out_low": 10.0,
+          "out_high": 176.0
+        },
+        {
+          "op": "desaturate",
+          "to_luma": 0.5
+        }
+      ],
+      "meta": {
+        "tile_m": 4.0
+      }
+    },
+    "gunmetal_polished": {
+      "because": "measured on the pixel master: median render luma 138/255, i.e. light grey plastic, not IoA steel. The generated sheet is a bright showroom alloy; stretch its values down so a lit facet lands on the 74-104 palette steps.",
+      "ops": [
+        {
+          "op": "level_stretch",
+          "low_pct": 4.0,
+          "high_pct": 96.0,
+          "out_low": 8.0,
+          "out_high": 126.0
+        }
+      ],
+      "meta": {
+        "tile_m": 1.0
+      }
+    }
+  }
+}
