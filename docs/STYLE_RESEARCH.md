@@ -390,6 +390,11 @@ converted into a value break (geometry, lighting, or a deliberate flat plane), n
 left in the albedo. Read §2 of this document with that constraint: abstraction is
 done by the grid whether or not the artist intends it.
 
+**On the review target:** the generated Iron Directorate style sheet is useful for
+pixel density and value ramps (hard edges, 3–4 steps, chunky clusters) but it
+rewrote the injected palette labels, so it cannot be the colour authority. Compare
+a master against it for *structure*, against `grimdark_3d.gpl` for *colour*.
+
 **Still not done, in priority order:** authored edge highlights and selout from the
 normal/AO masks (P3.5), a hue-shifted ramp generator (P3.1), sub-pixel and impact
 frames (P3.3/3.4), and an artist-quality retopo for the unit silhouette.

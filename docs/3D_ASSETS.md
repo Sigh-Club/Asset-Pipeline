@@ -314,3 +314,26 @@ Known limits of this tier, recorded in `docs/KNOWN-ISSUES.md`: the automated
 retopo silhouette is still soft, the unit's emissive mask is empty (no emissive
 slot is authored on the unit), and atlas utilisation is 1.8–49 % because the
 islands come from smart projection rather than an artist pack.
+
+### 8c. Reference-art gap fill (2026-11-10)
+
+The unit's declared references were dangling on disk: `output/img23d/line_infantry_mv/`
+held no orthos and there was no faction style sheet. Three Gemini generations
+closed the gap (consumer web app via `~/.pi/agent/bin/gemini-img`; the whole
+session used 3 of the 5-hour budget):
+
+| Output | Command shape | Use |
+|---|---|---|
+| `output/gen/sheets/deck_plate_industrial_0.png` | text → 2K square, seamless | ingested as `deck_plate_industrial` (1 m plate module) |
+| `output/gen/sheets/gunmetal_polished_0.png` | text → 2K square, seamless | ingested as `gunmetal_polished` (barrel body, rifle trim) |
+| `output/gen/sheets/line_infantry_turnaround_0.png` | `--edit` the pixel master → 16:9 four-view turnaround | cropped locally into `output/img23d/line_infantry_mv/{front,left,right,back}.png`, the paths the asset request declares |
+| `assets/units/iron_directorate_line_infantry/concept.png` | text → 2K square style sheet | **review target only**, not a source |
+
+Rules applied: flat uniform studio light for anything destined for 3D, pure white
+background (never a request for transparency), 2K then local downscale, and no
+edit chains. Two verified flaws showed up and are recorded rather than worked
+around silently: the style sheet **replaced the injected hex labels with its own
+palette** (`#800000`, `#151515`, … instead of the `grimdark_3d` values), and its
+trooper is more ornate than the line-infantry model. It is therefore a density /
+value-ramp reference, not a colour authority — the palette authority stays
+`assets/palettes/grimdark_3d.gpl`.

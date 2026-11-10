@@ -64,7 +64,8 @@
         "orthos": ["output/img23d/line_infantry_mv/front.png",
                     "output/img23d/line_infantry_mv/left.png",
                     "output/img23d/line_infantry_mv/right.png"],
-        "style_sheet": "assets/units/iron_directorate_line_infantry/concept.png"
+        "style_sheet": "assets/units/iron_directorate_line_infantry/concept.png",
+                    "turnaround": "output/gen/sheets/line_infantry_turnaround_0.png"
       },
       "materials": {"armour": "iron_directorate__armour_primary", "trim": "iron_directorate__metal_trim"},
       "gates": ["glb_contract", "texel_grid", "palette_compliance", "timing", "readability"]
