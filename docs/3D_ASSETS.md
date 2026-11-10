@@ -251,7 +251,7 @@ than intentions. Two drivers run the whole route:
 
 ```bash
 tools/build_pixel_asset.sh <out-name> <request-id> <prop|weapon|tile>
-tools/build_pixel_unit.sh  <out-name> <unit-id> <textured-unit.glb>
+tools/build_pixel_unit.sh  <out-name> <unit-id> <textured-unit.glb> [faction]
 ```
 
 | Stage | Tool | What it enforces |
@@ -282,6 +282,15 @@ grade is applied even under Raw, and it decayed every normal mask to a 0.64×
 multiply (decoded lengths 0.58–0.75) until `pass_materials.py` reset it. That is
 the third instance of the same class of bug; the module now owns the discipline for
 every renderer.
+
+`build_pixel_unit.sh` takes the faction as its 4th argument (default
+`iron_directorate`): the bake maps bare slot names to `<faction>__<slot>`, so
+shipping a non-Directorate unit without it silently bakes Directorate materials.
+`decimate_unit.py` also cleans before decimating now (weld, delete loose/degenerate,
+drop loose parts under 2 % of the body at full resolution). Image-to-3D shells
+arrive with coincident faces and debris — the Cinderborn cultist came in with 8
+components and its pixel master broke into 2–64 alpha components until that
+cleanup ran.
 
 **Material-source changes made to reach that bar** (recorded, not silent):
 `iron_directorate__metal_trim` retuned to neutral gunmetal (chroma 26.6 → 14.0)

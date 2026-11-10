@@ -8,7 +8,12 @@
 #
 # Usage:
 #   tools/build_pixel_unit.sh unit8 line_infantry \
-#     output/img23d/line_infantry_mv/atlas/unit_textured.glb
+#     output/img23d/line_infantry_mv/atlas/unit_textured.glb [faction]
+#
+# The 4th argument is the faction material prefix used by the atlas bake
+# (`<faction>__<slot>` in the pixel material library). Default iron_directorate;
+# ship no non-Iron-Directorate unit without passing it, or the bake silently
+# falls back to the Directorate kit.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,6 +22,7 @@ cd "$ROOT"
 ASSET="${1:?usage: build_pixel_unit.sh <out-name> <unit-id> <textured-unit.glb>}"
 ID="${2:?unit id required}"
 SRC="${3:?source GLB required}"
+FACTION="${4:-iron_directorate}"
 LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
 OUT="output/gen/${ASSET}"
 
@@ -31,7 +37,7 @@ tools/blender_run.sh --job uv -- -b -P tools/blender/bake_pixel_atlas.py -- \
 echo "=== 3/8 bake atlas"
 tools/blender_run.sh --job bake -- -b -P tools/blender/bake_pixel_atlas.py -- \
   --stage albedo --glb "$OUT/${ID}_texel.glb" --out "$OUT" --id "$ID" \
-  --profile pixel_3d --library "$LIB" --faction iron_directorate
+  --profile pixel_3d --library "$LIB" --faction "$FACTION"
 
 echo "=== 4/8 palette-lock atlas"
 python3 tools/style/palette_lock.py "$OUT/atlas/atlas_albedo.png" --profile pixel_3d \

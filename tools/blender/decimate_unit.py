@@ -31,6 +31,8 @@ def parse_args():
     ap.add_argument("--id")
     ap.add_argument("--tris", type=int, required=True)
     ap.add_argument("--profile", help="take geometry.tris_max from a style profile")
+    ap.add_argument("--no-clean", action="store_true",
+                    help="skip the pre-decimate weld/loose/degenerate cleanup")
     return ap.parse_args(argv)
 
 
@@ -67,6 +69,42 @@ def main():
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
+    # Clean the image-to-3D shell before decimating. img23d output arrives with
+    # coincident/duplicated faces and loose geometry (measured on the Cinder Cultist:
+    # 8 components, 429k faces); collapsing that directly leaves overlapping shells
+    # whose renders speckle into hundreds of alpha components, which the pixel
+    # master gate correctly rejects. Weld, drop loose/degenerate geometry first.
+    if not args.no_clean:
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.mesh.remove_doubles(threshold=1e-4)
+        bpy.ops.mesh.delete_loose()
+        bpy.ops.mesh.dissolve_degenerate()
+        bpy.ops.mesh.normals_make_consistent(inside=False)
+        bpy.ops.object.mode_set(mode="OBJECT")
+        # Floating debris goes before decimation, at full resolution where the
+        # cutoff is meaningful: a scrap under 2 % of the body cannot read at 256 px
+        # and only costs silhouette integrity (the Cinder Cultist's detached scraps
+        # broke its master into 2-4 alpha components). Legitimate armour plates are
+        # far above that.
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.mesh.separate(type="LOOSE")
+        bpy.ops.object.mode_set(mode="OBJECT")
+        parts = [o for o in bpy.data.objects if o.type == "MESH"]
+        if len(parts) > 1:
+            largest = max(parts, key=lambda o: len(o.data.polygons))
+            cutoff = max(16, int(len(largest.data.polygons) * 0.02))
+            for part in parts:
+                if part is not largest and len(part.data.polygons) < cutoff:
+                    bpy.data.objects.remove(part, do_unlink=True)
+            parts = [o for o in bpy.data.objects if o.type == "MESH"]
+            for part in parts:
+                part.select_set(True)
+            bpy.context.view_layer.objects.active = largest
+            bpy.ops.object.join()
+            obj = bpy.context.view_layer.objects.active
+        before = tris_of(obj)
     # collapse decimation undershoots the requested ratio by a face or two, and
     # the unit contract has a hard 4000-tri floor: retry upward until it clears
     snapshot = obj.data.copy()
