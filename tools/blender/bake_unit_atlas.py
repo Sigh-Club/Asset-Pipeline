@@ -47,6 +47,7 @@ def parse_args():
     ap.add_argument("--glb", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--stage", required=True, choices=("albedo", "final"))
+    ap.add_argument("--profile", help="style profile id (sets the atlas size)")
     ap.add_argument("--library", help="library .blend (stage albedo)")
     ap.add_argument("--atlas-size", type=int, default=2048)
     ap.add_argument("--samples", type=int, default=16)
@@ -213,8 +214,26 @@ def stage_final(args):
     print(f"EXPORTED {dest}")
 
 
+def profile_atlas_size(profile_id: str | None) -> int | None:
+    if not profile_id:
+        return None
+    import importlib.util
+    path = ROOT / "tools" / "style" / "profiles.py"
+    spec = importlib.util.spec_from_file_location("style_profiles", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    resolved = mod.resolve(profile_id)
+    errors = mod.validate(resolved)
+    if errors:
+        raise SystemExit("invalid profile: " + "; ".join(errors))
+    return int(resolved.get("texture", {}).get("atlas_px", 0)) or None
+
+
 def main():
     args = parse_args()
+    atlas_size = profile_atlas_size(args.profile)
+    if atlas_size and args.atlas_size == 2048:
+        args.atlas_size = atlas_size
     clear_scene()
     if args.stage == "albedo":
         if not args.library:

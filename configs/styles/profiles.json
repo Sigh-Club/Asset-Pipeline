@@ -1,0 +1,83 @@
+{
+  "//": "Style profiles. One profile selects the representation, budgets, shading model, pixel treatment and gate set for a whole asset. Stage tools read a profile; they never hard-code a style. Keys beginning with // are comments and are ignored by the validator.",
+  "schema_version": 1,
+  "defaults": {
+    "render": {"aa": false, "per_asset_resolution": true},
+    "animation": {"fps_authored": 12},
+    "gates": []
+  },
+  "gates": {
+    "glb_contract": "3D asset contract (tools/glb_contract.py)",
+    "seam": "tileable seam ratio <= 1.5 or absolute <= 0.02",
+    "material_flatness": "albedo low-frequency flatness <= 0.15",
+    "style_distance": "colour-layout distance within faction reference p95",
+    "palette_compliance": "every opaque pixel is in the profile palette or its ink",
+    "silhouette": "largest shapes readable at 1x and 2x target zoom",
+    "direction_coverage": "every required direction has every required action",
+    "timing": "pose-to-pose keys with anticipation and follow-through; no single-frame teleports",
+    "texel_grid": "texture pixels map to a constant world size; UVs snapped to grid",
+    "sheet_budget": "atlas frame count and page size within the profile budget",
+    "readability": "asset distinguishes from its neighbours at final camera distance"
+  },
+  "profiles": {
+    "aaa_3d": {
+      "label": "AAA-style 3D unit/prop (current path)",
+      "representation": "mesh_3d",
+      "geometry": {"tris_max": 25000, "tris_min": 4000, "shading": "pbr", "uv": "pbr"},
+      "texture": {"atlas_px": 2048, "material_model": "pbr", "normal_map": true,
+                   "ao": true, "emission": true},
+      "render": {"directions": 1},
+      "gates": ["glb_contract", "seam", "material_flatness", "style_distance"]
+    },
+    "lowpoly_3d": {
+      "label": "Stylised low-poly 3D (PSX-adjacent, palette-shaded)",
+      "representation": "mesh_3d",
+      "geometry": {"tris_max": 3000, "tris_min": 200, "shading": "cel", "uv": "pbr"},
+      "texture": {"atlas_px": 512, "material_model": "palette", "normal_map": false,
+                   "ao": false, "emission": true},
+      "render": {"directions": 1},
+      "pixel": {"palette_id": "grimdark_64", "dither": "none", "outline": 0.0, "selout": false},
+      "gates": ["glb_contract", "palette_compliance", "readability"]
+    },
+    "pixel_3d": {
+      "label": "Pixel-textured 3D (PSX/retro 3D, fixed texel grid)",
+      "representation": "mesh_3d",
+      "geometry": {"tris_max": 1200, "tris_min": 100, "shading": "flat", "uv": "texel_grid"},
+      "texture": {"atlas_px": 256, "material_model": "palette", "normal_map": false,
+                   "ao": false, "emission": true, "texel_world_m": 0.02},
+      "render": {"directions": 1},
+      "pixel": {"palette_id": "grimdark_64", "dither": "bayer4", "outline": 0.0, "selout": true},
+      "animation": {"fps_authored": 12, "clips": {
+        "idle": {"frames": [2, 6]}, "walk": {"frames": [4, 8]}, "run": {"frames": [4, 8]},
+        "aim": {"frames": [2, 4]}, "fire": {"frames": [2, 4]}, "reload": {"frames": [6, 10]},
+        "hit": {"frames": [2, 4]}, "death": {"frames": [6, 12]}, "melee": {"frames": [4, 8]}
+      }},
+      "gates": ["glb_contract", "texel_grid", "palette_compliance", "readability", "timing"]
+    },
+    "pixel_sprite": {
+      "label": "Pixel sprite, house style (8-direction isometric)",
+      "representation": "sprite_2d",
+      "render": {"directions": 8, "size_px": [96, 128]},
+      "pixel": {"palette_id": "rotbile", "dither": "bayer4", "outline": 0.62,
+                 "ink_luma": 0.22, "selout": true, "ramps": 4, "subpixel": true,
+                 "smear_frames": true},
+      "animation": {"fps_authored": 12, "clips": {
+        "idle": {"frames": [4, 8]}, "walk": {"frames": [6, 10]}, "run": {"frames": [6, 8]},
+        "aim": {"frames": [3, 5]}, "fire": {"frames": [3, 6]}, "reload": {"frames": [8, 14]},
+        "hit": {"frames": [2, 4]}, "death": {"frames": [6, 12]}, "melee": {"frames": [6, 10]}
+      }},
+      "gates": ["palette_compliance", "silhouette", "direction_coverage", "timing",
+                "sheet_budget"]
+    },
+    "hd_pixel_sprite": {
+      "label": "High-detail pixel sprite (modern HD pixel, 2x house canvas)",
+      "extends": "pixel_sprite",
+      "render": {"directions": 8, "size_px": [192, 256]},
+      "pixel": {"palette_id": "rotbile", "dither": "bayer2", "outline": 0.5,
+                 "ink_luma": 0.3, "selout": true, "ramps": 5, "subpixel": true,
+                 "smear_frames": true},
+      "gates": ["palette_compliance", "silhouette", "direction_coverage", "timing",
+                "sheet_budget", "readability"]
+    }
+  }
+}

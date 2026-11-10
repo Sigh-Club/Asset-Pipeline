@@ -62,6 +62,7 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--glb", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--profile", help="style profile id (sets the LOD0 tri budget)")
     ap.add_argument("--tris", type=int, default=20000)
     ap.add_argument("--voxel", type=float, default=0.012,
                     help="voxel size in metres; smaller keeps detail, larger merges parts")
@@ -291,8 +292,27 @@ def setup_render(out_dir: Path, samples: int, flat: bool = False):
     bpy.ops.render.render(write_still=True)
 
 
+def profile_budget(profile_id: str | None) -> int | None:
+    """Read the tri budget from a style profile, if one was given."""
+    if not profile_id:
+        return None
+    import importlib.util
+    path = ROOT / "tools" / "style" / "profiles.py"
+    spec = importlib.util.spec_from_file_location("style_profiles", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    resolved = mod.resolve(profile_id)
+    errors = mod.validate(resolved)
+    if errors:
+        raise SystemExit("invalid profile: " + "; ".join(errors))
+    return int(resolved.get("geometry", {}).get("tris_max", 0)) or None
+
+
 def main():
     args = parse_args()
+    budget = profile_budget(args.profile)
+    if budget and not args.tris:
+        args.tris = budget
     glb = Path(args.glb).resolve()
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)

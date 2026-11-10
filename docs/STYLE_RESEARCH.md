@@ -18,6 +18,9 @@ pixels on a 3D model.
 
 ---
 
+**Implementation:** the profiles derived from this research are defined in
+[`STYLE_PROFILES.md`](STYLE_PROFILES.md) and `configs/styles/profiles.json`.
+
 ## 1. The finding that changes the plan
 
 The best modern pixel work in the last five years is **not hand-drawn frame by
