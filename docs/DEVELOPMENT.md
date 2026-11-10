@@ -1093,9 +1093,17 @@ Delivered:
       the only cue list the game uses; `LoadingScene` falls back to the legacy
       WAV keys when it is empty.
 
+- [x] Music: the AI-generated IoA instrumental (`assets/audio_sources/
+      ioa_theme_instrumental.mp3`) is mastered as the `theme` cue — a 94 s
+      beat-aligned loop, -20 LUFS, 1.3 MB. Provenance recorded in the cue sheet
+      and the bank manifest.
+- [x] Second gate `tools/audio/verify_game_bank.py`: 34 cues / 104 files /
+      4.6 MiB on disk / 59 MiB decoded, every file decodes, every AudioKey the
+      code requests exists.
+
 Open:
 - [ ] Audition the bank in-engine and add further `picks.json` overrides where a
       cue reads wrong in context (the current picks were chosen from filenames and
       measurements, not by listening in the game).
-- [ ] Music: Sonniss supplies SFX and drones, not scored music. A CC0/attribution
-      music source (OpenGameArt, Pixabay) is still needed for the campaign theme.
+- [ ] If the theme loop point is audible in play, retune `start_seconds` /
+      `loop_crossfade` in `cues_ioa.json` and rebuild only that cue.

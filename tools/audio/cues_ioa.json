@@ -507,16 +507,19 @@
         "Theme",
         "Drone"
       ],
-      "max_seconds": 40.0,
+      "max_seconds": 95.2,
       "loop": true,
-      "min_seconds": 10.0,
+      "min_seconds": 0.0,
       "must": [
         "musc",
         "music",
         "score",
         "drone",
         "theme"
-      ]
+      ],
+      "loop_crossfade": 1.2,
+      "start_seconds": 0.0,
+      "source_note": "AI-generated instrumental supplied by the project owner (2025); not from the licensed library"
     },
     {
       "name": "explosion_large",

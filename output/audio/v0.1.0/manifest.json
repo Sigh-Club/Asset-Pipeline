@@ -1,7 +1,7 @@
 {
   "bank": "ioa-audio",
   "version": "0.1.0",
-  "generated": "2026-11-10T21:06:09Z",
+  "generated": "2026-11-10T21:14:37Z",
   "sample_rate": 48000,
   "channels": 2,
   "loudness_standard": "ITU-R BS.1770-5 / EBU R128 (ffmpeg loudnorm), -1 dBTP ceiling",
@@ -1272,24 +1272,24 @@
             "m4a": "web/theme.m4a"
           },
           "source": [
-            "sonniss/2023/344 Audio - Cymbals From Hell Vol. 2/MUSCPerc_Gong, Raw, Stinger, Drone 22_344 Audio_Cymbals From Hell Vol 2.wav"
+            "local/ioa_theme_instrumental.mp3"
           ],
           "recipe": "music_loop",
-          "duration": 39.4,
+          "duration": 94.0,
           "lufs_target": -20.0,
           "true_peak_target": -3.0,
           "level_mode": "lufs",
           "rms_target_dbfs": null,
-          "lufs_measured": -20.06,
-          "rms_dbfs_measured": -21.86,
-          "true_peak_dbtp": -9.74,
-          "pre_normalise_lufs": "-16.50",
-          "pre_normalise_lra": "4.30",
+          "lufs_measured": -20.0,
+          "rms_dbfs_measured": -21.75,
+          "true_peak_dbtp": -7.63,
+          "pre_normalise_lufs": "-18.78",
+          "pre_normalise_lra": "2.20",
           "size_bytes": {
-            "ogg": 449457,
-            "m4a": 561391
+            "ogg": 1323068,
+            "m4a": 1353494
           },
-          "sha256": "7f7fc790be785e6f3ef688cee8929ad05225c50bff0caa4b9c16736e7421ff6f"
+          "sha256": "3efac848373afe12f0fe34f10a1b7bb0f9f0239f4cdf3a7de1432e2e7f8deb3e"
         }
       ]
     },

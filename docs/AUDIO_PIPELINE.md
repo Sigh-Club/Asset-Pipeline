@@ -58,6 +58,7 @@ logged-in browser session, (c) terms stated in writing by the rights holder,
 | [ZapSplat](https://zapsplat.com/license/) | free tier | **required** | — | No (login) | Rejected as a base |
 | [BBC Sound Effects](https://sound-effects.bbcrewind.co.uk/licensing) | RemArc | — | — | No | **Rejected** — personal/education only, not commercial |
 | freepd.com | CC0 | — | — | — | **Dead** — closed permanently in 2025 |
+| AI-generated music (in-house) | Service terms; generated output | n/a | safe (it is not library audio) | local file, tracked in `assets/audio_sources/` | **Used for the theme** — see §2.4 |
 
 ### 2.1 Sonniss — the primary library
 
@@ -100,6 +101,32 @@ Verified working for `interface-sounds` (100 files), `impact-sounds`,
 `sci-fi-sounds`, `rpg-audio`, `digital-audio`, `music-jingles`, `ui-audio`,
 `voiceover-pack`, `casino-audio`. Files are 44.1 kHz OGG; licence text ships in
 each zip as `License.txt` (CC0).
+
+### 2.4 AI-generated music (the campaign theme)
+
+The menu theme is an AI-generated instrumental supplied by the project owner
+(`assets/audio_sources/ioa_theme_instrumental.mp3`, 3:14, 48 kHz stereo). It is
+the one audio asset that is *not* from a licensed library, which makes the rules
+different and simpler:
+
+- Generated output is ours to use; the service's terms cover the output, not a
+  third-party recording. No attribution, no per-project accounting.
+- The Sonniss "no AI training" clause is about *using Sonniss files as training
+  data*. It does not restrict AI-**generated** music that never touched the
+  library, so this track is unaffected.
+- Provenance still gets recorded: the source file is tracked in the repo, the cue
+  sheet carries a `source_note`, and the bank manifest records the exact source
+  path and hash. "AI made it" is not a reason to skip provenance.
+- Keep the AI service's terms-of-service snapshot with the file if the service
+  changes them; the generating service and date belong in the source note.
+
+The shipped cue is a **94 s loop** cut from the track at a beat boundary
+(96.98 BPM, beat at 95.22 s) with a 1.2 s circular crossfade. The cut is a
+delivery decision, not a creative one: a full 3:14 track decodes to ~74 MiB of
+PCM in the browser (Web Audio decodes the whole file), against ~36 MiB for the
+94 s loop. `cues_ioa.json` exposes `start_seconds`, `max_seconds` and
+`loop_crossfade`, so lengthening the loop later is one number, and the untouched
+source stays in the repo.
 
 ### 2.3 Fetching
 
@@ -296,12 +323,28 @@ tools/audio/fetch_library.py      download / extract / index
 tools/audio/cues_ioa.json         cue sheet (queries, recipes, targets)
 tools/audio/picks.json            auditioned per-cue source overrides
 tools/audio/build_bank.py         design, mix, master, encode, verify
+tools/audio/verify_game_bank.py   gate on the shipped copy in the game tree
+assets/audio_sources/             non-library masters (AI-generated theme), tracked
 output/audio/v0.1.0/              derived bank (tracked)
   master/  web/  manifest.json
 ```
 
 `picks.json` is the human-ear override: `{"directorate_fire": ["sonniss/2024/…wav"]}`.
 Automatic selection is the bootstrap; once a cue has been auditioned, pin it.
+A pick prefixed `local/` resolves under `assets/audio_sources/` instead of the
+licensed library (this is how the AI-generated theme is wired in).
+
+Two gates, in order:
+
+```bash
+python3 tools/audio/build_bank.py --verify             # the build is correct
+python3 tools/audio/verify_game_bank.py ../Imperium-of-Ash   # the shipped copy is correct
+```
+
+The second gate checks the files the browser will actually request: every
+manifest path exists and decodes, every cue key the TypeScript code can ask for
+exists in the bank, and each cue class stays inside its decoded-PCM budget
+(ui 1 MiB, sfx 8 MiB, ambient 40 MiB, music 60 MiB).
 
 ---
 
@@ -331,6 +374,17 @@ Automatic selection is the bootstrap; once a cue has been auditioned, pin it.
   the EULA prohibits AI/ML training use. Kenney/Pixabay are the training-safe
   pool.
   **Revisit when** Sonniss grants a training exception.
+- **Choice**: ship an AI-generated theme (94 s loop) alongside the licensed SFX
+  library, with the source file tracked in the repo. **Because**: composed music
+  is the one gap the Sonniss bundles do not fill, the generated output carries no
+  third-party obligations, and keeping the master in-repo keeps the bank
+  reproducible without the 240 GB library.
+  **Revisit when** a human-composed or commissioned score replaces it — swap the
+  file and re-run `--build --only theme`.
+- **Choice**: loop the theme at 94 s rather than shipping the full 3:14.
+  **Because**: Web Audio decodes the whole file to PCM (74 MiB vs 36 MiB) and the
+  menu preloads it; the cut is beat-aligned so it loops musically.
+  **Revisit when** the game streams music instead of decoding it.
 
 ## 9. Dead ends (do not re-test)
 

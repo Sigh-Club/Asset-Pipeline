@@ -41,6 +41,9 @@ LIBRARY = REPO / "assets" / "_audio_library"
 INDEX = LIBRARY / "library_index.json"
 SPEC = Path(__file__).resolve().parent / "cues_ioa.json"
 PICKS = Path(__file__).resolve().parent / "picks.json"
+# Human/AI-supplied masters that do not come from a licensed library. Kept in the
+# repo (small) so the bank stays reproducible without the 240 GB library.
+LOCAL_ROOT = REPO / "assets" / "audio_sources"
 OUT = REPO / "output" / "audio" / "v0.1.0"
 SR = 48000
 AUDIO_EXT = {".wav", ".aif", ".aiff", ".flac", ".ogg", ".mp3", ".m4a", ".opus"}
@@ -173,8 +176,14 @@ def pick(cue: dict, index: list[dict], picks: dict[str, str]) -> list[dict]:
     if name in picks:
         explicit = picks[name]
         layers = explicit if isinstance(explicit, list) else [explicit]
-        return [{"path": p, "score": 99.0, "duration": ffprobe_duration(LIBRARY / p)}
-                for p in layers]
+        resolved = []
+        for p in layers:
+            path = LOCAL_ROOT / p[len("local/"):] if p.startswith("local/") else LIBRARY / p
+            if not path.exists():
+                raise SystemExit(f"cue '{name}': missing source {path}")
+            resolved.append({"path": (p if p.startswith("local/") else p),
+                             "score": 99.0, "duration": ffprobe_duration(path)})
+        return resolved
 
     kenney = cue.get("kenney") or []
     if kenney:
@@ -202,9 +211,10 @@ def pick(cue: dict, index: list[dict], picks: dict[str, str]) -> list[dict]:
 # --------------------------------------------------------------------------- #
 # design chains
 # --------------------------------------------------------------------------- #
-def trim_filter(seconds: float, fade_in: float = 0.004, fade_out: float = 0.05) -> str:
+def trim_filter(seconds: float, fade_in: float = 0.004, fade_out: float = 0.05,
+                start: float = 0.0) -> str:
     """Trim to a bounded length and de-click the ends."""
-    f = f"atrim=0:{seconds:.3f},asetpts=PTS-STARTPTS"
+    f = f"atrim={start:.3f}:{start + seconds:.3f},asetpts=PTS-STARTPTS"
     if fade_in > 0:
         f += f",afade=t=in:st=0:d={fade_in:.3f}"
     if fade_out > 0:
@@ -412,7 +422,8 @@ def mono_compat(data: np.ndarray) -> np.ndarray:
 
 def build_layer(src: Path, recipe: dict, seconds: float, workdir: Path,
                 tag: str, reverb_ir: Path, send: float,
-                variant: int = 0, variants: int = 1) -> Path:
+                variant: int = 0, variants: int = 1,
+                start_seconds: float = 0.0) -> Path:
     """Run one source through the design chain plus a convolution reverb send.
 
     When a cue ships several variants, each one is pitch-shifted by a small
@@ -422,7 +433,8 @@ def build_layer(src: Path, recipe: dict, seconds: float, workdir: Path,
     """
     raw = workdir / f"{tag}_raw.wav"
     decode(src, raw)
-    chain = trim_filter(seconds, 0.004, recipe.get("fade_out", 0.05))
+    chain = trim_filter(seconds, 0.0 if variants else 0.004,
+                        recipe.get("fade_out", 0.05), start_seconds)
     if variants > 1:
         steps = [-1.0, 1.0, 0.0, 1.6, -1.6]
         semis = steps[(variant - 1) % len(steps)]
@@ -534,6 +546,10 @@ def encode(master: Path, out_dir: Path, stem: str) -> dict:
 # --------------------------------------------------------------------------- #
 # cue build
 # --------------------------------------------------------------------------- #
+def _source_path(rel: str) -> Path:
+    return LOCAL_ROOT / rel[len("local/"):] if rel.startswith("local/") else LIBRARY / rel
+
+
 def build_cue(cue: dict, sources: list[dict], spec: dict, workdir: Path,
               out_dir: Path, ir: Path) -> dict:
     name = cue["name"]
@@ -551,12 +567,13 @@ def build_cue(cue: dict, sources: list[dict], spec: dict, workdir: Path,
         tag = f"{name}_{variant}" if variants > 1 else name
         layer_paths = []
         for i, source in enumerate(sources):
-            src = LIBRARY / source["path"]
+            src = _source_path(source["path"])
             if not src.exists():
                 raise SystemExit(f"missing source {src}")
             layer_paths.append(build_layer(src, recipe, seconds, workdir,
                                            f"{tag}_s{i}", ir, send,
-                                           variant, variants))
+                                           variant, variants,
+                                           float(cue.get("start_seconds", 0.0))))
 
         # concatenate/repeat short sources when the cue needs a longer bed
         assembled = workdir / f"{tag}_assembled.wav"
@@ -584,7 +601,8 @@ def build_cue(cue: dict, sources: list[dict], spec: dict, workdir: Path,
         master.parent.mkdir(parents=True, exist_ok=True)
         measurement = normalise(assembled, master, target["lufs"], target["true_peak"], cls)
         if loop:
-            wav_save(master, loop_seam(wav_load(master)))
+            wav_save(master, loop_seam(wav_load(master),
+                                       float(cue.get("loop_crossfade", 0.6))))
         encoded = encode(master, out_dir / "web", tag)
 
         final = loudness(master)
