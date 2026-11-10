@@ -1080,10 +1080,11 @@ Delivered:
       recipes, targets), deterministic selection, design chain, convolution
       reverb, loop seam, loudness/peak mastering, OGG+M4A encode, `--verify`
       gate, `--sync-ioa` into the game.
-- [x] `-Ir- game bank v0.1.0: 34 cues / 52 masters, all passing the gate
-      (peak or LUFS target, ≤ -1 dBTP, no duplicate variants, loop seams clean).
-      Delivery weight 2.8 MB for the whole bank (the procedural WAV placeholders
-      it replaces were 7.3 MB for 44 files).
+- [x] Game bank v0.1.0: 34 cues / 52 masters built from the complete archive
+      (Sonniss 2015–2024 + 2026, Kenney CC0; 8,197 indexed files, ~240 GB), all
+      passing the gate (peak or LUFS target, ≤ -1 dBTP, no duplicate variants,
+      loop seams clean). Delivery weight 3.3 MB for the whole bank (the
+      procedural WAV placeholders it replaces were 7.3 MB for 44 files).
 - [x] Game runtime: `audioMixPolicy.ts` (bus gains, voice caps, de-dupe,
       ducking, pan clamp) with 7 unit tests, and `audioBus.ts` (Phaser mixer)
       wired into `LoadingScene` (manifest-driven cue loading), `CombatScene`,
@@ -1093,8 +1094,8 @@ Delivered:
       WAV keys when it is empty.
 
 Open:
-- [ ] Re-run `build_bank.py --build` against the complete archive (2015–2024 +
-      2026) and audition `picks.json` overrides; the current selections were made
-      from a partial library while the full archive was still downloading.
+- [ ] Audition the bank in-engine and add further `picks.json` overrides where a
+      cue reads wrong in context (the current picks were chosen from filenames and
+      measurements, not by listening in the game).
 - [ ] Music: Sonniss supplies SFX and drones, not scored music. A CC0/attribution
       music source (OpenGameArt, Pixabay) is still needed for the campaign theme.

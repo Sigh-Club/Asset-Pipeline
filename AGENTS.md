@@ -1,14 +1,29 @@
 # Asset-Pipeline AGENTS.md
-# Master Reference for All AI Assistants Working on IoA Sprite Assets
+# Master Reference for All AI Assistants Working on IoA Assets (sprite + 3D)
 
 ## Project Identity
 
 **Repository**: asset-pipeline  
-**Purpose**: Dedicated sprite and asset generation pipeline for Imperium of Ash (IoA), a grimdark tactical combat game set in the Warhammer 40K universe.  
-**Method**: Pre-rendered 3D-to-2D isometric sprites, fully automated.  
+**Purpose**: Asset generation pipeline for Imperium of Ash (IoA), a grimdark tactical combat game with Warhammer 40K **lineage** (roles and structure, not the setting or the files).  
+**Method**: Two paths — (a) skinned 3D GLB units/materials for the Three.js combat loop, (b) pre-rendered 3D-to-2D isometric sprite atlases. Both automated.  
 **Philosophy**: 2008-era quality (Dawn of War 1/2 calibre). Full RGBA colour, smooth LANCZOS downscale, detailed PBR materials, no pixel-art restrictions. Every pixel serves the grimdark aesthetic. Automation over manual labour.
 
 ## Critical Rules
+
+0. **Read the right doc first.** 3D units/materials/environments →
+   `docs/3D_ASSETS.md` and the `ioa-3d-assets` + `blender-game-assets` skills.
+   Fine-tuning a model → `docs/GENERATION_TRAINING_RESEARCH.md` and the
+   `generative-training` skill (decide before training; the box has 8 GB VRAM and
+   31 GB RAM, and the RAM is the real ceiling).
+   Sprite atlases/tiles/UI → this file and `docs/PIPELINE_V2.md`. Do not apply
+   sprite rules (8 directions, LANCZOS, palette) to GLB work.
+   Game/website audio (SFX libraries, cue design, mixing, loudness, delivery) →
+   `docs/AUDIO_PIPELINE.md` and `tools/audio/`. Do not hand-edit the built bank.
+0b. **One GPU job at a time.** 8 GB card shared with the desktop. Use
+   `tools/blender_run.sh` (VRAM wait + profile) and `tools/gpu_policy.py`; never
+   launch two Blender/CUDA jobs, never push beyond the `max` profile.
+0c. **3D assets pass the gate or they do not ship:**
+   `python3 tools/glb_contract.py <file>.glb --kind unit` must exit 0.
 
 1. **Full Colour, No Palette Lock**: Assets use full RGBA colour. The `grimdark_64.gpl` palette is available as an optional retro/pixel-art variant but is NOT the default. PBR materials render with full colour fidelity.
 2. **LANCZOS Downscale**: Raw renders are supersampled at 8× (768×1024) and downscaled with LANCZOS resampling for smooth anti-aliased edges — never nearest-neighbour.
@@ -17,7 +32,7 @@
 5. **8 Directions True**: No mirroring allowed. Each direction is a unique render. N, NE, E, SE, S, SW, W, NW.
 6. **Blender Single Source of Truth**: The `.blend` file is the master asset. Sprites are derived products, not masters.
 7. **Version Everything**: Every output directory MUST include a version tag (e.g., `v0.5.0/`).
-8. **AI Concept Only**: AI assistants generate concepts, configs, and pipeline scripts. Final sprites come from Blender render pipeline, not AI direct-to-sprite (avoids copyright/quality issues).
+8. **AI is for concepts, albedo and geometry seeds — not for final assets.** Image models generate concept art, orthographic turnarounds and tileable albedo; image-to-3D generates a base mesh; Blender produces the shipping asset (retopo, UV, PBR, rig, clips, export). Nothing generated is shipped unmodified.
 9. **Sync to IoA**: The `sync_to_ioa.py` tool (or manual copy to `../imperium-of-ash/frontend/public/assets/atlases/`) is the approved method. Always copy to the **correct** IoA repo.
 
 ## AI-Assisted Workflow Architecture
@@ -225,6 +240,9 @@ When creating assets, reference these IoA requirements:
 
 ## Batch Render Time Estimates
 
+> Sprite-path figures only (Cycles, 8 GB card). 3D GLB previews run in EEVEE at
+> seconds per frame; use `tools/gpu_policy.py` for 3D budgets.
+
 Based on Cycles GPU rendering with OptiX denoising:
 | Render quality | Render res | Samples | Time/frame | Time/unit (248 frames) | All 34 units |
 |---------------|-----------|---------|-----------|----------------------|-------------|
@@ -248,6 +266,11 @@ Use the render queue for overnight batching: `pipeline_cli.py queue add --unit <
 | Gallery Browser | `tools/gallery_server.py` (web UI) | — |
 | Palette (optional) | `assets/palettes/grimdark_64.gpl` | 64 colours for retro variants |
 | Sync | `pipeline_cli.py sync` | — |
+| **3D acceptance gate** | `tools/glb_contract.py` | GLB (tris, UV, clips, skin, orientation) |
+| **VRAM policy** | `tools/gpu_policy.py`, `tools/blender_run.sh` | job profiles, guarded launch |
+| **3D material library** | `tools/pbr/build_material_manifest.py` → `derive_maps.py` → `build_blender_library.py` | PBR set + `.blend` |
+| **Weld/UV stage** | `tools/blender/uv_prepare.py` | GLB with UVs |
+| **Material preview** | `tools/blender/preview_unit_materials.py` | render for review |
 
 ## LOD Support
 
