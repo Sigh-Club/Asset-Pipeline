@@ -42,6 +42,10 @@ def parse_args():
     ap.add_argument("--out", required=True)
     ap.add_argument("--library", help="material library .blend for render")
     ap.add_argument("--render", action="store_true")
+    ap.add_argument("--directions", type=int, default=1, choices=(1, 4, 8),
+                    help="camera orbit positions (8 for the sprite pipeline)")
+    ap.add_argument("--masks", action="store_true",
+                    help="also render normal / AO / emission masks per direction")
     ap.add_argument("--samples", type=int, default=1, help="1 = no antialiasing")
     return ap.parse_args(argv)
 
@@ -260,6 +264,65 @@ def unwrap(obj, texel_world_m: float):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
+def _emission_material(name: str):
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nt = mat.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
+    return mat, nt, em
+
+
+def normal_material():
+    mat, nt, em = _emission_material("pass_normal")
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    mul = nt.nodes.new("ShaderNodeVectorMath"); mul.operation = "MULTIPLY"
+    mul.inputs[1].default_value = (0.5, 0.5, 0.5)
+    add = nt.nodes.new("ShaderNodeVectorMath"); add.operation = "ADD"
+    add.inputs[1].default_value = (0.5, 0.5, 0.5)
+    nt.links.new(geo.outputs["Normal"], mul.inputs[0])
+    nt.links.new(mul.outputs["Vector"], add.inputs[0])
+    nt.links.new(add.outputs["Vector"], em.inputs["Color"])
+    em.inputs["Strength"].default_value = 1.0
+    return mat
+
+
+def ao_material(distance: float = 0.35):
+    mat, nt, em = _emission_material("pass_ao")
+    ao = nt.nodes.new("ShaderNodeAmbientOcclusion")
+    ao.inputs["Distance"].default_value = distance
+    ao.only_local = True
+    nt.links.new(ao.outputs["Color"], em.inputs["Color"])
+    em.inputs["Strength"].default_value = 1.0
+    return mat
+
+
+def emission_material(slot_mats):
+    """Emission-only pass: sample any emissive texture the library material has."""
+    mat, nt, em = _emission_material("pass_emission")
+    tex = None
+    for m in slot_mats:
+        if not (m and m.use_nodes):
+            continue
+        for n in m.node_tree.nodes:
+            if n.type == "TEX_IMAGE" and n.image and "emissive" in n.image.name.lower():
+                tex = n.image
+                break
+        if tex:
+            break
+    if tex:
+        node = nt.nodes.new("ShaderNodeTexImage")
+        node.image = tex
+        node.interpolation = "Closest"
+        nt.links.new(node.outputs["Color"], em.inputs["Color"])
+    else:
+        em.inputs["Color"].default_value = (0, 0, 0, 1)
+    return mat
+
+
 def setup_render(out_dir: Path, size, samples: int, extent: float = 1.0):
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE"
@@ -293,6 +356,7 @@ def setup_render(out_dir: Path, size, samples: int, extent: float = 1.0):
     co = bpy.data.objects.new("cam", cam)
     co.location = (extent * 2.6, -extent * 2.9, extent * 2.6)
     co.rotation_euler = (math.radians(60), 0, math.radians(42))
+    co.name = "review_cam"
     scene.collection.objects.link(co)
     scene.camera = co
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -301,6 +365,46 @@ def setup_render(out_dir: Path, size, samples: int, extent: float = 1.0):
 def render_to(path: Path):
     bpy.context.scene.render.filepath = str(path)
     bpy.ops.render.render(write_still=True)
+
+
+def orbit_camera(azimuth_deg: float, elevation_deg: float, extent: float):
+    """Place the review camera on an orbit around the object origin."""
+    cam = bpy.data.objects["review_cam"]
+    az = math.radians(azimuth_deg)
+    el = math.radians(elevation_deg)
+    r = max(1.4, extent * 3.4)
+    cam.location = (r * math.cos(el) * math.sin(az),
+                    -r * math.cos(el) * math.cos(az),
+                    r * math.sin(el))
+    # look at the object centre (origin) — Blender cameras look down -Z
+    from mathutils import Euler
+    direction = -cam.location
+    rot = direction.to_track_quat("-Z", "Y").to_euler()
+    cam.rotation_euler = rot
+
+
+def render_mask(obj, kind: str, slot_mats, path: Path):
+    """Data passes are saved with the Raw view transform: a normal map must store
+    0.5*N+0.5 as bytes, not an artistically tone-mapped colour."""
+    saved = [m for m in obj.data.materials]
+    mat = {"normal": normal_material, "ao": ao_material,
+           "emission": lambda: emission_material(slot_mats)}[kind]()
+    for i in range(len(obj.data.materials)):
+        obj.data.materials[i] = mat
+    scene = bpy.context.scene
+    prev = (scene.view_settings.view_transform, scene.view_settings.look)
+    try:
+        scene.view_settings.view_transform = "Raw"
+    except TypeError:
+        scene.view_settings.view_transform = "Standard"
+    scene.view_settings.look = "None"
+    try:
+        render_to(path)
+    finally:
+        scene.view_settings.view_transform = prev[0]
+        scene.view_settings.look = prev[1]
+    for i, m in enumerate(saved):
+        obj.data.materials[i] = m
 
 
 def main():
@@ -318,12 +422,28 @@ def main():
     unwrap(obj, texel)
 
     size = prof.get("render", {}).get("size_px") or [256, 256]
+    rendered = {"directions": 0, "beauty": [], "masks": []}
     if args.render:
         corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
         extent = max(max(c[i] for c in corners) - min(c[i] for c in corners)
                      for i in range(3))
         setup_render(out / "render", size, args.samples, extent)
-        render_to(out / "render" / f"{args.id}_3q.png")
+        slot_mats = list(obj.data.materials)
+        n = max(1, args.directions)
+        for i in range(n):
+            az = 0.0 if n == 1 else (i * 360.0 / n)
+            orbit_camera(az, 35.0, extent)
+            suffix = f"_az{int(az):03d}" if n > 1 else "_3q"
+            beauty = out / "render" / f"{args.id}{suffix}.png"
+            render_to(beauty)
+            rendered["beauty"].append(str(beauty))
+            if args.masks:
+                (out / "masks").mkdir(exist_ok=True)
+                for kind in ("normal", "ao", "emission"):
+                    mp = out / "masks" / f"{args.id}{suffix}_{kind}.png"
+                    render_mask(obj, kind, slot_mats, mp)
+                    rendered["masks"].append(str(mp))
+        rendered["directions"] = n
 
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
@@ -335,7 +455,7 @@ def main():
     meta = {
         "request": req, "profile": req.get("profile"), "recipe": recipe,
         "texel_world_m": texel, "render_size_px": size,
-        "materials": mats, "glb": str(glb),
+        "materials": mats, "glb": str(glb), "rendered": rendered,
         "note": "box-projected library materials are render-only; bake to UVs "
                 "before shipping the GLB with textures",
     }
