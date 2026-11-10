@@ -4,11 +4,18 @@
 high-VRAM image capability we have (hosted Gemini) to remove the local GPU
 bottleneck, without letting generation become the new bottleneck.
 
-**Sources:** official docs (`ai.google.dev/gemini-api/docs/image-generation`,
-retrieved 2026-11-09: 1K/2K/4K sizes, up to 14 reference images), the operator
-skill `~/.pi/agent/skills/gemini-image/SKILL.md`, and observed consumer-plan
-behaviour recorded there. Local observations are graded A; vendor docs B;
-community reports C.
+**Access reality (corrected 2026-11-09):** we have a **Gemini Pro consumer
+subscription (browser app)** — **no AI Studio, no API key**. Every API parameter
+below (`image_size`, `aspect_ratio`, reference-image counts, `response_format`)
+is documented behaviour we may *ask for in the prompt or set in the web UI*, not
+something we can pass programmatically. Batch loops, seeds and REST calls are not
+available. Quotas are consumer-plan windows, not API rate limits.
+
+**Sources:** official API docs (`ai.google.dev/gemini-api/docs/image-generation`,
+retrieved 2026-11-09: 1K/2K/4K sizes, up to 14 reference images) — used as
+reference for what the model can do, not as our interface; the operator skill
+`~/.pi/agent/skills/gemini-image/SKILL.md`; local observed behaviour. Local
+observations A; vendor docs B; community reports C.
 
 ---
 
@@ -17,6 +24,19 @@ community reports C.
 It buys **resolution and reference conditioning we cannot run locally**: 2K/4K
 outputs, multi-image reference edits, and Pro-model text rendering. It does not
 buy compute for training, rendering or baking — those stay on the 8 GB card.
+
+### What our access can and cannot do
+
+| | Consumer Gemini Pro web app |
+|---|---|
+| Interface | browser chat, or `~/.pi/agent/bin/gemini-img` driving the same web session |
+| API key / AI Studio | **none** |
+| Seeds / determinism | none |
+| Batch / automation | one prompt at a time through the wrapper; no parallel jobs |
+| Resolution | chosen in the UI when offered; state it in the prompt as backup |
+| Aspect ratio | UI control if present; state it in the prompt as backup |
+| Reference images | attach several in-chat; the API's 14 is not the practical limit here — 3–5 is |
+| Quota | consumer windows: ~8–12 standard gens per 5 h, Pro scarcer (14–25/day observed) |
 
 | Capability | Local (8 GB) | Gemini |
 |---|---|---|
@@ -129,8 +149,8 @@ Per unit: 1 turnaround sheet (Pro) + 1 material sheet (standard) + 1 concept
 
 ## 8. What would change this
 
-- An API key would allow batching and seeds-adjacent consistency; the quota model
-  changes to RPM/RPD and is more predictable.
+- An API key/AI Studio would allow batching, explicit `image_size`/ratio and a
+  predictable RPM/RPD quota; today we ask in prose and drive the web app.
 - If a local 24 GB card arrives, materials and orthos move local; Gemini stays for
   hero concepts and text-heavy sheets.
 - If consumer Pro quotas tighten, the sheet multiplier and 4K-downsample tricks
