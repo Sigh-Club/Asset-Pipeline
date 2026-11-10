@@ -253,7 +253,9 @@ in 3.90); the whole tree hangs off the existing mute switch.
 
 Website audio is a subset: `web_hover`, `web_click`, `web_page`, `web_error`,
 `web_success` at -9 to -4 dB trims, all under 10 KB, preloaded after the first
-gesture. Rules: hover cues only on pointer devices (`matchMedia('(hover: hover)')`),
+gesture. The implementation is `frontend/src/utils/webAudio.ts` (context resumed
+only from a real gesture, hover gated on `(hover: hover) and (pointer: fine)`,
+120 ms hover repeat window, persisted mute). Rules: hover cues only on pointer devices (`matchMedia('(hover: hover)')`),
 never on focus, never repeated within 120 ms, and a single global mute persisted
 in `localStorage`. Marketing pages should use at most one ambient bed and it must
 start only after an explicit user action.
