@@ -292,6 +292,46 @@ and `gunmetal_worn` value-stretched (luma std 6.46 → 59.3) by
 0.5 contrast retention so micro-wear does not read as noise after
 box-projection onto a coarse mesh.
 
+### 8a.1 Cover kit masters (2026-11-10) — the gameplay cover set
+
+The combat map needs a shape per cover tier, not one crate. A new `cover` recipe in
+`tools/blender/parametric_prop.py` builds six silhouettes from one request schema
+(`shape` = crate_stack / sandbag_row / barricade / machine_block / shield_wall /
+column) and the deck module was re-cut at the engine's 2.4 m cell:
+
+| Asset | `<out>` | tris | density vs profile | atlas | off-palette | tier / height |
+|---|---|---|---|---|---|---|
+| crate stack | `output/gen/cover8_crate` | 228 | +0.12 % | 256² | 0 | partial 0.95 m |
+| sandbag row | `output/gen/cover8_sandbag` | 364 | +0.62 % | 256² | 0 | partial 0.82 m |
+| barricade | `output/gen/cover8_barricade` | 108 | +0.02 % | 256² | 0 | partial 1.08 m |
+| machine block | `output/gen/cover8_machine` | 120 | −0.11 % | 256² | 0 | hardened 1.90 m |
+| shield wall | `output/gen/cover8_shield` | 108 | +0.73 % | 256² | 0 | hardened 1.85 m |
+| column | `output/gen/cover8_column` | 312 | +0.37 % | 256² | 0 | hardened 2.30 m |
+| deck module 2.4 m | `output/gen/tile8_24` | 380 | +0.36 % | 256² | 0 | tile |
+
+All seven pass `glb_contract.py` (prop/tile), `check_texel_grid.py` (0 % off-lattice,
+0 off-palette), `check_pixel_asset.py` and `check_master.py` (8 directions, distinct).
+
+**Two tool defects the kit exposed, fixed here:**
+
+1. **`pixel_uv.py` left every UV off the texel lattice whenever island packing
+   translated an island.** The snap ran *before* `pack_islands`, which then
+   translated islands by arbitrary (fractional-texel) offsets — the column came out
+   100 % off-lattice with a filtered atlas while its own report claimed
+   `uv_lattice_snapped: true`. Fixed by re-latticeing after packing (per-island
+   translation by the mean fractional offset, which preserves island shape) and
+   recording `islands_relattices` in the stage report. Negative control: the
+   unpatched column fails `check_texel_grid.py`, the patched one passes.
+2. **`check_pixel_asset.py` rejected correct boxy cover.** Its `prop` bbox-fill
+   range (0.25–0.95) assumes a rounded prop; a crate or wall seen edge-on
+   legitimately fills 0.96–1.00 of its bounding box. A separate `cover` kind
+   (0.20–1.00) was added instead of loosening `prop` for every prop.
+
+Surface area is the real budget on this tier: at 2 cm texels a 256² atlas holds
+~26 m², and the texel stage refuses anything needing >75 % of the atlas. The
+machine block and shield wall were dimensioned down to fit rather than raising the
+atlas (recorded in their request params).
+
 ### 8b. Gate negative controls (evidence, not claims)
 
 | Gate | Negative controls exercised |

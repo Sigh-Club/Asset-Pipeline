@@ -165,6 +165,15 @@ def build_tile(bm, p):
         _box(bm, (lip, t, 0.1), (-t / 2 + lip / 2, 0, 0.05))
 
 
+def _rot_x(verts, deg, pivot):
+    from mathutils import Matrix
+    piv = Vector(pivot)
+    m = Matrix.Rotation(math.radians(deg), 4, "X")
+    for v in verts:
+        v.co = piv + m @ (v.co - piv)
+    return verts
+
+
 def _rot_y(verts, deg, pivot):
     from mathutils import Matrix
     piv = Vector(pivot)
@@ -229,6 +238,99 @@ def build_weapon(bm, p):
     _box(bm, (0.055, 0.022, 0.045), (L * 0.09, 0, 0.155))
 
 
+def build_cover(bm, p):
+    """Battlefield cover, one shape per gameplay tier.
+
+    XCOM's tactical read depends on a player recognising, at a glance, whether an
+    object gives partial (waist) or hardened (chest+) cover and which side is
+    protected. Colour cannot carry that at 256 px, so each shape gets a distinct
+    silhouette vocabulary: stacked crates, a lumpy sandbag row and an angled
+    barricade for partial; a heavy machine block with a firing slit, a buttressed
+    shield wall and a capped column for hardened. `height_m` from the request is
+    the real height of the finished prop (measured min/max Z here, not assumed),
+    so the renderer's tier check and the geometry cannot drift apart.
+    """
+    shape = str(p.get("shape", "crate_stack"))
+    w = float(p.get("width_m", 1.6))
+    d = float(p.get("depth_m", 0.6))
+    h = float(p.get("height_m", 0.9))
+
+    if shape == "crate_stack":
+        # lower crate + upper crate offset, banded on four faces, with a lid plate
+        for (fw, fd, fh, ox, oy) in (
+                (w * 0.58, d * 0.92, h * 0.55, -w * 0.20, 0.0),
+                (w * 0.46, d * 0.86, h * 0.42, w * 0.22, d * 0.04)):
+            z0 = 0.0 if ox < 0 else h * 0.55
+            _box(bm, (fw, fd, fh), (ox, oy, z0 + fh / 2))
+            for k in range(2):
+                bz = z0 + fh * (k + 1) / 3
+                _box(bm, (fw * 1.02, fd * 0.06, fh * 0.09), (ox, fd / 2, bz))
+                _box(bm, (fw * 1.02, fd * 0.06, fh * 0.09), (ox, -fd / 2, bz))
+                _box(bm, (fw * 0.06, fd * 1.02, fh * 0.09), (ox + fw / 2, oy, bz))
+                _box(bm, (fw * 0.06, fd * 1.02, fh * 0.09), (ox - fw / 2, oy, bz))
+        _box(bm, (w * 0.36, d * 0.62, h * 0.03), (w * 0.22, d * 0.04, h * 0.985))
+    elif shape == "sandbag_row":
+        cols = 5
+        bag = (w / cols) * 0.94
+        for row in range(3):
+            z = h * (row + 0.5) / 3
+            offset = (bag / 2) if row % 2 else 0.0
+            for c in range(cols):
+                x = -w / 2 + bag / 2 + c * bag + offset - bag / 2
+                if abs(x) > w / 2 - bag * 0.35:
+                    continue
+                _cyl(bm, bag * 0.66, d * 0.96, (x, 0, z), 8, axis="y")
+    elif shape == "barricade":
+        # leaning panel on two feet with a hazard rail and cross braces
+        panel = _box(bm, (w, d * 0.16, h * 0.78), (0, 0, h * 0.58))
+        _rot_x(panel, 12.0, (0, 0, h * 0.20))
+        for sx in (-1, 1):
+            _box(bm, (0.10, d * 0.9, h * 0.14), (sx * (w / 2 - 0.12), 0, h * 0.07))
+            brace = _box(bm, (0.07, d * 0.10, h * 0.5), (sx * (w * 0.30), 0, h * 0.30))
+            _rot_x(brace, 26.0, (sx * (w * 0.30), 0, h * 0.08))
+        _box(bm, (w * 0.98, d * 0.22, h * 0.07), (0, 0, h * 0.95))
+        for i in range(3):
+            _box(bm, (0.06, d * 0.26, h * 0.05), (-w * 0.28 + i * w * 0.28, 0, h * 0.86))
+    elif shape == "machine_block":
+        # hardened: heavy plinth, sloped top and a firing slit between buttresses
+        _box(bm, (w, d, h * 0.60), (0, 0, h * 0.30))
+        _box(bm, (w * 0.94, d * 0.84, h * 0.28), (0, 0, h * 0.74))
+        _box(bm, (w * 0.66, d * 0.30, h * 0.09), (0, -d * 0.42, h * 0.64))
+        for sx in (-1, 1):
+            _box(bm, (0.14, d * 1.04, h * 0.22), (sx * (w / 2 - 0.07), 0, h * 0.51))
+        # front ribs and a stepped base: geometry for the tri floor and the value
+        # breaks that make a block read as machinery, not a crate
+        for i in range(4):
+            _box(bm, (w * 0.09, d * 0.10, h * 0.34), (-w * 0.36 + i * w * 0.24, -d / 2, h * 0.32))
+        _box(bm, (w * 1.06, d * 1.08, h * 0.05), (0, 0, h * 0.025))
+    elif shape == "shield_wall":
+        # hardened: a solid slab (a wall is one object — separate panels would fail
+        # the single-component silhouette gate and cost atlas area for nothing)
+        # with a capped top, a base plinth, end buttresses and raised front plates.
+        # Surface area is the binding constraint at a 2 cm texel grid on 256².
+        _box(bm, (w, d * 0.5, h * 0.9), (0, 0, h * 0.45))
+        _box(bm, (w * 1.02, d * 0.62, h * 0.05), (0, 0, h * 0.925))
+        _box(bm, (w * 1.02, d * 0.78, h * 0.05), (0, 0, h * 0.025))
+        for sx in (-1, 1):
+            _box(bm, (0.15, d, h * 0.98), (sx * (w / 2 - 0.07), 0, h * 0.49))
+        for i in range(3):
+            _box(bm, (w * 0.16, d * 0.14, h * 0.34), (-w * 0.26 + i * w * 0.26, -d * 0.29, h * 0.62))
+        # rear centre buttress: reads as load-bearing from the squad's side and
+        # keeps the piece above the contract's 100-tri floor
+        _box(bm, (0.18, d * 0.22, h * 0.8), (0, d * 0.30, h * 0.42))
+    else:  # column
+        r = float(p.get("diameter_m", 0.55)) / 2
+        _cyl(bm, r, h * 0.86, (0, 0, h * 0.45), 12)
+        _cyl(bm, r * 1.38, h * 0.07, (0, 0, h * 0.035), 12)
+        _cyl(bm, r * 1.32, h * 0.07, (0, 0, h * 0.90), 12)
+        for i in range(3):
+            _cyl(bm, r * 1.10, h * 0.04, (0, 0, h * (0.24 + i * 0.24)), 12)
+        for i in range(4):
+            a = (i / 4) * 6.2832
+            _box(bm, (r * 0.28, r * 0.28, h * 0.5),
+                 (math.cos(a) * r * 0.98, math.sin(a) * r * 0.98, h * 0.45))
+
+
 def build_block(bm, p):
     fw, fd = p.get("footprint_m", [6, 4])
     storeys = int(p.get("storeys", 2))
@@ -242,8 +344,8 @@ def build_block(bm, p):
 
 
 RECIPES = {
-    "barrel": build_barrel, "crate": build_crate, "tile": build_tile,
-    "weapon": build_weapon, "block": build_block,
+    "barrel": build_barrel, "cover": build_cover, "crate": build_crate,
+    "tile": build_tile, "weapon": build_weapon, "block": build_block,
 }
 
 
@@ -332,6 +434,11 @@ def assign_slots(obj, req, recipe, slot_count):
                 slot = 1
         elif recipe == "crate":
             if abs(n.y) > 0.7 and abs(c.y) > 0.3:
+                slot = 1
+        elif recipe == "cover":
+            h = float(p.get("height_m", 0.9))
+            # trim slot on the top band (rail/lid/cap) and on outward faces
+            if c.z > h * 0.80 or abs(n.z) > 0.85 and c.z > h * 0.55:
                 slot = 1
         poly.material_index = min(slot, slot_count - 1)
 

@@ -41,6 +41,10 @@ KIND_FILL = {
     "weapon": (0.10, 0.95), "prop": (0.25, 0.95), "tile": (0.45, 1.0),
     "unit": (0.15, 0.92), "building": (0.35, 0.95), "foliage": (0.10, 0.95),
     "ui_icon": (0.10, 0.95),
+    # Cover modules are slabs and blocks: edge-on, a correct crate/wall silhouette
+    # fills its bounding box (0.96-1.00), which the barrel-tuned prop range rejects.
+    # The class gets its own range instead of loosening "prop" for everything.
+    "cover": (0.20, 1.0),
 }
 ALPHA_THRESHOLD = 10
 

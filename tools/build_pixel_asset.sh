@@ -11,6 +11,7 @@
 #   tools/build_pixel_asset.sh barrel8  iron_directorate_barrel_a     prop
 #   tools/build_pixel_asset.sh weapon8  iron_directorate_lasrifle     weapon
 #   tools/build_pixel_asset.sh tile8    tile_floor_industrial_a       tile
+#   tools/build_pixel_asset.sh cover8_x cover_crate_stack_a           cover
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -65,7 +66,7 @@ python3 tools/style/palette_lock.py --dir "$OUT/render" --profile pixel_3d \
   --dither bayer4 --out-dir "$OUT/render_pixel" --suffix ""
 
 echo "=== 8/8 gates"
-CONTRACT_KIND="$KIND"; [[ "$KIND" == "weapon" ]] && CONTRACT_KIND="prop"
+CONTRACT_KIND="$KIND"; [[ "$KIND" == "weapon" || "$KIND" == "cover" ]] && CONTRACT_KIND="prop"
 python3 tools/glb_contract.py "$OUT/${ID}_pixel.glb" --kind "$CONTRACT_KIND"
 python3 tools/style/check_texel_grid.py "$OUT/${ID}_pixel.glb" --profile pixel_3d
 python3 tools/style/check_pixel_asset.py --dir "$OUT/render_pixel" \

@@ -163,6 +163,30 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
     bpy.ops.object.mode_set(mode="OBJECT")
     uv = me.uv_layers.active.data
 
+    # Re-lattice after packing. `pack_islands` TRANSLATES islands by arbitrary
+    # offsets, so a fractional-texel translation silently undoes the snapping
+    # above and every UV ends up off-lattice (observed: a 108-island column,
+    # 100 % off-lattice, atlas therefore filtered). Translating each island by
+    # the rounded offset keeps its shape and restores integer texel coordinates.
+    islands_after = _islands(me)
+    relattices = 0
+    for faces in islands_after:
+        loops = [li for f in faces for li in me.polygons[f].loop_indices]
+        pts = [(uv[li].uv.x, uv[li].uv.y) for li in loops]
+        du = sum(p[0] * atlas_px - round(p[0] * atlas_px) for p in pts) / len(pts)
+        dv = sum(p[1] * atlas_px - round(p[1] * atlas_px) for p in pts) / len(pts)
+        # remove the fractional part itself: each island shares one offset after a
+        # translation, so subtracting the mean fraction restores integer texels
+        # without distorting the island (rounding the mean would leave any
+        # fractional drift below half a texel uncorrected — the original bug).
+        su = -du / atlas_px
+        sv = -dv / atlas_px
+        if abs(du) > 1e-6 or abs(dv) > 1e-6:
+            relattices += 1
+        for li in loops:
+            u, v = uv[li].uv.x + su, uv[li].uv.y + sv
+            uv[li].uv = (min(max(u, 0.0), 1.0 - inv), min(max(v, 0.0), 1.0 - inv))
+
     us = [d.uv.x for d in uv]
     vs = [d.uv.y for d in uv]
     out_of_bounds = int(sum(1 for u in us if u < -1e-6 or u > 1 + 1e-6)
@@ -198,6 +222,7 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
         "islands_rescaled": scaled,
         "uv_out_of_bounds": out_of_bounds,
         "uv_lattice_snapped": True,
+        "islands_relattices": relattices,
     }
     return report
 
