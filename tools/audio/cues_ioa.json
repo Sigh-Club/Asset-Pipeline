@@ -1,0 +1,542 @@
+{
+  "$comment": "IoA audio cue sheet. 'queries' are UCS CatID prefixes and filename tokens used to pick candidates from the licensed library; 'recipe' selects the design chain in build_bank.py. Targets are per-asset short-term loudness in LUFS with a -1 dBTP ceiling (see docs/AUDIO_PIPELINE.md).",
+  "version": "0.1.0",
+  "targets": {
+    "oneshot": {
+      "lufs": -16.0,
+      "true_peak": -1.0
+    },
+    "ui": {
+      "lufs": -22.0,
+      "true_peak": -3.0
+    },
+    "ambient": {
+      "lufs": -24.0,
+      "true_peak": -6.0
+    },
+    "music": {
+      "lufs": -20.0,
+      "true_peak": -3.0
+    },
+    "stinger": {
+      "lufs": -17.0,
+      "true_peak": -1.5
+    }
+  },
+  "cues": [
+    {
+      "name": "ui_click",
+      "surface": "game+web",
+      "class": "ui",
+      "recipe": "ui_tick",
+      "queries": [
+        "UI_Click",
+        "Click",
+        "UI_Button"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/click_001.ogg"
+      ],
+      "max_seconds": 0.35,
+      "variants": 3
+    },
+    {
+      "name": "ui_hover",
+      "surface": "game+web",
+      "class": "ui",
+      "recipe": "ui_tick",
+      "queries": [
+        "UI_Tick",
+        "Tick",
+        "UI_Hover",
+        "Select"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/scroll_001.ogg"
+      ],
+      "max_seconds": 0.25,
+      "variants": 2,
+      "gain_db": -6.0
+    },
+    {
+      "name": "ui_error",
+      "surface": "game+web",
+      "class": "ui",
+      "recipe": "ui_negative",
+      "queries": [
+        "UI_Error",
+        "Error",
+        "UI_Buzz",
+        "Negative"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/error_001.ogg"
+      ],
+      "max_seconds": 0.7
+    },
+    {
+      "name": "ui_success",
+      "surface": "game+web",
+      "class": "ui",
+      "recipe": "ui_positive",
+      "queries": [
+        "UI_Confirm",
+        "Confirm",
+        "UI_Success",
+        "Achievement"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/confirmation_001.ogg"
+      ],
+      "max_seconds": 1.0
+    },
+    {
+      "name": "level_up",
+      "surface": "game",
+      "class": "stinger",
+      "recipe": "stinger",
+      "queries": [
+        "MUSCSting",
+        "Stinger",
+        "Jingle",
+        "Riser"
+      ],
+      "kenney": [
+        "music-jingles/Audio/Hit jingles/jingles_HIT00.ogg"
+      ],
+      "max_seconds": 3.0
+    },
+    {
+      "name": "directorate_fire",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "gunshot_rifle",
+      "queries": [
+        "WEAPFire",
+        "WEAPGun",
+        "Weapon",
+        "Rifle",
+        "Gunshot"
+      ],
+      "max_seconds": 1.2,
+      "variants": 3
+    },
+    {
+      "name": "cinderborn_fire",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "gunshot_heavy",
+      "queries": [
+        "WEAPFire",
+        "WEAPGun",
+        "Flame",
+        "Cannon",
+        "Heavy"
+      ],
+      "max_seconds": 1.8,
+      "variants": 3
+    },
+    {
+      "name": "directorate_hit",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "impact_metal",
+      "queries": [
+        "IMPTSMetal",
+        "IMPTMetal",
+        "Armor",
+        "Armour",
+        "Clank",
+        "Metal Hit",
+        "Hit",
+        "Impact"
+      ],
+      "max_seconds": 0.9,
+      "variants": 3,
+      "min_seconds": 0.2
+    },
+    {
+      "name": "cinderborn_hit",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "impact_flesh",
+      "queries": [
+        "IMPTSquish",
+        "IMPTSplat",
+        "GORE",
+        "Flesh",
+        "Fleshy",
+        "Blood"
+      ],
+      "max_seconds": 0.8,
+      "variants": 3,
+      "min_seconds": 0.2
+    },
+    {
+      "name": "directorate_miss",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "whiff",
+      "queries": [
+        "WHOOSH",
+        "Whoosh",
+        "Whizz",
+        "Pass By"
+      ],
+      "max_seconds": 0.6,
+      "variants": 2,
+      "gain_db": -6.0
+    },
+    {
+      "name": "cinderborn_miss",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "whiff",
+      "queries": [
+        "WHOOSH",
+        "Whoosh",
+        "Fire",
+        "Pass By"
+      ],
+      "max_seconds": 0.7,
+      "variants": 2,
+      "gain_db": -6.0
+    },
+    {
+      "name": "impact_crit",
+      "surface": "game",
+      "class": "stinger",
+      "recipe": "crit",
+      "queries": [
+        "IMPTMetal",
+        "EXPL",
+        "METLImpact",
+        "Impact",
+        "Critical"
+      ],
+      "max_seconds": 1.6
+    },
+    {
+      "name": "suppression_fire",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "suppression",
+      "queries": [
+        "WEAPFire",
+        "MG",
+        "Machine Gun",
+        "Burst"
+      ],
+      "max_seconds": 2.0
+    },
+    {
+      "name": "overwatch_trigger",
+      "surface": "game",
+      "class": "stinger",
+      "recipe": "overwatch",
+      "queries": [
+        "UI_Alert",
+        "Alarm",
+        "Beep",
+        "Notification"
+      ],
+      "max_seconds": 1.2
+    },
+    {
+      "name": "directorate_move",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "footstep_heavy",
+      "queries": [
+        "FOOTStep",
+        "Footstep",
+        "Boot",
+        "Armor",
+        "Metal"
+      ],
+      "max_seconds": 0.6,
+      "variants": 3,
+      "gain_db": -3.0
+    },
+    {
+      "name": "cinderborn_move",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "footstep_soft",
+      "queries": [
+        "FOOTStep",
+        "Footstep",
+        "Rubble",
+        "Gravel",
+        "Cloth"
+      ],
+      "max_seconds": 0.6,
+      "variants": 3,
+      "gain_db": -3.0
+    },
+    {
+      "name": "directorate_vox_ready",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "vox",
+      "queries": [
+        "VOX",
+        "Radio",
+        "Comms",
+        "Beep",
+        "Static"
+      ],
+      "max_seconds": 1.4
+    },
+    {
+      "name": "cinderborn_vox_ready",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "vox",
+      "queries": [
+        "VOX",
+        "Radio",
+        "Static",
+        "Chant",
+        "Whisper",
+        "Demon"
+      ],
+      "max_seconds": 1.4,
+      "rank": 1
+    },
+    {
+      "name": "ambient_directorate",
+      "surface": "game",
+      "class": "ambient",
+      "recipe": "ambient_bed",
+      "queries": [
+        "AMBIndustrial",
+        "AMBUrban",
+        "AMBHum",
+        "Industrial",
+        "Hum"
+      ],
+      "max_seconds": 20.0,
+      "loop": true,
+      "min_seconds": 8.0
+    },
+    {
+      "name": "ambient_cinderborn",
+      "surface": "game",
+      "class": "ambient",
+      "recipe": "ambient_bed",
+      "queries": [
+        "AMBFire",
+        "AMBDesigned",
+        "AMBDark",
+        "Fire",
+        "Wind"
+      ],
+      "max_seconds": 20.0,
+      "loop": true,
+      "min_seconds": 8.0
+    },
+    {
+      "name": "theme",
+      "surface": "game",
+      "class": "music",
+      "recipe": "music_loop",
+      "queries": [
+        "MUSC",
+        "Music",
+        "Score",
+        "Theme",
+        "Drone"
+      ],
+      "max_seconds": 40.0,
+      "loop": true,
+      "min_seconds": 10.0
+    },
+    {
+      "name": "explosion_large",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "explosion",
+      "queries": [
+        "EXPL",
+        "Explosion",
+        "Boom",
+        "Blast"
+      ],
+      "max_seconds": 2.5,
+      "min_seconds": 1.5
+    },
+    {
+      "name": "explosion_small",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "explosion",
+      "queries": [
+        "EXPL",
+        "Explosion",
+        "Grenade",
+        "Small",
+        "Blast"
+      ],
+      "max_seconds": 1.0,
+      "min_seconds": 0.25
+    },
+    {
+      "name": "melee_impact",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "impact_metal",
+      "queries": [
+        "IMPTSword",
+        "SWORD",
+        "Clang",
+        "METLImpact"
+      ],
+      "max_seconds": 1.0,
+      "variants": 2,
+      "min_seconds": 0.2
+    },
+    {
+      "name": "reload",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "mech",
+      "queries": [
+        "GUNMech",
+        "Mech",
+        "Magazine",
+        "Reload",
+        "Click"
+      ],
+      "max_seconds": 1.2
+    },
+    {
+      "name": "death_cry",
+      "surface": "game",
+      "class": "oneshot",
+      "recipe": "vocal",
+      "queries": [
+        "VOCL",
+        "Human",
+        "Grunt",
+        "Scream",
+        "Death"
+      ],
+      "max_seconds": 1.6
+    },
+    {
+      "name": "objective_complete",
+      "surface": "game",
+      "class": "stinger",
+      "recipe": "stinger",
+      "queries": [
+        "MUSCSting",
+        "Stinger",
+        "Achievement",
+        "Success"
+      ],
+      "max_seconds": 3.0
+    },
+    {
+      "name": "turn_start",
+      "surface": "game",
+      "class": "stinger",
+      "recipe": "stinger",
+      "queries": [
+        "MUSCSting",
+        "Transition",
+        "Riser",
+        "Whoosh"
+      ],
+      "max_seconds": 2.5
+    },
+    {
+      "name": "alarm",
+      "surface": "game+web",
+      "class": "oneshot",
+      "recipe": "alarm",
+      "queries": [
+        "ALRM",
+        "Alarm",
+        "Siren",
+        "Warning"
+      ],
+      "max_seconds": 2.0
+    },
+    {
+      "name": "web_hover",
+      "surface": "web",
+      "class": "ui",
+      "recipe": "ui_tick",
+      "queries": [
+        "UI_Tick",
+        "Tick",
+        "Select"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/scroll_002.ogg"
+      ],
+      "max_seconds": 0.2,
+      "gain_db": -9.0
+    },
+    {
+      "name": "web_click",
+      "surface": "web",
+      "class": "ui",
+      "recipe": "ui_tick",
+      "queries": [
+        "UI_Click",
+        "Click",
+        "UI_Button"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/click_002.ogg"
+      ],
+      "max_seconds": 0.3,
+      "gain_db": -4.0
+    },
+    {
+      "name": "web_page",
+      "surface": "web",
+      "class": "ui",
+      "recipe": "transition",
+      "queries": [
+        "WHOOSH",
+        "Transition",
+        "Swoosh"
+      ],
+      "max_seconds": 0.8,
+      "gain_db": -8.0
+    },
+    {
+      "name": "web_error",
+      "surface": "web",
+      "class": "ui",
+      "recipe": "ui_negative",
+      "queries": [
+        "UI_Error",
+        "Error",
+        "Negative"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/error_002.ogg"
+      ],
+      "max_seconds": 0.6
+    },
+    {
+      "name": "web_success",
+      "surface": "web",
+      "class": "ui",
+      "recipe": "ui_positive",
+      "queries": [
+        "UI_Confirm",
+        "Confirm",
+        "Positive"
+      ],
+      "kenney": [
+        "interface-sounds/Audio/confirmation_002.ogg"
+      ],
+      "max_seconds": 0.9
+    }
+  ]
+}

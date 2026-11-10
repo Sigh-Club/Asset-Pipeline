@@ -1,9 +1,13 @@
 # IoA Asset Pipeline — Development Master Document
 
 > **Status**: Active Development (v0.5.0)
-> **Target**: Warhammer 40,000: Dawn of War 1/2 quality — 2.5D isometric tactical game
+> **Scope (2026-11-09)**: this master document tracks the **2D sprite** programme.
+> The combat loop moved to skinned 3D GLB in Three.js — its tools, contract and
+> workstation policy live in [`3D_ASSETS.md`](3D_ASSETS.md). Both paths share
+> Blender, the material library and the GPU, not their settings.
+> **Target**: Dawn of War 1/2 presentation quality, achieved with our own assets
 > **This document must be updated when any task is completed. Priority: HIGH.**
-> **Last Updated**: 2026-07-27 — Full restructure: added sections 3, 9-13. DoW asset budgets, MCP arch, WebGPU engine spec, KTX2 optimisation pipeline, roadmap — Added DoW asset budgets, MCP architecture, WebGPU engine spec, optimisation pipeline, roadmap
+> **Last Updated**: 2026-11-09 — scoped this document to the 2D sprite programme; 3D GLB path moved to `3D_ASSETS.md`; MCP section marked as proposal (batch-only is the implemented method).
 > **2026-08-02 PIVOT**: Switched primary target from DoW2 (normal-map sculpt/bake) to DoW1 (painted diffuse + team-colour mask on lean geometry). See section 16.
 
 ---
@@ -64,6 +68,9 @@ Look:               Medium High Contrast
 ---
 
 ## 2. 3D Model Quality — Dawn of War 1 Standard
+
+> DoW1 is a **reference measurement**, not a source of geometry. The DoW import
+> path is retired; the style and budgets below still inform the 2D sprite bake.
 
 DoW1 assets have very specific constraints that our generator must match:
 
@@ -424,6 +431,11 @@ Void Corsairs:     Lithe, pointed, aggressive. Narrow waist,
 
 ## 9. AI Agent Orchestration — Blender MCP Architecture
 
+> **Status 2026-11-09: proposal, not implemented.** The shipping decision is the
+> opposite (see `AGENTS.md` §"No MCP, No Live Blender" and the 3D pipeline): batch
+> `blender -b -P` stages with render-to-PNG review. Read this section for the
+> reasoning, not as a description of the current system.
+
 ### Problem: Raw bpy Script Synthesis Fails
 
 Directly prompting LLMs to generate raw Blender Python (bpy) scripts fails in production due to:
@@ -449,7 +461,7 @@ The MCP bridge abstracts Blender's internal state behind validated, goal-first m
 ```
 bpy.ops.object.modifier_add(type='DECIMATE')
 ```
-Quadric Error Metrics reduction to match unit budget (1,200-2,500 tris for infantry)
+Quadric Error Metrics reduction to match the **2D sprite** budget (1,200-2,500 tris). The 3D GLB path uses a 10,000-25,000 tri LOD0 budget instead — do not apply the sprite figure to GLB work
 
 **3. Automated UV Unwrapping**
 ```
@@ -471,7 +483,7 @@ bpy.ops.object.parent_set(type='ARMATURE_AUTOMATIC')
 
 ### Pipeline Integration
 
-For our current pipeline, MCP would replace the need for manual `blender --background --python` invocation by providing a live Blender session that the agent can inspect and iterate on. This is a Phase 1 goal.
+MCP would replace manual `blender --background --python` invocation with a live session the agent can inspect and iterate on. **Not adopted** (2026-11-09): batch stages plus render-to-PNG review proved sufficient and more reproducible. MCP remains an option if interactive scene work becomes necessary.
 
 ---
 
@@ -1022,3 +1034,67 @@ Status:
   8 components, repair-before-print (`output/img23d/test_tome-triposr/`).
 - [ ] First real concept-to-asset run (unit or prop) through critic gate.
 - [ ] Decide Hunyuan Community License posture for shipped game assets.
+
+---
+
+## 19. 3D asset programme and generation-model training (2026-11-09)
+
+The combat loop moved to skinned 3D GLB; the operating manual is
+[`3D_ASSETS.md`](3D_ASSETS.md) and the live task list is [`../TODO.md`](../TODO.md).
+This section records state, not plans that may change tomorrow.
+
+Delivered and exercised on the line-infantry unit: `tools/glb_contract.py`
+(acceptance gate), `tools/blender/uv_prepare.py` (weld 59,987→10,000 verts, 3 UV
+islands), `tools/blender/preview_unit_materials.py`, `tools/pbr/`
+(manifest → derive → Blender library), `tools/gpu_policy.py` and
+`tools/blender_run.sh` (VRAM budgets/profiles).
+
+Status:
+- [x] Contract gate implemented; the shipped unit fails it deliberately (clay
+      material, no UVs, 3 of 9 clips) — this is now visible rather than assumed.
+- [x] Material library scaffold: 79 items planned across 7 faction kits, 17 shared
+      surfaces, 14 patterns, 13 decals; 22 image generations total; 4 items built.
+- [x] Workstation policy: 8 GB VRAM shared with the desktop, one GPU job at a time,
+      profiles from live free VRAM, 31 GB RAM ceiling documented.
+- [ ] Retopo / part separation — highest-value quality gap.
+- [ ] Clip set `run fire reload hit death melee` (0/81 in the game tree).
+- [ ] Training pilot (40 tiles, FLUX.2 klein 4B) — calibration pending, see TODO.md.
+
+Training decision, recorded so it is not re-litigated: image/material LoRAs only,
+on small Apache-2.0 bases; no 3D-shape or motion fine-tuning at this hardware tier.
+Evidence and VRAM/RAM tables: [`GENERATION_TRAINING_RESEARCH.md`](GENERATION_TRAINING_RESEARCH.md).
+
+---
+
+## 20. Audio programme (2026-11-10)
+
+The operating manual is [`AUDIO_PIPELINE.md`](AUDIO_PIPELINE.md). This section
+records state, not intent.
+
+Delivered:
+- [x] `tools/audio/sources.py` — licence-verified source registry (Sonniss
+      #GameAudioGDC 2015–2026, Kenney CC0) with the rejected sources and why.
+- [x] `tools/audio/fetch_library.py` — resumable bulk fetch, extraction,
+      `MANIFEST.json` (URL, sha256, licence) and UCS-aware `library_index.json`.
+- [x] `tools/audio/cues_ioa.json` + `build_bank.py` — cue sheet (queries,
+      recipes, targets), deterministic selection, design chain, convolution
+      reverb, loop seam, loudness/peak mastering, OGG+M4A encode, `--verify`
+      gate, `--sync-ioa` into the game.
+- [x] `-Ir- game bank v0.1.0: 34 cues / 52 masters, all passing the gate
+      (peak or LUFS target, ≤ -1 dBTP, no duplicate variants, loop seams clean).
+      Delivery weight 2.8 MB for the whole bank (the procedural WAV placeholders
+      it replaces were 7.3 MB for 44 files).
+- [x] Game runtime: `audioMixPolicy.ts` (bus gains, voice caps, de-dupe,
+      ducking, pan clamp) with 7 unit tests, and `audioBus.ts` (Phaser mixer)
+      wired into `LoadingScene` (manifest-driven cue loading), `CombatScene`,
+      `CombatTheatreManager`, `CombatActionManager`, `Unit` and both menu scenes.
+- [x] `frontend/src/data/audioManifest.json` is generated by the pipeline and is
+      the only cue list the game uses; `LoadingScene` falls back to the legacy
+      WAV keys when it is empty.
+
+Open:
+- [ ] Re-run `build_bank.py --build` against the complete archive (2015–2024 +
+      2026) and audition `picks.json` overrides; the current selections were made
+      from a partial library while the full archive was still downloading.
+- [ ] Music: Sonniss supplies SFX and drones, not scored music. A CC0/attribution
+      music source (OpenGameArt, Pixabay) is still needed for the campaign theme.

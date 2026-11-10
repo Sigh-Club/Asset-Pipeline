@@ -1,0 +1,1728 @@
+{
+  "bank": "ioa-audio",
+  "version": "0.1.0",
+  "generated": "2026-11-10T18:28:13Z",
+  "sample_rate": 48000,
+  "channels": 2,
+  "loudness_standard": "ITU-R BS.1770-5 / EBU R128 (ffmpeg loudnorm), -1 dBTP ceiling",
+  "targets": {
+    "oneshot": {
+      "lufs": -16.0,
+      "true_peak": -1.0
+    },
+    "ui": {
+      "lufs": -22.0,
+      "true_peak": -3.0
+    },
+    "ambient": {
+      "lufs": -24.0,
+      "true_peak": -6.0
+    },
+    "music": {
+      "lufs": -20.0,
+      "true_peak": -3.0
+    },
+    "stinger": {
+      "lufs": -17.0,
+      "true_peak": -1.5
+    }
+  },
+  "sources": {
+    "sonniss": {
+      "index": "https://sonniss.com/gameaudiogdc/",
+      "licence": "Sonniss #GameAudioGDC EULA v2.0 (27 Aug 2026): royalty-free, commercial, no attribution; no AI training; no resale as SFX",
+      "licence_url": "https://sonniss.com/gdc-bundle-license/",
+      "commercial": "yes",
+      "attribution": "none required",
+      "ai_training": "prohibited",
+      "resale_raw": "prohibited"
+    },
+    "kenney": {
+      "index": "https://kenney.nl/assets",
+      "licence": "CC0 1.0 Universal (public domain dedication)",
+      "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "commercial": "yes",
+      "attribution": "none required (credit appreciated)",
+      "ai_training": "permitted",
+      "resale_raw": "permitted"
+    }
+  },
+  "cues": [
+    {
+      "name": "alarm",
+      "class": "oneshot",
+      "surface": "game+web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "alarm",
+          "master": "master/alarm.wav",
+          "web": {
+            "ogg": "web/alarm.ogg",
+            "m4a": "web/alarm.m4a"
+          },
+          "source": [
+            "sonniss/2015/Coll Anderson - Traditional Sirens/EFX EXT Emergency Siren Distant 18 B.wav"
+          ],
+          "recipe": "alarm",
+          "duration": 1.781,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -9.41,
+          "rms_dbfs_measured": -16.46,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 22538,
+            "m4a": 25667
+          },
+          "sha256": "b643313e775ec06164118672f3fd391b04f4737dca42ddcc295c2200d9d42b82"
+        }
+      ]
+    },
+    {
+      "name": "ambient_cinderborn",
+      "class": "ambient",
+      "surface": "game",
+      "loop": true,
+      "variants": [
+        {
+          "stem": "ambient_cinderborn",
+          "master": "master/ambient_cinderborn.wav",
+          "web": {
+            "ogg": "web/ambient_cinderborn.ogg",
+            "m4a": "web/ambient_cinderborn.m4a"
+          },
+          "source": [
+            "sonniss/2016/Bombay Sonic - Fireworks/FIREWORKS_Neumann KMR81+SD702_Slapbacks_13.wav"
+          ],
+          "recipe": "ambient_bed",
+          "duration": 19.4,
+          "lufs_target": -24.0,
+          "true_peak_target": -6.0,
+          "level_mode": "lufs",
+          "rms_target_dbfs": null,
+          "lufs_measured": -24.2,
+          "rms_dbfs_measured": -24.78,
+          "true_peak_dbtp": -7.2,
+          "pre_normalise_lufs": "-28.92",
+          "pre_normalise_lra": "12.60",
+          "size_bytes": {
+            "ogg": 175949,
+            "m4a": 276066
+          },
+          "sha256": "c94b220c66c6b751db71012c570019b2d7dafd9b5c561b68cfeaa4d05a89d011"
+        }
+      ]
+    },
+    {
+      "name": "ambient_directorate",
+      "class": "ambient",
+      "surface": "game",
+      "loop": true,
+      "variants": [
+        {
+          "stem": "ambient_directorate",
+          "master": "master/ambient_directorate.wav",
+          "web": {
+            "ogg": "web/ambient_directorate.ogg",
+            "m4a": "web/ambient_directorate.m4a"
+          },
+          "source": [
+            "sonniss/2015/Detunized - HumBuzz/HumBuzz-Buzz-03.wav"
+          ],
+          "recipe": "ambient_bed",
+          "duration": 8.365,
+          "lufs_target": -24.0,
+          "true_peak_target": -6.0,
+          "level_mode": "lufs",
+          "rms_target_dbfs": null,
+          "lufs_measured": -28.47,
+          "rms_dbfs_measured": -33.94,
+          "true_peak_dbtp": -7.18,
+          "pre_normalise_lufs": "-39.42",
+          "pre_normalise_lra": "3.00",
+          "size_bytes": {
+            "ogg": 136037,
+            "m4a": 119625
+          },
+          "sha256": "aaa44821131d467907b60c4f6ee271aeff978388b2102573802432998bd5720c"
+        }
+      ]
+    },
+    {
+      "name": "cinderborn_fire",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "cinderborn_fire_1",
+          "master": "master/cinderborn_fire_1.wav",
+          "web": {
+            "ogg": "web/cinderborn_fire_1.ogg",
+            "m4a": "web/cinderborn_fire_1.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms/UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+          ],
+          "recipe": "gunshot_heavy",
+          "duration": 0.327,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -16.68,
+          "true_peak_dbtp": -2.17,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9835,
+            "m4a": 5442
+          },
+          "sha256": "94312edf0eb6367e3721631ec1ec3fac577a22015f3f9f94bf4818a00c6a996b"
+        },
+        {
+          "stem": "cinderborn_fire_2",
+          "master": "master/cinderborn_fire_2.wav",
+          "web": {
+            "ogg": "web/cinderborn_fire_2.ogg",
+            "m4a": "web/cinderborn_fire_2.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms/UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+          ],
+          "recipe": "gunshot_heavy",
+          "duration": 0.292,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -16.83,
+          "true_peak_dbtp": -2.17,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9194,
+            "m4a": 4956
+          },
+          "sha256": "8e159bb1720d266223d5b9bb970fd747c8afac826492fa7972108f5bf8e53c9a"
+        },
+        {
+          "stem": "cinderborn_fire_3",
+          "master": "master/cinderborn_fire_3.wav",
+          "web": {
+            "ogg": "web/cinderborn_fire_3.ogg",
+            "m4a": "web/cinderborn_fire_3.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms/UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+          ],
+          "recipe": "gunshot_heavy",
+          "duration": 0.31,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -16.76,
+          "true_peak_dbtp": -2.17,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9766,
+            "m4a": 5201
+          },
+          "sha256": "4bb4d144155514645d4aa2f325a0bb44e2055adf941a0f3d8620f9eb2f324232"
+        }
+      ]
+    },
+    {
+      "name": "cinderborn_hit",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "cinderborn_hit_1",
+          "master": "master/cinderborn_hit_1.wav",
+          "web": {
+            "ogg": "web/cinderborn_hit_1.ogg",
+            "m4a": "web/cinderborn_hit_1.m4a"
+          },
+          "source": [
+            "sonniss/2026/InMotionAudio - Sinister Textures 5/GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+          ],
+          "recipe": "impact_flesh",
+          "duration": 0.443,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -11.45,
+          "rms_dbfs_measured": -17.07,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 10986,
+            "m4a": 6565
+          },
+          "sha256": "6e431ad0a2ce8b468ba258397c1cea98f45e1bbfd3204f7c5d62c63d71edc0ab"
+        },
+        {
+          "stem": "cinderborn_hit_2",
+          "master": "master/cinderborn_hit_2.wav",
+          "web": {
+            "ogg": "web/cinderborn_hit_2.ogg",
+            "m4a": "web/cinderborn_hit_2.m4a"
+          },
+          "source": [
+            "sonniss/2026/InMotionAudio - Sinister Textures 5/GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+          ],
+          "recipe": "impact_flesh",
+          "duration": 0.427,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -11.65,
+          "rms_dbfs_measured": -17.12,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 10768,
+            "m4a": 6550
+          },
+          "sha256": "80b95fa178e3dd04f8be86f97162ae60523044d0b0189017f81014b1ac6f44eb"
+        },
+        {
+          "stem": "cinderborn_hit_3",
+          "master": "master/cinderborn_hit_3.wav",
+          "web": {
+            "ogg": "web/cinderborn_hit_3.ogg",
+            "m4a": "web/cinderborn_hit_3.m4a"
+          },
+          "source": [
+            "sonniss/2026/InMotionAudio - Sinister Textures 5/GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+          ],
+          "recipe": "impact_flesh",
+          "duration": 0.427,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -11.55,
+          "rms_dbfs_measured": -16.97,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 10967,
+            "m4a": 6543
+          },
+          "sha256": "cc2286d1ec4a4435b467295584f3cd65a0a82739e50238e0671659eafb8f61bf"
+        }
+      ]
+    },
+    {
+      "name": "cinderborn_miss",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "cinderborn_miss_1",
+          "master": "master/cinderborn_miss_1.wav",
+          "web": {
+            "ogg": "web/cinderborn_miss_1.ogg",
+            "m4a": "web/cinderborn_miss_1.m4a"
+          },
+          "source": [
+            "sonniss/2015/Soundopolis - Gore Toolkit HD/Whoosh_Swing_Fishing Pole_Full_Fienup_CLASSIC_001.wav"
+          ],
+          "recipe": "whiff",
+          "duration": 0.681,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -19.92,
+          "rms_dbfs_measured": -24.22,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 8144,
+            "m4a": 4712
+          },
+          "sha256": "2fe859fc740694f0ce6b276f6245be20c82fd55f332e982737e23f3fa1e6a818"
+        },
+        {
+          "stem": "cinderborn_miss_2",
+          "master": "master/cinderborn_miss_2.wav",
+          "web": {
+            "ogg": "web/cinderborn_miss_2.ogg",
+            "m4a": "web/cinderborn_miss_2.m4a"
+          },
+          "source": [
+            "sonniss/2015/Soundopolis - Gore Toolkit HD/Whoosh_Swing_Fishing Pole_Full_Fienup_CLASSIC_001.wav"
+          ],
+          "recipe": "whiff",
+          "duration": 0.677,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -20.59,
+          "rms_dbfs_measured": -24.85,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 7758,
+            "m4a": 4344
+          },
+          "sha256": "ad56a5b0846a77d1615b9b430e3e740732f7036f5528d96b62f832e2db75c86e"
+        }
+      ]
+    },
+    {
+      "name": "cinderborn_move",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "cinderborn_move_1",
+          "master": "master/cinderborn_move_1.wav",
+          "web": {
+            "ogg": "web/cinderborn_move_1.ogg",
+            "m4a": "web/cinderborn_move_1.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+          ],
+          "recipe": "footstep_soft",
+          "duration": 0.105,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.21,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5348,
+            "m4a": 2378
+          },
+          "sha256": "859db450d259cce964e528bb687770072da2b8b549ce90b939125faf6bf17564"
+        },
+        {
+          "stem": "cinderborn_move_2",
+          "master": "master/cinderborn_move_2.wav",
+          "web": {
+            "ogg": "web/cinderborn_move_2.ogg",
+            "m4a": "web/cinderborn_move_2.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+          ],
+          "recipe": "footstep_soft",
+          "duration": 0.1,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.66,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5327,
+            "m4a": 2265
+          },
+          "sha256": "544c2148edad50ea9e19da16c16c86c09443e6fe8c4a194c35f3d80a6f688a2e"
+        },
+        {
+          "stem": "cinderborn_move_3",
+          "master": "master/cinderborn_move_3.wav",
+          "web": {
+            "ogg": "web/cinderborn_move_3.ogg",
+            "m4a": "web/cinderborn_move_3.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+          ],
+          "recipe": "footstep_soft",
+          "duration": 0.103,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.47,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5364,
+            "m4a": 2465
+          },
+          "sha256": "10357f19e05b6666335745effd7900f04cffc36948a0b24cc7d8f908a4af37e4"
+        }
+      ]
+    },
+    {
+      "name": "cinderborn_vox_ready",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "cinderborn_vox_ready",
+          "master": "master/cinderborn_vox_ready.wav",
+          "web": {
+            "ogg": "web/cinderborn_vox_ready.ogg",
+            "m4a": "web/cinderborn_vox_ready.m4a"
+          },
+          "source": [
+            "sonniss/2026/344 Audio - Anime Fight Voices Vol. 1/VOXMale_Male Adventurer, Active Yell 19_344 Audio_Anime Fight Voices.wav"
+          ],
+          "recipe": "vox",
+          "duration": 0.444,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -11.55,
+          "rms_dbfs_measured": -15.52,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9171,
+            "m4a": 7289
+          },
+          "sha256": "da8a7c9ac41320800f9e27725974c211e59edfa08c50cbb805e22519c0423b29"
+        }
+      ]
+    },
+    {
+      "name": "death_cry",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "death_cry",
+          "master": "master/death_cry.wav",
+          "web": {
+            "ogg": "web/death_cry.ogg",
+            "m4a": "web/death_cry.m4a"
+          },
+          "source": [
+            "sonniss/2016/Bottle Rocket Fx - Scream/Grunt_Pain_Male_BB_10_SCREAM LIBRARY_BRFX-004.wav"
+          ],
+          "recipe": "vocal",
+          "duration": 0.462,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -12.95,
+          "rms_dbfs_measured": -17.16,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9153,
+            "m4a": 7716
+          },
+          "sha256": "a719cf989ad01e4c6d3dbc85172f958ae235739ef2e014ba21a119b678a2cf6c"
+        }
+      ]
+    },
+    {
+      "name": "directorate_fire",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "directorate_fire_1",
+          "master": "master/directorate_fire_1.wav",
+          "web": {
+            "ogg": "web/directorate_fire_1.ogg",
+            "m4a": "web/directorate_fire_1.m4a"
+          },
+          "source": [
+            "sonniss/2015/SoundMorph - Future Weapons/Alliance-AssaultRifle_05-Single_Shot-04.wav"
+          ],
+          "recipe": "gunshot_rifle",
+          "duration": 1.203,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -14.08,
+          "rms_dbfs_measured": -15.05,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 21380,
+            "m4a": 18229
+          },
+          "sha256": "d516cf27fbb091a1310c554e1b04bf67c15de2186907efcfae3f3f4191df13ef"
+        },
+        {
+          "stem": "directorate_fire_2",
+          "master": "master/directorate_fire_2.wav",
+          "web": {
+            "ogg": "web/directorate_fire_2.ogg",
+            "m4a": "web/directorate_fire_2.m4a"
+          },
+          "source": [
+            "sonniss/2015/SoundMorph - Future Weapons/Alliance-AssaultRifle_05-Single_Shot-04.wav"
+          ],
+          "recipe": "gunshot_rifle",
+          "duration": 1.188,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -14.2,
+          "rms_dbfs_measured": -15.37,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 21241,
+            "m4a": 18090
+          },
+          "sha256": "29e7c402a6808412f4f7da7d638b588edffe0976c343b3034fb34bdaca851a64"
+        },
+        {
+          "stem": "directorate_fire_3",
+          "master": "master/directorate_fire_3.wav",
+          "web": {
+            "ogg": "web/directorate_fire_3.ogg",
+            "m4a": "web/directorate_fire_3.m4a"
+          },
+          "source": [
+            "sonniss/2015/SoundMorph - Future Weapons/Alliance-AssaultRifle_05-Single_Shot-04.wav"
+          ],
+          "recipe": "gunshot_rifle",
+          "duration": 1.2,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -14.17,
+          "rms_dbfs_measured": -15.1,
+          "true_peak_dbtp": -2.19,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 21415,
+            "m4a": 18258
+          },
+          "sha256": "ce634453f370724d7b47de049278026908692c588daf352d180ad3140fb9f33d"
+        }
+      ]
+    },
+    {
+      "name": "directorate_hit",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "directorate_hit_1",
+          "master": "master/directorate_hit_1.wav",
+          "web": {
+            "ogg": "web/directorate_hit_1.ogg",
+            "m4a": "web/directorate_hit_1.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/impactMetal_heavy_003.ogg"
+          ],
+          "recipe": "impact_metal",
+          "duration": 0.204,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -16.98,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6689,
+            "m4a": 3997
+          },
+          "sha256": "538419259d97466ef8972d9fc62700e7d514e41d41f919ffadf6283667a5a391"
+        },
+        {
+          "stem": "directorate_hit_2",
+          "master": "master/directorate_hit_2.wav",
+          "web": {
+            "ogg": "web/directorate_hit_2.ogg",
+            "m4a": "web/directorate_hit_2.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/impactMetal_heavy_003.ogg"
+          ],
+          "recipe": "impact_metal",
+          "duration": 0.202,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.75,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6553,
+            "m4a": 3955
+          },
+          "sha256": "307b0832f23f1d82b69d9984d02a6e9831eb97cd831b6ec14c66d75a3169e3c1"
+        },
+        {
+          "stem": "directorate_hit_3",
+          "master": "master/directorate_hit_3.wav",
+          "web": {
+            "ogg": "web/directorate_hit_3.ogg",
+            "m4a": "web/directorate_hit_3.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/impactMetal_heavy_003.ogg"
+          ],
+          "recipe": "impact_metal",
+          "duration": 0.203,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.24,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6585,
+            "m4a": 4043
+          },
+          "sha256": "9fe2d6e274d5e11fa8b50f44a2eac90a7d144861ac04876282444cceb6e87ac3"
+        }
+      ]
+    },
+    {
+      "name": "directorate_miss",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "directorate_miss_1",
+          "master": "master/directorate_miss_1.wav",
+          "web": {
+            "ogg": "web/directorate_miss_1.ogg",
+            "m4a": "web/directorate_miss_1.m4a"
+          },
+          "source": [
+            "sonniss/2015/NoizBoy - Hong Kong Action Kit - Hit Kit #2/HKAP2 Spin Whoosh 2a.wav"
+          ],
+          "recipe": "whiff",
+          "duration": 0.58,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -13.01,
+          "rms_dbfs_measured": -16.39,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 7699,
+            "m4a": 5932
+          },
+          "sha256": "9c36760b98dbd930c4bd5b85dcf49c272728ddbb1c330e27eaeca3bb3453cc51"
+        },
+        {
+          "stem": "directorate_miss_2",
+          "master": "master/directorate_miss_2.wav",
+          "web": {
+            "ogg": "web/directorate_miss_2.ogg",
+            "m4a": "web/directorate_miss_2.m4a"
+          },
+          "source": [
+            "sonniss/2015/NoizBoy - Hong Kong Action Kit - Hit Kit #2/HKAP2 Spin Whoosh 2a.wav"
+          ],
+          "recipe": "whiff",
+          "duration": 0.577,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -13.25,
+          "rms_dbfs_measured": -16.6,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 7644,
+            "m4a": 5658
+          },
+          "sha256": "e3e9892079bb3df980627ccf040382d1cd47b00f9f51b187837814815c7709cc"
+        }
+      ]
+    },
+    {
+      "name": "directorate_move",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "directorate_move_1",
+          "master": "master/directorate_move_1.wav",
+          "web": {
+            "ogg": "web/directorate_move_1.ogg",
+            "m4a": "web/directorate_move_1.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+          ],
+          "recipe": "footstep_heavy",
+          "duration": 0.105,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.18,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5537,
+            "m4a": 2605
+          },
+          "sha256": "3bea963cedabf1d79265425b292705b2f7e752f5d68978d04bcb13c25df79ba6"
+        },
+        {
+          "stem": "directorate_move_2",
+          "master": "master/directorate_move_2.wav",
+          "web": {
+            "ogg": "web/directorate_move_2.ogg",
+            "m4a": "web/directorate_move_2.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+          ],
+          "recipe": "footstep_heavy",
+          "duration": 0.1,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.74,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5525,
+            "m4a": 2609
+          },
+          "sha256": "3bd21d0f489ec4425060d65c70d1ec63765eaabb6ba41fcb61984f3da0284e78"
+        },
+        {
+          "stem": "directorate_move_3",
+          "master": "master/directorate_move_3.wav",
+          "web": {
+            "ogg": "web/directorate_move_3.ogg",
+            "m4a": "web/directorate_move_3.m4a"
+          },
+          "source": [
+            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+          ],
+          "recipe": "footstep_heavy",
+          "duration": 0.103,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -17.49,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5556,
+            "m4a": 2621
+          },
+          "sha256": "c917f9ab1e837a7feda0e1012465ef45981bfc4b0f9538580d95e37d973d980a"
+        }
+      ]
+    },
+    {
+      "name": "directorate_vox_ready",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "directorate_vox_ready",
+          "master": "master/directorate_vox_ready.wav",
+          "web": {
+            "ogg": "web/directorate_vox_ready.ogg",
+            "m4a": "web/directorate_vox_ready.m4a"
+          },
+          "source": [
+            "sonniss/2026/SoundBits - Vox Hominis - Human Effort Voices/VOXLaff_Laughing Female 02 06_SNDBTS_VH.wav"
+          ],
+          "recipe": "vox",
+          "duration": 0.71,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -13.59,
+          "rms_dbfs_measured": -17.88,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 12186,
+            "m4a": 11209
+          },
+          "sha256": "97aa37f3bcdb3101983969a71a5ce60e8ebfe0de6db43e2a970c07946bb6da1c"
+        }
+      ]
+    },
+    {
+      "name": "explosion_large",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "explosion_large",
+          "master": "master/explosion_large.wav",
+          "web": {
+            "ogg": "web/explosion_large.ogg",
+            "m4a": "web/explosion_large.m4a"
+          },
+          "source": [
+            "kenney/sci-fi-sounds/Audio/explosionCrunch_003.ogg"
+          ],
+          "recipe": "explosion",
+          "duration": 1.553,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -15.22,
+          "rms_dbfs_measured": -15.64,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 20444,
+            "m4a": 23090
+          },
+          "sha256": "e7c447004f578dd14f59173688d6c75347889d1ac04e56c76c7e7ac47f4d15f2"
+        }
+      ]
+    },
+    {
+      "name": "explosion_small",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "explosion_small",
+          "master": "master/explosion_small.wav",
+          "web": {
+            "ogg": "web/explosion_small.ogg",
+            "m4a": "web/explosion_small.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - Anime Game/EXPLDsgn_Explosion Small Blast Enemy Death Crunchy Boom Cartoon Noisy Crash Impact Delay 03_ESM_AG.wav"
+          ],
+          "recipe": "explosion",
+          "duration": 1.0,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -17.5,
+          "rms_dbfs_measured": -19.36,
+          "true_peak_dbtp": -2.1,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 18381,
+            "m4a": 17202
+          },
+          "sha256": "302a595d69abccba5f258617616405680ab4bc87720d94055b62d37d1af32e7b"
+        }
+      ]
+    },
+    {
+      "name": "impact_crit",
+      "class": "stinger",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "impact_crit",
+          "master": "master/impact_crit.wav",
+          "web": {
+            "ogg": "web/impact_crit.ogg",
+            "m4a": "web/impact_crit.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - Anime Game/EXPLDsgn_Explosion Small Blast Enemy Death Crunchy Boom Cartoon Noisy Crash Impact Delay 03_ESM_AG.wav"
+          ],
+          "recipe": "crit",
+          "duration": 1.478,
+          "lufs_target": -17.0,
+          "true_peak_target": -1.5,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.7,
+          "lufs_measured": -15.98,
+          "rms_dbfs_measured": -20.38,
+          "true_peak_dbtp": -2.7,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 26793,
+            "m4a": 25414
+          },
+          "sha256": "e6b374554d6297f80da943b00948d01a9d84aafa668465bcee225ba0ce934a84"
+        }
+      ]
+    },
+    {
+      "name": "level_up",
+      "class": "stinger",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "level_up",
+          "master": "master/level_up.wav",
+          "web": {
+            "ogg": "web/level_up.ogg",
+            "m4a": "web/level_up.m4a"
+          },
+          "source": [
+            "kenney/music-jingles/Audio/Hit jingles/jingles_HIT00.ogg"
+          ],
+          "recipe": "stinger",
+          "duration": 0.284,
+          "lufs_target": -17.0,
+          "true_peak_target": -1.5,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.7,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -13.57,
+          "true_peak_dbtp": -2.7,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 7865,
+            "m4a": 5325
+          },
+          "sha256": "1c37b98a1eae4ebd6cbecb5237ec6af1976f1e12083649c05ccac6b5eea9858e"
+        }
+      ]
+    },
+    {
+      "name": "melee_impact",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "melee_impact_1",
+          "master": "master/melee_impact_1.wav",
+          "web": {
+            "ogg": "web/melee_impact_1.ogg",
+            "m4a": "web/melee_impact_1.m4a"
+          },
+          "source": [
+            "sonniss/2015/Soundopolis - Blades/Knife_Sword_Hit_Multiple_Fienup_003.wav"
+          ],
+          "recipe": "impact_metal",
+          "duration": 1.007,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -17.79,
+          "rms_dbfs_measured": -23.43,
+          "true_peak_dbtp": -2.15,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 20318,
+            "m4a": 15737
+          },
+          "sha256": "762b1c766ed76db047621b5e1cb0c52060509416bffd374f4da4f86520d486ff"
+        },
+        {
+          "stem": "melee_impact_2",
+          "master": "master/melee_impact_2.wav",
+          "web": {
+            "ogg": "web/melee_impact_2.ogg",
+            "m4a": "web/melee_impact_2.m4a"
+          },
+          "source": [
+            "sonniss/2015/Soundopolis - Blades/Knife_Sword_Hit_Multiple_Fienup_003.wav"
+          ],
+          "recipe": "impact_metal",
+          "duration": 0.981,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -18.19,
+          "rms_dbfs_measured": -24.03,
+          "true_peak_dbtp": -2.01,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 19839,
+            "m4a": 14847
+          },
+          "sha256": "61913006ad395284ac4d225d0387045bec8b537a8a71d9250660025c6f8a1e19"
+        }
+      ]
+    },
+    {
+      "name": "objective_complete",
+      "class": "stinger",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "objective_complete",
+          "master": "master/objective_complete.wav",
+          "web": {
+            "ogg": "web/objective_complete.ogg",
+            "m4a": "web/objective_complete.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - Anime Game/DSGNStngr_Power Up Bright Positive Successful Light Saturation Crash Shimmer 05_ESM_AG.wav"
+          ],
+          "recipe": "stinger",
+          "duration": 1.525,
+          "lufs_target": -17.0,
+          "true_peak_target": -1.5,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.7,
+          "lufs_measured": -14.25,
+          "rms_dbfs_measured": -20.95,
+          "true_peak_dbtp": -2.7,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 28576,
+            "m4a": 24248
+          },
+          "sha256": "9f543ea50d683c8c22789d88281dcc9f311be90b059730bf6fff5435086bd989"
+        }
+      ]
+    },
+    {
+      "name": "overwatch_trigger",
+      "class": "stinger",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "overwatch_trigger",
+          "master": "master/overwatch_trigger.wav",
+          "web": {
+            "ogg": "web/overwatch_trigger.ogg",
+            "m4a": "web/overwatch_trigger.m4a"
+          },
+          "source": [
+            "sonniss/2026/InMotionAudio - Medical Thermometer/BEEPMed_Thermometer_Beep11_InMotionAudio_MedicalThermometer.wav"
+          ],
+          "recipe": "overwatch",
+          "duration": 0.239,
+          "lufs_target": -17.0,
+          "true_peak_target": -1.5,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.7,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -11.36,
+          "true_peak_dbtp": -2.7,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 7226,
+            "m4a": 3953
+          },
+          "sha256": "1c3ec602517f2b1d60f88c26f22679d6d9851ff9c5766797661213ec7f04b4dd"
+        }
+      ]
+    },
+    {
+      "name": "reload",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "reload",
+          "master": "master/reload.wav",
+          "web": {
+            "ogg": "web/reload.ogg",
+            "m4a": "web/reload.m4a"
+          },
+          "source": [
+            "sonniss/2026/Epic Stock Media - HD Lock And Mechanism Sound Design Kit/MECHLtch_Click Deep Mechanism Latch Button Nearfield Thunk 02_ESM_HDLM.wav"
+          ],
+          "recipe": "mech",
+          "duration": 0.379,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -29.61,
+          "true_peak_dbtp": -2.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9354,
+            "m4a": 5502
+          },
+          "sha256": "3ee275258362e8526b88b8bc7e68cab3b1c5cf1f710b5159708d6d70175224f1"
+        }
+      ]
+    },
+    {
+      "name": "suppression_fire",
+      "class": "oneshot",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "suppression_fire",
+          "master": "master/suppression_fire.wav",
+          "web": {
+            "ogg": "web/suppression_fire.ogg",
+            "m4a": "web/suppression_fire.m4a"
+          },
+          "source": [
+            "sonniss/2015/Mechanical Wave - Vegetable Massacres/Juicy Burst_VM 03.wav"
+          ],
+          "recipe": "suppression",
+          "duration": 0.917,
+          "lufs_target": -16.0,
+          "true_peak_target": -1.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.2,
+          "lufs_measured": -15.55,
+          "rms_dbfs_measured": -22.7,
+          "true_peak_dbtp": -2.19,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 17580,
+            "m4a": 14910
+          },
+          "sha256": "2e4181d3e1d5dae519dfd676aaf0cb0335b77f0b3bb31a5f2ddcd7766d0b4352"
+        }
+      ]
+    },
+    {
+      "name": "theme",
+      "class": "music",
+      "surface": "game",
+      "loop": true,
+      "variants": [
+        {
+          "stem": "theme",
+          "master": "master/theme.wav",
+          "web": {
+            "ogg": "web/theme.ogg",
+            "m4a": "web/theme.m4a"
+          },
+          "source": [
+            "sonniss/2016/Bottle Rocket Fx - The Drone Collection/Drone_SciFi_TonalRumble_01.wav"
+          ],
+          "recipe": "music_loop",
+          "duration": 39.4,
+          "lufs_target": -20.0,
+          "true_peak_target": -3.0,
+          "level_mode": "lufs",
+          "rms_target_dbfs": null,
+          "lufs_measured": -19.98,
+          "rms_dbfs_measured": -21.03,
+          "true_peak_dbtp": -7.95,
+          "pre_normalise_lufs": "-24.29",
+          "pre_normalise_lra": "0.50",
+          "size_bytes": {
+            "ogg": 518856,
+            "m4a": 561622
+          },
+          "sha256": "d32e139d411e84e28a647e4d384a71c031c1e88675be131e84a23459c2c778ad"
+        }
+      ]
+    },
+    {
+      "name": "turn_start",
+      "class": "stinger",
+      "surface": "game",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "turn_start",
+          "master": "master/turn_start.wav",
+          "web": {
+            "ogg": "web/turn_start.ogg",
+            "m4a": "web/turn_start.m4a"
+          },
+          "source": [
+            "sonniss/2015/Alexander Kopeikin - Transitions HD/transition t05 hard 002.wav"
+          ],
+          "recipe": "stinger",
+          "duration": 0.981,
+          "lufs_target": -17.0,
+          "true_peak_target": -1.5,
+          "level_mode": "peak",
+          "rms_target_dbfs": -2.7,
+          "lufs_measured": -13.33,
+          "rms_dbfs_measured": -16.37,
+          "true_peak_dbtp": -2.7,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 11591,
+            "m4a": 8250
+          },
+          "sha256": "fca9188a73d6e0d3c9958494588034c54a8c37062d8ac4f90a9f7debfdc77515"
+        }
+      ]
+    },
+    {
+      "name": "ui_click",
+      "class": "ui",
+      "surface": "game+web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "ui_click_1",
+          "master": "master/ui_click_1.wav",
+          "web": {
+            "ogg": "web/ui_click_1.ogg",
+            "m4a": "web/ui_click_1.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/click_001.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.098,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -26.51,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5098,
+            "m4a": 1990
+          },
+          "sha256": "268575bebeaa9bccdaaf1545458a4ff7c902acd118ec32f079004c31a367295e"
+        },
+        {
+          "stem": "ui_click_2",
+          "master": "master/ui_click_2.wav",
+          "web": {
+            "ogg": "web/ui_click_2.ogg",
+            "m4a": "web/ui_click_2.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/click_001.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.095,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -26.92,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5002,
+            "m4a": 1815
+          },
+          "sha256": "b73c3fd03a2f6b849090a5217577d5b62334f6ad1c748c21e4414192a05c1bb3"
+        },
+        {
+          "stem": "ui_click_3",
+          "master": "master/ui_click_3.wav",
+          "web": {
+            "ogg": "web/ui_click_3.ogg",
+            "m4a": "web/ui_click_3.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/click_001.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.096,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -26.73,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 5075,
+            "m4a": 2011
+          },
+          "sha256": "3c0c64c8d5869d44a030e5029a3109f840346e9bbc51feb06856741bab11e723"
+        }
+      ]
+    },
+    {
+      "name": "ui_error",
+      "class": "ui",
+      "surface": "game+web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "ui_error",
+          "master": "master/ui_error.wav",
+          "web": {
+            "ogg": "web/ui_error.ogg",
+            "m4a": "web/ui_error.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/error_001.ogg"
+          ],
+          "recipe": "ui_negative",
+          "duration": 0.162,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -22.89,
+          "true_peak_dbtp": -4.18,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6575,
+            "m4a": 3145
+          },
+          "sha256": "8d7474c377eed362cf522d92b83c653b3a36ffb651eb77b92cc5cf12f8bc4a06"
+        }
+      ]
+    },
+    {
+      "name": "ui_hover",
+      "class": "ui",
+      "surface": "game+web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "ui_hover_1",
+          "master": "master/ui_hover_1.wav",
+          "web": {
+            "ogg": "web/ui_hover_1.ogg",
+            "m4a": "web/ui_hover_1.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/scroll_001.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.247,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -29.66,
+          "true_peak_dbtp": -4.13,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6705,
+            "m4a": 3880
+          },
+          "sha256": "ce8d751f20d354bc46b63a329838593b964727c1432a90e0d80a41fbdf8d5202"
+        },
+        {
+          "stem": "ui_hover_2",
+          "master": "master/ui_hover_2.wav",
+          "web": {
+            "ogg": "web/ui_hover_2.ogg",
+            "m4a": "web/ui_hover_2.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/scroll_001.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.241,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -30.21,
+          "true_peak_dbtp": -4.12,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6710,
+            "m4a": 3868
+          },
+          "sha256": "e1571ccff0d5c7bd5a84c87c6102b38db109fc87d51d8655c6a8171f5908a738"
+        }
+      ]
+    },
+    {
+      "name": "ui_success",
+      "class": "ui",
+      "surface": "game+web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "ui_success",
+          "master": "master/ui_success.wav",
+          "web": {
+            "ogg": "web/ui_success.ogg",
+            "m4a": "web/ui_success.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/confirmation_001.ogg"
+          ],
+          "recipe": "ui_positive",
+          "duration": 0.29,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -11.84,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6173,
+            "m4a": 5301
+          },
+          "sha256": "576e981c2012452a7c261c0652668af2340691b090bee86eddd3e8440226732e"
+        }
+      ]
+    },
+    {
+      "name": "web_click",
+      "class": "ui",
+      "surface": "web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "web_click",
+          "master": "master/web_click.wav",
+          "web": {
+            "ogg": "web/web_click.ogg",
+            "m4a": "web/web_click.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/click_002.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.012,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -14.03,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 4695,
+            "m4a": 1374
+          },
+          "sha256": "fd8b4e361a43631dbc9d091615e1900e32ee5e3d88ae33af9f4229d307ff2b32"
+        }
+      ]
+    },
+    {
+      "name": "web_error",
+      "class": "ui",
+      "surface": "web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "web_error",
+          "master": "master/web_error.wav",
+          "web": {
+            "ogg": "web/web_error.ogg",
+            "m4a": "web/web_error.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/error_002.ogg"
+          ],
+          "recipe": "ui_negative",
+          "duration": 0.165,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -21.49,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6912,
+            "m4a": 3381
+          },
+          "sha256": "61b647910dd963c01eedabb46b0e0c3abc042ebc1b982fd39d737ae75afd9348"
+        }
+      ]
+    },
+    {
+      "name": "web_hover",
+      "class": "ui",
+      "surface": "web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "web_hover",
+          "master": "master/web_hover.wav",
+          "web": {
+            "ogg": "web/web_hover.ogg",
+            "m4a": "web/web_hover.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/scroll_002.ogg"
+          ],
+          "recipe": "ui_tick",
+          "duration": 0.2,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -27.73,
+          "true_peak_dbtp": -4.19,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 6145,
+            "m4a": 3085
+          },
+          "sha256": "be63cdf9c9559a314b526d1399e83a546e30d8f6331ee4c60a8f08d0333cf290"
+        }
+      ]
+    },
+    {
+      "name": "web_page",
+      "class": "ui",
+      "surface": "web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "web_page",
+          "master": "master/web_page.wav",
+          "web": {
+            "ogg": "web/web_page.ogg",
+            "m4a": "web/web_page.m4a"
+          },
+          "source": [
+            "sonniss/2015/Alexander Kopeikin - Transitions HD/transition t05 hard 002.wav"
+          ],
+          "recipe": "transition",
+          "duration": 0.8,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": -14.01,
+          "rms_dbfs_measured": -17.94,
+          "true_peak_dbtp": -4.19,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 11249,
+            "m4a": 7972
+          },
+          "sha256": "1c56bee20a017d62846f298230443f955a20980e9f6921d7412bb8c79dc13b6c"
+        }
+      ]
+    },
+    {
+      "name": "web_success",
+      "class": "ui",
+      "surface": "web",
+      "loop": false,
+      "variants": [
+        {
+          "stem": "web_success",
+          "master": "master/web_success.wav",
+          "web": {
+            "ogg": "web/web_success.ogg",
+            "m4a": "web/web_success.m4a"
+          },
+          "source": [
+            "kenney/interface-sounds/Audio/confirmation_002.ogg"
+          ],
+          "recipe": "ui_positive",
+          "duration": 0.539,
+          "lufs_target": -22.0,
+          "true_peak_target": -3.0,
+          "level_mode": "peak",
+          "rms_target_dbfs": -4.2,
+          "lufs_measured": -8.71,
+          "rms_dbfs_measured": -14.66,
+          "true_peak_dbtp": -4.2,
+          "pre_normalise_lufs": null,
+          "pre_normalise_lra": null,
+          "size_bytes": {
+            "ogg": 9633,
+            "m4a": 9026
+          },
+          "sha256": "2e7603e31d94803c07da1a09d696d8bf25a1d703fdc7df10e37111e410da510d"
+        }
+      ]
+    }
+  ]
+}
