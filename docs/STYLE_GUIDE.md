@@ -1,14 +1,24 @@
 # Asset-Pipeline Style Guide
-## Imperium of Ash — Sprite Asset Standards
+## Imperium of Ash — Asset Standards
+
+> **Style authority:** the look, shading, effects and animation standards for the
+> pixel tiers, with sources, are in [`STYLE_RESEARCH.md`](STYLE_RESEARCH.md).
+>
+> **Scope 2026-11-09:** these style rules apply to both the 2D sprite bake and the
+> 3D GLB units; the faction-level palettes, silhouettes and weapon language are
+> ratified in `Imperium-of-Ash/docs/game-design/FACTION_IDENTITY.md`, which wins
+> where the two disagree. 3D-specific technique is in [`3D_ASSETS.md`](3D_ASSETS.md).
 
 ## 1. Visual Identity: Grimdark Industrial
 
-IoA exists in the Warhammer 40K universe. The visual language is:
+IoA is an **original grimdark science-fiction setting with Warhammer 40K lineage** —
+we inherit the roles and the structural language, never the setting, names or
+insignia. The visual language is:
 - **Heavy**: Solid, weighty, overbuilt machinery and armor
 - **Worn**: Scratches, rust, battle damage, soot stains
 - **Oppressive**: Deep shadows, limited light sources, claustrophobic
-- **Regimented**: Imperial Guard = clean lines, gold aquilas, standardized patterns
-- **Chaotic**: Cultists/Marines = asymmetrical, mutated, ritual markings
+- **Regimented**: Iron Directorate = clean lines, gold trim, standardised patterns
+- **Chaotic**: Sons of Cinder = asymmetrical, branded, ritual markings
 
 **Never**: Clean anime lines, bright saturated colors, cute proportions, smooth gradients.
 
