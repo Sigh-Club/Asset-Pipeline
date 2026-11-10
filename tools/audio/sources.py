@@ -36,7 +36,7 @@ SONNISS_YEARS: dict[str, tuple[str, int]] = {
     "2017": ("Sonniss.com - GDC 2017 - Game Audio Bundle Part {i}of9.zip", 9),
     "2018": ("Sonniss.com - GDC 2018 - Game Audio Bundle Part {i}of8.zip", 8),
     "2019": ("Sonniss.com - GDC 2019 - Game Audio Bundle Part {i}of8.zip", 8),
-    "2020": ("Sonniss.com - GDC 2020 - Game Audio Bundle Part {i}of14.zip", 14),
+    "2020": ("Sonniss.com - GDC 2020 - Game Audio Bundle Part{i}of14.zip", 14),
     "2023": ("Sonniss.com-GDC2023-GameAudioBundle{i}of14.zip", 14),
     "2024": ("Sonniss.com-GDC2024-GameAudioBundle{i}of9.zip", 9),
     "2026": ("Sonniss.com-GDC2026-GameAudioBundle{i}of5.zip", 5),

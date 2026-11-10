@@ -38,7 +38,14 @@
         "interface-sounds/Audio/click_001.ogg"
       ],
       "max_seconds": 0.35,
-      "variants": 3
+      "variants": 3,
+      "must": [
+        "click",
+        "tick",
+        "select",
+        "hover",
+        "ui"
+      ]
     },
     {
       "name": "ui_hover",
@@ -56,7 +63,14 @@
       ],
       "max_seconds": 0.25,
       "variants": 2,
-      "gain_db": -6.0
+      "gain_db": -6.0,
+      "must": [
+        "click",
+        "tick",
+        "select",
+        "hover",
+        "ui"
+      ]
     },
     {
       "name": "ui_error",
@@ -72,7 +86,14 @@
       "kenney": [
         "interface-sounds/Audio/error_001.ogg"
       ],
-      "max_seconds": 0.7
+      "max_seconds": 0.7,
+      "must": [
+        "error",
+        "negative",
+        "buzz",
+        "fail",
+        "deny"
+      ]
     },
     {
       "name": "ui_success",
@@ -88,7 +109,14 @@
       "kenney": [
         "interface-sounds/Audio/confirmation_001.ogg"
       ],
-      "max_seconds": 1.0
+      "max_seconds": 1.0,
+      "must": [
+        "confirm",
+        "positive",
+        "success",
+        "achievement",
+        "complete"
+      ]
     },
     {
       "name": "level_up",
@@ -104,7 +132,15 @@
       "kenney": [
         "music-jingles/Audio/Hit jingles/jingles_HIT00.ogg"
       ],
-      "max_seconds": 3.0
+      "max_seconds": 3.0,
+      "must": [
+        "sting",
+        "stinger",
+        "transition",
+        "riser",
+        "shimmer",
+        "hit"
+      ]
     },
     {
       "name": "directorate_fire",
@@ -119,7 +155,16 @@
         "Gunshot"
       ],
       "max_seconds": 1.2,
-      "variants": 3
+      "variants": 3,
+      "must": [
+        "weapon",
+        "rifle",
+        "gun",
+        "shot",
+        "firearm",
+        "blaster",
+        "bolter"
+      ]
     },
     {
       "name": "cinderborn_fire",
@@ -134,7 +179,16 @@
         "Heavy"
       ],
       "max_seconds": 1.8,
-      "variants": 3
+      "variants": 3,
+      "must": [
+        "weapon",
+        "cannon",
+        "heavy",
+        "launcher",
+        "flame",
+        "explo",
+        "artillery"
+      ]
     },
     {
       "name": "directorate_hit",
@@ -153,7 +207,16 @@
       ],
       "max_seconds": 0.9,
       "variants": 3,
-      "min_seconds": 0.2
+      "min_seconds": 0.2,
+      "must": [
+        "metal",
+        "armor",
+        "armour",
+        "steel",
+        "iron",
+        "clank",
+        "plate"
+      ]
     },
     {
       "name": "cinderborn_hit",
@@ -170,7 +233,16 @@
       ],
       "max_seconds": 0.8,
       "variants": 3,
-      "min_seconds": 0.2
+      "min_seconds": 0.2,
+      "must": [
+        "flesh",
+        "gore",
+        "blood",
+        "squish",
+        "splat",
+        "meat",
+        "body"
+      ]
     },
     {
       "name": "directorate_miss",
@@ -185,7 +257,13 @@
       ],
       "max_seconds": 0.6,
       "variants": 2,
-      "gain_db": -6.0
+      "gain_db": -6.0,
+      "must": [
+        "whoosh",
+        "swing",
+        "pass",
+        "swoosh"
+      ]
     },
     {
       "name": "cinderborn_miss",
@@ -200,7 +278,13 @@
       ],
       "max_seconds": 0.7,
       "variants": 2,
-      "gain_db": -6.0
+      "gain_db": -6.0,
+      "must": [
+        "whoosh",
+        "swing",
+        "pass",
+        "swoosh"
+      ]
     },
     {
       "name": "impact_crit",
@@ -214,7 +298,14 @@
         "Impact",
         "Critical"
       ],
-      "max_seconds": 1.6
+      "max_seconds": 1.6,
+      "must": [
+        "metal",
+        "impact",
+        "expl",
+        "clank",
+        "hit"
+      ]
     },
     {
       "name": "suppression_fire",
@@ -227,7 +318,15 @@
         "Machine Gun",
         "Burst"
       ],
-      "max_seconds": 2.0
+      "max_seconds": 2.0,
+      "must": [
+        "weapon",
+        "gun",
+        "rifle",
+        "burst",
+        "machine",
+        "fire"
+      ]
     },
     {
       "name": "overwatch_trigger",
@@ -240,7 +339,16 @@
         "Beep",
         "Notification"
       ],
-      "max_seconds": 1.2
+      "max_seconds": 1.2,
+      "must": [
+        "beep",
+        "alert",
+        "alarm",
+        "notification",
+        "ui",
+        "click",
+        "radio"
+      ]
     },
     {
       "name": "directorate_move",
@@ -256,7 +364,13 @@
       ],
       "max_seconds": 0.6,
       "variants": 3,
-      "gain_db": -3.0
+      "gain_db": -3.0,
+      "must": [
+        "footstep",
+        "boot",
+        "foot",
+        "step"
+      ]
     },
     {
       "name": "cinderborn_move",
@@ -272,7 +386,16 @@
       ],
       "max_seconds": 0.6,
       "variants": 3,
-      "gain_db": -3.0
+      "gain_db": -3.0,
+      "must": [
+        "footstep",
+        "step",
+        "gravel",
+        "rubble",
+        "cloth",
+        "sand",
+        "dirt"
+      ]
     },
     {
       "name": "directorate_vox_ready",
@@ -286,7 +409,16 @@
         "Beep",
         "Static"
       ],
-      "max_seconds": 1.4
+      "max_seconds": 1.4,
+      "must": [
+        "vox",
+        "radio",
+        "comms",
+        "beep",
+        "voice",
+        "speech",
+        "transmission"
+      ]
     },
     {
       "name": "cinderborn_vox_ready",
@@ -302,7 +434,16 @@
         "Demon"
       ],
       "max_seconds": 1.4,
-      "rank": 1
+      "rank": 1,
+      "must": [
+        "vox",
+        "radio",
+        "comms",
+        "beep",
+        "voice",
+        "speech",
+        "transmission"
+      ]
     },
     {
       "name": "ambient_directorate",
@@ -318,7 +459,16 @@
       ],
       "max_seconds": 20.0,
       "loop": true,
-      "min_seconds": 8.0
+      "min_seconds": 8.0,
+      "must": [
+        "amb",
+        "loop",
+        "room",
+        "hum",
+        "wind",
+        "fire",
+        "tone"
+      ]
     },
     {
       "name": "ambient_cinderborn",
@@ -334,7 +484,16 @@
       ],
       "max_seconds": 20.0,
       "loop": true,
-      "min_seconds": 8.0
+      "min_seconds": 8.0,
+      "must": [
+        "amb",
+        "loop",
+        "room",
+        "hum",
+        "wind",
+        "fire",
+        "tone"
+      ]
     },
     {
       "name": "theme",
@@ -350,7 +509,14 @@
       ],
       "max_seconds": 40.0,
       "loop": true,
-      "min_seconds": 10.0
+      "min_seconds": 10.0,
+      "must": [
+        "musc",
+        "music",
+        "score",
+        "drone",
+        "theme"
+      ]
     },
     {
       "name": "explosion_large",
@@ -364,7 +530,13 @@
         "Blast"
       ],
       "max_seconds": 2.5,
-      "min_seconds": 1.5
+      "min_seconds": 1.5,
+      "must": [
+        "expl",
+        "explosion",
+        "boom",
+        "blast"
+      ]
     },
     {
       "name": "explosion_small",
@@ -379,7 +551,13 @@
         "Blast"
       ],
       "max_seconds": 1.0,
-      "min_seconds": 0.25
+      "min_seconds": 0.25,
+      "must": [
+        "expl",
+        "explosion",
+        "boom",
+        "blast"
+      ]
     },
     {
       "name": "melee_impact",
@@ -394,7 +572,16 @@
       ],
       "max_seconds": 1.0,
       "variants": 2,
-      "min_seconds": 0.2
+      "min_seconds": 0.2,
+      "must": [
+        "metal",
+        "armor",
+        "armour",
+        "steel",
+        "iron",
+        "clank",
+        "plate"
+      ]
     },
     {
       "name": "reload",
@@ -408,7 +595,15 @@
         "Reload",
         "Click"
       ],
-      "max_seconds": 1.2
+      "max_seconds": 1.2,
+      "must": [
+        "mech",
+        "click",
+        "latch",
+        "magazine",
+        "reload",
+        "gun"
+      ]
     },
     {
       "name": "death_cry",
@@ -422,7 +617,17 @@
         "Scream",
         "Death"
       ],
-      "max_seconds": 1.6
+      "max_seconds": 1.6,
+      "must": [
+        "vocl",
+        "human",
+        "grunt",
+        "scream",
+        "pain",
+        "voice",
+        "male",
+        "female"
+      ]
     },
     {
       "name": "objective_complete",
@@ -435,7 +640,15 @@
         "Achievement",
         "Success"
       ],
-      "max_seconds": 3.0
+      "max_seconds": 3.0,
+      "must": [
+        "sting",
+        "stinger",
+        "transition",
+        "riser",
+        "shimmer",
+        "hit"
+      ]
     },
     {
       "name": "turn_start",
@@ -448,7 +661,15 @@
         "Riser",
         "Whoosh"
       ],
-      "max_seconds": 2.5
+      "max_seconds": 2.5,
+      "must": [
+        "sting",
+        "stinger",
+        "transition",
+        "riser",
+        "shimmer",
+        "hit"
+      ]
     },
     {
       "name": "alarm",
@@ -461,7 +682,13 @@
         "Siren",
         "Warning"
       ],
-      "max_seconds": 2.0
+      "max_seconds": 2.0,
+      "must": [
+        "alarm",
+        "siren",
+        "warning",
+        "alert"
+      ]
     },
     {
       "name": "web_hover",
@@ -477,7 +704,14 @@
         "interface-sounds/Audio/scroll_002.ogg"
       ],
       "max_seconds": 0.2,
-      "gain_db": -9.0
+      "gain_db": -9.0,
+      "must": [
+        "click",
+        "tick",
+        "select",
+        "hover",
+        "ui"
+      ]
     },
     {
       "name": "web_click",
@@ -493,7 +727,14 @@
         "interface-sounds/Audio/click_002.ogg"
       ],
       "max_seconds": 0.3,
-      "gain_db": -4.0
+      "gain_db": -4.0,
+      "must": [
+        "click",
+        "tick",
+        "select",
+        "hover",
+        "ui"
+      ]
     },
     {
       "name": "web_page",
@@ -506,7 +747,13 @@
         "Swoosh"
       ],
       "max_seconds": 0.8,
-      "gain_db": -8.0
+      "gain_db": -8.0,
+      "must": [
+        "whoosh",
+        "transition",
+        "swoosh",
+        "pass"
+      ]
     },
     {
       "name": "web_error",
@@ -521,7 +768,14 @@
       "kenney": [
         "interface-sounds/Audio/error_002.ogg"
       ],
-      "max_seconds": 0.6
+      "max_seconds": 0.6,
+      "must": [
+        "error",
+        "negative",
+        "buzz",
+        "fail",
+        "deny"
+      ]
     },
     {
       "name": "web_success",
@@ -536,7 +790,14 @@
       "kenney": [
         "interface-sounds/Audio/confirmation_002.ogg"
       ],
-      "max_seconds": 0.9
+      "max_seconds": 0.9,
+      "must": [
+        "confirm",
+        "positive",
+        "success",
+        "achievement",
+        "complete"
+      ]
     }
   ]
 }

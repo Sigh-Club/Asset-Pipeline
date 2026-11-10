@@ -126,11 +126,26 @@ def score(entry: dict, queries: list[str], source_bias: list[str]) -> float:
     return total
 
 
+def _matches(entry: dict, tokens: list[str]) -> bool:
+    hay = (entry["stem"] + " " + entry["path"]).lower()
+    return any(t.lower() in hay for t in tokens)
+
+
 def candidates(cue: dict, index: list[dict], limit: int = 60,
                probe: int = 24) -> list[dict]:
-    """Stable, evidence-ordered candidate list for one cue."""
+    """Stable, evidence-ordered candidate list for one cue.
+
+    A cue may declare ``must`` tokens: at least one has to appear in the filename
+    or path.  Without this a broad query like "Impact" selects anything with the
+    word in it (measured: an armour hit resolved to a wooden-debris recording).
+    """
+    must = cue.get("must") or []
+    pool = [e for e in index if _matches(e, must)] if must else index
+    if must and not pool:
+        print(f"  WARN no candidate matches must={must}; falling back to queries")
+        pool = index
     scored = []
-    for entry in index:
+    for entry in pool:
         s = score(entry, cue.get("queries", []), cue.get("source_bias", ["sonniss"]))
         if s > 0:
             scored.append((s, entry))

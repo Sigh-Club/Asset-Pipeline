@@ -1,0 +1,15 @@
+{
+  "$comment": "Explicit, auditioned source overrides. Automatic selection is the bootstrap; these are the designer's choices after searching the indexed library. Paths are relative to assets/_audio_library/. See docs/AUDIO_PIPELINE.md section 7.",
+  "directorate_hit": "sonniss/2020/MatiasMacSD - OPEN CONTRACT/193_Hit_Impact_Metal-01-02.wav",
+  "cinderborn_hit": "sonniss/2024/Justsoundeffects - Gore Mini Pack/GORESplt_Gore Splatter 01_JSE_GMP.wav",
+  "suppression_fire": "sonniss/2020/Super Thump - Weapons of World War II - Designed/STDSGN_WoWW2_Wep_MG_M1919_Machinegun_Auto-Burst_Shot_X6.wav",
+  "cinderborn_fire": "sonniss/2020/SmartSoundFX - Futuristic/CANNON Plasma Shot Tonal High 10.wav",
+  "directorate_vox_ready": "sonniss/2020/Bluezone - Interception - Radio Transmission/Bluezone_BC0266_radio_beep_walkie_talkie_002.wav",
+  "cinderborn_vox_ready": "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 2of8/CFry – Shortwave/Radio Static 9.wav",
+  "directorate_move": "sonniss/2016/Levan Nadashvili - Soldier Footsteps/FS Metal Soldier Walk N01.wav",
+  "cinderborn_move": "sonniss/2023/RYK-Sounds - Footstep/mud 1 loop.wav",
+  "impact_crit": "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 3of8/Gamemaster Audio - Guns, Bullets and Explosions/explosion_large_07.wav",
+  "melee_impact": "sonniss/2020/SmartSoundFX – Medieval/SWORD Hit Metal 02.wav",
+  "theme": "sonniss/2023/344 Audio - Cymbals From Hell Vol. 2/MUSCPerc_Gong, Raw, Stinger, Drone 22_344 Audio_Cymbals From Hell Vol 2.wav",
+  "ambient_cinderborn": "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 5of8/Soundrangers - Wind/wind_blustery_08_loop.wav"
+}

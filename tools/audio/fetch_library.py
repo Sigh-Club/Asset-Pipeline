@@ -63,8 +63,34 @@ def remote_size(url: str, timeout: int = 40) -> int:
         return 0
 
 
+MIRRORS = ["https://hippolytus.feralhosting.com/sonniss/"]
+MIRROR_PREFIX = "https://downloads.sonniss.com/"
+
+
+def with_mirrors(url: str) -> list[str]:
+    """Primary URL first, then the published mirrors.
+
+    downloads.sonniss.com intermittently returns 404 on a part that is present;
+    the mirrors carry the same files, so a failed primary is retried there.
+    """
+    candidates = [url]
+    if url.startswith(MIRROR_PREFIX):
+        name = url[len(MIRROR_PREFIX):]
+        candidates += [m + name for m in MIRRORS]
+    return candidates
+
+
+CHUNK = 1024 * 1024 * 1024
+
+
 def download(url: str, dest: Path, expected: int = 0) -> bool:
-    """Resume-or-skip an HTTP download.  Returns True when the file is complete."""
+    """Chunked, resumable download.  Returns True when the file is complete.
+
+    downloads.sonniss.com stalls on an open-ended range (`Range: bytes=0-`) and
+    on plain full-file GETs, but serves closed ranges immediately.  The client
+    therefore walks the file in explicit 32 MiB windows, appending each one, and
+    falls back to the published mirrors on failure.
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() and (expected == 0 or dest.stat().st_size == expected):
         log(f"  skip (complete) {dest.name} {dest.stat().st_size:,} B")
@@ -72,18 +98,37 @@ def download(url: str, dest: Path, expected: int = 0) -> bool:
     tmp = dest.with_suffix(dest.suffix + ".part")
     if dest.exists() and not tmp.exists():
         dest.rename(tmp)
-    for attempt in range(1, 6):
-        cmd = ["curl", "-L", "--fail", "--retry", "2", "--retry-delay", "3",
-               "-C", "-", "-A", UA, "-o", str(tmp), url]
-        log(f"  fetch {dest.name} (attempt {attempt})")
-        rc = subprocess.run(cmd).returncode
+    urls = with_mirrors(url)
+
+    for attempt in range(1, 11):
+        if expected and tmp.exists() and tmp.stat().st_size > expected:
+            tmp.unlink()
+        offset = tmp.stat().st_size if tmp.exists() else 0
+        if expected and offset == expected:
+            tmp.rename(dest)
+            return True
+        source = urls[(attempt - 1) % len(urls)]
+        end = (min(offset + CHUNK, expected) - 1) if expected else offset + CHUNK - 1
+        log(f"  fetch {dest.name} attempt {attempt} bytes {offset:,}-{end:,}")
+        with tmp.open("ab") as fh:
+            rc = subprocess.run(
+                ["curl", "-sL", "--fail", "--max-time", "900", "-A", UA,
+                 "-r", f"{offset}-{end}", "-o", "-", source],
+                stdout=fh,
+            ).returncode
         have = tmp.stat().st_size if tmp.exists() else 0
-        if rc == 0 and (expected == 0 or have == expected):
+        if expected and have >= expected:
             tmp.rename(dest)
             log(f"  ok {dest.name} {have:,} B")
             return True
-        log(f"  incomplete rc={rc} {have:,}/{expected:,} B - retrying")
-        time.sleep(2 * attempt)
+        if not expected and rc == 0 and (end - offset + 1) > (have - offset):
+            tmp.rename(dest)
+            log(f"  ok {dest.name} {have:,} B (size unknown)")
+            return True
+        if rc != 0 and have == offset:
+            log(f"  no progress rc={rc} - mirror/retry")
+            time.sleep(2 * attempt)
+        # a successful partial chunk just continues the loop
     return False
 
 
@@ -230,6 +275,8 @@ def build_index() -> None:
         if "_zips" in path.parts:
             continue
         rel = path.relative_to(LIBRARY).as_posix()
+        if "__MACOSX" in path.parts or path.name.startswith("._"):
+            continue
         stem = path.stem
         catid = ""
         parts = stem.split("_", 1)

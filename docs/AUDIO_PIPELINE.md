@@ -117,7 +117,9 @@ python3 tools/audio/fetch_library.py --source sonniss --years all
 python3 tools/audio/fetch_library.py --index
 ```
 
-Raw library location: `assets/_audio_library/` (gitignored, ~120 GB).
+Raw library location: `assets/_audio_library/` (gitignored). As of 2026-11-10 the
+full archive is present: 9 years of Sonniss bundles plus the 2026 bundle and the
+Kenney packs, 8,197 indexed audio files, ~240 GB on disk.
 `MANIFEST.json` records source, URL, byte count, SHA-256, file count and licence
 per downloaded archive; `LICENCE.txt` is written into each source directory.
 
@@ -292,7 +294,7 @@ assets/_audio_library/            raw licensed library (gitignored, ~120 GB)
 tools/audio/sources.py            registry: URLs, part counts, licence notes
 tools/audio/fetch_library.py      download / extract / index
 tools/audio/cues_ioa.json         cue sheet (queries, recipes, targets)
-tools/audio/picks.json            optional explicit per-cue source overrides
+tools/audio/picks.json            auditioned per-cue source overrides
 tools/audio/build_bank.py         design, mix, master, encode, verify
 output/audio/v0.1.0/              derived bank (tracked)
   master/  web/  manifest.json
@@ -338,6 +340,13 @@ Automatic selection is the bootstrap; once a cue has been auditioned, pin it.
   recordings, wrong licence.
 - Bulk `curl` of `sonniss.com` HTML — Cloudflare challenge; use the
   `downloads.sonniss.com` URLs directly, they are not challenged.
+- `downloads.sonniss.com` **stalls on a plain GET and on an open-ended range**
+  (`Range: bytes=0-`); closed ranges (`bytes=0-1073741823`) return at ~60 MB/s.
+  `fetch_library.py` therefore walks each archive in explicit 1 GiB windows and
+  appends. Do not "simplify" this back to a single GET.
+- Filename templates differ per year: 2016–2019 use `Part 1of8` (space before the
+  number), 2020 uses `Part1of14` (no space). A wrong space returns 404 on every
+  request and looks like an outage; verify with a HEAD before trusting a template.
 - `kenney.nl/assets/<slug>/download` — 404. The signed-link JSON endpoint is the
   only scriptable path.
 - Freesound bulk download without an account — original files are OAuth2-gated;

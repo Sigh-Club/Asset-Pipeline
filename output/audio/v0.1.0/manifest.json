@@ -1,7 +1,7 @@
 {
   "bank": "ioa-audio",
   "version": "0.1.0",
-  "generated": "2026-11-10T18:28:13Z",
+  "generated": "2026-11-10T21:06:09Z",
   "sample_rate": 48000,
   "channels": 2,
   "loudness_standard": "ITU-R BS.1770-5 / EBU R128 (ffmpeg loudnorm), -1 dBTP ceiling",
@@ -62,24 +62,24 @@
             "m4a": "web/alarm.m4a"
           },
           "source": [
-            "sonniss/2015/Coll Anderson - Traditional Sirens/EFX EXT Emergency Siren Distant 18 B.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 6of8/TheWorkRoom Audio Post - South African Sirens/Siren_ST 17.wav"
           ],
           "recipe": "alarm",
-          "duration": 1.781,
+          "duration": 1.28,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -9.41,
-          "rms_dbfs_measured": -16.46,
+          "lufs_measured": -16.44,
+          "rms_dbfs_measured": -21.07,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 22538,
-            "m4a": 25667
+            "ogg": 18396,
+            "m4a": 18699
           },
-          "sha256": "b643313e775ec06164118672f3fd391b04f4737dca42ddcc295c2200d9d42b82"
+          "sha256": "b71f7438592c3093ae6b739df5f2711854c86c892b69d077c6f22a07f2e0fe3e"
         }
       ]
     },
@@ -97,7 +97,7 @@
             "m4a": "web/ambient_cinderborn.m4a"
           },
           "source": [
-            "sonniss/2016/Bombay Sonic - Fireworks/FIREWORKS_Neumann KMR81+SD702_Slapbacks_13.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 5of8/Soundrangers - Wind/wind_blustery_08_loop.wav"
           ],
           "recipe": "ambient_bed",
           "duration": 19.4,
@@ -105,16 +105,16 @@
           "true_peak_target": -6.0,
           "level_mode": "lufs",
           "rms_target_dbfs": null,
-          "lufs_measured": -24.2,
-          "rms_dbfs_measured": -24.78,
-          "true_peak_dbtp": -7.2,
-          "pre_normalise_lufs": "-28.92",
-          "pre_normalise_lra": "12.60",
+          "lufs_measured": -23.98,
+          "rms_dbfs_measured": -27.64,
+          "true_peak_dbtp": -12.14,
+          "pre_normalise_lufs": "-18.61",
+          "pre_normalise_lra": "3.80",
           "size_bytes": {
-            "ogg": 175949,
-            "m4a": 276066
+            "ogg": 272817,
+            "m4a": 276240
           },
-          "sha256": "c94b220c66c6b751db71012c570019b2d7dafd9b5c561b68cfeaa4d05a89d011"
+          "sha256": "47c5e3e46000b7c0715c929bea8cdf57c5b1137dcc16543522da27e10393e4dc"
         }
       ]
     },
@@ -167,24 +167,24 @@
             "m4a": "web/cinderborn_fire_1.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms/UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+            "sonniss/2020/SmartSoundFX - Futuristic/CANNON Plasma Shot Tonal High 10.wav"
           ],
           "recipe": "gunshot_heavy",
-          "duration": 0.327,
+          "duration": 1.27,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -16.68,
-          "true_peak_dbtp": -2.17,
+          "lufs_measured": -11.36,
+          "rms_dbfs_measured": -13.34,
+          "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 9835,
-            "m4a": 5442
+            "ogg": 22914,
+            "m4a": 18849
           },
-          "sha256": "94312edf0eb6367e3721631ec1ec3fac577a22015f3f9f94bf4818a00c6a996b"
+          "sha256": "bda19472e3a3a390357b4feba7a5a0d97a37bfebd5393328f6afc73c3516d736"
         },
         {
           "stem": "cinderborn_fire_2",
@@ -194,24 +194,24 @@
             "m4a": "web/cinderborn_fire_2.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms/UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+            "sonniss/2020/SmartSoundFX - Futuristic/CANNON Plasma Shot Tonal High 10.wav"
           ],
           "recipe": "gunshot_heavy",
-          "duration": 0.292,
+          "duration": 1.246,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -16.83,
-          "true_peak_dbtp": -2.17,
+          "lufs_measured": -11.36,
+          "rms_dbfs_measured": -13.41,
+          "true_peak_dbtp": -2.18,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 9194,
-            "m4a": 4956
+            "ogg": 22562,
+            "m4a": 18719
           },
-          "sha256": "8e159bb1720d266223d5b9bb970fd747c8afac826492fa7972108f5bf8e53c9a"
+          "sha256": "972f91a6c853ce79bfa3dd9541c57bdcfed9a1c880f3f6ad53ed8f57b49f0c15"
         },
         {
           "stem": "cinderborn_fire_3",
@@ -221,24 +221,24 @@
             "m4a": "web/cinderborn_fire_3.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms/UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+            "sonniss/2020/SmartSoundFX - Futuristic/CANNON Plasma Shot Tonal High 10.wav"
           ],
           "recipe": "gunshot_heavy",
-          "duration": 0.31,
+          "duration": 1.259,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -16.76,
-          "true_peak_dbtp": -2.17,
+          "lufs_measured": -11.48,
+          "rms_dbfs_measured": -13.49,
+          "true_peak_dbtp": -2.18,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 9766,
-            "m4a": 5201
+            "ogg": 22829,
+            "m4a": 18665
           },
-          "sha256": "4bb4d144155514645d4aa2f325a0bb44e2055adf941a0f3d8620f9eb2f324232"
+          "sha256": "340e0493d4253aa8d3e4028f58c8b48fa1d6dff3db7d647f20a16c2612856292"
         }
       ]
     },
@@ -256,24 +256,24 @@
             "m4a": "web/cinderborn_hit_1.m4a"
           },
           "source": [
-            "sonniss/2026/InMotionAudio - Sinister Textures 5/GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+            "sonniss/2024/Justsoundeffects - Gore Mini Pack/GORESplt_Gore Splatter 01_JSE_GMP.wav"
           ],
           "recipe": "impact_flesh",
-          "duration": 0.443,
+          "duration": 0.816,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -11.45,
-          "rms_dbfs_measured": -17.07,
+          "lufs_measured": -13.14,
+          "rms_dbfs_measured": -18.52,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 10986,
-            "m4a": 6565
+            "ogg": 20897,
+            "m4a": 12734
           },
-          "sha256": "6e431ad0a2ce8b468ba258397c1cea98f45e1bbfd3204f7c5d62c63d71edc0ab"
+          "sha256": "63a5a61d0b7cb662d6e5199c991eb840273b4ea7fbca1e8a6752b554f6365756"
         },
         {
           "stem": "cinderborn_hit_2",
@@ -283,24 +283,24 @@
             "m4a": "web/cinderborn_hit_2.m4a"
           },
           "source": [
-            "sonniss/2026/InMotionAudio - Sinister Textures 5/GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+            "sonniss/2024/Justsoundeffects - Gore Mini Pack/GORESplt_Gore Splatter 01_JSE_GMP.wav"
           ],
           "recipe": "impact_flesh",
-          "duration": 0.427,
+          "duration": 0.783,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -11.65,
-          "rms_dbfs_measured": -17.12,
+          "lufs_measured": -12.75,
+          "rms_dbfs_measured": -18.71,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 10768,
-            "m4a": 6550
+            "ogg": 20674,
+            "m4a": 12106
           },
-          "sha256": "80b95fa178e3dd04f8be86f97162ae60523044d0b0189017f81014b1ac6f44eb"
+          "sha256": "a298c25f0ed53184259a539aa5292152ddd5111826764b6e3031b144e83a0525"
         },
         {
           "stem": "cinderborn_hit_3",
@@ -310,24 +310,24 @@
             "m4a": "web/cinderborn_hit_3.m4a"
           },
           "source": [
-            "sonniss/2026/InMotionAudio - Sinister Textures 5/GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+            "sonniss/2024/Justsoundeffects - Gore Mini Pack/GORESplt_Gore Splatter 01_JSE_GMP.wav"
           ],
           "recipe": "impact_flesh",
-          "duration": 0.427,
+          "duration": 0.8,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -11.55,
-          "rms_dbfs_measured": -16.97,
+          "lufs_measured": -13.26,
+          "rms_dbfs_measured": -18.6,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 10967,
-            "m4a": 6543
+            "ogg": 20625,
+            "m4a": 12343
           },
-          "sha256": "cc2286d1ec4a4435b467295584f3cd65a0a82739e50238e0671659eafb8f61bf"
+          "sha256": "a2d03d84a44b397001b042279fdcc4d12707426f89b09d52fad7a64c828b2f1a"
         }
       ]
     },
@@ -345,24 +345,24 @@
             "m4a": "web/cinderborn_miss_1.m4a"
           },
           "source": [
-            "sonniss/2015/Soundopolis - Gore Toolkit HD/Whoosh_Swing_Fishing Pole_Full_Fienup_CLASSIC_001.wav"
+            "sonniss/2016/SoundBits -  Just Whoosh 3 _ Whoosh Essentials/Whoosh_Rod_Pole_022.wav"
           ],
           "recipe": "whiff",
-          "duration": 0.681,
+          "duration": 0.702,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -19.92,
-          "rms_dbfs_measured": -24.22,
+          "lufs_measured": -15.43,
+          "rms_dbfs_measured": -18.81,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 8144,
-            "m4a": 4712
+            "ogg": 14183,
+            "m4a": 10406
           },
-          "sha256": "2fe859fc740694f0ce6b276f6245be20c82fd55f332e982737e23f3fa1e6a818"
+          "sha256": "a7a1f1232231c84cfc14767b5586308720d1afe0403ef6d35a9f9b09c38444b9"
         },
         {
           "stem": "cinderborn_miss_2",
@@ -372,24 +372,24 @@
             "m4a": "web/cinderborn_miss_2.m4a"
           },
           "source": [
-            "sonniss/2015/Soundopolis - Gore Toolkit HD/Whoosh_Swing_Fishing Pole_Full_Fienup_CLASSIC_001.wav"
+            "sonniss/2016/SoundBits -  Just Whoosh 3 _ Whoosh Essentials/Whoosh_Rod_Pole_022.wav"
           ],
           "recipe": "whiff",
-          "duration": 0.677,
+          "duration": 0.695,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -20.59,
-          "rms_dbfs_measured": -24.85,
+          "lufs_measured": -14.22,
+          "rms_dbfs_measured": -18.44,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 7758,
-            "m4a": 4344
+            "ogg": 13984,
+            "m4a": 10425
           },
-          "sha256": "ad56a5b0846a77d1615b9b430e3e740732f7036f5528d96b62f832e2db75c86e"
+          "sha256": "63cec47692034785dec8e41bfb88a8534a70afe0be429f6669fcd720f2ef5299"
         }
       ]
     },
@@ -407,24 +407,24 @@
             "m4a": "web/cinderborn_move_1.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+            "sonniss/2023/RYK-Sounds - Footstep/mud 1 loop.wav"
           ],
           "recipe": "footstep_soft",
-          "duration": 0.105,
+          "duration": 0.618,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.21,
+          "lufs_measured": -14.51,
+          "rms_dbfs_measured": -20.55,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 5348,
-            "m4a": 2378
+            "ogg": 11576,
+            "m4a": 9842
           },
-          "sha256": "859db450d259cce964e528bb687770072da2b8b549ce90b939125faf6bf17564"
+          "sha256": "aae9d192d7359d26b08c296f705935ca5713b142b14d9e605e4e74170034ae98"
         },
         {
           "stem": "cinderborn_move_2",
@@ -434,24 +434,24 @@
             "m4a": "web/cinderborn_move_2.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+            "sonniss/2023/RYK-Sounds - Footstep/mud 1 loop.wav"
           ],
           "recipe": "footstep_soft",
-          "duration": 0.1,
+          "duration": 0.588,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.66,
+          "lufs_measured": -14.79,
+          "rms_dbfs_measured": -20.91,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 5327,
-            "m4a": 2265
+            "ogg": 11236,
+            "m4a": 9583
           },
-          "sha256": "544c2148edad50ea9e19da16c16c86c09443e6fe8c4a194c35f3d80a6f688a2e"
+          "sha256": "e18f8c356313b3b704047d51486bb24684ff7d7ef9d535c7de2c34fbe6e6657b"
         },
         {
           "stem": "cinderborn_move_3",
@@ -461,24 +461,24 @@
             "m4a": "web/cinderborn_move_3.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+            "sonniss/2023/RYK-Sounds - Footstep/mud 1 loop.wav"
           ],
           "recipe": "footstep_soft",
-          "duration": 0.103,
+          "duration": 0.6,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.47,
+          "lufs_measured": -14.92,
+          "rms_dbfs_measured": -20.78,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 5364,
-            "m4a": 2465
+            "ogg": 11773,
+            "m4a": 9490
           },
-          "sha256": "10357f19e05b6666335745effd7900f04cffc36948a0b24cc7d8f908a4af37e4"
+          "sha256": "4de5c2aa8b1e3b9234685bf17751d2382e18bdc9812f20715327db22b63e9db3"
         }
       ]
     },
@@ -496,24 +496,24 @@
             "m4a": "web/cinderborn_vox_ready.m4a"
           },
           "source": [
-            "sonniss/2026/344 Audio - Anime Fight Voices Vol. 1/VOXMale_Male Adventurer, Active Yell 19_344 Audio_Anime Fight Voices.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 2of8/CFry \u2013 Shortwave/Radio Static 9.wav"
           ],
           "recipe": "vox",
-          "duration": 0.444,
+          "duration": 1.4,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -11.55,
-          "rms_dbfs_measured": -15.52,
+          "lufs_measured": -8.91,
+          "rms_dbfs_measured": -14.6,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 9171,
-            "m4a": 7289
+            "ogg": 22305,
+            "m4a": 20900
           },
-          "sha256": "da8a7c9ac41320800f9e27725974c211e59edfa08c50cbb805e22519c0423b29"
+          "sha256": "a27672e5f00d840e7561de43bdecbc029f750bd9b12aa56ac1a74238b59ede9c"
         }
       ]
     },
@@ -566,24 +566,24 @@
             "m4a": "web/directorate_fire_1.m4a"
           },
           "source": [
-            "sonniss/2015/SoundMorph - Future Weapons/Alliance-AssaultRifle_05-Single_Shot-04.wav"
+            "sonniss/2017/Sonniss.com - GDC 2017 - Game Audio Bundle Part 5of9/MatiasMacSD - THE WEAPONS - SCI-FI WEAPONS/Weapon Shot Blaster-06.wav"
           ],
           "recipe": "gunshot_rifle",
-          "duration": 1.203,
+          "duration": 1.211,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -14.08,
-          "rms_dbfs_measured": -15.05,
-          "true_peak_dbtp": -2.2,
+          "lufs_measured": -12.48,
+          "rms_dbfs_measured": -17.21,
+          "true_peak_dbtp": -2.19,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 21380,
-            "m4a": 18229
+            "ogg": 21050,
+            "m4a": 17944
           },
-          "sha256": "d516cf27fbb091a1310c554e1b04bf67c15de2186907efcfae3f3f4191df13ef"
+          "sha256": "efaf33c977b1c28d8a07e84c601f30508aaa8890436503a426c24e2171a67ed3"
         },
         {
           "stem": "directorate_fire_2",
@@ -593,24 +593,24 @@
             "m4a": "web/directorate_fire_2.m4a"
           },
           "source": [
-            "sonniss/2015/SoundMorph - Future Weapons/Alliance-AssaultRifle_05-Single_Shot-04.wav"
+            "sonniss/2017/Sonniss.com - GDC 2017 - Game Audio Bundle Part 5of9/MatiasMacSD - THE WEAPONS - SCI-FI WEAPONS/Weapon Shot Blaster-06.wav"
           ],
           "recipe": "gunshot_rifle",
-          "duration": 1.188,
+          "duration": 1.184,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -14.2,
-          "rms_dbfs_measured": -15.37,
+          "lufs_measured": -11.96,
+          "rms_dbfs_measured": -16.64,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 21241,
-            "m4a": 18090
+            "ogg": 20738,
+            "m4a": 17696
           },
-          "sha256": "29e7c402a6808412f4f7da7d638b588edffe0976c343b3034fb34bdaca851a64"
+          "sha256": "abbed5194eb54251860a68e34b069fb36ee934b668daf2152902c5e3fa811408"
         },
         {
           "stem": "directorate_fire_3",
@@ -620,7 +620,7 @@
             "m4a": "web/directorate_fire_3.m4a"
           },
           "source": [
-            "sonniss/2015/SoundMorph - Future Weapons/Alliance-AssaultRifle_05-Single_Shot-04.wav"
+            "sonniss/2017/Sonniss.com - GDC 2017 - Game Audio Bundle Part 5of9/MatiasMacSD - THE WEAPONS - SCI-FI WEAPONS/Weapon Shot Blaster-06.wav"
           ],
           "recipe": "gunshot_rifle",
           "duration": 1.2,
@@ -628,16 +628,16 @@
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -14.17,
-          "rms_dbfs_measured": -15.1,
+          "lufs_measured": -12.29,
+          "rms_dbfs_measured": -17.01,
           "true_peak_dbtp": -2.19,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 21415,
-            "m4a": 18258
+            "ogg": 20696,
+            "m4a": 17776
           },
-          "sha256": "ce634453f370724d7b47de049278026908692c588daf352d180ad3140fb9f33d"
+          "sha256": "3b179fec4625a9d8cfcdfb61016db36e7b189f9721f5e9c6236dff8d12f74591"
         }
       ]
     },
@@ -655,24 +655,24 @@
             "m4a": "web/directorate_hit_1.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/impactMetal_heavy_003.ogg"
+            "sonniss/2020/MatiasMacSD - OPEN CONTRACT/193_Hit_Impact_Metal-01-02.wav"
           ],
           "recipe": "impact_metal",
-          "duration": 0.204,
+          "duration": 0.917,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -16.98,
+          "lufs_measured": -9.5,
+          "rms_dbfs_measured": -13.63,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 6689,
-            "m4a": 3997
+            "ogg": 18636,
+            "m4a": 13968
           },
-          "sha256": "538419259d97466ef8972d9fc62700e7d514e41d41f919ffadf6283667a5a391"
+          "sha256": "fd6a0185600ff48e4262728b60a903459655945d8836cad6651da6e0ab05446a"
         },
         {
           "stem": "directorate_hit_2",
@@ -682,24 +682,24 @@
             "m4a": "web/directorate_hit_2.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/impactMetal_heavy_003.ogg"
+            "sonniss/2020/MatiasMacSD - OPEN CONTRACT/193_Hit_Impact_Metal-01-02.wav"
           ],
           "recipe": "impact_metal",
-          "duration": 0.202,
+          "duration": 0.886,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.75,
+          "lufs_measured": -9.3,
+          "rms_dbfs_measured": -13.63,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 6553,
-            "m4a": 3955
+            "ogg": 17664,
+            "m4a": 13659
           },
-          "sha256": "307b0832f23f1d82b69d9984d02a6e9831eb97cd831b6ec14c66d75a3169e3c1"
+          "sha256": "97fd0ec282d0e1ce0f2fe3d9294b4ef4fea02bdcec57990d131ab8f3030698dc"
         },
         {
           "stem": "directorate_hit_3",
@@ -709,24 +709,24 @@
             "m4a": "web/directorate_hit_3.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/impactMetal_heavy_003.ogg"
+            "sonniss/2020/MatiasMacSD - OPEN CONTRACT/193_Hit_Impact_Metal-01-02.wav"
           ],
           "recipe": "impact_metal",
-          "duration": 0.203,
+          "duration": 0.9,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.24,
+          "lufs_measured": -9.34,
+          "rms_dbfs_measured": -13.5,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 6585,
-            "m4a": 4043
+            "ogg": 18179,
+            "m4a": 13732
           },
-          "sha256": "9fe2d6e274d5e11fa8b50f44a2eac90a7d144861ac04876282444cceb6e87ac3"
+          "sha256": "3403905708ca45c38bfd3f358bd8e6f0ccaf3662b39834906ead145dbf0354c4"
         }
       ]
     },
@@ -744,24 +744,24 @@
             "m4a": "web/directorate_miss_1.m4a"
           },
           "source": [
-            "sonniss/2015/NoizBoy - Hong Kong Action Kit - Hit Kit #2/HKAP2 Spin Whoosh 2a.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 3of8/Gamemaster Audio - Punch and Combat Sounds/whoosh_weapon_knife_swing_04.wav"
           ],
           "recipe": "whiff",
-          "duration": 0.58,
+          "duration": 0.26,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -13.01,
-          "rms_dbfs_measured": -16.39,
-          "true_peak_dbtp": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -22.81,
+          "true_peak_dbtp": -2.19,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 7699,
-            "m4a": 5932
+            "ogg": 7357,
+            "m4a": 4962
           },
-          "sha256": "9c36760b98dbd930c4bd5b85dcf49c272728ddbb1c330e27eaeca3bb3453cc51"
+          "sha256": "ae361f6ced12d7237d02193ba30531cf63b253ad2ee3a6878a2ba0e8302c0bbf"
         },
         {
           "stem": "directorate_miss_2",
@@ -771,24 +771,24 @@
             "m4a": "web/directorate_miss_2.m4a"
           },
           "source": [
-            "sonniss/2015/NoizBoy - Hong Kong Action Kit - Hit Kit #2/HKAP2 Spin Whoosh 2a.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 3of8/Gamemaster Audio - Punch and Combat Sounds/whoosh_weapon_knife_swing_04.wav"
           ],
           "recipe": "whiff",
-          "duration": 0.577,
+          "duration": 0.232,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -13.25,
-          "rms_dbfs_measured": -16.6,
-          "true_peak_dbtp": -2.2,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -22.04,
+          "true_peak_dbtp": -2.19,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 7644,
-            "m4a": 5658
+            "ogg": 7314,
+            "m4a": 4387
           },
-          "sha256": "e3e9892079bb3df980627ccf040382d1cd47b00f9f51b187837814815c7709cc"
+          "sha256": "b02081e6bfb6eb3471818ffdf9f721694f1cd4ba60dd451ab5989495df2bc9a1"
         }
       ]
     },
@@ -806,24 +806,24 @@
             "m4a": "web/directorate_move_1.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+            "sonniss/2016/Levan Nadashvili - Soldier Footsteps/FS Metal Soldier Walk N01.wav"
           ],
           "recipe": "footstep_heavy",
-          "duration": 0.105,
+          "duration": 0.617,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.18,
+          "lufs_measured": -17.11,
+          "rms_dbfs_measured": -17.81,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 5537,
-            "m4a": 2605
+            "ogg": 13133,
+            "m4a": 9929
           },
-          "sha256": "3bea963cedabf1d79265425b292705b2f7e752f5d68978d04bcb13c25df79ba6"
+          "sha256": "af8a786f693c5b9e03226213c1058b076a7ea6cf90ce64c16047bd6904ec6ab2"
         },
         {
           "stem": "directorate_move_2",
@@ -833,24 +833,24 @@
             "m4a": "web/directorate_move_2.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+            "sonniss/2016/Levan Nadashvili - Soldier Footsteps/FS Metal Soldier Walk N01.wav"
           ],
           "recipe": "footstep_heavy",
-          "duration": 0.1,
+          "duration": 0.59,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.74,
+          "lufs_measured": -16.08,
+          "rms_dbfs_measured": -18.0,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 5525,
-            "m4a": 2609
+            "ogg": 13624,
+            "m4a": 9733
           },
-          "sha256": "3bd21d0f489ec4425060d65c70d1ec63765eaabb6ba41fcb61984f3da0284e78"
+          "sha256": "c1d87685de92804e3b2f64604900cc56b3e281604a2b6fecd092c27263a63c0c"
         },
         {
           "stem": "directorate_move_3",
@@ -860,24 +860,24 @@
             "m4a": "web/directorate_move_3.m4a"
           },
           "source": [
-            "kenney/impact-sounds/Audio/footstep_concrete_000.ogg"
+            "sonniss/2016/Levan Nadashvili - Soldier Footsteps/FS Metal Soldier Walk N01.wav"
           ],
           "recipe": "footstep_heavy",
-          "duration": 0.103,
+          "duration": 0.6,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -17.49,
+          "lufs_measured": -17.35,
+          "rms_dbfs_measured": -17.87,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 5556,
-            "m4a": 2621
+            "ogg": 13387,
+            "m4a": 10045
           },
-          "sha256": "c917f9ab1e837a7feda0e1012465ef45981bfc4b0f9538580d95e37d973d980a"
+          "sha256": "4e47e4bbeb237c4943a57e0292c0b88c55360581d5e4a01d839f834dbe8cb093"
         }
       ]
     },
@@ -895,24 +895,24 @@
             "m4a": "web/directorate_vox_ready.m4a"
           },
           "source": [
-            "sonniss/2026/SoundBits - Vox Hominis - Human Effort Voices/VOXLaff_Laughing Female 02 06_SNDBTS_VH.wav"
+            "sonniss/2020/Bluezone - Interception - Radio Transmission/Bluezone_BC0266_radio_beep_walkie_talkie_002.wav"
           ],
           "recipe": "vox",
-          "duration": 0.71,
+          "duration": 0.134,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -13.59,
-          "rms_dbfs_measured": -17.88,
+          "lufs_measured": null,
+          "rms_dbfs_measured": -11.96,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 12186,
-            "m4a": 11209
+            "ogg": 6662,
+            "m4a": 2942
           },
-          "sha256": "97aa37f3bcdb3101983969a71a5ce60e8ebfe0de6db43e2a970c07946bb6da1c"
+          "sha256": "e701904b1004296fc73e20b7bf567141e77fe64b356df1297bd9b86823e3ebc3"
         }
       ]
     },
@@ -930,24 +930,24 @@
             "m4a": "web/explosion_large.m4a"
           },
           "source": [
-            "kenney/sci-fi-sounds/Audio/explosionCrunch_003.ogg"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 3of8/Gamemaster Audio - Guns, Bullets and Explosions/explosion_large_07.wav"
           ],
           "recipe": "explosion",
-          "duration": 1.553,
+          "duration": 2.5,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -15.22,
-          "rms_dbfs_measured": -15.64,
-          "true_peak_dbtp": -2.2,
+          "lufs_measured": -14.7,
+          "rms_dbfs_measured": -14.87,
+          "true_peak_dbtp": -2.18,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 20444,
-            "m4a": 23090
+            "ogg": 38537,
+            "m4a": 36565
           },
-          "sha256": "e7c447004f578dd14f59173688d6c75347889d1ac04e56c76c7e7ac47f4d15f2"
+          "sha256": "52034362f5a9b2300f63baafce086e334f2eab269130d99c78085dc3bd499f47"
         }
       ]
     },
@@ -965,7 +965,7 @@
             "m4a": "web/explosion_small.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - Anime Game/EXPLDsgn_Explosion Small Blast Enemy Death Crunchy Boom Cartoon Noisy Crash Impact Delay 03_ESM_AG.wav"
+            "sonniss/2017/Sonniss.com - GDC 2017 - Game Audio Bundle Part 4of9/Gamemaster Audio -  Explosion Sound Pack/explosion_large_no_tail_03.wav"
           ],
           "recipe": "explosion",
           "duration": 1.0,
@@ -973,16 +973,16 @@
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -17.5,
-          "rms_dbfs_measured": -19.36,
-          "true_peak_dbtp": -2.1,
+          "lufs_measured": -13.38,
+          "rms_dbfs_measured": -13.84,
+          "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 18381,
-            "m4a": 17202
+            "ogg": 19012,
+            "m4a": 14897
           },
-          "sha256": "302a595d69abccba5f258617616405680ab4bc87720d94055b62d37d1af32e7b"
+          "sha256": "ab23cfdc2891bc2e586c6ffedee66116f724090495e6e35a57ec66ba1984903b"
         }
       ]
     },
@@ -1000,24 +1000,24 @@
             "m4a": "web/impact_crit.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - Anime Game/EXPLDsgn_Explosion Small Blast Enemy Death Crunchy Boom Cartoon Noisy Crash Impact Delay 03_ESM_AG.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 3of8/Gamemaster Audio - Guns, Bullets and Explosions/explosion_large_07.wav"
           ],
           "recipe": "crit",
-          "duration": 1.478,
+          "duration": 1.6,
           "lufs_target": -17.0,
           "true_peak_target": -1.5,
           "level_mode": "peak",
           "rms_target_dbfs": -2.7,
-          "lufs_measured": -15.98,
-          "rms_dbfs_measured": -20.38,
+          "lufs_measured": -12.83,
+          "rms_dbfs_measured": -14.11,
           "true_peak_dbtp": -2.7,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 26793,
-            "m4a": 25414
+            "ogg": 26944,
+            "m4a": 23488
           },
-          "sha256": "e6b374554d6297f80da943b00948d01a9d84aafa668465bcee225ba0ce934a84"
+          "sha256": "b850a66a2ccf95c986d3b32e2b7100b43fbc82136219d5d70176567e10b3a6c5"
         }
       ]
     },
@@ -1070,24 +1070,24 @@
             "m4a": "web/melee_impact_1.m4a"
           },
           "source": [
-            "sonniss/2015/Soundopolis - Blades/Knife_Sword_Hit_Multiple_Fienup_003.wav"
+            "sonniss/2020/SmartSoundFX \u2013 Medieval/SWORD Hit Metal 02.wav"
           ],
           "recipe": "impact_metal",
-          "duration": 1.007,
+          "duration": 0.855,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -17.79,
-          "rms_dbfs_measured": -23.43,
+          "lufs_measured": -15.75,
+          "rms_dbfs_measured": -22.76,
           "true_peak_dbtp": -2.15,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 20318,
-            "m4a": 15737
+            "ogg": 16569,
+            "m4a": 13186
           },
-          "sha256": "762b1c766ed76db047621b5e1cb0c52060509416bffd374f4da4f86520d486ff"
+          "sha256": "c7c964d253351ec722b1fb361bf140262edfc8df74dd487d278af975e4cb5913"
         },
         {
           "stem": "melee_impact_2",
@@ -1097,24 +1097,24 @@
             "m4a": "web/melee_impact_2.m4a"
           },
           "source": [
-            "sonniss/2015/Soundopolis - Blades/Knife_Sword_Hit_Multiple_Fienup_003.wav"
+            "sonniss/2020/SmartSoundFX \u2013 Medieval/SWORD Hit Metal 02.wav"
           ],
           "recipe": "impact_metal",
-          "duration": 0.981,
+          "duration": 0.851,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -18.19,
-          "rms_dbfs_measured": -24.03,
-          "true_peak_dbtp": -2.01,
+          "lufs_measured": -13.55,
+          "rms_dbfs_measured": -20.5,
+          "true_peak_dbtp": -2.19,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 19839,
-            "m4a": 14847
+            "ogg": 17011,
+            "m4a": 13362
           },
-          "sha256": "61913006ad395284ac4d225d0387045bec8b537a8a71d9250660025c6f8a1e19"
+          "sha256": "711139f4a9d92cf27fa5145369872af9f4f2baeecac655d18af3d2a6032908ee"
         }
       ]
     },
@@ -1132,24 +1132,24 @@
             "m4a": "web/objective_complete.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - Anime Game/DSGNStngr_Power Up Bright Positive Successful Light Saturation Crash Shimmer 05_ESM_AG.wav"
+            "sonniss/2018/Sonniss.com - GDC 2018 - Game Audio Bundle Part 5of8/Sir Bedlam Productions \u2013 Bedlam Stingers - Cinematic Horror Sound FX/Stinger-String5.wav"
           ],
           "recipe": "stinger",
-          "duration": 1.525,
+          "duration": 3.0,
           "lufs_target": -17.0,
           "true_peak_target": -1.5,
           "level_mode": "peak",
           "rms_target_dbfs": -2.7,
-          "lufs_measured": -14.25,
-          "rms_dbfs_measured": -20.95,
+          "lufs_measured": -25.87,
+          "rms_dbfs_measured": -29.17,
           "true_peak_dbtp": -2.7,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 28576,
-            "m4a": 24248
+            "ogg": 46415,
+            "m4a": 42520
           },
-          "sha256": "9f543ea50d683c8c22789d88281dcc9f311be90b059730bf6fff5435086bd989"
+          "sha256": "9449b1d51944ef424c4283f726ad95a3b5290a0786ca264aa62620df4e428db4"
         }
       ]
     },
@@ -1202,24 +1202,24 @@
             "m4a": "web/reload.m4a"
           },
           "source": [
-            "sonniss/2026/Epic Stock Media - HD Lock And Mechanism Sound Design Kit/MECHLtch_Click Deep Mechanism Latch Button Nearfield Thunk 02_ESM_HDLM.wav"
+            "sonniss/2023/David Dumais Audio - Sci-Fi Weapons Pack 1/GUNMech_Heavy Mech Cock 03_DDUMAIS_NONE.wav"
           ],
           "recipe": "mech",
-          "duration": 0.379,
+          "duration": 1.095,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": null,
-          "rms_dbfs_measured": -29.61,
+          "lufs_measured": -14.63,
+          "rms_dbfs_measured": -21.79,
           "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 9354,
-            "m4a": 5502
+            "ogg": 20600,
+            "m4a": 15495
           },
-          "sha256": "3ee275258362e8526b88b8bc7e68cab3b1c5cf1f710b5159708d6d70175224f1"
+          "sha256": "716d8d4db72d63675c7838f79ab797d276299b10bd7cd9cccd44777fdb037ed6"
         }
       ]
     },
@@ -1237,24 +1237,24 @@
             "m4a": "web/suppression_fire.m4a"
           },
           "source": [
-            "sonniss/2015/Mechanical Wave - Vegetable Massacres/Juicy Burst_VM 03.wav"
+            "sonniss/2020/Super Thump - Weapons of World War II - Designed/STDSGN_WoWW2_Wep_MG_M1919_Machinegun_Auto-Burst_Shot_X6.wav"
           ],
           "recipe": "suppression",
-          "duration": 0.917,
+          "duration": 2.0,
           "lufs_target": -16.0,
           "true_peak_target": -1.0,
           "level_mode": "peak",
           "rms_target_dbfs": -2.2,
-          "lufs_measured": -15.55,
-          "rms_dbfs_measured": -22.7,
-          "true_peak_dbtp": -2.19,
+          "lufs_measured": -14.28,
+          "rms_dbfs_measured": -18.77,
+          "true_peak_dbtp": -2.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 17580,
-            "m4a": 14910
+            "ogg": 33735,
+            "m4a": 29090
           },
-          "sha256": "2e4181d3e1d5dae519dfd676aaf0cb0335b77f0b3bb31a5f2ddcd7766d0b4352"
+          "sha256": "edf8f44aa53d44d2f061d039e73a0bdaed2f9b12ac66d3daec7bf2be3448a310"
         }
       ]
     },
@@ -1272,7 +1272,7 @@
             "m4a": "web/theme.m4a"
           },
           "source": [
-            "sonniss/2016/Bottle Rocket Fx - The Drone Collection/Drone_SciFi_TonalRumble_01.wav"
+            "sonniss/2023/344 Audio - Cymbals From Hell Vol. 2/MUSCPerc_Gong, Raw, Stinger, Drone 22_344 Audio_Cymbals From Hell Vol 2.wav"
           ],
           "recipe": "music_loop",
           "duration": 39.4,
@@ -1280,16 +1280,16 @@
           "true_peak_target": -3.0,
           "level_mode": "lufs",
           "rms_target_dbfs": null,
-          "lufs_measured": -19.98,
-          "rms_dbfs_measured": -21.03,
-          "true_peak_dbtp": -7.95,
-          "pre_normalise_lufs": "-24.29",
-          "pre_normalise_lra": "0.50",
+          "lufs_measured": -20.06,
+          "rms_dbfs_measured": -21.86,
+          "true_peak_dbtp": -9.74,
+          "pre_normalise_lufs": "-16.50",
+          "pre_normalise_lra": "4.30",
           "size_bytes": {
-            "ogg": 518856,
-            "m4a": 561622
+            "ogg": 449457,
+            "m4a": 561391
           },
-          "sha256": "d32e139d411e84e28a647e4d384a71c031c1e88675be131e84a23459c2c778ad"
+          "sha256": "7f7fc790be785e6f3ef688cee8929ad05225c50bff0caa4b9c16736e7421ff6f"
         }
       ]
     },
@@ -1307,24 +1307,24 @@
             "m4a": "web/turn_start.m4a"
           },
           "source": [
-            "sonniss/2015/Alexander Kopeikin - Transitions HD/transition t05 hard 002.wav"
+            "sonniss/2017/Sonniss.com - GDC 2017 - Game Audio Bundle Part 4of9/Glitchedtones - Whooshes & Transitions/Whoosh Transition 049.wav"
           ],
           "recipe": "stinger",
-          "duration": 0.981,
+          "duration": 1.788,
           "lufs_target": -17.0,
           "true_peak_target": -1.5,
           "level_mode": "peak",
           "rms_target_dbfs": -2.7,
-          "lufs_measured": -13.33,
-          "rms_dbfs_measured": -16.37,
+          "lufs_measured": -13.1,
+          "rms_dbfs_measured": -19.43,
           "true_peak_dbtp": -2.7,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 11591,
-            "m4a": 8250
+            "ogg": 30639,
+            "m4a": 27142
           },
-          "sha256": "fca9188a73d6e0d3c9958494588034c54a8c37062d8ac4f90a9f7debfdc77515"
+          "sha256": "d2bf7a0837f892c0a6d34ebb5d3d562bed01126a1867ef5c06dc22032d5f014b"
         }
       ]
     },
@@ -1668,7 +1668,7 @@
             "m4a": "web/web_page.m4a"
           },
           "source": [
-            "sonniss/2015/Alexander Kopeikin - Transitions HD/transition t05 hard 002.wav"
+            "sonniss/2020/Sound Spark LLC - Whooshes Impacts and Transitions/Whoosh_Fast_02.wav"
           ],
           "recipe": "transition",
           "duration": 0.8,
@@ -1676,16 +1676,16 @@
           "true_peak_target": -3.0,
           "level_mode": "peak",
           "rms_target_dbfs": -4.2,
-          "lufs_measured": -14.01,
-          "rms_dbfs_measured": -17.94,
-          "true_peak_dbtp": -4.19,
+          "lufs_measured": -14.82,
+          "rms_dbfs_measured": -21.0,
+          "true_peak_dbtp": -4.2,
           "pre_normalise_lufs": null,
           "pre_normalise_lra": null,
           "size_bytes": {
-            "ogg": 11249,
-            "m4a": 7972
+            "ogg": 14736,
+            "m4a": 12788
           },
-          "sha256": "1c56bee20a017d62846f298230443f955a20980e9f6921d7412bb8c79dc13b6c"
+          "sha256": "473b0ddfd72a141042429afebd195a6ebec78a02acd482138c96615c48c17408"
         }
       ]
     },
