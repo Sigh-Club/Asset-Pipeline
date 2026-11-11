@@ -1,0 +1,57 @@
+{
+  "id": "deck_plate_industrial",
+  "kind": "material",
+  "faction": "iron_directorate",
+  "slot": "deck",
+  "prompt": "riveted gunmetal diamond-plate deck, recessed panel seams, bolted corners, chipped charcoal paint, oil staining; seamless, flat studio light",
+  "tileable": true,
+  "tileable_before": 0.2846,
+  "tileable_after": 0.0225,
+  "tileable_ratio_before": 10.566,
+  "tileable_ratio_after": 0.854,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 4.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "metallic",
+    "normal",
+    "roughness"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated",
+  "retunes": [
+    {
+      "id": "deck_plate_industrial",
+      "because": "review: the floor tile reads as a plain slab. The generated sheet carries a warm oil/rust cast across most of its area, which at a 2 cm texel grid and a 64-colour palette locks to leather-brown instead of industrial steel. Neutralise the alloy and keep the wear as value, not hue.",
+      "luma_std_before": 24.51,
+      "luma_std_after": 44.09,
+      "luma_range_before": [
+        0.0,
+        255.0
+      ],
+      "luma_range_after": [
+        0.0,
+        255.0
+      ],
+      "chroma_before": 3.97,
+      "chroma_after": 3.75
+    },
+    {
+      "id": "deck_plate_industrial",
+      "because": "review: the floor tile reads as a plain slab. The generated sheet carries a warm oil/rust cast across most of its area, which at a 2 cm texel grid and a 64-colour palette locks to leather-brown instead of industrial steel. Neutralise the alloy and keep the wear as value, not hue. Second fault found at 256 px: one 2 m texture tile put the diamond tread at ~3.5 texels, which locks to noise. The world size of one tile is doubled, so the tread reads at ~7 texels and the geometric panel seam carries the deck module.",
+      "luma_std_before": 44.07,
+      "luma_std_after": 43.9,
+      "luma_range_before": [
+        0.0,
+        255.0
+      ],
+      "luma_range_after": [
+        0.8,
+        254.8
+      ],
+      "chroma_before": 3.75,
+      "chroma_after": 1.87
+    }
+  ]
+}

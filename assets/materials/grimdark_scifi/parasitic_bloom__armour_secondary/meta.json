@@ -1,0 +1,21 @@
+{
+  "id": "parasitic_bloom__armour_secondary",
+  "kind": "material",
+  "faction": "parasitic_bloom",
+  "slot": "armour_secondary",
+  "prompt": "dense chitin scale plates, mottled brown-green, wet sheen",
+  "tileable": true,
+  "tileable_before": 0.1603,
+  "tileable_after": 0.0219,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.35,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

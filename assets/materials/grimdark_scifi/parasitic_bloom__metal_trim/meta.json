@@ -1,0 +1,21 @@
+{
+  "id": "parasitic_bloom__metal_trim",
+  "kind": "material",
+  "faction": "parasitic_bloom",
+  "slot": "metal_trim",
+  "prompt": "thorned living bone spurs, ivory tips, dark root ends",
+  "tileable": true,
+  "tileable_before": 0.2763,
+  "tileable_after": 0.0242,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.3,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

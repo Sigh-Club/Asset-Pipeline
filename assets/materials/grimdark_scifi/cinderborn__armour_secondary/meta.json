@@ -1,0 +1,21 @@
+{
+  "id": "cinderborn__armour_secondary",
+  "kind": "material",
+  "faction": "cinderborn",
+  "slot": "armour_secondary",
+  "prompt": "burnished bronze trim on blackened armour, soot in the engraving",
+  "tileable": true,
+  "tileable_before": 0.1437,
+  "tileable_after": 0.0324,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.35,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

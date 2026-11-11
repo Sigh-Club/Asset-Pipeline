@@ -1,0 +1,21 @@
+{
+  "id": "pattern_gothic_filigree",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable gothic filigree band, ornate pressed-metal scrollwork, aged gold",
+  "tileable": true,
+  "tileable_before": 0.2164,
+  "tileable_after": 0.0571,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.6,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

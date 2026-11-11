@@ -1,0 +1,21 @@
+{
+  "id": "sand_rubble",
+  "kind": "material",
+  "faction": "shared",
+  "slot": "shared",
+  "prompt": "grey-brown rubble and sand, stones of mixed size, dust",
+  "tileable": true,
+  "tileable_before": 0.1626,
+  "tileable_after": 0.0779,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

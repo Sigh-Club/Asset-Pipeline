@@ -1,0 +1,21 @@
+{
+  "id": "insignia_iron_directorate",
+  "kind": "decal",
+  "faction": "shared",
+  "slot": "decal",
+  "prompt": "stamped gold cog-and-bayonet emblem, flat graphic, single colour on transparent",
+  "tileable": false,
+  "tileable_before": 0.4458,
+  "tileable_after": 0.2548,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

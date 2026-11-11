@@ -1,0 +1,22 @@
+{
+  "id": "iron_directorate__accent_emissive",
+  "kind": "material",
+  "faction": "iron_directorate",
+  "slot": "accent_emissive",
+  "prompt": "cool cyan lens and rail-coil glow, concentric rings, no bloom",
+  "tileable": true,
+  "tileable_before": 0.1398,
+  "tileable_after": 0.0166,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.3,
+  "emissive": true,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic",
+    "emissive"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

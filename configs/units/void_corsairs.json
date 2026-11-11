@@ -1,0 +1,39 @@
+{
+  "faction": "void_corsairs",
+  "style": "corsair",
+  "units": {
+    "void_corsair_raider": {
+      "body": "standard",
+      "helm": "fin",
+      "shoulders": "swept",
+      "weapon": "lance"
+    },
+    "voidblade_assassin": {
+      "body": "light",
+      "helm": "fin",
+      "shoulders": "swept",
+      "weapon": "blade",
+      "cloak": true
+    },
+    "tech_priest": {
+      "body": "standard",
+      "helm": "fin",
+      "shoulders": "swept",
+      "weapon": "rail",
+      "back": "servo"
+    },
+    "neon_runner": {
+      "body": "light",
+      "helm": "fin",
+      "shoulders": "swept",
+      "weapon": "blade"
+    },
+    "hulk_frigate": {
+      "body": "monolith",
+      "helm": "fin",
+      "shoulders": "swept",
+      "weapon": "autocannon",
+      "crest": true
+    }
+  }
+}

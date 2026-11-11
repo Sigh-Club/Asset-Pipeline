@@ -1,0 +1,21 @@
+{
+  "id": "wreckstorm_clans__underlayer",
+  "kind": "material",
+  "faction": "wreckstorm_clans",
+  "slot": "underlayer",
+  "prompt": "filthy leather and hide scraps, crude stitching, oil stains",
+  "tileable": true,
+  "tileable_before": 0.1014,
+  "tileable_after": 0.0273,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.22,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

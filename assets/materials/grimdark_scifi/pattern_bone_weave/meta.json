@@ -1,0 +1,21 @@
+{
+  "id": "pattern_bone_weave",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable woven bone lattice, interlaced ribs, ivory with dried tissue",
+  "tileable": true,
+  "tileable_before": 0.168,
+  "tileable_after": 0.034,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.6,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

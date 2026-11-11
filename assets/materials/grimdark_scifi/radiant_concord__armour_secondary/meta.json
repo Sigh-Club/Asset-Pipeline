@@ -1,0 +1,21 @@
+{
+  "id": "radiant_concord__armour_secondary",
+  "kind": "material",
+  "faction": "radiant_concord",
+  "slot": "armour_secondary",
+  "prompt": "mirror-chrome trim, perfect reflective edges, micro-scratches only",
+  "tileable": true,
+  "tileable_before": 0.3141,
+  "tileable_after": 0.0051,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.35,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

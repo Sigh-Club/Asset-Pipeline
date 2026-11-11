@@ -1,0 +1,21 @@
+{
+  "id": "pattern_circuit_tracery",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable etched circuit tracery, thin silver traces on dark substrate, tiny vias",
+  "tileable": true,
+  "tileable_before": 0.167,
+  "tileable_after": 0.0639,
+  "size": 1024,
+  "metallic_constant": 0.6,
+  "tile_m": 0.5,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

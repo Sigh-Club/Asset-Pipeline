@@ -1,0 +1,47 @@
+{
+  "faction": "parasitic_bloom",
+  "style": "bloom",
+  "units": {
+    "hunger_crawlers": {
+      "body": "light",
+      "helm": "carapace",
+      "shoulders": "bulb",
+      "weapon": "claw"
+    },
+    "carapace_warden": {
+      "body": "heavy",
+      "helm": "carapace",
+      "shoulders": "bulb",
+      "weapon": "claw"
+    },
+    "psi_lynx": {
+      "body": "light",
+      "helm": "carapace",
+      "shoulders": "bulb",
+      "weapon": "claw",
+      "cloak": true
+    },
+    "soul_weaver": {
+      "body": "standard",
+      "helm": "carapace",
+      "shoulders": "bulb",
+      "weapon": "blade",
+      "back": "servo"
+    },
+    "voidmaw_monstrosity": {
+      "body": "monolith",
+      "helm": "carapace",
+      "shoulders": "bulb",
+      "weapon": "claw",
+      "horns": true
+    },
+    "void_swarm_titan": {
+      "body": "monolith",
+      "helm": "carapace",
+      "shoulders": "bulb",
+      "weapon": "claw",
+      "back": "pack",
+      "crest": true
+    }
+  }
+}

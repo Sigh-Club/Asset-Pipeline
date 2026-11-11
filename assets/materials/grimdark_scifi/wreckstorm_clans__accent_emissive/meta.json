@@ -1,0 +1,22 @@
+{
+  "id": "wreckstorm_clans__accent_emissive",
+  "kind": "material",
+  "faction": "wreckstorm_clans",
+  "slot": "accent_emissive",
+  "prompt": "yellow warning paint and hot exhaust glow through slats, no bloom",
+  "tileable": true,
+  "tileable_before": 0.1191,
+  "tileable_after": 0.0143,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.3,
+  "emissive": true,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic",
+    "emissive"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

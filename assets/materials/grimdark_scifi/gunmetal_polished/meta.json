@@ -1,0 +1,41 @@
+{
+  "id": "gunmetal_polished",
+  "kind": "material",
+  "faction": "shared",
+  "slot": "shared",
+  "prompt": "polished gunmetal plate, recessed panel seams, countersunk rivets, chipped edges, brushed grain; seamless, flat studio light",
+  "tileable": true,
+  "tileable_before": 0.0892,
+  "tileable_after": 0.0073,
+  "tileable_ratio_before": 8.207,
+  "tileable_ratio_after": 0.705,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "metallic",
+    "normal",
+    "roughness"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated",
+  "retunes": [
+    {
+      "id": "gunmetal_polished",
+      "because": "measured on the pixel master: median render luma 138/255, i.e. light grey plastic, not IoA steel. The generated sheet is a bright showroom alloy; stretch its values down so a lit facet lands on the 74-104 palette steps.",
+      "luma_std_before": 13.34,
+      "luma_std_after": 27.03,
+      "luma_range_before": [
+        7.2,
+        255.0
+      ],
+      "luma_range_after": [
+        0.0,
+        255.0
+      ],
+      "chroma_before": 1.49,
+      "chroma_after": 3.4
+    }
+  ]
+}

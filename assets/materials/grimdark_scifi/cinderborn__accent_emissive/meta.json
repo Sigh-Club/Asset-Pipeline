@@ -1,0 +1,22 @@
+{
+  "id": "cinderborn__accent_emissive",
+  "kind": "material",
+  "faction": "cinderborn",
+  "slot": "accent_emissive",
+  "prompt": "orange witchfire embers embedded in cracked armour, glowing fissures, no bloom",
+  "tileable": true,
+  "tileable_before": 0.1934,
+  "tileable_after": 0.0262,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.3,
+  "emissive": true,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic",
+    "emissive"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

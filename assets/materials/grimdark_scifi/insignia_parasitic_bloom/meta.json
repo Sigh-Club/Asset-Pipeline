@@ -1,0 +1,21 @@
+{
+  "id": "insignia_parasitic_bloom",
+  "kind": "decal",
+  "faction": "shared",
+  "slot": "decal",
+  "prompt": "radial spore-bloom sigil, organic linework, flat graphic",
+  "tileable": false,
+  "tileable_before": 0.4584,
+  "tileable_after": 0.2683,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

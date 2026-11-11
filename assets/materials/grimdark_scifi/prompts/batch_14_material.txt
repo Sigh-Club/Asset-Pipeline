@@ -1,0 +1,3 @@
+A 2x2 grid of 1 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.
+Quadrants: top-left, top-right, bottom-left, bottom-right.
+top-left: weathered timber planks, split grain, nail stains, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference

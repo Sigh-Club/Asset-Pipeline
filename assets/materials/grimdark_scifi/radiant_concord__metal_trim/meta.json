@@ -1,0 +1,21 @@
+{
+  "id": "radiant_concord__metal_trim",
+  "kind": "material",
+  "faction": "radiant_concord",
+  "slot": "metal_trim",
+  "prompt": "anodised silver mechanism housings, precision machined, no rust",
+  "tileable": true,
+  "tileable_before": 0.1549,
+  "tileable_after": 0.008,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.3,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

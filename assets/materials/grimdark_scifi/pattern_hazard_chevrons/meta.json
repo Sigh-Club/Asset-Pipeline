@@ -1,0 +1,21 @@
+{
+  "id": "pattern_hazard_chevrons",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable worn hazard chevrons, yellow and black paint chipped to primer",
+  "tileable": true,
+  "tileable_before": 0.1779,
+  "tileable_after": 0.0238,
+  "size": 1024,
+  "metallic_constant": 0.2,
+  "tile_m": 0.8,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

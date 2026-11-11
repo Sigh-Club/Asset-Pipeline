@@ -1,0 +1,21 @@
+{
+  "id": "pattern_chainmail",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable heavy chainmail rings, blackened iron, oiled, interlocked",
+  "tileable": true,
+  "tileable_before": 0.1158,
+  "tileable_after": 0.0309,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.3,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

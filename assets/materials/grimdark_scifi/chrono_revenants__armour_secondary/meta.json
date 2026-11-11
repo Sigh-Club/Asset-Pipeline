@@ -1,0 +1,21 @@
+{
+  "id": "chrono_revenants__armour_secondary",
+  "kind": "material",
+  "faction": "chrono_revenants",
+  "slot": "armour_secondary",
+  "prompt": "bronze-green engraved funerary plate, hieroglyph grooves, patina",
+  "tileable": true,
+  "tileable_before": 0.1106,
+  "tileable_after": 0.0293,
+  "size": 1024,
+  "metallic_constant": 0.9,
+  "tile_m": 0.35,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

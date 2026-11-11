@@ -1,0 +1,21 @@
+{
+  "id": "radiant_concord__underlayer",
+  "kind": "material",
+  "faction": "radiant_concord",
+  "slot": "underlayer",
+  "prompt": "smooth grey bodysuit fabric, seamless, subtle hexagonal weave",
+  "tileable": true,
+  "tileable_before": 0.119,
+  "tileable_after": 0.0329,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.22,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

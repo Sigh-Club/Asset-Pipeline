@@ -1,0 +1,21 @@
+{
+  "id": "radiant_concord__armour_primary",
+  "kind": "material",
+  "faction": "radiant_concord",
+  "slot": "armour_primary",
+  "prompt": "pristine white ceramic composite armour, razor-clean panel lines, faint iridescence",
+  "tileable": true,
+  "tileable_before": 0.0576,
+  "tileable_after": 0.0058,
+  "size": 1024,
+  "metallic_constant": 0.1,
+  "tile_m": 0.5,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

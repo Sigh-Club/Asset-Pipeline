@@ -1,0 +1,21 @@
+{
+  "id": "cinderborn__armour_primary",
+  "kind": "material",
+  "faction": "cinderborn",
+  "slot": "armour_primary",
+  "prompt": "warped ceramite plates, ash-black with purple-pink witchfire heat staining, brands and rivets, cracked enamel",
+  "tileable": true,
+  "tileable_before": 0.12,
+  "tileable_after": 0.028,
+  "size": 1024,
+  "metallic_constant": 0.3,
+  "tile_m": 0.5,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

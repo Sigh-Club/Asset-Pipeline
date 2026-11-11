@@ -1,0 +1,34 @@
+{
+  "faction": "radiant_concord",
+  "style": "concord",
+  "units": {
+    "radiant_android": {
+      "body": "standard",
+      "helm": "dome",
+      "shoulders": "plate",
+      "weapon": "rail"
+    },
+    "atmos_battlesuit": {
+      "body": "heavy",
+      "helm": "dome",
+      "shoulders": "plate",
+      "weapon": "rail",
+      "back": "jump",
+      "crest": true
+    },
+    "spear_strike": {
+      "body": "heavy",
+      "helm": "dome",
+      "shoulders": "plate",
+      "weapon": "lance",
+      "back": "jump"
+    },
+    "targeter_flock": {
+      "body": "light",
+      "helm": "dome",
+      "shoulders": "none",
+      "weapon": "rail",
+      "cloak": true
+    }
+  }
+}

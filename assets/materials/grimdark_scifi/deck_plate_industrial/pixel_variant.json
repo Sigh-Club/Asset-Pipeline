@@ -1,0 +1,17 @@
+{
+  "size_px": 400,
+  "tile_m": 4.0,
+  "texel_m": 0.02,
+  "texels_per_tile": 200.0,
+  "supersample": 2,
+  "written": [
+    "albedo_pixel.png"
+  ],
+  "contrast_keep": 0.5,
+  "luma_std_before": 40.22,
+  "luma_std_after": 20.11,
+  "source_px": [
+    1024,
+    1024
+  ]
+}

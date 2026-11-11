@@ -1,0 +1,21 @@
+{
+  "id": "void_corsairs__armour_secondary",
+  "kind": "material",
+  "faction": "void_corsairs",
+  "slot": "armour_secondary",
+  "prompt": "deep teal lacquered panels with hairline silver inlay",
+  "tileable": true,
+  "tileable_before": 0.0741,
+  "tileable_after": 0.0097,
+  "size": 1024,
+  "metallic_constant": 0.5,
+  "tile_m": 0.35,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

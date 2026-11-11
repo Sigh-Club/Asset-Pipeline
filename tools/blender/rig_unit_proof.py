@@ -24,6 +24,9 @@ from pathlib import Path
 import bpy
 from mathutils import Vector
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import unit_pose  # noqa: E402
+
 # Bone layout: name -> (head, tail, parent, connected). Mixamo-compatible names
 # so humanoid clips can be retargeted. Coordinates are authored in metres for a
 # 1.9 m unit facing -Y, origin at the feet.
@@ -68,6 +71,11 @@ def parse_args():
     p.add_argument("--render", action="store_true")
     p.add_argument("--clips", default="all", choices=("all", "proof"),
                    help="all = the 9 contract clips; proof = idle/walk/aim only")
+    p.add_argument("--bind", default="distance", choices=("distance", "authored"),
+                   help="distance = the img23d proof weighting; authored = use the "
+                        "per-part vertex groups written by parametric_unit.py")
+    p.add_argument("--hold", default="relaxed", choices=("relaxed", "ranged", "melee"),
+                   help="authored arm pose; must match the pose the mesh was built with")
     p.add_argument("--samples", type=int, default=16)
     return p.parse_args(argv)
 
@@ -77,11 +85,37 @@ def clear_scene():
     bpy.ops.object.delete(use_global=False)
 
 
-def import_and_normalise(path: Path):
+def import_and_normalise(path: Path, bind: str = "distance"):
     bpy.ops.import_scene.gltf(filepath=str(path))
     meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
     if not meshes:
         raise SystemExit("no mesh in glb")
+
+    if bind == "authored":
+        # `parametric_unit.py` names every part `<bone>__<slot>__<tag>`. Bind the
+        # parts rigidly to their bone before the join; the authored mesh is
+        # already in metres with feet at z=0, so no rescale or re-centre.
+        for o in meshes:
+            bone = o.name.split("__")[0]
+            if bone not in bone_layout(1.9):
+                raise SystemExit(f"part {o.name!r} has no rig bone prefix")
+            vg = o.vertex_groups.get(bone) or o.vertex_groups.new(name=bone)
+            vg.add(list(range(len(o.data.vertices))), 1.0, "REPLACE")
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in meshes:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = meshes[0]
+        if len(meshes) > 1:
+            bpy.ops.object.join()
+        obj = bpy.context.view_layer.objects.active
+        obj.name = "unit_body"
+        obj.data.name = "unit_body_mesh"
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        return obj
+
     bpy.ops.object.select_all(action="DESELECT")
     for o in meshes:
         o.select_set(True)
@@ -111,13 +145,27 @@ def import_and_normalise(path: Path):
     return obj
 
 
-def build_armature(height: float):
+def authored_bind(obj, arm):
+    """Use the per-part vertex groups instead of distance weighting."""
+    present = [b.name for b in arm.data.bones if obj.vertex_groups.get(b.name) is not None]
+    if not present:
+        raise SystemExit("authored bind: mesh carries no bone vertex groups")
+    mod = obj.modifiers.new(name="Armature", type="ARMATURE")
+    mod.object = arm
+    obj.parent = arm
+    obj.matrix_parent_inverse = arm.matrix_world.inverted()
+    return "authored"
+
+
+def build_armature(height: float, pose: str = "relaxed", authored: bool = False):
     arm_data = bpy.data.armatures.new("unit_rig")
     arm = bpy.data.objects.new("unit_rig", arm_data)
     bpy.context.collection.objects.link(arm)
     bpy.context.view_layer.objects.active = arm
     bpy.ops.object.mode_set(mode="EDIT")
-    layout = bone_layout(height)
+    # Authored units use the same arm pose the mesh was built with; the img23d
+    # route keeps the neutral A-pose layout.
+    layout = unit_pose.bone_layout(height, pose) if authored else bone_layout(height)
     created = {}
     for name, (head, tail, parent, connect) in layout.items():
         b = arm_data.edit_bones.new(name)
@@ -622,12 +670,16 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     clear_scene()
-    body = import_and_normalise(glb)
+    body = import_and_normalise(glb, args.bind)
     corners = [body.matrix_world @ Vector(c) for c in body.bound_box]
     height = max(c.z for c in corners) - min(c.z for c in corners)
+    if args.bind == "authored":
+        # Accessories (banners, thrusters) may exceed the body; the skeleton is
+        # authored for the 1.9 m body and must not be rescaled by them.
+        height = 1.9
 
-    arm = build_armature(height)
-    mode = auto_weight(body, arm)
+    arm = build_armature(height, args.hold, authored=(args.bind == "authored"))
+    mode = authored_bind(body, arm) if args.bind == "authored" else auto_weight(body, arm)
 
     scene = bpy.context.scene
     scene.render.fps = 30

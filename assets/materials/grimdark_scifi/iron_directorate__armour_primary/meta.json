@@ -1,0 +1,21 @@
+{
+  "id": "iron_directorate__armour_primary",
+  "kind": "material",
+  "faction": "iron_directorate",
+  "slot": "armour_primary",
+  "prompt": "disciplined industrial armour plate, deep navy-blue enamel over steel, gold pinstripe edging, rivets, parade-ground wear",
+  "tileable": true,
+  "tileable_before": 0.0692,
+  "tileable_after": 0.0067,
+  "size": 1024,
+  "metallic_constant": 0.15,
+  "tile_m": 0.5,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

@@ -1,0 +1,39 @@
+{
+  "id": "iron_directorate__armour_secondary",
+  "kind": "material",
+  "faction": "iron_directorate",
+  "slot": "armour_secondary",
+  "prompt": "bright gold-trimmed armour panels, brushed gold leaf over gunmetal, tiny dents",
+  "tileable": true,
+  "tileable_before": 0.2183,
+  "tileable_after": 0.0147,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.18,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "metallic",
+    "normal",
+    "roughness"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated",
+  "retunes": [
+    {
+      "id": "iron_directorate__armour_secondary",
+      "because": "review: gold chevron reads as an insignia, motif too large for a 256 tile. Halving the world size of one texture tile halves the motif pitch; the gold band becomes a trim line at the 2 cm texel grid instead of a badge.",
+      "luma_std_before": 28.87,
+      "luma_std_after": 28.87,
+      "luma_range_before": [
+        15.0,
+        253.6
+      ],
+      "luma_range_after": [
+        15.0,
+        253.6
+      ],
+      "chroma_before": 14.67,
+      "chroma_after": 14.67
+    }
+  ]
+}

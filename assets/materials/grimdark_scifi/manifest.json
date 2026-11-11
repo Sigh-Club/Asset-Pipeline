@@ -1,0 +1,1300 @@
+{
+  "library": "grimdark_scifi",
+  "root": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi",
+  "sheet_size": 2048,
+  "per_sheet": 4,
+  "generation_estimate": 22,
+  "counts": {
+    "items": 79,
+    "materials": 52,
+    "patterns": 14,
+    "decals": 13,
+    "factions": 7
+  },
+  "items": [
+    {
+      "id": "iron_directorate__armour_primary",
+      "kind": "material",
+      "faction": "iron_directorate",
+      "slot": "armour_primary",
+      "prompt": "disciplined industrial armour plate, deep navy-blue enamel over steel, gold pinstripe edging, rivets, parade-ground wear",
+      "metal": 0.15,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#2f4f7a",
+        "secondary": "#c8a44a",
+        "accent": "#7fd4ff",
+        "neutral": "#3a3d42"
+      }
+    },
+    {
+      "id": "iron_directorate__armour_secondary",
+      "kind": "material",
+      "faction": "iron_directorate",
+      "slot": "armour_secondary",
+      "prompt": "bright gold-trimmed armour panels, brushed gold leaf over gunmetal, tiny dents",
+      "metal": 1.0,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#2f4f7a",
+        "secondary": "#c8a44a",
+        "accent": "#7fd4ff",
+        "neutral": "#3a3d42"
+      }
+    },
+    {
+      "id": "iron_directorate__underlayer",
+      "kind": "material",
+      "faction": "iron_directorate",
+      "slot": "underlayer",
+      "prompt": "charcoal military fatigues, tight weave, sweat and dust, reinforced knees",
+      "metal": 0.0,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#2f4f7a",
+        "secondary": "#c8a44a",
+        "accent": "#7fd4ff",
+        "neutral": "#3a3d42"
+      }
+    },
+    {
+      "id": "iron_directorate__metal_trim",
+      "kind": "material",
+      "faction": "iron_directorate",
+      "slot": "metal_trim",
+      "prompt": "polished gunmetal fittings and buckles, cold blue sheen, fingerprints",
+      "metal": 1.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#2f4f7a",
+        "secondary": "#c8a44a",
+        "accent": "#7fd4ff",
+        "neutral": "#3a3d42"
+      }
+    },
+    {
+      "id": "iron_directorate__accent_emissive",
+      "kind": "material",
+      "faction": "iron_directorate",
+      "slot": "accent_emissive",
+      "prompt": "cool cyan lens and rail-coil glow, concentric rings, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#2f4f7a",
+        "secondary": "#c8a44a",
+        "accent": "#7fd4ff",
+        "neutral": "#3a3d42"
+      }
+    },
+    {
+      "id": "cinderborn__armour_primary",
+      "kind": "material",
+      "faction": "cinderborn",
+      "slot": "armour_primary",
+      "prompt": "warped ceramite plates, ash-black with purple-pink witchfire heat staining, brands and rivets, cracked enamel",
+      "metal": 0.3,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#3a2438",
+        "secondary": "#b0478f",
+        "accent": "#ff8a3d",
+        "neutral": "#1e1a1f"
+      }
+    },
+    {
+      "id": "cinderborn__armour_secondary",
+      "kind": "material",
+      "faction": "cinderborn",
+      "slot": "armour_secondary",
+      "prompt": "burnished bronze trim on blackened armour, soot in the engraving",
+      "metal": 1.0,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#3a2438",
+        "secondary": "#b0478f",
+        "accent": "#ff8a3d",
+        "neutral": "#1e1a1f"
+      }
+    },
+    {
+      "id": "cinderborn__underlayer",
+      "kind": "material",
+      "faction": "cinderborn",
+      "slot": "underlayer",
+      "prompt": "ash-stained crimson cloth and chain, scorched hems, ember burns",
+      "metal": 0.1,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#3a2438",
+        "secondary": "#b0478f",
+        "accent": "#ff8a3d",
+        "neutral": "#1e1a1f"
+      }
+    },
+    {
+      "id": "cinderborn__metal_trim",
+      "kind": "material",
+      "faction": "cinderborn",
+      "slot": "metal_trim",
+      "prompt": "blackened iron chains and hooks, heat discolouration, cinder dust",
+      "metal": 1.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#3a2438",
+        "secondary": "#b0478f",
+        "accent": "#ff8a3d",
+        "neutral": "#1e1a1f"
+      }
+    },
+    {
+      "id": "cinderborn__accent_emissive",
+      "kind": "material",
+      "faction": "cinderborn",
+      "slot": "accent_emissive",
+      "prompt": "orange witchfire embers embedded in cracked armour, glowing fissures, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#3a2438",
+        "secondary": "#b0478f",
+        "accent": "#ff8a3d",
+        "neutral": "#1e1a1f"
+      }
+    },
+    {
+      "id": "parasitic_bloom__armour_primary",
+      "kind": "material",
+      "faction": "parasitic_bloom",
+      "slot": "armour_primary",
+      "prompt": "coral-bone carapace plating, ridged and layered, dull ivory with green algae in the seams",
+      "metal": 0.0,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#7d6b5a",
+        "secondary": "#3f6f52",
+        "accent": "#c9f27a",
+        "neutral": "#2a2320"
+      }
+    },
+    {
+      "id": "parasitic_bloom__armour_secondary",
+      "kind": "material",
+      "faction": "parasitic_bloom",
+      "slot": "armour_secondary",
+      "prompt": "dense chitin scale plates, mottled brown-green, wet sheen",
+      "metal": 0.0,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#7d6b5a",
+        "secondary": "#3f6f52",
+        "accent": "#c9f27a",
+        "neutral": "#2a2320"
+      }
+    },
+    {
+      "id": "parasitic_bloom__underlayer",
+      "kind": "material",
+      "faction": "parasitic_bloom",
+      "slot": "underlayer",
+      "prompt": "exposed sinew and membrane, pink-grey, veined, glistening",
+      "metal": 0.0,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#7d6b5a",
+        "secondary": "#3f6f52",
+        "accent": "#c9f27a",
+        "neutral": "#2a2320"
+      }
+    },
+    {
+      "id": "parasitic_bloom__metal_trim",
+      "kind": "material",
+      "faction": "parasitic_bloom",
+      "slot": "metal_trim",
+      "prompt": "thorned living bone spurs, ivory tips, dark root ends",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#7d6b5a",
+        "secondary": "#3f6f52",
+        "accent": "#c9f27a",
+        "neutral": "#2a2320"
+      }
+    },
+    {
+      "id": "parasitic_bloom__accent_emissive",
+      "kind": "material",
+      "faction": "parasitic_bloom",
+      "slot": "accent_emissive",
+      "prompt": "spore bulbs glowing acid yellow-green, translucent membranes, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#7d6b5a",
+        "secondary": "#3f6f52",
+        "accent": "#c9f27a",
+        "neutral": "#2a2320"
+      }
+    },
+    {
+      "id": "radiant_concord__armour_primary",
+      "kind": "material",
+      "faction": "radiant_concord",
+      "slot": "armour_primary",
+      "prompt": "pristine white ceramic composite armour, razor-clean panel lines, faint iridescence",
+      "metal": 0.1,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#e8eef2",
+        "secondary": "#9fb6c4",
+        "accent": "#39e0f0",
+        "neutral": "#5a6670"
+      }
+    },
+    {
+      "id": "radiant_concord__armour_secondary",
+      "kind": "material",
+      "faction": "radiant_concord",
+      "slot": "armour_secondary",
+      "prompt": "mirror-chrome trim, perfect reflective edges, micro-scratches only",
+      "metal": 1.0,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#e8eef2",
+        "secondary": "#9fb6c4",
+        "accent": "#39e0f0",
+        "neutral": "#5a6670"
+      }
+    },
+    {
+      "id": "radiant_concord__underlayer",
+      "kind": "material",
+      "faction": "radiant_concord",
+      "slot": "underlayer",
+      "prompt": "smooth grey bodysuit fabric, seamless, subtle hexagonal weave",
+      "metal": 0.0,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#e8eef2",
+        "secondary": "#9fb6c4",
+        "accent": "#39e0f0",
+        "neutral": "#5a6670"
+      }
+    },
+    {
+      "id": "radiant_concord__metal_trim",
+      "kind": "material",
+      "faction": "radiant_concord",
+      "slot": "metal_trim",
+      "prompt": "anodised silver mechanism housings, precision machined, no rust",
+      "metal": 1.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#e8eef2",
+        "secondary": "#9fb6c4",
+        "accent": "#39e0f0",
+        "neutral": "#5a6670"
+      }
+    },
+    {
+      "id": "radiant_concord__accent_emissive",
+      "kind": "material",
+      "faction": "radiant_concord",
+      "slot": "accent_emissive",
+      "prompt": "cyan targeting light strips, crisp glowing rectangles, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#e8eef2",
+        "secondary": "#9fb6c4",
+        "accent": "#39e0f0",
+        "neutral": "#5a6670"
+      }
+    },
+    {
+      "id": "chrono_revenants__armour_primary",
+      "kind": "material",
+      "faction": "chrono_revenants",
+      "slot": "armour_primary",
+      "prompt": "green-black living metal slab armour, seamless necrodermis, faint vertical striations",
+      "metal": 0.95,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#1d2b24",
+        "secondary": "#3d6b52",
+        "accent": "#7cff9e",
+        "neutral": "#11150f"
+      }
+    },
+    {
+      "id": "chrono_revenants__armour_secondary",
+      "kind": "material",
+      "faction": "chrono_revenants",
+      "slot": "armour_secondary",
+      "prompt": "bronze-green engraved funerary plate, hieroglyph grooves, patina",
+      "metal": 0.9,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#1d2b24",
+        "secondary": "#3d6b52",
+        "accent": "#7cff9e",
+        "neutral": "#11150f"
+      }
+    },
+    {
+      "id": "chrono_revenants__underlayer",
+      "kind": "material",
+      "faction": "chrono_revenants",
+      "slot": "underlayer",
+      "prompt": "dark metallic mesh joints, no cloth, oiled black",
+      "metal": 0.8,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#1d2b24",
+        "secondary": "#3d6b52",
+        "accent": "#7cff9e",
+        "neutral": "#11150f"
+      }
+    },
+    {
+      "id": "chrono_revenants__metal_trim",
+      "kind": "material",
+      "faction": "chrono_revenants",
+      "slot": "metal_trim",
+      "prompt": "aged gold inlay on black stone, chipped edges",
+      "metal": 1.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#1d2b24",
+        "secondary": "#3d6b52",
+        "accent": "#7cff9e",
+        "neutral": "#11150f"
+      }
+    },
+    {
+      "id": "chrono_revenants__accent_emissive",
+      "kind": "material",
+      "faction": "chrono_revenants",
+      "slot": "accent_emissive",
+      "prompt": "sickly green gauss energy seams, sharp glowing lines, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#1d2b24",
+        "secondary": "#3d6b52",
+        "accent": "#7cff9e",
+        "neutral": "#11150f"
+      }
+    },
+    {
+      "id": "wreckstorm_clans__armour_primary",
+      "kind": "material",
+      "faction": "wreckstorm_clans",
+      "slot": "armour_primary",
+      "prompt": "bolted scrap armour, rust-orange and mismatched plates, weld beads, dents, painted glyphs",
+      "metal": 0.55,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#8a4a24",
+        "secondary": "#5a5a52",
+        "accent": "#e0b02a",
+        "neutral": "#2e2a25"
+      }
+    },
+    {
+      "id": "wreckstorm_clans__armour_secondary",
+      "kind": "material",
+      "faction": "wreckstorm_clans",
+      "slot": "armour_secondary",
+      "prompt": "stacked scrap metal patchwork, exposed rivets, grease",
+      "metal": 0.9,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#8a4a24",
+        "secondary": "#5a5a52",
+        "accent": "#e0b02a",
+        "neutral": "#2e2a25"
+      }
+    },
+    {
+      "id": "wreckstorm_clans__underlayer",
+      "kind": "material",
+      "faction": "wreckstorm_clans",
+      "slot": "underlayer",
+      "prompt": "filthy leather and hide scraps, crude stitching, oil stains",
+      "metal": 0.0,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#8a4a24",
+        "secondary": "#5a5a52",
+        "accent": "#e0b02a",
+        "neutral": "#2e2a25"
+      }
+    },
+    {
+      "id": "wreckstorm_clans__metal_trim",
+      "kind": "material",
+      "faction": "wreckstorm_clans",
+      "slot": "metal_trim",
+      "prompt": "crude iron spikes and reinforcement bar, hammer marks",
+      "metal": 1.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#8a4a24",
+        "secondary": "#5a5a52",
+        "accent": "#e0b02a",
+        "neutral": "#2e2a25"
+      }
+    },
+    {
+      "id": "wreckstorm_clans__accent_emissive",
+      "kind": "material",
+      "faction": "wreckstorm_clans",
+      "slot": "accent_emissive",
+      "prompt": "yellow warning paint and hot exhaust glow through slats, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#8a4a24",
+        "secondary": "#5a5a52",
+        "accent": "#e0b02a",
+        "neutral": "#2e2a25"
+      }
+    },
+    {
+      "id": "void_corsairs__armour_primary",
+      "kind": "material",
+      "faction": "void_corsairs",
+      "slot": "armour_primary",
+      "prompt": "pale bone-white hull plating, swept fin edges, hard-light seams, immaculate",
+      "metal": 0.35,
+      "tile_m": 0.5,
+      "emissive": false,
+      "palette": {
+        "primary": "#cfd6d2",
+        "secondary": "#2a3f4a",
+        "accent": "#8ef2ff",
+        "neutral": "#1a2226"
+      }
+    },
+    {
+      "id": "void_corsairs__armour_secondary",
+      "kind": "material",
+      "faction": "void_corsairs",
+      "slot": "armour_secondary",
+      "prompt": "deep teal lacquered panels with hairline silver inlay",
+      "metal": 0.5,
+      "tile_m": 0.35,
+      "emissive": false,
+      "palette": {
+        "primary": "#cfd6d2",
+        "secondary": "#2a3f4a",
+        "accent": "#8ef2ff",
+        "neutral": "#1a2226"
+      }
+    },
+    {
+      "id": "void_corsairs__underlayer",
+      "kind": "material",
+      "faction": "void_corsairs",
+      "slot": "underlayer",
+      "prompt": "fine dark bodysuit weave, faint reflective thread",
+      "metal": 0.1,
+      "tile_m": 0.22,
+      "emissive": false,
+      "palette": {
+        "primary": "#cfd6d2",
+        "secondary": "#2a3f4a",
+        "accent": "#8ef2ff",
+        "neutral": "#1a2226"
+      }
+    },
+    {
+      "id": "void_corsairs__metal_trim",
+      "kind": "material",
+      "faction": "void_corsairs",
+      "slot": "metal_trim",
+      "prompt": "pale chrome edging, holographic sheen, cold",
+      "metal": 1.0,
+      "tile_m": 0.3,
+      "emissive": false,
+      "palette": {
+        "primary": "#cfd6d2",
+        "secondary": "#2a3f4a",
+        "accent": "#8ef2ff",
+        "neutral": "#1a2226"
+      }
+    },
+    {
+      "id": "void_corsairs__accent_emissive",
+      "kind": "material",
+      "faction": "void_corsairs",
+      "slot": "accent_emissive",
+      "prompt": "hard-light blade edges, pale cyan plasma, razor thin, no bloom",
+      "metal": 0.0,
+      "tile_m": 0.3,
+      "emissive": true,
+      "palette": {
+        "primary": "#cfd6d2",
+        "secondary": "#2a3f4a",
+        "accent": "#8ef2ff",
+        "neutral": "#1a2226"
+      }
+    },
+    {
+      "id": "gunmetal_worn",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "worn gunmetal steel, fine scratches, oil sheen, dark charcoal grey",
+      "metal": 1.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "steel_rusted",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "heavily rusted steel plate, orange-brown corrosion, pitting, flaking paint edges",
+      "metal": 0.8,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "steel_painted_green",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "chipped military green painted steel, exposed primer, edge wear",
+      "metal": 0.3,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "brass_tarnished",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "tarnished brass, verdigris in recesses, brushed highlights",
+      "metal": 1.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "black_polymer",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "matte black injection-moulded polymer, mould texture, faint scuffs",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "rubber_worn",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "worn black rubber, fine crazing, dust in the grooves",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "leather_tan",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "tan leather straps, creased, stitched seams, sweat staining",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "cloth_canvas",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "coarse olive canvas weave, frayed threads, dust",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "bone_chitin",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "pale bone chitin, ridged growth lines, matte, slight translucency at edges",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "flesh_organic",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "pale organic flesh, fine pores, veins under the surface, slightly wet",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "concrete_urban",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "grey urban concrete, aggregate showing, hairline cracks, soot",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "concrete_scorched",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "concrete blackened by fire, ash film, heat crazing",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "metal_grate",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "steel floor grating, diamond plate, worn edges, grime in the recesses",
+      "metal": 1.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "asphalt_cracked",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "cracked asphalt, tar patches, gravel, faded road paint",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "sand_rubble",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "grey-brown rubble and sand, stones of mixed size, dust",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "glass_dirty",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "dirty industrial glass, smudges, fine scratches, faint green tint",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "wood_plank",
+      "kind": "material",
+      "faction": "shared",
+      "slot": "shared",
+      "prompt": "weathered timber planks, split grain, nail stains",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false
+    },
+    {
+      "id": "pattern_panel_seams",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable armour panel seams and rivet rows, dark recessed grooves, worn edges",
+      "metal": 0.8,
+      "emissive": false,
+      "scale_m": 1.0,
+      "tile_m": 1.0
+    },
+    {
+      "id": "pattern_rivet_rows",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "rows of dome rivets on brushed metal, even spacing, grime in the recesses",
+      "metal": 1.0,
+      "emissive": false,
+      "scale_m": 0.4,
+      "tile_m": 0.4
+    },
+    {
+      "id": "pattern_hex_mesh",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable hexagonal grip mesh, raised hexagons, oil in the grooves",
+      "metal": 0.9,
+      "emissive": false,
+      "scale_m": 0.25,
+      "tile_m": 0.25
+    },
+    {
+      "id": "pattern_gothic_filigree",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable gothic filigree band, ornate pressed-metal scrollwork, aged gold",
+      "metal": 1.0,
+      "emissive": false,
+      "scale_m": 0.6,
+      "tile_m": 0.6
+    },
+    {
+      "id": "pattern_circuit_tracery",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable etched circuit tracery, thin silver traces on dark substrate, tiny vias",
+      "metal": 0.6,
+      "emissive": false,
+      "scale_m": 0.5,
+      "tile_m": 0.5
+    },
+    {
+      "id": "pattern_carapace_scale",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable overlapping carapace scales, bone-brown, ridged growth lines",
+      "metal": 0.0,
+      "emissive": false,
+      "scale_m": 0.5,
+      "tile_m": 0.5
+    },
+    {
+      "id": "pattern_chainmail",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable heavy chainmail rings, blackened iron, oiled, interlocked",
+      "metal": 1.0,
+      "emissive": false,
+      "scale_m": 0.3,
+      "tile_m": 0.3
+    },
+    {
+      "id": "pattern_dazzle_camo",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable naval dazzle camouflage, hard-edged navy and grey geometric shapes",
+      "metal": 0.2,
+      "emissive": false,
+      "scale_m": 2.0,
+      "tile_m": 2.0
+    },
+    {
+      "id": "pattern_hazard_chevrons",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable worn hazard chevrons, yellow and black paint chipped to primer",
+      "metal": 0.2,
+      "emissive": false,
+      "scale_m": 0.8,
+      "tile_m": 0.8
+    },
+    {
+      "id": "pattern_edge_wear",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable rust and paint edge-wear gradient, chipped rims, bare metal beneath",
+      "metal": 0.8,
+      "emissive": false,
+      "scale_m": 0.5,
+      "tile_m": 0.5
+    },
+    {
+      "id": "pattern_cable_bundle",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable bundle of ribbed cables and conduits, black rubber and steel braid",
+      "metal": 0.4,
+      "emissive": false,
+      "scale_m": 0.6,
+      "tile_m": 0.6
+    },
+    {
+      "id": "pattern_arcane_band",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable band of carved arcane glyphs, glowing recesses, dark stone",
+      "metal": 0.1,
+      "emissive": false,
+      "scale_m": 0.7,
+      "tile_m": 0.7
+    },
+    {
+      "id": "pattern_stencil_marks",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable military stencil block lettering and numbering, worn white paint",
+      "metal": 0.1,
+      "emissive": false,
+      "scale_m": 0.9,
+      "tile_m": 0.9
+    },
+    {
+      "id": "pattern_bone_weave",
+      "kind": "pattern",
+      "faction": "shared",
+      "slot": "pattern",
+      "prompt": "tileable woven bone lattice, interlaced ribs, ivory with dried tissue",
+      "metal": 0.0,
+      "emissive": false,
+      "scale_m": 0.6,
+      "tile_m": 0.6
+    },
+    {
+      "id": "insignia_iron_directorate",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "stamped gold cog-and-bayonet emblem, flat graphic, single colour on transparent",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "insignia_cinderborn",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "branded flame-and-chain sigil, glowing edges, flat graphic",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "insignia_parasitic_bloom",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "radial spore-bloom sigil, organic linework, flat graphic",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "insignia_radiant_concord",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "geometric resonance choir glyph, thin cyan lines, flat graphic",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "insignia_chrono_revenants",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "segmented hourglass cartouche, engraved, flat graphic",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "insignia_wreckstorm_clans",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "crude riveted jaw sigil, spray-stencil edges, flat graphic",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "insignia_void_corsairs",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "swept fin-and-star sigil, hard-light outline, flat graphic",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "decal_scorch",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "black scorch blast mark, radial soot, alpha fade at edges",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "decal_bullet_holes",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "cluster of bullet impact holes with chipped rims and soot rings",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "decal_blood",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "dried blood spatter, dark maroon, irregular droplets",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "decal_rust_streaks",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "vertical rust weeping streaks from fixings, transparent",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    },
+    {
+      "id": "decal_hazard_stripes",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "worn yellow-black hazard diagonal stripes, chipped paint",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": true
+    },
+    {
+      "id": "decal_warning_stencil",
+      "kind": "decal",
+      "faction": "shared",
+      "slot": "decal",
+      "prompt": "military stencil lettering block, worn white paint, generic marks only",
+      "metal": 0.0,
+      "tile_m": 1.0,
+      "emissive": false,
+      "full_bleed": false
+    }
+  ],
+  "batches": [
+    {
+      "batch": 1,
+      "kind": "material",
+      "items": [
+        "chrono_revenants__armour_primary",
+        "chrono_revenants__armour_secondary",
+        "chrono_revenants__underlayer",
+        "chrono_revenants__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_01_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: green-black living metal slab armour, seamless necrodermis, faint vertical striations, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: bronze-green engraved funerary plate, hieroglyph grooves, patina, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: dark metallic mesh joints, no cloth, oiled black, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: aged gold inlay on black stone, chipped edges, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 2,
+      "kind": "material",
+      "items": [
+        "cinderborn__armour_primary",
+        "cinderborn__armour_secondary",
+        "cinderborn__underlayer",
+        "cinderborn__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_02_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: warped ceramite plates, ash-black with purple-pink witchfire heat staining, brands and rivets, cracked enamel, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: burnished bronze trim on blackened armour, soot in the engraving, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: ash-stained crimson cloth and chain, scorched hems, ember burns, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: blackened iron chains and hooks, heat discolouration, cinder dust, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 3,
+      "kind": "material",
+      "items": [
+        "iron_directorate__armour_primary",
+        "iron_directorate__armour_secondary",
+        "iron_directorate__underlayer",
+        "iron_directorate__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_03_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: disciplined industrial armour plate, deep navy-blue enamel over steel, gold pinstripe edging, rivets, parade-ground wear, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: bright gold-trimmed armour panels, brushed gold leaf over gunmetal, tiny dents, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: charcoal military fatigues, tight weave, sweat and dust, reinforced knees, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: polished gunmetal fittings and buckles, cold blue sheen, fingerprints, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 4,
+      "kind": "material",
+      "items": [
+        "parasitic_bloom__armour_primary",
+        "parasitic_bloom__armour_secondary",
+        "parasitic_bloom__underlayer",
+        "parasitic_bloom__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_04_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: coral-bone carapace plating, ridged and layered, dull ivory with green algae in the seams, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: dense chitin scale plates, mottled brown-green, wet sheen, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: exposed sinew and membrane, pink-grey, veined, glistening, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: thorned living bone spurs, ivory tips, dark root ends, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 5,
+      "kind": "material",
+      "items": [
+        "radiant_concord__armour_primary",
+        "radiant_concord__armour_secondary",
+        "radiant_concord__underlayer",
+        "radiant_concord__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_05_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: pristine white ceramic composite armour, razor-clean panel lines, faint iridescence, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: mirror-chrome trim, perfect reflective edges, micro-scratches only, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: smooth grey bodysuit fabric, seamless, subtle hexagonal weave, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: anodised silver mechanism housings, precision machined, no rust, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 6,
+      "kind": "material",
+      "items": [
+        "void_corsairs__armour_primary",
+        "void_corsairs__armour_secondary",
+        "void_corsairs__underlayer",
+        "void_corsairs__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_06_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: pale bone-white hull plating, swept fin edges, hard-light seams, immaculate, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: deep teal lacquered panels with hairline silver inlay, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: fine dark bodysuit weave, faint reflective thread, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: pale chrome edging, holographic sheen, cold, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 7,
+      "kind": "material",
+      "items": [
+        "wreckstorm_clans__armour_primary",
+        "wreckstorm_clans__armour_secondary",
+        "wreckstorm_clans__underlayer",
+        "wreckstorm_clans__metal_trim"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_07_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: bolted scrap armour, rust-orange and mismatched plates, weld beads, dents, painted glyphs, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: stacked scrap metal patchwork, exposed rivets, grease, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: filthy leather and hide scraps, crude stitching, oil stains, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: crude iron spikes and reinforcement bar, hammer marks, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 8,
+      "kind": "material",
+      "items": [
+        "iron_directorate__accent_emissive",
+        "cinderborn__accent_emissive",
+        "parasitic_bloom__accent_emissive",
+        "radiant_concord__accent_emissive"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_08_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: cool cyan lens and rail-coil glow, concentric rings, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed\ntop-right: orange witchfire embers embedded in cracked armour, glowing fissures, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed\nbottom-left: spore bulbs glowing acid yellow-green, translucent membranes, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed\nbottom-right: cyan targeting light strips, crisp glowing rectangles, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed"
+    },
+    {
+      "batch": 9,
+      "kind": "material",
+      "items": [
+        "chrono_revenants__accent_emissive",
+        "wreckstorm_clans__accent_emissive",
+        "void_corsairs__accent_emissive"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_09_material.png",
+      "prompt": "A 2x2 grid of 3 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: sickly green gauss energy seams, sharp glowing lines, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed\ntop-right: yellow warning paint and hot exhaust glow through slats, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed\nbottom-left: hard-light blade edges, pale cyan plasma, razor thin, no bloom, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference, emissive areas bright and saturated but unbloomed"
+    },
+    {
+      "batch": 10,
+      "kind": "material",
+      "items": [
+        "gunmetal_worn",
+        "steel_rusted",
+        "steel_painted_green",
+        "brass_tarnished"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_10_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: worn gunmetal steel, fine scratches, oil sheen, dark charcoal grey, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: heavily rusted steel plate, orange-brown corrosion, pitting, flaking paint edges, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: chipped military green painted steel, exposed primer, edge wear, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: tarnished brass, verdigris in recesses, brushed highlights, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 11,
+      "kind": "material",
+      "items": [
+        "black_polymer",
+        "rubber_worn",
+        "leather_tan",
+        "cloth_canvas"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_11_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: matte black injection-moulded polymer, mould texture, faint scuffs, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: worn black rubber, fine crazing, dust in the grooves, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: tan leather straps, creased, stitched seams, sweat staining, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: coarse olive canvas weave, frayed threads, dust, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 12,
+      "kind": "material",
+      "items": [
+        "bone_chitin",
+        "flesh_organic",
+        "concrete_urban",
+        "concrete_scorched"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_12_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: pale bone chitin, ridged growth lines, matte, slight translucency at edges, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: pale organic flesh, fine pores, veins under the surface, slightly wet, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: grey urban concrete, aggregate showing, hairline cracks, soot, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: concrete blackened by fire, ash film, heat crazing, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 13,
+      "kind": "material",
+      "items": [
+        "metal_grate",
+        "asphalt_cracked",
+        "sand_rubble",
+        "glass_dirty"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_13_material.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: steel floor grating, diamond plate, worn edges, grime in the recesses, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: cracked asphalt, tar patches, gravel, faded road paint, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: grey-brown rubble and sand, stones of mixed size, dust, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: dirty industrial glass, smudges, fine scratches, faint green tint, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 14,
+      "kind": "material",
+      "items": [
+        "wood_plank"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_14_material.png",
+      "prompt": "A 2x2 grid of 1 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: weathered timber planks, split grain, nail stains, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 15,
+      "kind": "pattern",
+      "items": [
+        "pattern_arcane_band",
+        "pattern_bone_weave",
+        "pattern_cable_bundle",
+        "pattern_carapace_scale"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_15_pattern.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: tileable band of carved arcane glyphs, glowing recesses, dark stone, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: tileable woven bone lattice, interlaced ribs, ivory with dried tissue, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: tileable bundle of ribbed cables and conduits, black rubber and steel braid, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: tileable overlapping carapace scales, bone-brown, ridged growth lines, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 16,
+      "kind": "pattern",
+      "items": [
+        "pattern_chainmail",
+        "pattern_circuit_tracery",
+        "pattern_dazzle_camo",
+        "pattern_edge_wear"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_16_pattern.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: tileable heavy chainmail rings, blackened iron, oiled, interlocked, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: tileable etched circuit tracery, thin silver traces on dark substrate, tiny vias, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: tileable naval dazzle camouflage, hard-edged navy and grey geometric shapes, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: tileable rust and paint edge-wear gradient, chipped rims, bare metal beneath, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 17,
+      "kind": "pattern",
+      "items": [
+        "pattern_gothic_filigree",
+        "pattern_hazard_chevrons",
+        "pattern_hex_mesh",
+        "pattern_panel_seams"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_17_pattern.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: tileable gothic filigree band, ornate pressed-metal scrollwork, aged gold, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: tileable worn hazard chevrons, yellow and black paint chipped to primer, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: tileable hexagonal grip mesh, raised hexagons, oil in the grooves, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: tileable armour panel seams and rivet rows, dark recessed grooves, worn edges, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 18,
+      "kind": "pattern",
+      "items": [
+        "pattern_rivet_rows",
+        "pattern_stencil_marks"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_18_pattern.png",
+      "prompt": "A 2x2 grid of 2 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: rows of dome rivets on brushed metal, even spacing, grime in the recesses, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: tileable military stencil block lettering and numbering, worn white paint, seamless tileable texture, filling the entire quadrant edge to edge, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 19,
+      "kind": "decal",
+      "items": [
+        "decal_blood",
+        "decal_bullet_holes",
+        "decal_hazard_stripes",
+        "decal_rust_streaks"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_19_decal.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: dried blood spatter, dark maroon, irregular droplets, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: cluster of bullet impact holes with chipped rims and soot rings, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: worn yellow-black hazard diagonal stripes, chipped paint, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: vertical rust weeping streaks from fixings, transparent, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 20,
+      "kind": "decal",
+      "items": [
+        "decal_scorch",
+        "decal_warning_stencil",
+        "insignia_chrono_revenants",
+        "insignia_cinderborn"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_20_decal.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: black scorch blast mark, radial soot, alpha fade at edges, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: military stencil lettering block, worn white paint, generic marks only, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: segmented hourglass cartouche, engraved, flat graphic, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: branded flame-and-chain sigil, glowing edges, flat graphic, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 21,
+      "kind": "decal",
+      "items": [
+        "insignia_iron_directorate",
+        "insignia_parasitic_bloom",
+        "insignia_radiant_concord",
+        "insignia_void_corsairs"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_21_decal.png",
+      "prompt": "A 2x2 grid of 4 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: stamped gold cog-and-bayonet emblem, flat graphic, single colour on transparent, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\ntop-right: radial spore-bloom sigil, organic linework, flat graphic, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-left: geometric resonance choir glyph, thin cyan lines, flat graphic, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference\nbottom-right: swept fin-and-star sigil, hard-light outline, flat graphic, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    },
+    {
+      "batch": 22,
+      "kind": "decal",
+      "items": [
+        "insignia_wreckstorm_clans"
+      ],
+      "sheet": "/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/materials/grimdark_scifi/sheets/batch_22_decal.png",
+      "prompt": "A 2x2 grid of 1 separate material tiles on a pure black background, each quadrant a distinct tile, separated by a 24 pixel black gutter.\nQuadrants: top-left, top-right, bottom-left, bottom-right.\ntop-left: crude riveted jaw sigil, spray-stencil edges, flat graphic, single flat vector-style graphic centred on exactly #FFFFFF pure white background, no gradient, no vignette, no drop shadow, no card edge, no checkerboard, crisp edges, the graphic is the only non-white content, grimdark science-fiction material reference, 40k-adjacent industrial grim tone, neutral albedo colour, base colour only, no perspective, no vignette, no cast shadows, no baked lighting, no bloom, no text, no watermark, no objects, no background scene, flat even illumination, photographic material reference"
+    }
+  ]
+}

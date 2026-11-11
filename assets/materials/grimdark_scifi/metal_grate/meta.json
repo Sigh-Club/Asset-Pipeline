@@ -1,0 +1,21 @@
+{
+  "id": "metal_grate",
+  "kind": "material",
+  "faction": "shared",
+  "slot": "shared",
+  "prompt": "steel floor grating, diamond plate, worn edges, grime in the recesses",
+  "tileable": true,
+  "tileable_before": 0.1451,
+  "tileable_after": 0.0451,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

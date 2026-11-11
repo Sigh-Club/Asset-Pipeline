@@ -1,0 +1,21 @@
+{
+  "id": "parasitic_bloom__armour_primary",
+  "kind": "material",
+  "faction": "parasitic_bloom",
+  "slot": "armour_primary",
+  "prompt": "coral-bone carapace plating, ridged and layered, dull ivory with green algae in the seams",
+  "tileable": true,
+  "tileable_before": 0.2597,
+  "tileable_after": 0.0277,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.5,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

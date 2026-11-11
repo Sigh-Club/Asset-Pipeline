@@ -1,0 +1,21 @@
+{
+  "id": "insignia_chrono_revenants",
+  "kind": "decal",
+  "faction": "shared",
+  "slot": "decal",
+  "prompt": "segmented hourglass cartouche, engraved, flat graphic",
+  "tileable": false,
+  "tileable_before": 0.5003,
+  "tileable_after": 0.4577,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "pattern_hex_mesh",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable hexagonal grip mesh, raised hexagons, oil in the grooves",
+  "tileable": true,
+  "tileable_before": 0.3027,
+  "tileable_after": 0.0222,
+  "size": 1024,
+  "metallic_constant": 0.9,
+  "tile_m": 0.25,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

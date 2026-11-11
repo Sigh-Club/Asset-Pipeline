@@ -1,0 +1,32 @@
+{
+  "faction": "chrono_revenants",
+  "style": "revenant",
+  "units": {
+    "sepulchre_warden": {
+      "body": "heavy",
+      "helm": "slab",
+      "shoulders": "slab",
+      "weapon": "gauss",
+      "back": "pack"
+    },
+    "undying_cohort": {
+      "body": "standard",
+      "helm": "slab",
+      "shoulders": "slab",
+      "weapon": "gauss"
+    },
+    "void_reaper": {
+      "body": "standard",
+      "helm": "slab",
+      "shoulders": "slab",
+      "weapon": "chainblade"
+    },
+    "tomb_obelisk": {
+      "body": "monolith",
+      "helm": "slab",
+      "shoulders": "slab",
+      "weapon": "gauss",
+      "crest": true
+    }
+  }
+}

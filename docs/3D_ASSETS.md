@@ -386,3 +386,33 @@ palette** (`#800000`, `#151515`, … instead of the `grimdark_3d` values), and i
 trooper is more ornate than the line-infantry model. It is therefore a density /
 value-ramp reference, not a colour authority — the palette authority stays
 `assets/palettes/grimdark_3d.gpl`.
+
+---
+
+## 8. Authored unit kit (2026-11-11)
+
+The roster-scale unit route is authored, not image-to-3D. It is deterministic, needs no Gemini
+quota or GPU generation, and carries role gear as real geometry.
+
+```bash
+# mesh + authored-weight rig + texel/atlas/palette/master/gates
+BUILD_RIG=1 tools/build_pixel_authored_unit.sh unit_<id> <unit-id> <faction>
+```
+
+- `configs/units/<faction>.json` — unit configs (body preset, helm, shoulders, back, weapon,
+  shield/robe/cloak, crest/horns).
+- `tools/blender/parametric_unit.py` — modular part generator. Primary forms are chamfered/tapered
+  prisms and wedges, not axis-aligned cubes; parts are named `<bone>__<slot>__<tag>` for authored
+  binding.
+- `tools/blender/unit_pose.py` — the shared arm poses. `ranged` puts the right hand on the pistol
+  grip and the left hand on the foregrip; the weapon is built around those two points and weighted
+  to `RightHand`. `melee` grows the blade from the right-hand socket.
+- `tools/blender/rig_unit_proof.py --bind authored --hold <pose>` — binds the authored vertex
+  groups (no distance weights) and builds the same 22-bone/9-clip rig.
+- `tools/pbr/tint_faction_pixel.py` — rebuilds a faction kit's pixel albedo on its identity ramp
+  when the generated sheet is ash-toned and the hue is lost at the pixel-variant size
+  (`configs/materials/faction_pixel_ramps.json`).
+
+Art rules applied: silhouette first, exaggerated role proportions, chamfered planes, no surface
+greebles outside the 4,000–4,800 tri budget. The engine floor is filled with hidden interior
+structure, never floating surface studs (those split the silhouette at side angles).

@@ -1,0 +1,21 @@
+{
+  "id": "pattern_cable_bundle",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable bundle of ribbed cables and conduits, black rubber and steel braid",
+  "tileable": true,
+  "tileable_before": 0.2034,
+  "tileable_after": 0.0336,
+  "size": 1024,
+  "metallic_constant": 0.4,
+  "tile_m": 0.6,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

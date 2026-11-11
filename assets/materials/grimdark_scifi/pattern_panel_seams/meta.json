@@ -1,0 +1,21 @@
+{
+  "id": "pattern_panel_seams",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable armour panel seams and rivet rows, dark recessed grooves, worn edges",
+  "tileable": true,
+  "tileable_before": 0.1381,
+  "tileable_after": 0.0083,
+  "size": 1024,
+  "metallic_constant": 0.8,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "chrono_revenants__metal_trim",
+  "kind": "material",
+  "faction": "chrono_revenants",
+  "slot": "metal_trim",
+  "prompt": "aged gold inlay on black stone, chipped edges",
+  "tileable": true,
+  "tileable_before": 0.1431,
+  "tileable_after": 0.0332,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.3,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

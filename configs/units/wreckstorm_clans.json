@@ -1,0 +1,46 @@
+{
+  "faction": "wreckstorm_clans",
+  "style": "wreckstorm",
+  "units": {
+    "detonation_crew": {
+      "body": "standard",
+      "helm": "jaw",
+      "shoulders": "scrap",
+      "weapon": "slugga",
+      "back": "ammo"
+    },
+    "scrapwalker_brute": {
+      "body": "heavy",
+      "helm": "jaw",
+      "shoulders": "scrap",
+      "weapon": "chainblade"
+    },
+    "junk_goliath": {
+      "body": "monolith",
+      "helm": "jaw",
+      "shoulders": "scrap",
+      "weapon": "autocannon"
+    },
+    "titan_fist": {
+      "body": "heavy",
+      "helm": "jaw",
+      "shoulders": "scrap",
+      "weapon": "chainblade",
+      "crest": true
+    },
+    "warboss": {
+      "body": "monolith",
+      "helm": "jaw",
+      "shoulders": "scrap",
+      "weapon": "chainblade",
+      "crest": true,
+      "horns": true
+    },
+    "wreckstorm_biker": {
+      "body": "light",
+      "helm": "jaw",
+      "shoulders": "scrap",
+      "weapon": "slugga"
+    }
+  }
+}

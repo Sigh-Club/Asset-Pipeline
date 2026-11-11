@@ -1,0 +1,13 @@
+{
+  "//": "Faction pixel albedo ramps. The generated material sheets are deliberately ash-toned, but at the 32-50 px pixel-variant size the faction hue is lost and the palette lock snaps it to grey. These ramps rebuild the albedo from the source luminance so the faction identity survives the pixel tier. Dark -> mid -> highlight; values are hex from FACTION_IDENTITY.md.",
+  "schema_version": 1,
+  "factions": {
+    "cinderborn": {
+      "slots": {
+        "armour_primary": ["#160d1f", "#4b1d6b", "#7a4a9e"],
+        "underlayer": ["#120a18", "#300050", "#4b1d6b"],
+        "accent_emissive": ["#7a2a5a", "#ff4dd8", "#ff9ae8"]
+      }
+    }
+  }
+}

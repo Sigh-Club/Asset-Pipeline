@@ -1,0 +1,21 @@
+{
+  "id": "insignia_wreckstorm_clans",
+  "kind": "decal",
+  "faction": "shared",
+  "slot": "decal",
+  "prompt": "crude riveted jaw sigil, spray-stencil edges, flat graphic",
+  "tileable": false,
+  "tileable_before": 0.0046,
+  "tileable_after": 0.0056,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

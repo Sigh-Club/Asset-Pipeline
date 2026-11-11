@@ -1,0 +1,40 @@
+{
+  "id": "iron_directorate__metal_trim",
+  "kind": "material",
+  "faction": "iron_directorate",
+  "slot": "metal_trim",
+  "prompt": "polished gunmetal fittings and buckles, cold blue sheen, fingerprints",
+  "tileable": true,
+  "tileable_before": 0.2222,
+  "tileable_after": 0.0162,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 0.3,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "metallic",
+    "normal",
+    "roughness"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated",
+  "retunes": [
+    {
+      "id": "iron_directorate__metal_trim",
+      "because": "review: glossy blue padded blocks; wrong surface language for polished gunmetal",
+      "luma_std_before": 27.54,
+      "luma_std_after": 42.56,
+      "luma_range_before": [
+        0.0,
+        255.0
+      ],
+      "luma_range_after": [
+        0.0,
+        255.0
+      ],
+      "chroma_before": 26.64,
+      "chroma_after": 14.04
+    }
+  ],
+  "surface": "polished gunmetal"
+}

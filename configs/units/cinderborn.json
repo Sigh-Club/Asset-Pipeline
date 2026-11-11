@@ -1,0 +1,105 @@
+{
+  "faction": "cinderborn",
+  "style": "cinderborn",
+  "units": {
+    "cinder_cultist": {
+      "label": "Cinder Cultists",
+      "body": "light",
+      "helm": "hood",
+      "shoulders": "none",
+      "back": "none",
+      "weapon": "blade",
+      "robe": true
+    },
+    "zealot_line": {
+      "label": "Line Zealots",
+      "body": "standard",
+      "helm": "hood",
+      "shoulders": "asym",
+      "back": "none",
+      "weapon": "chainblade",
+      "robe": true,
+      "horns": true
+    },
+    "ash_stalker": {
+      "label": "Ash Stalkers",
+      "body": "light",
+      "helm": "hood",
+      "shoulders": "none",
+      "back": "none",
+      "weapon": "blade",
+      "cloak": true,
+      "robe": true
+    },
+    "pyre_immolator": {
+      "label": "Pyre Immolators",
+      "body": "heavy",
+      "helm": "brim",
+      "shoulders": "asym",
+      "back": "ammo",
+      "weapon": "heavy_stubber",
+      "robe": true
+    },
+    "ashbound_artificer": {
+      "label": "Ashbound Artificer",
+      "body": "standard",
+      "helm": "hood",
+      "shoulders": "asym",
+      "back": "servo",
+      "weapon": "blade",
+      "robe": true
+    },
+    "zealot_captain": {
+      "label": "Zealot Captain",
+      "body": "standard",
+      "helm": "hood",
+      "shoulders": "asym",
+      "back": "banner",
+      "weapon": "chainblade",
+      "crest": true,
+      "robe": true,
+      "horns": true
+    },
+    "cinder_wraith": {
+      "label": "Cinder Wraith",
+      "body": "light",
+      "helm": "hood",
+      "shoulders": "none",
+      "back": "none",
+      "weapon": "blade",
+      "cloak": true,
+      "robe": true
+    },
+    "voidtouched_legionnaire": {
+      "label": "Voidtouched Legionnaire",
+      "body": "standard",
+      "helm": "hood",
+      "shoulders": "asym",
+      "back": "pack",
+      "weapon": "rifle",
+      "robe": false
+    },
+    "son_of_cinder": {
+      "label": "Son of Cinder",
+      "body": "heavy",
+      "helm": "hood",
+      "shoulders": "asym",
+      "back": "banner",
+      "weapon": "chainblade",
+      "crest": true,
+      "robe": true,
+      "horns": true
+    },
+    "warlord": {
+      "label": "Warlord",
+      "body": "monolith",
+      "helm": "hood",
+      "shoulders": "asym",
+      "back": "banner",
+      "weapon": "chainblade",
+      "crest": true,
+      "robe": true,
+      "horns": true
+    }
+  }
+}

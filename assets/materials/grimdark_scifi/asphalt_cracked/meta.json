@@ -1,0 +1,21 @@
+{
+  "id": "asphalt_cracked",
+  "kind": "material",
+  "faction": "shared",
+  "slot": "shared",
+  "prompt": "cracked asphalt, tar patches, gravel, faded road paint",
+  "tileable": true,
+  "tileable_before": 0.1457,
+  "tileable_after": 0.0644,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

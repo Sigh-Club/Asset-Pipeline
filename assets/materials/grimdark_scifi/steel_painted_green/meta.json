@@ -1,0 +1,21 @@
+{
+  "id": "steel_painted_green",
+  "kind": "material",
+  "faction": "shared",
+  "slot": "shared",
+  "prompt": "chipped military green painted steel, exposed primer, edge wear",
+  "tileable": true,
+  "tileable_before": 0.0958,
+  "tileable_after": 0.0128,
+  "size": 1024,
+  "metallic_constant": 0.3,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

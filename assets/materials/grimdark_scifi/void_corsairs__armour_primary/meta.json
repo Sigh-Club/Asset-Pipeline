@@ -1,0 +1,21 @@
+{
+  "id": "void_corsairs__armour_primary",
+  "kind": "material",
+  "faction": "void_corsairs",
+  "slot": "armour_primary",
+  "prompt": "pale bone-white hull plating, swept fin edges, hard-light seams, immaculate",
+  "tileable": true,
+  "tileable_before": 0.0437,
+  "tileable_after": 0.0052,
+  "size": 1024,
+  "metallic_constant": 0.35,
+  "tile_m": 0.5,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

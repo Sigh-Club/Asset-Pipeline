@@ -1,0 +1,92 @@
+{
+  "faction": "iron_directorate",
+  "style": "directorate",
+  "units": {
+    "line_infantry": {
+      "label": "Line Infantry",
+      "body": "standard",
+      "helm": "visor",
+      "shoulders": "block",
+      "back": "pack",
+      "weapon": "rifle"
+    },
+    "assault_breachers": {
+      "label": "Assault Breachers",
+      "body": "standard",
+      "helm": "visor",
+      "shoulders": "block",
+      "back": "jump",
+      "weapon": "rifle"
+    },
+    "pathfinder_scouts": {
+      "label": "Pathfinder Scouts",
+      "body": "light",
+      "helm": "cap",
+      "shoulders": "none",
+      "back": "none",
+      "weapon": "longrifle",
+      "cloak": true
+    },
+    "storm_talons": {
+      "label": "Storm Talons",
+      "body": "standard",
+      "helm": "visor",
+      "shoulders": "block",
+      "back": "jump",
+      "weapon": "rifle",
+      "crest": true
+    },
+    "suppression_team": {
+      "label": "Suppression Team",
+      "body": "heavy",
+      "helm": "brim",
+      "shoulders": "block",
+      "back": "ammo",
+      "weapon": "heavy_stubber"
+    },
+    "aegis_artillery": {
+      "label": "Aegis Artillery Battery",
+      "body": "heavy",
+      "helm": "brim",
+      "shoulders": "block",
+      "back": "ammo",
+      "weapon": "autocannon"
+    },
+    "logistics_engineer": {
+      "label": "Logistics Engineer",
+      "body": "standard",
+      "helm": "visor",
+      "shoulders": "plate",
+      "back": "servo",
+      "weapon": "rifle"
+    },
+    "command_officer": {
+      "label": "Command Officer",
+      "body": "standard",
+      "helm": "visor",
+      "shoulders": "block",
+      "back": "banner",
+      "weapon": "blade",
+      "crest": true
+    },
+    "ironclad_warden": {
+      "label": "Ironclad Warden",
+      "body": "heavy",
+      "helm": "slab",
+      "shoulders": "block",
+      "back": "pack",
+      "weapon": "autocannon",
+      "shield": "tower",
+      "crest": true
+    },
+    "ashrim_raiders": {
+      "label": "Ashrim Raiders",
+      "body": "light",
+      "helm": "cap",
+      "shoulders": "plate",
+      "back": "none",
+      "weapon": "rifle",
+      "cloak": true
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "gunmetal_worn",
+  "kind": "material",
+  "faction": "shared",
+  "slot": "shared",
+  "prompt": "worn gunmetal steel, fine scratches, oil sheen, dark charcoal grey",
+  "tileable": true,
+  "tileable_before": 0.0957,
+  "tileable_after": 0.0117,
+  "size": 1024,
+  "metallic_constant": 1.0,
+  "tile_m": 1.0,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "metallic",
+    "normal",
+    "roughness"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated",
+  "retunes": [
+    {
+      "id": "gunmetal_worn",
+      "because": "review: flat and low-contrast; needs value separation",
+      "luma_std_before": 6.46,
+      "luma_std_after": 59.3,
+      "luma_range_before": [
+        42.9,
+        173.1
+      ],
+      "luma_range_after": [
+        0.0,
+        255.0
+      ],
+      "chroma_before": 2.12,
+      "chroma_after": 9.92
+    }
+  ]
+}

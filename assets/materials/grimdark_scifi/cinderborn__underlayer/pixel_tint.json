@@ -1,0 +1,9 @@
+{
+  "ramp": [
+    "#120a18",
+    "#300050",
+    "#4b1d6b"
+  ],
+  "source": "albedo_pixel_src.png",
+  "because": "generated sheet is ash-toned; faction hue lost at pixel-variant size"
+}

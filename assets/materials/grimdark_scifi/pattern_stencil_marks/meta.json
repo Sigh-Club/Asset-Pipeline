@@ -1,0 +1,21 @@
+{
+  "id": "pattern_stencil_marks",
+  "kind": "pattern",
+  "faction": "shared",
+  "slot": "pattern",
+  "prompt": "tileable military stencil block lettering and numbering, worn white paint",
+  "tileable": true,
+  "tileable_before": 0.3019,
+  "tileable_after": 0.0103,
+  "size": 1024,
+  "metallic_constant": 0.1,
+  "tile_m": 0.9,
+  "emissive": false,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}

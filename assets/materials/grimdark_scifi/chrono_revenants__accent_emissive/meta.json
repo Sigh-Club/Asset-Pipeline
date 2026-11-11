@@ -1,0 +1,22 @@
+{
+  "id": "chrono_revenants__accent_emissive",
+  "kind": "material",
+  "faction": "chrono_revenants",
+  "slot": "accent_emissive",
+  "prompt": "sickly green gauss energy seams, sharp glowing lines, no bloom",
+  "tileable": true,
+  "tileable_before": 0.0885,
+  "tileable_after": 0.01,
+  "size": 1024,
+  "metallic_constant": 0.0,
+  "tile_m": 0.3,
+  "emissive": true,
+  "maps": [
+    "albedo",
+    "normal",
+    "roughness",
+    "metallic",
+    "emissive"
+  ],
+  "derived": "normal/roughness from albedo (tools/pbr/derive_maps.py); not model-generated"
+}
