@@ -116,23 +116,28 @@ def alpha_metrics(alpha: np.ndarray) -> dict:
 
     # 4-connected components, iterative (no scipy dependency)
     seen = np.zeros_like(mask, dtype=bool)
-    comps = 0
-    stack = []
+    sizes = []
     for y, x in zip(ys, xs):
         if seen[y, x]:
             continue
-        comps += 1
-        stack.append((y, x))
+        n = 0
+        stack = [(y, x)]
         seen[y, x] = True
         while stack:
             cy, cx = stack.pop()
+            n += 1
             for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
                 if 0 <= ny < mask.shape[0] and 0 <= nx < mask.shape[1] \
                         and mask[ny, nx] and not seen[ny, nx]:
                     seen[ny, nx] = True
                     stack.append((ny, nx))
+        sizes.append(n)
+    total = float(sum(sizes)) or 1.0
+    # A shipped part assembly renders as body + gear (weapon, backpack, pauldron).
+    # The rule that matters is one dominant body, not one blob.
     return {"coverage": round(float(mask.mean()), 4),
-            "bbox_fill": round(fill, 3), "components": comps}
+            "bbox_fill": round(fill, 3), "components": len(sizes),
+            "largest_frac": round(max(sizes) / total, 4)}
 
 
 def palette_drift(rgb: np.ndarray, mask: np.ndarray, palette: np.ndarray) -> dict:
@@ -251,8 +256,9 @@ def check(path: Path, profile_id: str, write_preview: bool, kind: str = "prop") 
             failures.append(f"palette drift p95 {drift['drift_p95']} > {DRIFT_P95_LIMIT}")
     if "silhouette" in gates or "readability" in gates:
         fill_min, fill_max = KIND_FILL.get(kind, KIND_FILL["prop"])
-        if shape["components"] != 1:
-            failures.append(f"silhouette has {shape['components']} components (expected 1)")
+        if shape.get("largest_frac", 1.0) < 0.90:
+            failures.append(f"silhouette has no dominant body (largest piece "
+                            f"{shape.get('largest_frac', 0):.0%} of {shape['components']} components)")
         if not fill_min <= shape["bbox_fill"] <= fill_max:
             failures.append(f"bbox fill {shape['bbox_fill']} outside {fill_min}-{fill_max} "
                             f"for kind '{kind}'")
