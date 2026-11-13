@@ -158,7 +158,7 @@ def node_world(js):
     return {i: world(i) for i in range(len(js["nodes"]))}
 
 
-OPTIONAL = ("special", "oris", "levator", "temporalis", "oculi", "risorius", "frontalis",
+OPTIONAL = ("root", "neutral_bone", "special", "oris", "levator", "temporalis", "oculi", "risorius", "frontalis",
           "corrugator", "zygomaticus", "depressor", "mentalis", "nasalis",
           "buccinator", "masseter", "occipitalis", "auricular")
 
@@ -191,6 +191,9 @@ def main(path):
             joints += accessor(js, binc, prim["attributes"]["JOINTS_0"])
             weights += accessor(js, binc, prim["attributes"]["WEIGHTS_0"])
 
+    if not js.get("skins"):
+        print("FAIL\n  ERROR the GLB has no skin (the mesh was never bound to the rig)")
+        return 1
     skin = js["skins"][0]
     joint_nodes = skin["joints"]
     names = {i: js["nodes"][n].get("name", f"node{n}") for i, n in enumerate(joint_nodes)}
@@ -255,8 +258,10 @@ def main(path):
     def cloud_dist(p):
         return min(v_len(v_sub(p, v)) for v in pos) if pos else 9.9
 
-    finger_bones = [n for n in names.values() if n.startswith("finger")]
-    hand_bones = [n for n in names.values() if n.startswith("hand") or n in ("wrist.L", "wrist.R")]
+    humanoid = any(n in ("wrist.L", "lowerarm01.L", "hand.L") for n in names.values())
+    finger_bones = [n for n in names.values() if n.startswith("finger")] if humanoid else []
+    hand_bones = ([n for n in names.values()
+                   if n.startswith("hand") or n in ("wrist.L", "wrist.R")] if humanoid else [])
     inside = {}
     for name in finger_bones + hand_bones:
         h = head_of(name)
@@ -269,6 +274,24 @@ def main(path):
 
     # segment lengths from the real joints: shoulder->elbow, elbow->wrist,
     # hip->knee, knee->ankle (no twist-bone children, which are short and lie).
+    # creature rigs: every deform bone must be near the body it deforms
+    if not humanoid:
+        deform = [n for n in names.values()
+                  if not n.startswith(("root", "special", "neutral_bone"))]
+        far = []
+        for name in deform:
+            h = head_of(name)
+            if h is None:
+                continue
+            d = cloud_dist(h)
+            if d > 0.12:
+                far.append(f"{name} {d*100:.0f}cm")
+        if far:
+            warnings.append(f"{len(far)} bones >12 cm from the mesh: {far[:6]}")
+        report["humanoid"] = False
+    else:
+        report["humanoid"] = True
+
     ratios, seg = {}, {}
     for key, a, b in (("upperarm", "upperarm01.L", "lowerarm01.L"),
                       ("lowerarm", "lowerarm01.L", "wrist.L"),

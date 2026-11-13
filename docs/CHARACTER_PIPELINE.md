@@ -79,6 +79,49 @@ weights, gear built to the skeleton, and real animation clips.
   transforms; every bone-to-mesh measurement is then meaningless. Bake the IK result into the
   action, clear the constraints, clear the pose and export with `export_rest_position_armature`.
 
+## Rig classes: humanoid, alien, monster (measured references)
+
+Bone budgets are taken from shipped games, not invented. Measured from the installed DoW
+Definitive Edition archives (`DXP2Data-Whm-Definitive.sga`) with `tools/dow/whm_animdata.py`:
+
+| Reference | Class | Bones |
+|---|---|---|
+| `kroot_hounds.whm` | quadruped beast | 30 |
+| `krootox.whm` | large quadruped | 82 |
+| `daemonprince.whm` | large monster | 33 |
+| `kroot_warrior.whm` | humanoid alien | 43 |
+| `kroot_shaper.whm` | humanoid alien | 49 |
+| DoW DE `imperial_guard_guardsman.whm` | human | 32 |
+| DoW DE space marine | human | 59 |
+| XCOM EU `body_genericsoldier_sf.upk` | human | 63 |
+| MPFB2 standard rig | human | 137 (incl. facial) |
+
+DoW2 Retribution is installed but its archives are SGA v5+, which `relic-tool-sga-v2` cannot read;
+the DoW DE Kroot/Krootox/Daemon Prince cover the same classes and were used instead.
+
+### How a non-human rig is built
+
+1. `configs/rigs/<class>.json` — declarative template: bone names, hierarchy, rest head/tail,
+   deform flag, skin radius, IK chains, and the measured reference it targets.
+   Shipped: `quadruped.json` (31 bones), `monster.json` (28 bones).
+2. `tools/blender/creature_base.py` — builds an organic base mesh from the template with the Skin
+   modifier (per-bone radii), subdivision and smoothing, then decimates to budget. No primitive kit.
+3. `tools/blender/rig_template.py` — builds the armature from the same template, fits it to the
+   mesh height, binds with heat weights and falls back to envelope weights using the template radii
+   when heat weighting fails (measured: skin-modifier shells are non-manifold and heat weighting
+   returns empty groups).
+4. `tools/audit_rig.py` — certifies the result. Humanoid-only checks (finger distance, limb ratios,
+   hands on weapon) are conditional; creature rigs get deform-bone coverage and bone-to-mesh
+   distance instead.
+
+Measured proof: `output/units/beast` (quadruped, 31 bones, 12k-poly base) and
+`output/units/brute` (monster, 28 bones) both PASS the anatomy gate with zero orphan deform bones.
+
+**Decision:** humanoids keep the MPFB2 standard rig (137 bones, fingers, morphs). Creatures and
+monsters use rig templates plus a generated or authored base mesh. **Rejected:** hand-written rig
+code per creature; **rejected:** Rigify metarig fitting (the centroid fit was the original defect).
+**Revisit when:** a creature needs facial rigging or more than ~90 bones (krootox-class).
+
 ## Certification gates (all required)
 
 0. Automated: `python3 tools/audit_rig.py <glb>` must PASS (bone-to-skin <= 9 cm, human limb
