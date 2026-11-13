@@ -16,7 +16,7 @@ _ap.add_argument('--faction', default='iron_directorate')
 _ap.add_argument('--unit', default='line_infantry')
 _ap.add_argument('--id', default=None)
 _ap.add_argument('--out', default=None)
-_ap.add_argument('--decimate', type=float, default=0.42)
+_ap.add_argument('--decimate', type=float, default=1.0)
 _ap.add_argument('--height', type=float, default=1.90)
 _ap.add_argument('--render', action='store_true')
 _ap.add_argument('--export', action='store_true')
@@ -31,6 +31,7 @@ _CFG=json.loads(_CFG_PATH.read_text()).get('units',{}).get(A.unit,{}) if _CFG_PA
 def _v(n,d): return getattr(A,n,None) or _CFG.get(n,d)
 HELM=_v('helm','visor'); SHOULDERS=_v('shoulders','block'); BACK=_v('back','pack')
 WEAPON=_v('weapon','rifle'); SHIELD=_v('shield',None)
+print('FLAGS ROBE',bool(A.robe or _CFG.get('robe')),'CLOAK',bool(A.cloak or _CFG.get('cloak')))
 CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
 CREST=bool(A.crest or _CFG.get('crest')); HORNS=bool(A.horns or _CFG.get('horns'))
 BODY=_v('body','standard')
@@ -42,21 +43,47 @@ bpy.ops.preferences.addon_enable(module='bl_ext.user_default.mpfb')
 bpy.ops.mpfb.create_human()
 body=bpy.data.objects['Human']
 bpy.context.view_layer.objects.active=body
-bpy.ops.mpfb.add_standard_rig()
-arm=[o for o in bpy.data.objects if o.type=='ARMATURE'][0]
-print('MPFB human verts',len(body.data.vertices),'bones',len(arm.data.bones),'keys',list(body.keys())[:8])
-# the human is parented to the rig; unparent before scaling or the scale is applied twice
-bpy.ops.object.select_all(action='DESELECT')
-body.select_set(True); bpy.context.view_layer.objects.active=body
-bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-# scale human+rig to target height (feet stay on the ground)
-bpy.ops.object.select_all(action='DESELECT')
-body.select_set(True); arm.select_set(True); bpy.context.view_layer.objects.active=arm
+try:
+    bpy.context.scene.mpfb_macropanel_gender=1.0
+    bpy.context.scene.mpfb_macropanel_muscle=0.45
+    print('GENDER set',bpy.context.scene.mpfb_macropanel_gender)
+except Exception as _e:
+    print('GENDER skip',_e)
+# scale the mesh to the target height BEFORE rigging, so the rig is generated
+# for the final proportions and the skin bind is correct
 lo=min(v.co.z for v in body.data.vertices); hi=max(v.co.z for v in body.data.vertices)
 s=HEIGHT/(hi-lo)
-for o in (body,arm):
-    o.scale=(s,s,s); o.location=(o.location.x,o.location.y,o.location.z*s)
+body.scale=(s,s,s); body.location=(body.location.x,body.location.y,body.location.z*s)
 bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
+bpy.context.view_layer.objects.active=body
+bpy.ops.mpfb.add_standard_rig()
+arm=[o for o in bpy.data.objects if o.type=='ARMATURE'][0]
+print('MPFB human verts',len(body.data.vertices),'bones',len(arm.data.bones))
+# decimate the body but keep the hands at full resolution. The Decimate modifier
+# ignores its vertex group in Blender 5.1 (measured: identical output with and
+# without), so the hands are separated, the body is decimated, and the hands are
+# joined back. Both sides keep the same weights, so the wrist seam does not crack.
+if A.decimate>0 and A.decimate<1.0:
+    if body.data.shape_keys: body.shape_key_clear()
+    bpy.context.view_layer.objects.active=body
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for v in body.data.vertices:
+        v.select = abs(v.co.x)>0.40
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_mode(type='VERT')
+    bpy.ops.mesh.separate(type='SELECTED')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    hands=[o for o in bpy.context.selected_objects if o is not body and o.type=='MESH']
+    print('HANDS separated',[o.name for o in hands],'verts',[len(o.data.vertices) for o in hands])
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active=body
+    dm=body.modifiers.new('dec','DECIMATE'); dm.ratio=A.decimate; dm.use_collapse_triangulate=True
+    bpy.ops.object.modifier_apply(modifier=dm.name)
+    if hands:
+        for h in hands: h.select_set(True)
+        body.select_set(True); bpy.context.view_layer.objects.active=body
+        bpy.ops.object.join()
+    print('DECIMATED ratio',A.decimate,'tris',len(body.data.polygons),'verts',len(body.data.vertices))
 # landmarks from the skeleton (anatomical joints, not surface centroids)
 def bh(n): return arm.data.bones[n].head_local.copy()
 def bt(n): return arm.data.bones[n].tail_local.copy()
@@ -67,13 +94,6 @@ for side in ('L','R'):
               'hip':bh(f'upperleg01.{side}'),'knee':bh(f'lowerleg01.{side}'),
               'ankle':bh(f'foot.{side}'),'toe':bh(f'toe1-1.{side}')}
 print('LANDMARKS',{k:(round(v.x,3),round(v.y,3),round(v.z,3)) for k,v in Lm['L'].items()})
-# decimate AFTER rigging so weights and topology survive the budget cut
-if A.decimate>0 and A.decimate<1.0:
-    if body.data.shape_keys: body.shape_key_clear()
-    dm=body.modifiers.new('dec','DECIMATE'); dm.ratio=A.decimate; dm.use_collapse_triangulate=True
-    bpy.context.view_layer.objects.active=body
-    bpy.ops.object.modifier_apply(modifier=dm.name)
-    print('DECIMATED polys',len(body.data.polygons))
 # ---------------- P2 pose ----------------
 BLADE = WEAPON in ('blade','chainblade')
 if BLADE:
@@ -111,7 +131,7 @@ for side in ('L','R'):
             pb=arm.pose.bones.get(f'finger{f}-{k}.{side}')
             if pb:
                 pb.rotation_mode='XYZ'
-                pb.rotation_euler.x=math.radians(-ang)
+                pb.rotation_euler.z=math.radians(-ang)
 bpy.context.view_layer.update()
 
 # ================= P3/P4 armour + weapon =================
@@ -154,30 +174,31 @@ def dup_region(name,keep,thick=0.022,dec=0.25,material=None):
         bm.free(); bpy.data.objects.remove(d,do_unlink=True); return None
     bm.to_mesh(d.data); bm.free()
     s=d.modifiers.new('sol','SOLIDIFY'); s.thickness=thick; s.offset=1.0; s.use_rim=True
-    dm=d.modifiers.new('dec','DECIMATE'); dm.ratio=dec
+    if len(d.data.polygons)>200:
+        dm=d.modifiers.new('dec','DECIMATE'); dm.ratio=max(dec,0.50)
     if material:
         d.data.materials.clear(); d.data.materials.append(material)
     return d
 
 L=Lm
-def torso_ok(p): return 1.04<p.z<1.46 and abs(p.x)<0.235 and -0.17<p.y<0.19
+def torso_ok(p): return 1.0<p.z<1.5 and math.hypot(p.x,p.y)<0.30
 dup_region('cuirass',torso_ok,0.024,0.20,M['steel'])
 for i,(z0,z1) in enumerate([(1.03,1.085),(1.095,1.15),(1.16,1.215)]):
-    dup_region(f'lame{i}',lambda p,z0=z0,z1=z1: z0<p.z<z1 and abs(p.x)<0.225 and -0.17<p.y<0.18,0.018,0.35,M['dark'])
+    dup_region(f'lame{i}',lambda p,z0=z0,z1=z1: z0<p.z<z1 and abs(p.x)<0.28 and -0.24<p.y<0.24,0.018,0.35,M['dark'])
 for side,sgn in (('L',1),('R',-1)):
-    dup_region(f'tasset_{side}',lambda p,sgn=sgn: 0.86<p.z<1.03 and 0.04<sgn*p.x<0.23 and p.y<0.07,0.02,0.35,M['steel'])
+    dup_region(f'tasset_{side}',lambda p,sgn=sgn: 0.84<p.z<1.03 and 0.03<sgn*p.x<0.28 and p.y<0.12,0.02,0.35,M['steel'])
     a,b=Lm[side]['hip'],Lm[side]['knee']
-    dup_region(f'thighsuit_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.105 and 0.08<segd(p,a,b)[1]<0.92,0.012,0.30,M['dark'])
-    dup_region(f'thighplate_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.105 and 0.12<segd(p,a,b)[1]<0.85 and p.y<0.0,0.02,0.35,M['steel'])
+    dup_region(f'thighsuit_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.095 and 0.08<segd(p,a,b)[1]<0.92,0.012,0.30,M['dark'])
+    dup_region(f'thighplate_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.095 and 0.12<segd(p,a,b)[1]<0.85 and p.y<0.0,0.02,0.35,M['steel'])
     a,b=Lm[side]['knee'],Lm[side]['ankle']
-    dup_region(f'greave_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.095 and 0.10<segd(p,a,b)[1]<0.92 and p.y<0.02,0.022,0.35,M['steel'])
+    dup_region(f'greave_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.09 and 0.10<segd(p,a,b)[1]<0.92 and p.y<0.02,0.022,0.35,M['steel'])
     a,b=Lm[side]['shoulder'],Lm[side]['elbow']
     dup_region(f'rerebrace_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.085 and 0.20<segd(p,a,b)[1]<0.95,0.016,0.35,M['dark'])
     a,b=Lm[side]['elbow'],Lm[side]['wrist']
-    dup_region(f'vambrace_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.078 and 0.25<segd(p,a,b)[1]<0.98,0.02,0.35,M['dark'])
+    dup_region(f'vambrace_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.08 and 0.25<segd(p,a,b)[1]<0.98,0.02,0.35,M['dark'])
     a,b=Lm[side]['wrist'],Lm[side]['hand']
-    dup_region(f'gauntlet_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.088 and 0.0<segd(p,a,b)[1]<0.85,0.018,0.35,M['steel'])
-    dup_region(f'boot_{side}',lambda p,sgn=sgn: p.z<0.155 and 0.03<sgn*p.x<0.23,0.028,0.4,M['dark'])
+    dup_region(f'gauntlet_{side}',lambda p,a=a,b=b: segd(p,a,b)[0]<0.085 and 0.0<segd(p,a,b)[1]<0.85,0.018,0.35,M['steel'])
+    dup_region(f'boot_{side}',lambda p,sgn=sgn: p.z<0.16 and 0.02<sgn*p.x<0.28,0.028,0.4,M['dark'])
 
 # ---- posed joint positions for rigid plates ----
 deps=bpy.context.evaluated_depsgraph_get(); ae=arm.evaluated_get(deps)
@@ -240,9 +261,9 @@ def rm(names):
         if o: bpy.data.objects.remove(o,do_unlink=True)
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
-    bevel(add_box(f'pauldron_{side}',c+Vector((sgn*0.01,0.0,0.015)),(0.19,0.25,0.09),M['steel'],pitch=-6,roll=sgn*18,taper=0.78,taper_y=0.82))
-    bevel(add_box(f'pauldron2_{side}',c+Vector((sgn*0.035,0.0,-0.045)),(0.17,0.23,0.075),M['dark'],pitch=-4,roll=sgn*30,taper=0.8,taper_y=0.85))
-    bevel(add_box(f'pauldronrim_{side}',c+Vector((sgn*0.055,0.0,-0.10)),(0.14,0.20,0.045),M['steel'],roll=sgn*38,taper=0.85))
+    bevel(add_box(f'pauldron_{side}',c+Vector((sgn*0.0,0.0,0.015)),(0.16,0.22,0.08),M['steel'],pitch=-6,roll=sgn*18,taper=0.78,taper_y=0.82))
+    bevel(add_box(f'pauldron2_{side}',c+Vector((sgn*0.02,0.0,-0.045)),(0.145,0.20,0.065),M['dark'],pitch=-4,roll=sgn*30,taper=0.8,taper_y=0.85))
+    bevel(add_box(f'pauldronrim_{side}',c+Vector((sgn*0.035,0.0,-0.10)),(0.12,0.17,0.04),M['steel'],roll=sgn*38,taper=0.85))
     bevel(add_cap(f'kneepad_{side}',knee[side]+Vector((0,-0.06,0.0)),(0.075,0.07,0.075),-0.02,M['steel']))
     bevel(add_cap(f'elbowpad_{side}',elbow[side]+Vector((sgn*0.035,0.02,0.0)),(0.07,0.07,0.07),-0.02,M['dark']))
 
@@ -261,6 +282,11 @@ bevel(add_box('cheekR',(-0.088,-0.075,1.755),(0.04,0.13,0.15),M['dark'],pitch=-6
 bevel(add_box('jawguard',(0,-0.075,1.675),(0.155,0.15,0.06),M['steel'],pitch=6),0.01)
 add_cyl('neck',(0,0.01,1.655),0.075,0.11,M['suit'],axis=Vector((0,0,1)))
 add_cyl('collar',(0,0.01,1.575),0.118,0.09,M['dark'],axis=Vector((0,0,1)),seg=14)
+for _n in ('helmet','brow','mask','visor','visorhood','respL','respR','resphose','cheekL','cheekR','jawguard'):
+    _o=bpy.data.objects.get(_n)
+    if _o:
+        _c=Vector((0,0,1.79))
+        for _v in _o.data.vertices: _v.co=(_v.co-_c)*0.86+_c
 if HELM=='cap':
     rm(['mask','visor','visorhood','respL','respR','resphose','jawguard','cheekL','cheekR','brow'])
     add_cyl('brim',(0,-0.02,1.835),0.165,0.02,M['steel'],axis=Vector((0,0,1)),seg=12)
@@ -298,8 +324,8 @@ for i,(a,b) in enumerate(zip(hose,hose[1:])):
 bevel(add_box('aquila',(0,-0.178,1.335),(0.11,0.02,0.035),M['brass']),0.006)
 bevel(add_box('wingL',(0.075,-0.172,1.34),(0.05,0.018,0.02),M['brass'],roll=14),0.005)
 bevel(add_box('wingR',(-0.075,-0.172,1.34),(0.05,0.018,0.02),M['brass'],roll=-14),0.005)
-bevel(add_box('chestpouchL',(0.115,-0.15,1.24),(0.075,0.055,0.075),M['leather']),0.008)
-bevel(add_box('chestpouchR',(-0.115,-0.15,1.24),(0.075,0.055,0.075),M['leather']),0.008)
+bevel(add_box('chestpouchL',(0.145,-0.13,1.24),(0.075,0.055,0.075),M['leather']),0.008)
+bevel(add_box('chestpouchR',(-0.145,-0.13,1.24),(0.075,0.055,0.075),M['leather']),0.008)
 # pauldron rim band
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
@@ -340,7 +366,7 @@ bevel(add_box('gorget',(0,-0.02,1.505),(0.26,0.14,0.06),M['dark'],pitch=-8),0.01
 bevel(add_box('strapL',(0.10,-0.135,1.43),(0.05,0.04,0.20),M['leather'],roll=8),0.008)
 bevel(add_box('strapR',(-0.10,-0.135,1.43),(0.05,0.04,0.20),M['leather'],roll=-8),0.008)
 add_cyl('emblem',(0,-0.172,1.33),0.045,0.018,M['brass'],axis=Vector((0,1,0)),seg=12)
-bevel(add_box('holster',(-0.16,-0.02,0.90),(0.08,0.10,0.16),M['leather'],pitch=6),0.01)
+bevel(add_box('holster',(-0.14,-0.02,0.90),(0.08,0.10,0.16),M['leather'],pitch=6),0.01)
 for side,sgn in (('L',1),('R',-1)):
     hp,kp=Lm[side]["hip"],Lm[side]["knee"]
     mid=(hp+kp)*0.5
@@ -349,12 +375,12 @@ for side,sgn in (('L',1),('R',-1)):
     sh,el=shoulder[side],elbow[side]
     am=(sh+el)*0.5
     bevel(add_box(f'armplate_{side}',am+Vector((sgn*0.055,0.0,0.0)),(0.075,0.115,0.17),M['steel'],pitch=50,taper=0.8),0.01)
-add_cyl('belt',(0,0.0,1.035),0.20,0.05,M['leather'],axis=Vector((0,0,1)),seg=18)
+add_cyl('belt',(0,0.0,1.035),0.19,0.05,M['leather'],axis=Vector((0,0,1)),seg=18)
 add_box('buckle',(0,-0.152,1.035),(0.07,0.022,0.055),M['brass'])
 for i,(x,y) in enumerate([(-0.13,-0.135),(0.0,-0.155),(0.13,-0.135)]):
     add_box(f'pouch{i}',(x,y,0.985),(0.075,0.05,0.095),M['leather'])
     add_box(f'pouchflap{i}',(x,y-0.005,1.035),(0.08,0.055,0.025),M['dark'])
-add_box('tabard',(0,-0.15,0.885),(0.135,0.02,0.29),M['cloth'])
+add_box('tabard',(0,-0.13,0.885),(0.135,0.02,0.29),M['cloth'])
 if ROBE:
     add_cone('robe',(0,0.0,0.62*HS),0.27*HS,0.18*HS,0.86*HS,M['cloth'],seg=14)
     add_box('robesash',(0,-0.02,1.02),(0.30,0.30,0.06),M['leather'])
@@ -364,9 +390,12 @@ if CLOAK:
 if SHIELD=='tower':
     bevel(add_box('shield',(0.30,-0.16,1.14),(0.06,0.34,0.64),M['steel'],pitch=6,roll=8),0.014)
     add_box('shieldboss',(0.34,-0.16,1.14),(0.03,0.10,0.10),M['brass'])
-for side,sgn in (('L',1),('R',-1)):
-    add_box(f'toecap_{side}',(sgn*0.135,-0.115,0.055),(0.105,0.13,0.09),M['dark'])
-    add_box(f'sole_{side}',(sgn*0.135,-0.045,0.018),(0.125,0.26,0.035),M['gun'])
+for side in ('L','R'):
+    _ax=Lm[side]['ankle'].x
+    _ay=Lm[side]['ankle'].y; _ty=Lm[side]['toe'].y; _tz=Lm[side]['toe'].z
+    _len=abs(_ty-_ay)
+    add_box(f'toecap_{side}',(_ax,_ty-0.02,_tz+0.045),(0.105,0.12,0.08),M['dark'])
+    add_box(f'sole_{side}',(_ax,(_ay+_ty)/2,_tz+0.012),(0.125,_len+0.10,0.028),M['gun'])
 add_box('seal',(0.10,-0.155,1.30),(0.035,0.012,0.045),M['brass'])
 add_box('sealribbon',(0.10,-0.152,1.255),(0.028,0.008,0.055),M['cloth'])
 
@@ -454,78 +483,96 @@ else:
     bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark'],pitch=-6),0.008)
     wcyl(thg+0.14,0,-0.06,0.012,0.03,M['dark'],pitch=90)      # sling loop front
 
-# ---- bind gear, join, keyframe aim/idle, export ----
-def bone_for(n):
-    l=n.lower()
-    if l.startswith(('fistr','w_','wpn')): return 'wrist.R'
-    if l.startswith('fistl'): return 'wrist.L'
-    for k in ('helmet','mask','visor','brow','resp','cheek','jaw','crest','neck','collar','hood','hose','brim','chin','slab','horn','eye'):
-        if l.startswith(k): return 'head'
-    for s in ('L','R'):
-        sf=s.lower()
-        if l.startswith(('pauldron',)) and l.endswith(sf): return f'upperarm01.{s}'
-        if l.startswith(('armplate','elbowpad')) and l.endswith(sf): return f'upperarm02.{s}'
-        if l.startswith(('cuff','shield')) and l.endswith(sf): return f'lowerarm02.{s}'
-        if l.startswith(('thighplate','thighrim')) and l.endswith(sf): return f'upperleg02.{s}'
-        if l.startswith(('kneepad','greave','shin')) and l.endswith(sf): return f'lowerleg02.{s}'
-        if l.startswith(('boot','toecap','sole')) and l.endswith(sf): return f'foot.{s}'
-    for k in ('backpack','packspine','packvent','can','bedroll','antenna','vent','aquila','wing','emblem','chest','strap','gorget','cuirass','seal','thruster','nozzle','ammo','round','servo','banner'):
-        if l.startswith(k): return 'spine04'
-    for k in ('belt','buckle','pouch','tabard','holster','tasset','robe','cloak'):
-        if l.startswith(k): return 'pelvis.L'
-    return 'spine04'
-    for k in ('belt','buckle','pouch','tabard','holster','tasset','robe','cloak'):
-        if l.startswith(k): return 'spine'
-    return 'spine.003'
+if not A.render:
+    # ---- bind gear, join, keyframe aim/idle, export ----
+    def bone_for(n):
+        l=n.lower()
+        if l.startswith(('fistr','w_','wpn')): return 'wrist.R'
+        if l.startswith('fistl'): return 'wrist.L'
+        for k in ('helmet','mask','visor','brow','resp','cheek','jaw','crest','neck','collar','hood','hose','brim','chin','slab','horn','eye'):
+            if l.startswith(k): return 'head'
+        for s in ('L','R'):
+            sf=s.lower()
+            if l.startswith(('pauldron',)) and l.endswith(sf): return f'upperarm01.{s}'
+            if l.startswith(('armplate','elbowpad')) and l.endswith(sf): return f'upperarm02.{s}'
+            if l.startswith(('cuff','shield')) and l.endswith(sf): return f'lowerarm02.{s}'
+            if l.startswith(('thighplate','thighrim')) and l.endswith(sf): return f'upperleg02.{s}'
+            if l.startswith(('kneepad','greave','shin')) and l.endswith(sf): return f'lowerleg02.{s}'
+            if l.startswith(('boot','toecap','sole')) and l.endswith(sf): return f'foot.{s}'
+        for k in ('backpack','packspine','packvent','can','bedroll','antenna','vent','aquila','wing','emblem','chest','strap','gorget','cuirass','seal','thruster','nozzle','ammo','round','servo','banner'):
+            if l.startswith(k): return 'spine04'
+        for k in ('belt','buckle','pouch','tabard','holster','tasset','robe','cloak'):
+            if l.startswith(k): return 'pelvis.L'
+        return 'spine04'
+        for k in ('belt','buckle','pouch','tabard','holster','tasset','robe','cloak'):
+            if l.startswith(k): return 'spine'
+        return 'spine.003'
 
-# pose delta per bone: gear authored at posed positions must be pre-transformed
-# by the inverse delta so the armature's aim pose lands it back on the body.
-D={}
-for b in arm.data.bones:
-    pb=arm.pose.bones.get(b.name)
-    if pb: D[b.name]=pb.matrix @ b.matrix_local.inverted()
-gear=[o for o in bpy.data.objects if o.type=='MESH' and o is not body]
-for o in gear:
-    if o.vertex_groups and any(m.type=='ARMATURE' for m in o.modifiers):
-        continue
-    bn=bone_for(o.name)
-    if bn in D:
-        inv=D[bn].inverted()
-        for v in o.data.vertices: v.co=inv @ v.co
-    vg=o.vertex_groups.new(name=bn)
-    vg.add(list(range(len(o.data.vertices))),1.0,'REPLACE')
-bpy.ops.object.select_all(action='DESELECT')
-for o in gear: o.select_set(True)
-body.select_set(True); bpy.context.view_layer.objects.active=body
-bpy.ops.object.join()
-print('JOINED tris',len(body.data.polygons),'verts',len(body.data.vertices),'slots',[m.name for m in body.data.materials])
-
-# pose as an aim action (and idle) so the master render can pose it
-arm.animation_data_create()
-act=bpy.data.actions.new('aim'); arm.animation_data.action=act
-bpy.context.view_layer.objects.active=arm
-bpy.ops.object.mode_set(mode='POSE')
-bpy.ops.pose.select_all(action='SELECT')
-bpy.ops.nla.bake(frame_start=1,frame_end=1,step=1,only_selected=False,
-                 visual_keying=True,clear_constraints=True,clear_parents=False,
-                 use_current_action=True,bake_types={'POSE'})
-bpy.ops.object.mode_set(mode='OBJECT')
-print('BAKED aim keyframes')
-for _n in ('idle','walk','run','fire','reload','hit','death','melee'):
-    _a=act.copy(); _a.name=_n
-bpy.context.scene.frame_set(1)
-
-if A.export:
-    uid=A.id or A.unit
-    out=Path(A.out) if A.out else Path('output/units')/A.faction/uid
-    out.mkdir(parents=True,exist_ok=True)
+    # pose delta per bone: gear authored at posed positions must be pre-transformed
+    # by the inverse delta so the armature's aim pose lands it back on the body.
+    D={}
+    for b in arm.data.bones:
+        pb=arm.pose.bones.get(b.name)
+        if pb: D[b.name]=pb.matrix @ b.matrix_local.inverted()
+    gear=[o for o in bpy.data.objects if o.type=='MESH' and o is not body]
+    for o in gear:
+        if o.vertex_groups and any(m.type=='ARMATURE' for m in o.modifiers):
+            continue
+        bn=bone_for(o.name)
+        if bn in D:
+            inv=D[bn].inverted()
+            for v in o.data.vertices: v.co=inv @ v.co
+        vg=o.vertex_groups.new(name=bn)
+        vg.add(list(range(len(o.data.vertices))),1.0,'REPLACE')
     bpy.ops.object.select_all(action='DESELECT')
-    body.select_set(True); arm.select_set(True)
+    print('GEARNAMES',[o.name for o in gear])
+    for o in gear: o.select_set(True)
+    body.select_set(True); bpy.context.view_layer.objects.active=body
+    bpy.ops.object.join()
+    print('JOINED tris',len(body.data.polygons),'verts',len(body.data.vertices),'slots',[m.name for m in body.data.materials])
+
+    # pose as an aim action (and idle) so the master render can pose it
+    arm.animation_data_create()
+    act=bpy.data.actions.new('aim'); arm.animation_data.action=act
     bpy.context.view_layer.objects.active=arm
-    dest=out/f'{uid}_rigged.glb'
-    bpy.ops.export_scene.gltf(filepath=str(dest),export_format='GLB',use_selection=True,
-        export_animations=True,export_animation_mode='ACTIONS',export_anim_slide_to_zero=True)
-    print('EXPORTED',dest)
+    # bake the IK result into the action and drop the constraints, otherwise the
+    # exporter writes the constrained pose as the "rest" node transforms and every
+    # bone-to-mesh measurement is meaningless.
+    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.pose.select_all(action='SELECT')
+    bpy.ops.nla.bake(frame_start=1,frame_end=1,step=1,only_selected=False,
+                     visual_keying=True,clear_constraints=True,clear_parents=False,
+                     use_current_action=True,bake_types={'POSE'})
+    bpy.ops.object.mode_set(mode='OBJECT')
+    print('BAKED aim action, constraints cleared')
+    for _n in ('idle','walk','run','fire','reload','hit','death','melee'):
+        _a=act.copy(); _a.name=_n
+    bpy.context.scene.frame_set(1)
+    # ship the GLB in BIND pose: the aim pose lives only in the action. Exporting
+    # the posed skeleton made every bone-to-mesh check meaningless and gave the
+    # model a default aim state instead of a rest state.
+    arm.animation_data.action=None
+    bpy.context.view_layer.objects.active=arm
+    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.pose.select_all(action='SELECT')
+    bpy.ops.pose.transforms_clear()
+    bpy.ops.object.mode_set(mode='OBJECT')
+    arm.data.pose_position='REST'   # force bind-pose node transforms in the GLB
+    bpy.context.view_layer.update()
+    print('BIND pose cleared for export')
+
+    if A.export:
+        uid=A.id or A.unit
+        out=Path(A.out) if A.out else Path('output/units')/A.faction/uid
+        out.mkdir(parents=True,exist_ok=True)
+        bpy.ops.object.select_all(action='DESELECT')
+        body.select_set(True); arm.select_set(True)
+        bpy.context.view_layer.objects.active=arm
+        dest=out/f'{uid}_rigged.glb'
+        bpy.ops.export_scene.gltf(filepath=str(dest),export_format='GLB',use_selection=True,
+            export_animations=True,export_animation_mode='ACTIONS',export_anim_slide_to_zero=True,export_rest_position_armature=True)
+        print('EXPORTED',dest)
+
 
 
 

@@ -62,7 +62,28 @@ weights, gear built to the skeleton, and real animation clips.
 - Bake IK to bone keyframes only at export; keep the rig editable in the source scene.
 - Export GLB with the skeleton, weights and clips; validate in-engine.
 
+## Measured facts (Blender 5.1, 2026-11)
+
+- The Decimate modifier **ignores its vertex group** in Blender 5.1: identical output at ratios
+  0.20 and 0.42 with the same group, and the "protected" hands were still stripped. Do not rely on
+  vertex-group protection; do not decimate at all for hero units.
+- The "skirt" defect seen in GLB renders was a **misdiagnosis**. Geometrically the legs are separate
+  (4 cm gap at the ankles, only 18 of 803 body vertices within 3 cm of x=0 at shin height). The
+  apparent cone was flat dark shading on close-set legs, not fused geometry.
+- Full-anatomy body cost: 19,158 verts / ~19.5k tris; joined with the gear kit ~26.5k tris. The
+  final pixel GLB measures 19,943 tris after the atlas/final stage.
+- The MPFB distal phalanx bone heads sit up to 8 cm from the nearest body vertex in the rest pose
+  (the fingers are curled, the bones are straight). The rejected centroid-rig route measured
+  20-26 cm, which is the failure class the gate has to catch.
+- A GLB exported while IK constraints are live writes the **constrained pose** as the node
+  transforms; every bone-to-mesh measurement is then meaningless. Bake the IK result into the
+  action, clear the constraints, clear the pose and export with `export_rest_position_armature`.
+
 ## Certification gates (all required)
+
+0. Automated: `python3 tools/audit_rig.py <glb>` must PASS (bone-to-skin <= 9 cm, human limb
+   ratios, no unweighted vertices, no orphan body bones, hands near the weapon) and
+   `python3 tools/glb_contract.py <glb> --kind unit` must PASS (<= 35,000 tris LOD0).
 
 1. Rig anatomy: every finger bone inside the mesh and weighted; hand IK error < 5 mm; elbow/knee
    bend test passes without collapse.
@@ -79,6 +100,12 @@ weights, gear built to the skeleton, and real animation clips.
   metarig on the CC0 sculpt; decimate-before-rig; box fists. **Because:** the MPFB base ships
   anatomical joints, fingers, weights and morphs for humans/aliens, is free/CC0 and runs in Blender
   5.1. **Revisit when:** MPFB breaks on a Blender upgrade, or a creature base is required.
+- **Choice:** ship the anatomical body **undecimated** and raise the hi LOD0 budget to 35,000 tris.
+  **Rejected:** decimating the body to fit a 16k/25k budget. **Because:** decimation is what stripped
+  the hands (6-8 cm bone-to-mesh) and welded the legs; the anatomical body is only 19.5k tris and a
+  26.5k rigged unit is normal for a modern hero character. **Check:** `tools/glb_contract.py` and
+  `scripts/guard_pixel.py` hi class both pass; audit_rig passes. **Revisit when:** the combat scene
+  exceeds the frame budget with 10+ units on screen.
 - **Choice:** gear in rest pose, rigid one-bone binding for hard pieces. **Rejected:** posed-position
   gear with inverse-delta compensation. **Because:** compensation only holds for the baked pose and
   displaced the primitives when the rig changed.
@@ -88,6 +115,8 @@ weights, gear built to the skeleton, and real animation clips.
 - Done: MPFB2 installed and proven in Blender 5.1; `tools/blender/mpfb_unit_build.py` creates the
   human, adds the 137-bone rig, derives landmarks from the skeleton, decimates after rigging, solves
   the two-handed pose (0.000 m error) and curls the real finger bones.
-- Next: rebuild the armour kit in rest pose to the MPFB proportions (the current kit is authored for
-  the old CC0 body and sits oversized), set the male/alien morphs, then migrate the 20 humanoid
-  units, add normal/AO to the pixel material, and retarget real clips.
+- Done: male morph, rest-pose bind export, anatomy gate (`tools/audit_rig.py`), contract budget for
+  full-anatomy units, mirrored feet and degenerate lames fixed, one unit certified end-to-end
+  (`output/gen/unit_mpfb`, 19,943 tris, 137 joints, 9 clips, 0 off-palette).
+- Next: batch the 20 humanoid units, add normal/AO to the pixel material, retarget real clips, then
+  rebuild the gear kit tighter to the MPFB proportions (upper arms and face are still exposed).

@@ -28,7 +28,7 @@ PLACEHOLDER_MATERIALS = {"proof_clay", "material", "Material", "default", "Defau
 
 # Contract values, per docs/ASSET_PIPELINE_ROADMAP.md §2 and §4.
 LIMITS = {
-    "unit": {"max_tris": 25000, "min_tris": 4000, "max_mb": 10.0, "skinned": True,
+    "unit": {"max_tris": 35000, "min_tris": 4000, "max_mb": 10.0, "skinned": True,
              "need_uv": True, "need_texture": True, "need_clips": REQUIRED_CLIPS},
     "prop": {"max_tris": 12000, "min_tris": 100, "max_mb": 4.0, "skinned": False,
              "need_uv": True, "need_texture": True, "need_clips": []},
