@@ -1,0 +1,469 @@
+{
+ "name": "humanoid",
+ "class": "human",
+ "reference": {
+  "source": "DoW2 marine parts / DoW DE guardsman / XCOM EU soldier",
+  "bones": [
+   32,
+   59,
+   63
+  ]
+ },
+ "height_m": 1.9,
+ "ik": [
+  [
+   "thigh_L",
+   "shin_L",
+   "foot_L"
+  ],
+  [
+   "thigh_R",
+   "shin_R",
+   "foot_R"
+  ],
+  [
+   "upperarm_L",
+   "lowerarm_L",
+   "hand_L"
+  ],
+  [
+   "upperarm_R",
+   "lowerarm_R",
+   "hand_R"
+  ]
+ ],
+ "bones": [
+  {
+   "name": "root",
+   "parent": null,
+   "head": [
+    0,
+    0,
+    0.95
+   ],
+   "tail": [
+    0,
+    0,
+    1.15
+   ],
+   "radius": 0.18,
+   "deform": false
+  },
+  {
+   "name": "pelvis",
+   "parent": "root",
+   "head": [
+    0,
+    0,
+    0.95
+   ],
+   "tail": [
+    0,
+    0,
+    1.06
+   ],
+   "radius": 0.16,
+   "deform": true
+  },
+  {
+   "name": "spine_01",
+   "parent": "pelvis",
+   "head": [
+    0,
+    0,
+    1.06
+   ],
+   "tail": [
+    0,
+    0,
+    1.18
+   ],
+   "radius": 0.15,
+   "deform": true
+  },
+  {
+   "name": "spine_02",
+   "parent": "spine_01",
+   "head": [
+    0,
+    0,
+    1.18
+   ],
+   "tail": [
+    0,
+    0,
+    1.3
+   ],
+   "radius": 0.15,
+   "deform": true
+  },
+  {
+   "name": "spine_03",
+   "parent": "spine_02",
+   "head": [
+    0,
+    0,
+    1.3
+   ],
+   "tail": [
+    0,
+    0,
+    1.42
+   ],
+   "radius": 0.15,
+   "deform": true
+  },
+  {
+   "name": "chest",
+   "parent": "spine_03",
+   "head": [
+    0,
+    0,
+    1.42
+   ],
+   "tail": [
+    0,
+    0,
+    1.54
+   ],
+   "radius": 0.16,
+   "deform": true
+  },
+  {
+   "name": "neck",
+   "parent": "chest",
+   "head": [
+    0,
+    0,
+    1.54
+   ],
+   "tail": [
+    0,
+    0,
+    1.62
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "head",
+   "parent": "neck",
+   "head": [
+    0,
+    0,
+    1.62
+   ],
+   "tail": [
+    0,
+    0,
+    1.8
+   ],
+   "radius": 0.12,
+   "deform": true
+  },
+  {
+   "name": "jaw",
+   "parent": "head",
+   "head": [
+    0,
+    -0.04,
+    1.66
+   ],
+   "tail": [
+    0,
+    -0.12,
+    1.63
+   ],
+   "radius": 0.06,
+   "deform": true
+  },
+  {
+   "name": "clavicle_L",
+   "parent": "chest",
+   "head": [
+    0.06649999999999999,
+    0,
+    1.5
+   ],
+   "tail": [
+    0.19,
+    0,
+    1.46
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "upperarm_L",
+   "parent": "clavicle_L",
+   "head": [
+    0.19,
+    0,
+    1.46
+   ],
+   "tail": [
+    0.19,
+    0,
+    1.2
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "lowerarm_L",
+   "parent": "upperarm_L",
+   "head": [
+    0.19,
+    0,
+    1.2
+   ],
+   "tail": [
+    0.19,
+    -0.02,
+    0.98
+   ],
+   "radius": 0.07,
+   "deform": true
+  },
+  {
+   "name": "hand_L",
+   "parent": "lowerarm_L",
+   "head": [
+    0.19,
+    -0.02,
+    0.98
+   ],
+   "tail": [
+    0.19,
+    -0.04,
+    0.86
+   ],
+   "radius": 0.06,
+   "deform": true
+  },
+  {
+   "name": "thumb_L",
+   "parent": "hand_L",
+   "head": [
+    0.171,
+    -0.05,
+    0.92
+   ],
+   "tail": [
+    0.15200000000000002,
+    -0.08,
+    0.87
+   ],
+   "radius": 0.03,
+   "deform": true
+  },
+  {
+   "name": "thigh_L",
+   "parent": "pelvis",
+   "head": [
+    0.11,
+    0,
+    0.95
+   ],
+   "tail": [
+    0.11,
+    0,
+    0.55
+   ],
+   "radius": 0.12,
+   "deform": true
+  },
+  {
+   "name": "shin_L",
+   "parent": "thigh_L",
+   "head": [
+    0.11,
+    0,
+    0.55
+   ],
+   "tail": [
+    0.11,
+    0,
+    0.16
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "foot_L",
+   "parent": "shin_L",
+   "head": [
+    0.11,
+    0,
+    0.16
+   ],
+   "tail": [
+    0.11,
+    -0.06,
+    0.05
+   ],
+   "radius": 0.08,
+   "deform": true
+  },
+  {
+   "name": "toe_L",
+   "parent": "foot_L",
+   "head": [
+    0.11,
+    -0.06,
+    0.05
+   ],
+   "tail": [
+    0.11,
+    -0.18,
+    0.03
+   ],
+   "radius": 0.06,
+   "deform": true
+  },
+  {
+   "name": "clavicle_R",
+   "parent": "chest",
+   "head": [
+    -0.06649999999999999,
+    0,
+    1.5
+   ],
+   "tail": [
+    -0.19,
+    0,
+    1.46
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "upperarm_R",
+   "parent": "clavicle_R",
+   "head": [
+    -0.19,
+    0,
+    1.46
+   ],
+   "tail": [
+    -0.19,
+    0,
+    1.2
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "lowerarm_R",
+   "parent": "upperarm_R",
+   "head": [
+    -0.19,
+    0,
+    1.2
+   ],
+   "tail": [
+    -0.19,
+    -0.02,
+    0.98
+   ],
+   "radius": 0.07,
+   "deform": true
+  },
+  {
+   "name": "hand_R",
+   "parent": "lowerarm_R",
+   "head": [
+    -0.19,
+    -0.02,
+    0.98
+   ],
+   "tail": [
+    -0.19,
+    -0.04,
+    0.86
+   ],
+   "radius": 0.06,
+   "deform": true
+  },
+  {
+   "name": "thumb_R",
+   "parent": "hand_R",
+   "head": [
+    -0.171,
+    -0.05,
+    0.92
+   ],
+   "tail": [
+    -0.15200000000000002,
+    -0.08,
+    0.87
+   ],
+   "radius": 0.03,
+   "deform": true
+  },
+  {
+   "name": "thigh_R",
+   "parent": "pelvis",
+   "head": [
+    -0.11,
+    0,
+    0.95
+   ],
+   "tail": [
+    -0.11,
+    0,
+    0.55
+   ],
+   "radius": 0.12,
+   "deform": true
+  },
+  {
+   "name": "shin_R",
+   "parent": "thigh_R",
+   "head": [
+    -0.11,
+    0,
+    0.55
+   ],
+   "tail": [
+    -0.11,
+    0,
+    0.16
+   ],
+   "radius": 0.09,
+   "deform": true
+  },
+  {
+   "name": "foot_R",
+   "parent": "shin_R",
+   "head": [
+    -0.11,
+    0,
+    0.16
+   ],
+   "tail": [
+    -0.11,
+    -0.06,
+    0.05
+   ],
+   "radius": 0.08,
+   "deform": true
+  },
+  {
+   "name": "toe_R",
+   "parent": "foot_R",
+   "head": [
+    -0.11,
+    -0.06,
+    0.05
+   ],
+   "tail": [
+    -0.11,
+    -0.18,
+    0.03
+   ],
+   "radius": 0.06,
+   "deform": true
+  }
+ ]
+}

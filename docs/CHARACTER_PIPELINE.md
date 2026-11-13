@@ -130,6 +130,33 @@ monsters use rig templates plus a generated or authored base mesh. **Rejected:**
 code per creature; **rejected:** Rigify metarig fitting (the centroid fit was the original defect).
 **Revisit when:** a creature needs facial rigging or more than ~90 bones (krootox-class).
 
+## Using shipped-game meshes as bases (DoW2)
+
+DoW2 art is already extracted at `Projects/Decompilor/work/dow2-retribution/sga`; art is pulled with
+`extract_sga.py --all --match '<race regex>'` (the default run skips art, which is why the models
+appeared to be missing). Geometry decodes: DoW2 stores it in `DATADATA v7` chunks with an attribute
+table, vertex count, stride, vertex stream and a submesh/index table.
+
+Tooling in this repo:
+- `tools/dow2/chunky_mesh.py` — decodes one or more `.model` parts to OBJ (positions + submeshes).
+  Measured: `space_marine_base` 16,838 verts / 9,720 tris, carnifex armour 11,034 tris,
+  hive tyrant 8,549, hormagaunt 3,800, warrior brood 4,206, genestealer 4,546.
+- `tools/blender/dow2_base.py` — imports the OBJ, welds, fixes the up-axis (DoW2 vertex data is
+  Y-up), scales to the unit height, grounds it and decimates to budget.
+- `tools/blender/rig_template.py` — fits one of our rig templates to that base (per-axis bbox fit),
+  binds with distance-based weights and exports a bind-pose GLB.
+- `configs/rigs/humanoid.json` (27 bones), `quadruped.json` (31), `monster.json` (28) — all inside
+  the measured shipped-game bands.
+
+Verified end to end: `space_marine_base` -> humanoid template -> `output/units/space_marine`
+(PASS), `carnifex` (4 parts merged) -> quadruped template -> `output/units/carnifex` (PASS).
+
+Known limits, measured: the bbox fit is crude for T-posed meshes (bones 20-68 cm from the surface on
+the marine), and a part assembly can legitimately leave head/weapon bones unweighted (the gate
+reports those as warnings for creature-class rigs, hard failures for humanoids). Per-creature fit
+overrides are the next refinement; the MPFB human remains the human base where a production
+skeleton is wanted.
+
 ## Certification gates (all required)
 
 0. Automated: `python3 tools/audit_rig.py <glb>` must PASS (bone-to-skin <= 9 cm, human limb

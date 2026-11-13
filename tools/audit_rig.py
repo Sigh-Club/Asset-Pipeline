@@ -195,6 +195,14 @@ def main(path):
         print("FAIL\n  ERROR the GLB has no skin (the mesh was never bound to the rig)")
         return 1
     skin = js["skins"][0]
+    world_nodes = node_world(js)
+    # put the vertices in world space: the mesh node may carry a transform, and
+    # comparing node-space vertices with world-space bones produces false
+    # "bone outside mesh" failures (measured on the DoW2 carnifex base).
+    mesh_nodes = [i for i, n in enumerate(js["nodes"]) if "mesh" in n]
+    if mesh_nodes:
+        mm = world_nodes[mesh_nodes[0]]
+        pos = [m_apply(mm, v) for v in pos]
     joint_nodes = skin["joints"]
     names = {i: js["nodes"][n].get("name", f"node{n}") for i, n in enumerate(joint_nodes)}
     world = node_world(js)
@@ -222,6 +230,8 @@ def main(path):
         skinned.append(tuple(acc))
     pos = skinned
 
+    humanoid = any(n in ("wrist.L", "lowerarm01.L", "hand.L") for n in names.values())
+
     weighted = {i: 0 for i in range(len(joint_nodes))}
     unweighted = 0
     for jt, wt in zip(joints, weights):
@@ -242,7 +252,12 @@ def main(path):
     facial_orphan = [n for n in orphan if n.split(".")[0].rstrip("0123456789") in OPTIONAL]
     body_orphan = [n for n in orphan if n not in facial_orphan]
     if body_orphan:
-        failures.append(f"{len(body_orphan)} body bones have no skinned vertices: {body_orphan[:8]}")
+        # a creature built from a part assembly may legitimately have no geometry
+        # for a bone (head/weapon sockets); a humanoid rig may not
+        if humanoid:
+            failures.append(f"{len(body_orphan)} body bones have no skinned vertices: {body_orphan[:8]}")
+        else:
+            warnings.append(f"{len(body_orphan)} bones unweighted (part assembly): {body_orphan[:6]}")
     if facial_orphan:
         warnings.append(f"{len(facial_orphan)} optional/facial bones unweighted (decimated face)")
 
@@ -258,7 +273,6 @@ def main(path):
     def cloud_dist(p):
         return min(v_len(v_sub(p, v)) for v in pos) if pos else 9.9
 
-    humanoid = any(n in ("wrist.L", "lowerarm01.L", "hand.L") for n in names.values())
     finger_bones = [n for n in names.values() if n.startswith("finger")] if humanoid else []
     hand_bones = ([n for n in names.values()
                    if n.startswith("hand") or n in ("wrist.L", "wrist.R")] if humanoid else [])

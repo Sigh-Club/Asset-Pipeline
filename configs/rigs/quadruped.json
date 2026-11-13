@@ -370,7 +370,7 @@
    "deform": true
   },
   {
-   "name": "toe_L",
+   "name": "toe_L_hind",
    "parent": "foot_L",
    "head": [
     0.24,
@@ -514,7 +514,7 @@
    "deform": true
   },
   {
-   "name": "toe_R",
+   "name": "toe_R_hind",
    "parent": "foot_R",
    "head": [
     -0.24,
