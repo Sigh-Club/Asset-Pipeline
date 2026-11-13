@@ -1,22 +1,30 @@
 {
-  "//": "Pixel-tier box-projection world-size multipliers. Default 1.0: the band-limited albedo_pixel variants (tools/pbr/build_pixel_variants.py) already match the texel budget, so changing the projection size would move the surface off that budget. Kept as recorded data because a material whose feature pitch is still wrong at the texel grid needs a documented per-material multiplier, not a code fork.",
-  "schema_version": 1,
-  "materials": {
-    "iron_directorate__metal_trim": {
-      "world_size_multiplier": 1.0,
-      "because": "the camo read was aliasing, not world scale (fixed by band-limited albedo_pixel variants); one physical texture size now serves both tiers"
-    },
-    "iron_directorate__armour_primary": {
-      "world_size_multiplier": 1.0,
-      "because": "as above"
-    },
-    "deck_plate_industrial": {
-      "world_size_multiplier": 1.0,
-      "because": "authored at 4 m for the tier"
-    },
-    "gunmetal_worn": {
-      "world_size_multiplier": 1.0,
-      "because": "as above"
-    }
+ "//": "Pixel-tier box-projection world-size multipliers. Default 1.0: the band-limited albedo_pixel variants (tools/pbr/build_pixel_variants.py) already match the texel budget, so changing the projection size would move the surface off that budget. Kept as recorded data because a material whose feature pitch is still wrong at the texel grid needs a documented per-material multiplier, not a code fork.",
+ "schema_version": 1,
+ "materials": {
+  "iron_directorate__metal_trim": {
+   "world_size_multiplier": 2.0,
+   "because": "base-mesh units carry curved organic surfaces; the 1x camo pitch aliases to speckle at the 2 cm texel grid, 2x makes the pattern read as camo blocks (A/B on the line infantry base master)"
+  },
+  "iron_directorate__armour_primary": {
+   "world_size_multiplier": 4.0,
+   "because": "base-mesh units: 2 cm texel grid turns 1x/2x camo pitch into sub-pixel speckle at the 256 px master; 4x makes the pattern read as camo blocks (A/B on the line infantry base master)"
+  },
+  "deck_plate_industrial": {
+   "world_size_multiplier": 1.0,
+   "because": "authored at 4 m for the tier"
+  },
+  "gunmetal_worn": {
+   "world_size_multiplier": 1.0,
+   "because": "as above"
+  },
+  "iron_directorate__armour_secondary": {
+   "world_size_multiplier": 4.0,
+   "because": "base-mesh units: 2 cm texel grid turns 1x/2x camo pitch into sub-pixel speckle at the 256 px master; 4x makes the pattern read as camo blocks (A/B on the line infantry base master)"
+  },
+  "iron_directorate__underlayer": {
+   "world_size_multiplier": 4.0,
+   "because": "base-mesh units: 2 cm texel grid turns 1x/2x camo pitch into sub-pixel speckle at the 256 px master; 4x makes the pattern read as camo blocks (A/B on the line infantry base master)"
   }
+ }
 }

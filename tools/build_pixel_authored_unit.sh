@@ -24,6 +24,8 @@ ASSET="${1:?usage: build_pixel_authored_unit.sh <out-name> <unit-id> <faction>}"
 ID="${2:?unit id required}"
 FACTION="${3:?faction required}"
 LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
+PROFILE="${PROFILE:-pixel_3d}"
+MATERIAL_MAP="${MATERIAL_MAP:-}"
 SRC_DIR="output/units/${FACTION}/${ID}"
 SRC="${SRC_DIR}/${ID}_rigged.glb"
 OUT="output/gen/${ASSET}"
@@ -42,40 +44,44 @@ fi
 
 echo "=== 1/8 texel grid"
 tools/blender_run.sh --job uv -- -b -P tools/blender/bake_pixel_atlas.py -- \
-  --stage texel --glb "$SRC" --out "$OUT" --id "$ID" --profile pixel_3d
+  --stage texel --glb "$SRC" --out "$OUT" --id "$ID" --profile "$PROFILE"
 
 echo "=== 2/8 bake atlas"
 tools/blender_run.sh --job bake -- -b -P tools/blender/bake_pixel_atlas.py -- \
   --stage albedo --glb "$OUT/${ID}_texel.glb" --out "$OUT" --id "$ID" \
-  --profile pixel_3d --library "$LIB" --faction "$FACTION"
+  --profile "$PROFILE" --library "$LIB" --faction "$FACTION" \
+  ${MATERIAL_MAP:+--material-map "$MATERIAL_MAP"}
+
+echo "=== 2b/8 denoise baked atlas"
+python3 tools/style/denoise_atlas.py "$OUT/atlas/atlas_albedo.png" --size 5
 
 echo "=== 3/8 palette-lock atlas"
-python3 tools/style/palette_lock.py "$OUT/atlas/atlas_albedo.png" --profile pixel_3d \
+python3 tools/style/palette_lock.py "$OUT/atlas/atlas_albedo.png" --profile "$PROFILE" \
   --dither none --out-dir "$OUT/atlas" --suffix _pixel
 if [[ -f "$OUT/atlas/atlas_emission.png" ]]; then
-  python3 tools/style/palette_lock.py "$OUT/atlas/atlas_emission.png" --profile pixel_3d \
+  python3 tools/style/palette_lock.py "$OUT/atlas/atlas_emission.png" --profile "$PROFILE" \
     --dither none --out-dir "$OUT/atlas" --suffix _pixel
 fi
 
 echo "=== 4/8 final GLB"
 tools/blender_run.sh --job script -- -b -P tools/blender/bake_pixel_atlas.py -- \
-  --stage final --glb "$OUT/${ID}_texel.glb" --out "$OUT" --id "$ID" --profile pixel_3d
+  --stage final --glb "$OUT/${ID}_texel.glb" --out "$OUT" --id "$ID" --profile "$PROFILE"
 
 echo "=== 5/8 8-direction master (aim pose, feet anchored)"
 tools/blender_run.sh --job render -- -b -P tools/blender/render_pixel_master.py -- \
   --glb "$OUT/${ID}_pixel.glb" --out "$OUT" --id "$ID" --size 256 --directions 8 \
-  --masks --anchor bottom --action aim --exclude-mesh Icosphere
+  --masks --anchor bottom --action aim --keep-smooth --exclude-mesh Icosphere
 
 echo "=== 6/8 palette-lock frames"
-python3 tools/style/palette_lock.py --dir "$OUT/render" --profile pixel_3d \
+python3 tools/style/palette_lock.py --dir "$OUT/render" --profile "$PROFILE" \
   --dither none --out-dir "$OUT/render_pixel" --suffix ""
 
 echo "=== 7/8 gates"
 python3 tools/glb_contract.py "$OUT/${ID}_pixel.glb" --kind unit
-python3 tools/style/check_texel_grid.py "$OUT/${ID}_pixel.glb" --profile pixel_3d
+python3 tools/style/check_texel_grid.py "$OUT/${ID}_pixel.glb" --profile "$PROFILE"
 python3 tools/style/check_pixel_asset.py --dir "$OUT/render_pixel" \
-  --profile pixel_3d --kind unit
-python3 tools/style/check_master.py --dir "$OUT" --profile pixel_3d \
+  --profile "$PROFILE" --kind unit
+python3 tools/style/check_master.py --dir "$OUT" --profile "$PROFILE" \
   --expect-directions 8 --require-distinct
 
 echo "=== 8/8 done"

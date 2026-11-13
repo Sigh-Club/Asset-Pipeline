@@ -833,4 +833,5 @@ def main():
           f"height={bounds_hi.z - bounds_lo.z:.3f}m")
 
 
-main()
+if __name__ == "__main__":
+    main()

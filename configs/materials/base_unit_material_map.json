@@ -1,0 +1,6 @@
+{
+  "//": "Base-mesh units: the grimdark library's camo/weave is authored for boxy kit meshes; on curved organic surfaces at the 2 cm texel grid it palette-locks to static. The three large-coverage slots are mapped to flat faction colours so the silhouette and armour plates read; leather, brass, gunmetal and the emissive visor keep their library textures.",
+  "underlayer": "flat_underlayer",
+  "armour_primary": "flat_armour_primary",
+  "armour_secondary": "flat_armour_secondary"
+}
