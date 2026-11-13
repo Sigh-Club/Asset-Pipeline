@@ -16,7 +16,7 @@ _ap.add_argument('--faction', default='iron_directorate')
 _ap.add_argument('--unit', default='line_infantry')
 _ap.add_argument('--id', default=None)
 _ap.add_argument('--out', default=None)
-_ap.add_argument('--decimate', type=float, default=1.0)
+_ap.add_argument('--decimate', type=float, default=0.34)
 _ap.add_argument('--height', type=float, default=1.90)
 _ap.add_argument('--render', action='store_true')
 _ap.add_argument('--export', action='store_true')
@@ -59,31 +59,15 @@ bpy.context.view_layer.objects.active=body
 bpy.ops.mpfb.add_standard_rig()
 arm=[o for o in bpy.data.objects if o.type=='ARMATURE'][0]
 print('MPFB human verts',len(body.data.vertices),'bones',len(arm.data.bones))
-# decimate the body but keep the hands at full resolution. The Decimate modifier
-# ignores its vertex group in Blender 5.1 (measured: identical output with and
-# without), so the hands are separated, the body is decimated, and the hands are
-# joined back. Both sides keep the same weights, so the wrist seam does not crack.
+# uniform decimate. Vertex-group protection and hand separation were both
+# measured to fight the ratio (0.20 and 0.34 produced near-identical counts), so
+# the body is decimated plainly; the anatomy gate measures the result.
 if A.decimate>0 and A.decimate<1.0:
     if body.data.shape_keys: body.shape_key_clear()
     bpy.context.view_layer.objects.active=body
-    bpy.ops.object.mode_set(mode='OBJECT')
-    for v in body.data.vertices:
-        v.select = abs(v.co.x)>0.40
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_mode(type='VERT')
-    bpy.ops.mesh.separate(type='SELECTED')
-    bpy.ops.object.mode_set(mode='OBJECT')
-    hands=[o for o in bpy.context.selected_objects if o is not body and o.type=='MESH']
-    print('HANDS separated',[o.name for o in hands],'verts',[len(o.data.vertices) for o in hands])
-    bpy.ops.object.select_all(action='DESELECT')
-    bpy.context.view_layer.objects.active=body
     dm=body.modifiers.new('dec','DECIMATE'); dm.ratio=A.decimate; dm.use_collapse_triangulate=True
     bpy.ops.object.modifier_apply(modifier=dm.name)
-    if hands:
-        for h in hands: h.select_set(True)
-        body.select_set(True); bpy.context.view_layer.objects.active=body
-        bpy.ops.object.join()
-    print('DECIMATED ratio',A.decimate,'tris',len(body.data.polygons),'verts',len(body.data.vertices))
+    print('DECIMATED ratio',A.decimate,'polys',len(body.data.polygons),'verts',len(body.data.vertices))
 # landmarks from the skeleton (anatomical joints, not surface centroids)
 def bh(n): return arm.data.bones[n].head_local.copy()
 def bt(n): return arm.data.bones[n].tail_local.copy()
