@@ -96,8 +96,16 @@ Definitive Edition archives (`DXP2Data-Whm-Definitive.sga`) with `tools/dow/whm_
 | XCOM EU `body_genericsoldier_sf.upk` | human | 63 |
 | MPFB2 standard rig | human | 137 (incl. facial) |
 
-DoW2 Retribution is installed but its archives are SGA v5+, which `relic-tool-sga-v2` cannot read;
-the DoW DE Kroot/Krootox/Daemon Prince cover the same classes and were used instead.
+DoW2 Retribution is already decompiled and extracted at
+`Projects/Decompilor/work/dow2-retribution` (SGA v5 via `relic.sga`, Chunky v3 via
+`chunky_dump.py`, art pulled with `extract_sga.py --all --match`). Measured Tyranid composition
+(parts / materials / mesh payload): carnifex 14 / 23 / 1.8 MB, hive_tyrant 12 / 22 / 2.1 MB,
+lictor 4 / 16 / 2.2 MB, ravener 4 / 16 / 1.1 MB, warrior_brood 4 / 12 / 0.9 MB,
+termagaunt 5 / 10 / 0.9 MB, hormagaunt 4 / 4 / 0.6 MB. Two facts follow for our pipeline:
+DoW2 units are **part assemblies with one material per draw call**, and their skeletons are
+separate Havok/`FOLDSKEL` assets, not embedded in the mesh models. Our shipped units (single
+mesh, 8 materials, ~3.5 MB incl. textures and clips) sit inside that envelope; the gaps are LODs
+(DoW2 ships a state/LOD tree) and material splitting.
 
 ### How a non-human rig is built
 
