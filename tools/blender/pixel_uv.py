@@ -35,6 +35,10 @@ def _tri_area_uv(a, b, c) -> float:
     return abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) * 0.5
 
 
+def _tri_area_3d(a, b, c) -> float:
+    return _world_area([a, b, c])
+
+
 def _world_area(coords) -> float:
     if len(coords) < 3:
         return 0.0
@@ -46,55 +50,69 @@ def _world_area(coords) -> float:
 
 
 def _islands(me) -> list[list[int]]:
-    """Union faces that share a mesh edge *and* coincident UVs along it."""
-    uv = me.uv_layers.active.data
-    parent = list(range(len(me.polygons)))
+    """Union faces that share a mesh edge *and* coincident UVs along it.
 
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
+    BMesh traversal, not RNA walks: the previous implementation scanned polygons
+    through RNA for every edge-face pair and took 543 s on a 53k-tri unit.
+    """
+    import bmesh
 
-    def union(a, b):
-        ra, rb = find(a), find(b)
-        if ra != rb:
-            parent[rb] = ra
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.faces.ensure_lookup_table()
+    uv_layer = bm.loops.layers.uv.active
+    if uv_layer is None:
+        n = len(me.polygons)
+        bm.free()
+        return [list(range(n))]
 
-    edge_faces = {}
-    for poly in me.polygons:
-        for ek in poly.edge_keys:
-            edge_faces.setdefault(ek, []).append(poly.index)
-
-    def uv_of(poly_index, vid):
-        poly = me.polygons[poly_index]
-        for li in poly.loop_indices:
-            if me.loops[li].vertex_index == vid:
-                return (uv[li].uv.x, uv[li].uv.y)
+    def loop_uv(face, vert):
+        for loop in face.loops:
+            if loop.vert == vert:
+                return loop[uv_layer].uv
         return None
 
-    for ek, faces in edge_faces.items():
-        if len(faces) < 2:
+    def same_uv(a, b):
+        return a is not None and b is not None and (
+            abs(a[0] - b[0]) + abs(a[1] - b[1]) < 1e-6)
+
+    seen = [False] * len(bm.faces)
+    islands = []
+    for face in bm.faces:
+        if seen[face.index]:
             continue
-        v0, v1 = ek
-        for i in range(len(faces)):
-            for j in range(i + 1, len(faces)):
-                a0, a1 = uv_of(faces[i], v0), uv_of(faces[i], v1)
-                b0, b1 = uv_of(faces[j], v0), uv_of(faces[j], v1)
-                if None in (a0, a1, b0, b1):
-                    continue
-                if max(abs(a0[0] - b0[0]) + abs(a0[1] - b0[1]),
-                       abs(a1[0] - b1[0]) + abs(a1[1] - b1[1])) < 1e-6:
-                    union(faces[i], faces[j])
-    groups = {}
-    for f in range(len(me.polygons)):
-        groups.setdefault(find(f), []).append(f)
-    return list(groups.values())
+        seen[face.index] = True
+        stack = [face]
+        comp = []
+        while stack:
+            cf = stack.pop()
+            comp.append(cf.index)
+            for edge in cf.edges:
+                for nf in edge.link_faces:
+                    if nf is cf or seen[nf.index]:
+                        continue
+                    ok = True
+                    for v in edge.verts:
+                        if not same_uv(loop_uv(cf, v), loop_uv(nf, v)):
+                            ok = False
+                            break
+                    if ok:
+                        seen[nf.index] = True
+                        stack.append(nf)
+        islands.append(comp)
+    bm.free()
+    return islands
 
 
 def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
                     margin_texels: int = 1) -> dict:
-    """Apply the texel grid to `obj`; returns a measurement report."""
+    """Apply the texel grid to `obj`; returns a measurement report.
+
+    All per-loop work runs on foreach_get buffers: RNA access per loop made the
+    per-island rescale take 750 s on a 53k-tri unit (measured).
+    """
+    import array
+
     if texel_world_m <= 0:
         raise SystemExit("texel_world_m must be > 0")
     bpy.ops.object.select_all(action="DESELECT")
@@ -108,12 +126,34 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
     bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.002)
     bpy.ops.uv.pack_islands(rotate=False, scale=True, margin=0.002)
     bpy.ops.object.mode_set(mode="OBJECT")
-    # re-fetch: every UV operator can reallocate the layer; a stale reference
-    # reads freed memory and reports nonsense densities (observed 1e56 m2/texel)
-    uv = me.uv_layers.active.data
 
-    world_area = sum(_world_area([me.vertices[v].co for v in p.vertices])
-                     for p in me.polygons)
+    def fetch():
+        nv, npo, nl = len(me.vertices), len(me.polygons), len(me.loops)
+        co = array.array("f", bytes(4 * 3 * nv)); me.vertices.foreach_get("co", co)
+        ls = array.array("i", bytes(4 * npo)); me.polygons.foreach_get("loop_start", ls)
+        lt = array.array("i", bytes(4 * npo)); me.polygons.foreach_get("loop_total", lt)
+        lv = array.array("i", bytes(4 * nl)); me.loops.foreach_get("vertex_index", lv)
+        uv = array.array("f", bytes(4 * 2 * nl)); me.uv_layers.active.data.foreach_get("uv", uv)
+        return co, ls, lt, lv, uv
+
+    def face_world_area(i, co, ls, lt, lv):
+        idx = [lv[k] for k in range(ls[i], ls[i] + lt[i])]
+        pts = [(co[3 * v], co[3 * v + 1], co[3 * v + 2]) for v in idx]
+        a = 0.0
+        for k in range(1, len(pts) - 1):
+            a += _tri_area_3d(pts[0], pts[k], pts[k + 1])
+        return a
+
+    def face_uv_area(i, ls, lt, uv):
+        idx = [ls[i] + k for k in range(lt[i])]
+        pts = [(uv[2 * li], uv[2 * li + 1]) for li in idx]
+        a = 0.0
+        for k in range(1, len(pts) - 1):
+            a += _tri_area_uv(pts[0], pts[k], pts[k + 1])
+        return a
+
+    co, ls, lt, lv, uv = fetch()
+    world_area = sum(face_world_area(i, co, ls, lt, lv) for i in range(len(me.polygons)))
     needed_frac = world_area / (texel_world_m ** 2 * atlas_px ** 2)
     if needed_frac > 0.75:
         raise SystemExit(
@@ -123,34 +163,31 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
 
     islands = _islands(me)
     scaled = 0
+    target_frac = texel_world_m ** 2 * atlas_px ** 2
     for faces in islands:
-        loops = [li for f in faces for li in me.polygons[f].loop_indices]
-        uv_by_loop = {li: (uv[li].uv.x, uv[li].uv.y) for li in loops}
-        uvs = [uv_by_loop[li] for li in loops]
-        uv_area = 0.0
-        for f in faces:
-            li = list(me.polygons[f].loop_indices)
-            for k in range(1, len(li) - 1):
-                uv_area += _tri_area_uv(uv_by_loop[li[0]], uv_by_loop[li[k]],
-                                        uv_by_loop[li[k + 1]])
-        w_area = sum(_world_area([me.vertices[v].co for v in me.polygons[f].vertices])
-                     for f in faces)
-        target = w_area / (texel_world_m ** 2 * atlas_px ** 2)
+        loops = [ls[f] + k for f in faces for k in range(lt[f])]
+        if not loops:
+            continue
+        uv_area = sum(face_uv_area(f, ls, lt, uv) for f in faces)
+        w_area = sum(face_world_area(f, co, ls, lt, lv) for f in faces)
+        target = w_area / target_frac
         if uv_area <= 1e-12 or target <= 0:
             continue
         s = math.sqrt(target / uv_area)
-        cx = sum(p[0] for p in uvs) / len(uvs)
-        cy = sum(p[1] for p in uvs) / len(uvs)
-        for li, p in zip(loops, uvs):
-            uv[li].uv = ((p[0] - cx) * s + cx, (p[1] - cy) * s + cy)
+        cx = sum(uv[2 * li] for li in loops) / len(loops)
+        cy = sum(uv[2 * li + 1] for li in loops) / len(loops)
+        for li in loops:
+            uv[2 * li] = (uv[2 * li] - cx) * s + cx
+            uv[2 * li + 1] = (uv[2 * li + 1] - cy) * s + cy
         scaled += 1
 
-    # snap to the texel lattice and keep the result inside the atlas
     inv = 1.0 / atlas_px
-    for i in range(len(uv)):
-        u = min(max(uv[i].uv.x, 0.0), 1.0 - inv)
-        v = min(max(uv[i].uv.y, 0.0), 1.0 - inv)
-        uv[i].uv = (round(u * atlas_px) / atlas_px, round(v * atlas_px) / atlas_px)
+    for i in range(len(uv) // 2):
+        u = min(max(uv[2 * i], 0.0), 1.0 - inv)
+        v = min(max(uv[2 * i + 1], 0.0), 1.0 - inv)
+        uv[2 * i] = round(u * atlas_px) / atlas_px
+        uv[2 * i + 1] = round(v * atlas_px) / atlas_px
+    me.uv_layers.active.data.foreach_set("uv", uv)
 
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
@@ -161,47 +198,33 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
     except TypeError:  # Blender <4.2 has no margin_method
         bpy.ops.uv.pack_islands(rotate=False, scale=False, margin=margin)
     bpy.ops.object.mode_set(mode="OBJECT")
-    uv = me.uv_layers.active.data
 
-    # Re-lattice after packing. `pack_islands` TRANSLATES islands by arbitrary
-    # offsets, so a fractional-texel translation silently undoes the snapping
-    # above and every UV ends up off-lattice (observed: a 108-island column,
-    # 100 % off-lattice, atlas therefore filtered). Translating each island by
-    # the rounded offset keeps its shape and restores integer texel coordinates.
-    islands_after = _islands(me)
+    # Re-lattice after packing: pack_islands translates islands by arbitrary
+    # offsets, which undoes the snapping above.
+    co, ls, lt, lv, uv = fetch()
     relattices = 0
-    for faces in islands_after:
-        loops = [li for f in faces for li in me.polygons[f].loop_indices]
-        pts = [(uv[li].uv.x, uv[li].uv.y) for li in loops]
-        du = sum(p[0] * atlas_px - round(p[0] * atlas_px) for p in pts) / len(pts)
-        dv = sum(p[1] * atlas_px - round(p[1] * atlas_px) for p in pts) / len(pts)
-        # remove the fractional part itself: each island shares one offset after a
-        # translation, so subtracting the mean fraction restores integer texels
-        # without distorting the island (rounding the mean would leave any
-        # fractional drift below half a texel uncorrected — the original bug).
-        su = -du / atlas_px
-        sv = -dv / atlas_px
+    for faces in _islands(me):
+        loops = [ls[f] + k for f in faces for k in range(lt[f])]
+        if not loops:
+            continue
+        du = sum(uv[2 * li] * atlas_px - round(uv[2 * li] * atlas_px) for li in loops) / len(loops)
+        dv = sum(uv[2 * li + 1] * atlas_px - round(uv[2 * li + 1] * atlas_px) for li in loops) / len(loops)
         if abs(du) > 1e-6 or abs(dv) > 1e-6:
             relattices += 1
+        su, sv = -du / atlas_px, -dv / atlas_px
         for li in loops:
-            u, v = uv[li].uv.x + su, uv[li].uv.y + sv
-            uv[li].uv = (min(max(u, 0.0), 1.0 - inv), min(max(v, 0.0), 1.0 - inv))
+            uv[2 * li] = min(max(uv[2 * li] + su, 0.0), 1.0 - inv)
+            uv[2 * li + 1] = min(max(uv[2 * li + 1] + sv, 0.0), 1.0 - inv)
+    me.uv_layers.active.data.foreach_set("uv", uv)
 
-    us = [d.uv.x for d in uv]
-    vs = [d.uv.y for d in uv]
-    out_of_bounds = int(sum(1 for u in us if u < -1e-6 or u > 1 + 1e-6)
-                        + sum(1 for v in vs if v < -1e-6 or v > 1 + 1e-6))
+    out_of_bounds = int(sum(1 for i in range(len(uv) // 2)
+                            if not (-1e-6 <= uv[2 * i] <= 1 + 1e-6)
+                            or not (-1e-6 <= uv[2 * i + 1] <= 1 + 1e-6)))
     if out_of_bounds:
         raise SystemExit(f"packing left {out_of_bounds} UV coords outside [0,1]; "
                          f"lower the texel density or raise atlas_px")
 
-    # measured density: world area per texel actually assigned
-    used_uv = 0.0
-    for f in me.polygons:
-        li = list(f.loop_indices)
-        uvs = [(uv[i].uv.x, uv[i].uv.y) for i in li]
-        for k in range(1, len(li) - 1):
-            used_uv += _tri_area_uv(uvs[0], uvs[k], uvs[k + 1])
+    used_uv = sum(face_uv_area(i, ls, lt, uv) for i in range(len(me.polygons)))
     texels_used = used_uv * atlas_px ** 2
     implied = (world_area / texels_used) if texels_used else 0.0
     target = texel_world_m ** 2
@@ -210,7 +233,7 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
             f"texel density contract not met: implied {implied:.6f} m2/texel vs "
             f"profile {target:.6f} m2/texel (world area {world_area:.3f} m2, "
             f"texels {texels_used:.1f})")
-    report = {
+    return {
         "atlas_px": atlas_px,
         "texel_world_m": texel_world_m,
         "world_area_m2": round(world_area, 4),
@@ -224,7 +247,6 @@ def unwrap_and_grid(obj, texel_world_m: float, atlas_px: int,
         "uv_lattice_snapped": True,
         "islands_relattices": relattices,
     }
-    return report
 
 
 def report_path(out: Path) -> Path:
