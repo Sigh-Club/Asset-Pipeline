@@ -42,8 +42,8 @@ build() {
   python3 tools/audit_rig.py "output/units/$id/${id}_rigged.glb" | tail -3
 }
 
-build ig_human human.json 1.85 "$(find_one ig_base.model)"
-build super_human super_human.json 2.15 "$(find_one space_marine_base.model)"
+build ig_human human.json 1.85 "$(find_one commissar_armour.model)"
+build super_human super_human.json 2.15 "$(find_one power_armour_ultramarines_commander.model)"
 build eldar eldar.json 1.95 "$(find_one farseer_armour_common.model)"
 build carnifex quadruped.json 2.40 \
   "$(find_one carnifex_armour_common.model)" \

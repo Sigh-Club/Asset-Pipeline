@@ -247,6 +247,31 @@ def main(path):
     failures, warnings = [], []
     report = {"bones": len(joint_nodes), "verts": len(pos), "unweighted": unweighted}
 
+    # geometry sanity: a broken index decode or a bad merge produces triangles
+    # spanning the model. The silhouette and contract gates cannot see this (a
+    # jumble still renders as one blob), so it is measured directly.
+    if len(pos) > 3:
+        span = max(max(p[i] for p in pos) - min(p[i] for p in pos) for i in range(3)) or 1.0
+        edges = []
+        for prim2 in [pr for m2 in js["meshes"] for pr in m2["primitives"]]:
+            if "indices" not in prim2:
+                continue
+            idx = accessor(js, binc, prim2["indices"])
+            flat = [x[0] for x in idx]
+            for k in range(0, len(flat) - 2, 3):
+                a, b, c = flat[k], flat[k + 1], flat[k + 2]
+                if max(a, b, c) >= len(pos):
+                    continue
+                for u, v in ((a, b), (b, c), (c, a)):
+                    edges.append(sum((pos[u][i] - pos[v][i]) ** 2 for i in range(3)) ** 0.5)
+        if edges:
+            worst = max(edges)
+            report["max_edge_frac"] = round(worst / span, 3)
+            if worst / span > 0.35:
+                failures.append(f"geometry has an edge {worst:.2f} m long "
+                                f"({worst / span:.0%} of the model) - broken mesh")
+
+
     if unweighted / max(1, len(pos)) > MAX_UNWEIGHTED_FRAC:
         failures.append(f"{unweighted}/{len(pos)} vertices are unweighted")
 

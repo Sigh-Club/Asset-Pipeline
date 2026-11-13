@@ -96,30 +96,52 @@ def decode_geometry(pay: bytes):
     nsub = struct.unpack_from("<I", tail, 0)[0]
     if not 0 < nsub <= 64:
         return pos, []
-    # The submesh table entry width differs by asset version: try 8/12/16-byte
-    # entries and keep the first layout whose index stream validates.
-    for entry in (12, 8, 16):
+
+    def score(subs):
+        """Reject index streams that produce impossible triangles: a correct
+        decode has no edge longer than a fraction of the model."""
+        span = max(max(p[i] for p in pos) - min(p[i] for p in pos) for i in range(3)) or 1.0
+        worst = 0.0
+        for s in subs:
+            idx = s["indices"]
+            for k in range(0, len(idx) - 2, 3):
+                for a, b in ((idx[k], idx[k + 1]), (idx[k + 1], idx[k + 2]), (idx[k + 2], idx[k])):
+                    pa, pb = pos[a], pos[b]
+                    d = sum((pa[i] - pb[i]) ** 2 for i in range(3)) ** 0.5
+                    worst = max(worst, d)
+        return worst / span
+
+    best = None
+    # entry width and index width are not documented; try the plausible set and
+    # keep the decode whose worst edge is smallest relative to the model size
+    for entry in (12, 8, 16, 4):
         table_end = 4 + nsub * entry
         if table_end > len(tail):
             continue
-        cursor = table_end
-        subs = []
-        ok = True
-        for i in range(nsub):
-            base = 4 + i * entry
-            count, material = struct.unpack_from("<2I", tail, base)
-            if count == 0 or count % 3 or count * 2 + cursor > len(tail):
-                ok = False
-                break
-            idx = struct.unpack_from("<%dH" % count, tail, cursor)
-            if not idx or max(idx) >= vcount:
-                ok = False
-                break
-            cursor += count * 2
-            subs.append({"material": material, "indices": list(idx)})
-        if ok and subs:
-            return pos, subs
-    return pos, []
+        for fmt, width in (("<H", 2), ("<I", 4)):
+            cursor = table_end
+            subs = []
+            ok = True
+            for i in range(nsub):
+                count = struct.unpack_from("<I", tail, 4 + i * entry)[0]
+                material = struct.unpack_from("<I", tail, 8 + i * entry)[0] if entry >= 12 else i
+                if count == 0 or count % 3 or cursor + count * width > len(tail):
+                    ok = False
+                    break
+                idx = list(struct.unpack_from(f"<{count}{fmt[1]}", tail, cursor))
+                if not idx or max(idx) >= vcount:
+                    ok = False
+                    break
+                cursor += count * width
+                subs.append({"material": material, "indices": idx})
+            if not ok or not subs:
+                continue
+            sc = score(subs)
+            if best is None or sc < best[0]:
+                best = (sc, subs)
+    if best is None:
+        return pos, []
+    return pos, best[1]
 
 
 def collect(root, blob, out_models):
@@ -175,9 +197,12 @@ def write_obj(models, dest: Path):
             lines.append(f"v {x:.6f} {y:.6f} {z:.6f}")
         for name, idx, base in m["groups"]:
             lines.append(f"g {name}")
+            # every geometry payload has its own vertex block; faces must be
+            # offset by that block, not only by the model base (omitting it made
+            # later payloads reference the first block and produced 1.9 m edges)
+            off = vbase + base
             for i in range(0, len(idx) - 2, 3):
-                a, b, c = idx[i] + vbase, idx[i + 1] + vbase, idx[i + 2] + vbase
-                lines.append(f"f {a} {b} {c}")
+                lines.append(f"f {idx[i] + off} {idx[i + 1] + off} {idx[i + 2] + off}")
         vbase += len(m["verts"])
     dest.write_text("\n".join(lines) + "\n")
 

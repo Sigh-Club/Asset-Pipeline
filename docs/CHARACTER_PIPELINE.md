@@ -167,6 +167,25 @@ run foot 0.65 m, melee hand 0.59 m, death head drop 0.87 m.
 
 The frames ship with those nine clips and pass `tools/audit_rig.py`.
 
+## Visual-truth gate (added after a shipped jumble)
+
+Contract, silhouette and palette gates passed a completely broken mesh: a jumble of triangles still
+renders as one silhouette blob, still has valid UVs and still sits in the tri budget. Two failures
+slipped through that way:
+
+1. **Wrong source model.** `ig_base` and `space_marine_base` are the Imperial Guard and Space Marine
+   *base buildings*, not troopers. The frames were rigged scenery.
+2. **Broken index decode.** `chunky_mesh.py` offset every face by the model base but not by the
+   payload's own vertex block, so models with more than one geometry payload referenced the wrong
+   vertices and produced 1.9 m edges.
+
+`tools/audit_rig.py` now measures geometry directly: an edge longer than 35% of the model span fails
+the asset. Measured after the fix: ig_human 0.21, super_human 0.17, eldar 0.19, carnifex 0.13.
+
+Body sources (verified by bbox proportions, not by filename): human `commissar_armour`,
+super-human `power_armour_ultramarines_commander`, eldar `farseer_armour_common`, monster carnifex
+(4 parts merged). Do not use `*_base.model` — those are scenery.
+
 ## Base frames shipped (human, super-human, eldar, monster)
 
 `tools/build_base_frames.sh` rebuilds all four from the extracted DoW2 art and audits each one.
