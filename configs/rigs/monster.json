@@ -480,5 +480,47 @@
    "radius": 0.07,
    "deform": true
   }
+ ],
+ "sockets": [
+  {
+   "name": "socket_weapon_L",
+   "parent": "hand_L",
+   "at": "tail",
+   "offset": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "socket_weapon_R",
+   "parent": "hand_R",
+   "at": "tail",
+   "offset": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "socket_head",
+   "parent": "head",
+   "at": "tail",
+   "offset": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "socket_back",
+   "parent": "chest",
+   "at": "tail",
+   "offset": [
+    0,
+    0.1,
+    0.1
+   ]
+  }
  ]
 }

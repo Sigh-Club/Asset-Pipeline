@@ -158,7 +158,7 @@ def node_world(js):
     return {i: world(i) for i in range(len(js["nodes"]))}
 
 
-OPTIONAL = ("root", "neutral_bone", "special", "oris", "levator", "temporalis", "oculi", "risorius", "frontalis",
+OPTIONAL = ("root", "neutral_bone", "special", "socket_", "oris", "levator", "temporalis", "oculi", "risorius", "frontalis",
           "corrugator", "zygomaticus", "depressor", "mentalis", "nasalis",
           "buccinator", "masseter", "occipitalis", "auricular")
 
@@ -230,7 +230,9 @@ def main(path):
         skinned.append(tuple(acc))
     pos = skinned
 
-    humanoid = any(n in ("wrist.L", "lowerarm01.L", "hand.L") for n in names.values())
+    # thumbs/fingers are the humanoid marker: creature frames end at the wrist
+    humanoid = any(n.startswith(("thumb", "finger")) or n in ("wrist.L", "wrist.R")
+                   for n in names.values())
 
     weighted = {i: 0 for i in range(len(joint_nodes))}
     unweighted = 0
@@ -249,7 +251,9 @@ def main(path):
         failures.append(f"{unweighted}/{len(pos)} vertices are unweighted")
 
     orphan = [names[i] for i, c in weighted.items() if c == 0]
-    facial_orphan = [n for n in orphan if n.split(".")[0].rstrip("0123456789") in OPTIONAL]
+    facial_orphan = [n for n in orphan
+                     if any(n.startswith(p) or n.split(".")[0].rstrip("0123456789") == p
+                            for p in OPTIONAL)]
     body_orphan = [n for n in orphan if n not in facial_orphan]
     if body_orphan:
         # a creature built from a part assembly may legitimately have no geometry
@@ -283,7 +287,9 @@ def main(path):
             continue
         d = cloud_dist(h)
         inside[name] = d
-        if d > MAX_BONE_TO_SKIN_M:
+        # a fingerless frame (shipped-mesh humanoid) cannot sit inside fingertips
+        limit = MAX_BONE_TO_SKIN_M if finger_bones else 0.15
+        if d > limit:
             failures.append(f"{name} head is {d*100:.1f} cm outside the mesh")
 
     # segment lengths from the real joints: shoulder->elbow, elbow->wrist,

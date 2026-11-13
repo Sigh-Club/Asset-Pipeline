@@ -31,6 +31,8 @@ _ap.add_argument("--mesh", required=True)
 _ap.add_argument("--out", required=True)
 _ap.add_argument("--id", required=True)
 _ap.add_argument("--no-fit", action="store_true", help="keep template coordinates")
+_ap.add_argument("--fit", choices=("uniform", "bbox"), default="uniform",
+                 help="uniform (default) fits height and grounds; bbox stretches per axis")
 _ap.add_argument("--export", action="store_true", default=True)
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
@@ -63,16 +65,27 @@ thi = Vector((max(p.x for p in tpl_pts), max(p.y for p in tpl_pts), max(p.z for 
 if A.no_fit:
     fit_scale = Vector((1, 1, 1))
     fit_off = Vector((0, 0, 0))
-else:
-    # per-axis bbox fit: a uniform height scale puts bones outside a bulky
-    # creature (measured on the carnifex: pelvis 114 cm off the mesh)
+elif A.fit == "bbox":
+    # per-axis bbox fit. Only correct for a mesh already in the template's pose:
+    # a T-posed or weapon-carrying base inflates one axis and stretches the
+    # skeleton (measured: depth scaled 6x on the DoW2 ig_base).
     fit_scale = Vector(((hi.x - lo.x) / max(1e-6, thi.x - tlo.x),
                         (hi.y - lo.y) / max(1e-6, thi.y - tlo.y),
                         (hi.z - lo.z) / max(1e-6, thi.z - tlo.z)))
     fit_off = lo - Vector((tlo.x * fit_scale.x, tlo.y * fit_scale.y, tlo.z * fit_scale.z))
+else:
+    # uniform, centred, grounded fit: the base is already scaled to the unit
+    # height by the base builder, so the authored template lands on it directly.
+    s = (hi.z - lo.z) / max(1e-6, thi.z - tlo.z)
+    fit_scale = Vector((s, s, s))
+    tcx = (tlo.x + thi.x) / 2
+    tcy = (tlo.y + thi.y) / 2
+    mcx = (lo.x + hi.x) / 2
+    mcy = (lo.y + hi.y) / 2
+    fit_off = Vector((mcx - tcx * s, mcy - tcy * s, lo.z - tlo.z * s))
 scale = fit_scale
-print(f"FIT mesh=({hi.x-lo.x:.2f},{hi.y-lo.y:.2f},{hi.z-lo.z:.2f}) "
-      f"scale=({fit_scale.x:.3f},{fit_scale.y:.3f},{fit_scale.z:.3f})")
+print(f"FIT mode={A.fit} mesh=({hi.x-lo.x:.2f},{hi.y-lo.y:.2f},{hi.z-lo.z:.2f}) "
+      f"scale={fit_scale.x:.3f}")
 
 
 def fit_point(p):
@@ -107,8 +120,73 @@ for spec in TPL["bones"]:
     if spec.get("parent"):
         created[spec["name"]].parent = created[spec["parent"]]
         created[spec["name"]].use_connect = False
+# attachment sockets: non-deform bones the game can parent gear to (weapons,
+# backpacks, helmets). They export as nodes even though they carry no weights.
+sockets = 0
+for s in TPL.get("sockets", []):
+    parent = created.get(s.get("parent"))
+    if parent is None:
+        continue
+    base = parent.tail if s.get("at", "tail") == "tail" else parent.head
+    pos = Vector(base) + Vector(s.get("offset", [0, 0, 0]))
+    b = arm_data.edit_bones.new(s["name"])
+    b.head = pos
+    b.tail = pos + Vector((0, 0, 0.05))
+    b.use_deform = False
+    b.parent = parent
+    sockets += 1
+# limb fitting: place the arm and leg chains along the mesh's own limbs instead
+# of trusting the template's pose. Shipped bases are A-posed or T-posed and the
+# fingertips/feet are the reliable landmarks.
+if not A.no_fit:
+    world_co = [body.matrix_world @ v.co for v in body.data.vertices]
+    zmax = max(p.z for p in world_co)
+    for side, sgn in (("L", 1), ("R", -1)):
+        clav = created.get(f"clavicle_{side}")
+        ua = created.get(f"upperarm_{side}")
+        la = created.get(f"lowerarm_{side}")
+        hd = created.get(f"hand_{side}")
+        if not (clav and ua and la and hd):
+            continue
+        shoulder = clav.tail.copy()
+        upper_body = [p for p in world_co if p.z > shoulder.z - (zmax * 0.25)]
+        if not upper_body:
+            continue
+        tip = max(upper_body, key=lambda p: sgn * p.x)
+        reach = (tip - shoulder).length
+        if 0.25 < reach < 1.4:
+            def at(f):
+                return shoulder + (tip - shoulder) * f
+            ua.head = shoulder
+            ua.tail = at(0.45)
+            la.head = ua.tail
+            la.tail = at(0.80)
+            hd.head = la.tail
+            hd.tail = at(1.0)
+            print(f"FIT arm {side} reach={reach:.2f} tip=({tip.x:.2f},{tip.y:.2f},{tip.z:.2f})")
+        # legs: the foot chain ends at the lowest vertex on that side
+        th = created.get(f"thigh_{side}")
+        sh = created.get(f"shin_{side}")
+        ft = created.get(f"foot_{side}")
+        if not (th and sh and ft):
+            continue
+        hip = th.head.copy()
+        lower = [p for p in world_co if sgn * p.x > 0 and p.z < hip.z * 0.75]
+        if not lower:
+            continue
+        foot = min(lower, key=lambda p: p.z)
+        if 0.2 < (foot - hip).length < 1.4:
+            mid = hip + (foot - hip) * 0.55
+            th.tail = mid
+            sh.head = mid
+            sh.tail = foot + (hip - foot).normalized() * 0.12
+            ft.head = sh.tail
+            ft.tail = foot
+            print(f"FIT leg {side} foot=({foot.x:.2f},{foot.y:.2f},{foot.z:.2f})")
+
 bpy.ops.object.mode_set(mode="OBJECT")
-print("RIG bones", len(arm_data.bones), "deform", sum(1 for b in arm_data.bones if b.use_deform))
+print("RIG bones", len(arm_data.bones), "deform", sum(1 for b in arm_data.bones if b.use_deform),
+      "sockets", sockets)
 
 # ------------------------------------------------------------------ bind
 # Distance-based weighting: Blender's heat weighting returns empty groups on
@@ -155,6 +233,32 @@ for v in body.data.vertices:
             vgroups[n].add([v.index], w, "REPLACE")
             weighted[n] += 1
 print("BIND proximity groups", len(vgroups))
+
+# coverage fallback: a bone that lost the nearest-3 contest still needs geometry,
+# otherwise the rig has a dead joint. Claims are resolved by distance across all
+# orphan bones so one fallback cannot strip another (measured: the jaw stripped
+# the neck and the export lost it).
+orphan_names = [n for n, c in weighted.items() if c == 0]
+claims = {}
+for name in orphan_names:
+    seg = next((s for s in segments if s[0] == name), None)
+    if not seg:
+        continue
+    _n, a, b = seg
+    ranked = sorted(((seg_dist(body.matrix_world @ v.co, a, b), v.index)
+                     for v in body.data.vertices))[:max(4, len(body.data.vertices) // 200)]
+    for d, vi in ranked:
+        if vi not in claims or d < claims[vi][0]:
+            claims[vi] = (d, name)
+for vi, (_d, name) in claims.items():
+    for other in vgroups.values():
+        if other.name != name:
+            other.remove([vi])
+    vgroups[name].add([vi], 1.0, "REPLACE")
+for name in orphan_names:
+    weighted[name] = sum(1 for vi, (_d, n) in claims.items() if n == name)
+    if weighted[name]:
+        print("BIND coverage", name, weighted[name], "verts")
 
 orphans = [n for n, c in weighted.items() if c == 0]
 print("BIND orphan_deform_bones", len(orphans), orphans[:8])

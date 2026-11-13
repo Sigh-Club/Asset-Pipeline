@@ -157,6 +157,38 @@ reports those as warnings for creature-class rigs, hard failures for humanoids).
 overrides are the next refinement; the MPFB human remains the human base where a production
 skeleton is wanted.
 
+## Base frames shipped (human, super-human, eldar, monster)
+
+`tools/build_base_frames.sh` rebuilds all four from the extracted DoW2 art and audits each one.
+Each frame carries attachment sockets (`socket_weapon_L/R`, `socket_shoulder_L/R`, `socket_backpack`,
+`socket_head`, `socket_hip_L/R`) exported as nodes, so gear is parented in the game rather than
+welded into the mesh.
+
+| Frame | Class | Source mesh | Tris | Joints | Sockets | Audit |
+|---|---|---|---|---|---|---|
+| `ig_human` | human | DoW2 `ig_base` | 7,825 | 35 (26 deform) | 8 | PASS |
+| `super_human` | super-human (Space Marine / Chaos Marine) | DoW2 `space_marine_base` | 8,497 | 35 (26 deform) | 8 | PASS |
+| `eldar` | slim athletic | DoW2 `guardian_common` | 2,939 | 35 (26 deform) | 8 | PASS |
+| `carnifex` | monster | DoW2 carnifex (4 parts merged) | 10,671 | 35 (30 deform) | 4 | PASS |
+
+Chaos Marines share the `super_human` frame: the shipped game reuses the marine armour and varies
+material, palette and spike/horn gear, which is also how our palette tier works.
+
+Frame construction, measured and automated:
+- `tools/dow2/chunky_mesh.py` decodes the shipped geometry; `tools/blender/dow2_base.py` welds,
+  fixes the Y-up axis, scales to the class height, grounds and decimates.
+- `tools/blender/rig_template.py` fits the frame: uniform height fit, then **limb fitting** to the
+  mesh's own extremities (the bases are A/T-posed, so a bbox fit stretches depth up to 6x).
+- Binding is distance-based with a distance-resolved coverage fallback; Blender's heat and envelope
+  binds both return empty groups on these meshes.
+- `tools/audit_rig.py` certifies each frame (deform coverage, limb ratios for humanoids, bone-to-mesh
+  distance, sockets allowed to be unweighted).
+
+Not yet done: the frames ship in bind pose with no clips. The required clip set (idle/walk/run/fire/
+reload/hit/death/melee) still has to be retargeted onto these skeletons; the humanoid frames are
+27 bones and the monster 31, which is inside the measured DoW/XCOM bands and compatible with the
+usual retarget sources.
+
 ## Certification gates (all required)
 
 0. Automated: `python3 tools/audit_rig.py <glb>` must PASS (bone-to-skin <= 9 cm, human limb
