@@ -13,6 +13,7 @@ Then run tools/build_pixel_authored_unit.sh with PROFILE=pixel_3d_hi and
 MATERIAL_MAP=configs/materials/base_unit_material_map.json.
 """
 import argparse, bpy, math, addon_utils, statistics
+from pathlib import Path
 _argv=__import__('sys').argv
 _args=_argv[_argv.index('--')+1:] if '--' in _argv else []
 _ap=argparse.ArgumentParser()
@@ -23,7 +24,29 @@ _ap.add_argument('--out', default=None)
 _ap.add_argument('--decimate', type=float, default=0.36)
 _ap.add_argument('--render', action='store_true')
 _ap.add_argument('--export', action='store_true')
+_ap.add_argument('--helm', default=None)
+_ap.add_argument('--shoulders', default=None)
+_ap.add_argument('--back', default=None)
+_ap.add_argument('--weapon', default=None)
+_ap.add_argument('--cloak', action='store_true')
+_ap.add_argument('--robe', action='store_true')
+_ap.add_argument('--crest', action='store_true')
+_ap.add_argument('--horns', action='store_true')
+_ap.add_argument('--shield', default=None)
 A=_ap.parse_args(_args)
+import json as _json
+_CFG_PATH=Path('configs/units')/f'{A.faction}.json'
+_CFG=_json.loads(_CFG_PATH.read_text()).get('units',{}).get(A.unit,{}) if _CFG_PATH.exists() else {}
+def _v(name,default):
+    return getattr(A,name,None) or _CFG.get(name,default)
+HELM=_v('helm','visor'); SHOULDERS=_v('shoulders','block'); BACK=_v('back','pack')
+WEAPON=_v('weapon','rifle'); SHIELD=_v('shield',None)
+CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
+BODY=_v('body','standard')
+HEIGHT={'light':1.82,'standard':1.90,'heavy':1.98,'monolith':2.15}.get(BODY,1.90)
+HS=HEIGHT/1.90
+CREST=bool(A.crest or _CFG.get('crest')); HORNS=bool(A.horns or _CFG.get('horns'))
+print('VARIANT',HELM,SHOULDERS,BACK,WEAPON,'cloak',CLOAK,'robe',ROBE,'crest',CREST,'horns',HORNS,'shield',SHIELD)
 from mathutils import Vector, Matrix
 addon_utils.enable('rigify', default_set=True)
 bpy.ops.wm.open_mainfile(filepath='/run/media/talzanar/games/Projects/IoA/asset-pipeline/assets/base_meshes/human-base-meshes-bundle-v1.4.1/human_base_meshes_bundle.blend')
@@ -38,7 +61,7 @@ mx=statistics.median(c.x for c in torso); my=statistics.median(c.y for c in tors
 for v in body.data.vertices: v.co.x-=mx; v.co.y-=my
 body.data.update()
 co=[v.co.copy() for v in body.data.vertices]
-lo=min(c.z for c in co); hi=max(c.z for c in co); s=1.9/(hi-lo)
+lo=min(c.z for c in co); hi=max(c.z for c in co); s=HEIGHT/(hi-lo)
 for v in body.data.vertices: v.co*=s; v.co.z-=lo*s
 body.data.update()
 co=[v.co.copy() for v in body.data.vertices]
@@ -71,7 +94,7 @@ bpy.ops.object.select_all(action='DESELECT')
 bpy.ops.object.armature_human_metarig_add(); arm=bpy.context.object; arm.location=(0,0,0)
 # scale metarig to 1.9 by bbox
 cs=[arm.matrix_world@Vector(c) for c in arm.bound_box]
-zlo=min(c.z for c in cs); zhi=max(c.z for c in cs); s2=1.9/(zhi-zlo)
+zlo=min(c.z for c in cs); zhi=max(c.z for c in cs); s2=HEIGHT/(zhi-zlo)
 arm.scale=(s2,s2,s2); bpy.ops.object.transform_apply(scale=True)
 cs=[arm.matrix_world@Vector(c) for c in arm.bound_box]
 zlo=min(c.z for c in cs); arm.location=(0,0,-zlo); bpy.ops.object.transform_apply(location=True)
@@ -111,14 +134,23 @@ for tgt in [(0.28,0.0,1.35),(0.39,0.0,1.10),(0.42,0.0,0.90),(0.05,0.0,1.30),(0.0
     v=body.data.vertices[vi]
     ws=sorted([(g.weight, body.vertex_groups[g.group].name) for g in v.groups], reverse=True)[:5]
     print('WEIGHTS near',tgt,'->',[(round(w,3),n) for w,n in ws])
-# ---------------- P2 two-handed shouldered pose ----------------
-stock=Vector((-0.18,0.06,1.44))
-axis=Vector((0.50,-0.86,-0.02)).normalized()
-grip=stock+axis*0.21+Vector((0,0,-0.07))
-fore=stock+axis*0.44+Vector((0,0,-0.05))
-muzzle=stock+axis*0.82
+# ---------------- P2 pose ----------------
+BLADE = WEAPON in ('blade','chainblade')
+if BLADE:
+    stock=Vector((-0.10,-0.28,1.34))
+    grip=Vector((-0.14,-0.30,1.34))
+    fore=Vector((0.19,-0.02,1.02))
+    muzzle=Vector((0.0,0.0,0.0))
+    axis=Vector((0.0,-1.0,0.0))
+    poles={'R':Vector((-0.45,0.05,1.15)),'L':Vector((0.45,0.12,1.05))}
+else:
+    stock=Vector((-0.18,0.06,1.44))
+    axis=Vector((0.50,-0.86,-0.02)).normalized()
+    grip=stock+axis*0.21+Vector((0,0,-0.07))
+    fore=stock+axis*0.44+Vector((0,0,-0.05))
+    muzzle=stock+axis*0.82
+    poles={'R':Vector((-0.45,0.10,1.20)),'L':Vector((0.40,-0.10,1.15))}
 print('WEAPON stock',stock,'grip',grip,'fore',fore,'muzzle',muzzle,'sep',(fore-grip).length)
-poles={'R':Vector((-0.45,0.10,1.20)),'L':Vector((0.40,-0.10,1.15))}
 targets={'R':grip,'L':fore}
 bpy.context.view_layer.objects.active=arm; bpy.ops.object.mode_set(mode='POSE')
 for side in ('R','L'):
@@ -134,7 +166,6 @@ for side in ('R','L'):
     print(f'HAND {side} at ({h.x:+.3f},{h.y:+.3f},{h.z:+.3f}) target ({targets[side].x:+.3f},{targets[side].y:+.3f},{targets[side].z:+.3f}) err={(h-targets[side]).length:.3f}')
 # ================= P3/P4 armour + weapon =================
 import bmesh
-from pathlib import Path
 from mathutils import Vector, Matrix
 
 def mkmat(name,rgb,rough=0.6,metal=0.0,emit=None):
@@ -235,6 +266,11 @@ def add_cyl(name,c,r,d,material,axis=Vector((0,0,1)),seg=10):
     bmesh.ops.translate(bm,vec=c,verts=bm.verts)
     return new_obj(name,bm,material)
 
+def add_cone(name,c,r1,r2,d,material,seg=12):
+    bm=bmesh.new(); bmesh.ops.create_cone(bm,cap_ends=True,segments=seg,radius1=r1,radius2=r2,depth=d)
+    bmesh.ops.translate(bm,vec=c,verts=bm.verts)
+    return new_obj(name,bm,material)
+
 def add_cap(name,c,rad,cut,material,seg=14,rings=8):
     bm=bmesh.new(); bmesh.ops.create_uvsphere(bm,u_segments=seg,v_segments=rings,radius=1.0)
     for v in bm.verts: v.co=Vector((v.co.x*rad[0],v.co.y*rad[1],v.co.z*rad[2]))
@@ -248,6 +284,10 @@ def add_cap(name,c,rad,cut,material,seg=14,rings=8):
 # pauldrons: angular layered plates
 def bevel(o,w=0.012):
     b=o.modifiers.new('bev','BEVEL'); b.width=w; b.segments=1; b.limit_method='ANGLE'; return o
+def rm(names):
+    for n in names:
+        o=bpy.data.objects.get(n)
+        if o: bpy.data.objects.remove(o,do_unlink=True)
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
     bevel(add_box(f'pauldron_{side}',c+Vector((sgn*0.01,0.0,0.015)),(0.19,0.25,0.09),M['steel'],pitch=-6,roll=sgn*18,taper=0.78,taper_y=0.82))
@@ -271,6 +311,27 @@ bevel(add_box('cheekR',(-0.088,-0.075,1.755),(0.04,0.13,0.15),M['dark'],pitch=-6
 bevel(add_box('jawguard',(0,-0.075,1.675),(0.155,0.15,0.06),M['steel'],pitch=6),0.01)
 add_cyl('neck',(0,0.01,1.655),0.075,0.11,M['suit'],axis=Vector((0,0,1)))
 add_cyl('collar',(0,0.01,1.575),0.118,0.09,M['dark'],axis=Vector((0,0,1)),seg=14)
+if HELM=='cap':
+    rm(['mask','visor','visorhood','respL','respR','resphose','jawguard','cheekL','cheekR','brow'])
+    add_cyl('brim',(0,-0.02,1.835),0.165,0.02,M['steel'],axis=Vector((0,0,1)),seg=12)
+    bevel(add_box('chin',(0,-0.09,1.70),(0.13,0.08,0.04),M['dark']),0.008)
+elif HELM=='brim':
+    add_cyl('brim',(0,-0.02,1.845),0.21,0.028,M['steel'],axis=Vector((0,0,1)),seg=14)
+elif HELM=='slab':
+    rm(['mask','visor','visorhood','cheekL','cheekR'])
+    bevel(add_box('slab',(0,-0.10,1.77),(0.19,0.10,0.20),M['steel'],pitch=-4),0.014)
+    add_box('slabvisor',(0,-0.16,1.80),(0.16,0.02,0.024),M['visor'])
+elif HELM=='hood':
+    rm(['helmet','brow','mask','visor','visorhood','respL','respR','resphose','cheekL','cheekR','jawguard'])
+    add_cap('hood',(0,0.0,1.80),(0.145,0.155,0.15),-0.10,M['cloth'],seg=10,rings=5)
+    bevel(add_box('hoodmask',(0,-0.10,1.755),(0.16,0.11,0.17),M['dark'],pitch=-4),0.012)
+    add_box('eyeL',(0.045,-0.158,1.80),(0.04,0.02,0.018),M['visor'])
+    add_box('eyeR',(-0.045,-0.158,1.80),(0.04,0.02,0.018),M['visor'])
+if CREST:
+    bevel(add_box('crest',(0,0.01,1.905),(0.03,0.16,0.055),M['brass']),0.008)
+if HORNS:
+    for sgn in (1,-1):
+        add_cyl(f'horn{sgn}',(sgn*0.10,0.0,1.91),0.032,0.24,M['dark'],axis=Vector((sgn*0.5,0.1,1.0)),seg=8)
 
 # backpack, belt, pouches, tabard
 bevel(add_box('backpack',(0,0.165,1.30),(0.26,0.14,0.34),M['dark']),0.015)
@@ -293,9 +354,37 @@ bevel(add_box('chestpouchR',(-0.115,-0.15,1.24),(0.075,0.055,0.075),M['leather']
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
     bevel(add_box(f'pauldronband_{side}',c+Vector((sgn*0.06,0.0,-0.125)),(0.155,0.215,0.022),M['steel'],roll=sgn*38),0.006)
+if SHOULDERS=='none':
+    rm([f'{p}_{s}' for p in ('pauldron','pauldron2','pauldronrim','pauldronband') for s in ('L','R')])
+elif SHOULDERS=='plate':
+    rm([f'{p}_{s}' for p in ('pauldron2','pauldronrim','pauldronband') for s in ('L','R')])
+elif SHOULDERS=='asym':
+    rm(['pauldron2_R','pauldronrim_R','pauldronband_R','pauldron_R'])
+    c=shoulder['L']
+    bevel(add_box('pauldronbig_L',c+Vector((0.02,0.0,0.01)),(0.24,0.30,0.13),M['steel'],pitch=-8,roll=22,taper=0.75),0.014)
+    for i,(dx,dy,dz) in enumerate([(0.10,-0.06,0.08),(0.13,0.04,0.06),(0.07,0.12,0.04)]):
+        add_cyl(f'spike{i}',c+Vector((dx,dy,dz)),0.03,0.16,M['dark'],axis=Vector((0.7,dy,0.7)),seg=6)
 add_cyl('ventL',(0.075,0.242,1.40),0.036,0.06,M['steel'],axis=Vector((0,1,0)))
 add_cyl('ventR',(-0.075,0.242,1.40),0.036,0.06,M['steel'],axis=Vector((0,1,0)))
 add_box('packtop',(0,0.19,1.50),(0.20,0.11,0.045),M['steel'])
+if BACK=='none':
+    rm(['backpack','packspine','canL','canR','packvent','bedroll','ventL','ventR','packtop'])
+elif BACK=='jump':
+    for sgn in (1,-1):
+        add_cyl(f'thruster{sgn}',(sgn*0.11,0.19,1.24),0.055,0.20,M['dark'],axis=Vector((0,0,1)),seg=10)
+        add_cyl(f'nozzle{sgn}',(sgn*0.11,0.19,1.13),0.045,0.06,M['gun'],axis=Vector((0,0,1)),seg=10)
+elif BACK=='ammo':
+    rm(['canL','canR','bedroll'])
+    bevel(add_box('ammobox',(0,0.24,1.30),(0.30,0.14,0.30),M['dark']),0.012)
+    for i in range(4):
+        add_cyl(f'round{i}',(0.10-i*0.06,0.295,1.30),0.020,0.24,M['brass'],axis=Vector((0,0,1)),seg=6)
+elif BACK=='servo':
+    rm(['canR','bedroll'])
+    for i,(a,b) in enumerate([((0.12,0.22,1.45),(0.28,0.10,1.55)),((0.28,0.10,1.55),(0.34,-0.08,1.36)),((0.34,-0.08,1.36),(0.30,-0.20,1.20))]):
+        d=Vector(b)-Vector(a); add_cyl(f'servo{i}',(Vector(a)+Vector(b))/2,0.032,d.length,M['steel'],axis=d.normalized(),seg=8)
+elif BACK=='banner':
+    add_cyl('bannerpole',(0.10,0.20,1.55),0.028,1.0,M['dark'],axis=Vector((0,0,1)),seg=8)
+    add_box('bannercloth',(0.10,0.18,1.85),(0.03,0.28,0.36),M['cloth'])
 bevel(add_box('chestridge',(0,-0.145,1.33),(0.20,0.05,0.16),M['steel'],pitch=-6),0.012)
 bevel(add_box('gorget',(0,-0.02,1.505),(0.26,0.14,0.06),M['dark'],pitch=-8),0.012)
 bevel(add_box('strapL',(0.10,-0.135,1.43),(0.05,0.04,0.20),M['leather'],roll=8),0.008)
@@ -316,6 +405,15 @@ for i,(x,y) in enumerate([(-0.13,-0.135),(0.0,-0.155),(0.13,-0.135)]):
     add_box(f'pouch{i}',(x,y,0.985),(0.075,0.05,0.095),M['leather'])
     add_box(f'pouchflap{i}',(x,y-0.005,1.035),(0.08,0.055,0.025),M['dark'])
 add_box('tabard',(0,-0.15,0.885),(0.135,0.02,0.29),M['cloth'])
+if ROBE:
+    add_cone('robe',(0,0.0,0.62*HS),0.27*HS,0.18*HS,0.86*HS,M['cloth'],seg=14)
+    add_box('robesash',(0,-0.02,1.02),(0.30,0.30,0.06),M['leather'])
+if CLOAK:
+    bevel(add_box('cloak',(0,0.17*HS,1.05*HS),(0.38*HS,0.03,0.95*HS),M['cloth'],pitch=4),0.01)
+    add_box('cloakcollar',(0,0.10,1.52),(0.36,0.10,0.08),M['dark'])
+if SHIELD=='tower':
+    bevel(add_box('shield',(0.30,-0.16,1.14),(0.06,0.34,0.64),M['steel'],pitch=6,roll=8),0.014)
+    add_box('shieldboss',(0.34,-0.16,1.14),(0.03,0.10,0.10),M['brass'])
 for side,sgn in (('L',1),('R',-1)):
     add_box(f'toecap_{side}',(sgn*0.135,-0.115,0.055),(0.105,0.13,0.09),M['dark'])
     add_box(f'sole_{side}',(sgn*0.135,-0.045,0.018),(0.125,0.26,0.035),M['gun'])
@@ -327,9 +425,14 @@ wristR=ae.matrix_world@ae.pose.bones['hand.R'].head
 wristL=ae.matrix_world@ae.pose.bones['hand.L'].head
 palmR=(ae.matrix_world@ae.pose.bones['hand.R'].head+ae.matrix_world@ae.pose.bones['hand.R'].tail)/2
 palmL=(ae.matrix_world@ae.pose.bones['hand.L'].head+ae.matrix_world@ae.pose.bones['hand.L'].tail)/2
-axis=(wristL-wristR).normalized(); up0=Vector((0,0,1))
-right=axis.cross(up0).normalized(); up=right.cross(axis).normalized()
-bore=palmR+up*0.07
+if BLADE:
+    axis=Vector((-0.12,-0.58,0.81)).normalized(); up0=Vector((0,0,1))
+    right=axis.cross(up0).normalized(); up=right.cross(axis).normalized()
+    bore=palmR
+else:
+    axis=(wristL-wristR).normalized(); up0=Vector((0,0,1))
+    right=axis.cross(up0).normalized(); up=right.cross(axis).normalized()
+    bore=palmR+up*0.07
 frame=Matrix((right,axis,up)).transposed().to_4x4()
 print('RIFLE palmR',tuple(round(x,3) for x in palmR),'palmL',tuple(round(x,3) for x in palmL),'axis',tuple(round(x,3) for x in axis),'len',round((palmL-palmR).length,3))
 def wbox(t,u,v,s,material,pitch=0.0,taper=1.0,name=None):
@@ -350,43 +453,63 @@ def wcyl(t,u,v,r,d,material,pitch=0.0):
     Mw=frame.copy(); Mw.translation=bore+axis*t+right*u+up*v
     bmesh.ops.transform(bm,matrix=Mw,verts=bm.verts)
     return new_obj(f'wc_{t:+.2f}',bm,material)
-tg=-0.03; thg=0.23
-wbox(tg-0.245,0,0.03,(0.075,0.06,0.13),M['gun'])          # buttplate
-wbox(tg-0.175,0,0.015,(0.075,0.19,0.11),M['gun'])         # stock
-wbox(tg-0.155,0,0.085,(0.065,0.21,0.05),M['gun'])          # comb
-wbox(-0.01,0,0.0,(0.095,0.31,0.14),M['gun'])              # receiver
-wbox(0.02,0.045,0.015,(0.012,0.08,0.045),M['dark'])       # ejection port
-wcyl(0.10,0.052,0.03,0.009,0.055,M['dark'])               # charging handle
-wbox(tg,0,-0.095,(0.055,0.075,0.15),M['dark'],pitch=16)   # pistol grip
-wbox(0.03,0,-0.19,(0.075,0.13,0.20),M['gun'],pitch=-9)     # magazine
-wbox(0.035,0,-0.17,(0.062,0.075,0.02),M['brass'],pitch=-9) # mag base
-wbox(0.0,0,-0.065,(0.035,0.09,0.014),M['gun'])            # trigger guard
-wbox(thg,0,-0.02,(0.08,0.34,0.125),M['dark'])            # handguard
-wbox(thg+0.02,0.038,-0.02,(0.012,0.24,0.075),M['gun'])    # rail R
-wbox(thg+0.02,-0.038,-0.02,(0.012,0.24,0.075),M['gun'])   # rail L
-wbox(thg+0.18,0,0.0,(0.045,0.06,0.06),M['gun'])           # gas block
-wcyl(thg+0.40,0,0.0,0.030,0.52,M['gun'])                  # barrel
-wcyl(thg+0.69,0,0.0,0.042,0.10,M['dark'])                 # muzzle
-wbox(thg+0.26,0,0.04,(0.02,0.04,0.06),M['dark'])
-wbox(thg+0.40,0,-0.005,(0.06,0.14,0.06),M['dark'])       # front sight
-wbox(-0.03,0,0.085,(0.035,0.045,0.04),M['dark'])          # rear sight
-wbox(-0.02,0,0.115,(0.05,0.20,0.05),M['dark'])            # scope body
-wbox(-0.02,0.0,0.085,(0.035,0.07,0.05),M['steel'])        # scope mount
-wcyl(-0.02+0.075,0,0.115,0.028,0.03,M['gun'])   # scope objective
-wcyl(-0.02-0.085,0,0.115,0.024,0.03,M['gun'])    # scope ocular
-wbox(0.05,0,-0.075,(0.02,0.46,0.016),M['leather'])        # sling strap
-wcyl(tg-0.19,0,-0.03,0.012,0.03,M['dark'],pitch=90)       # sling loop rear
-# gauntlet fists wrapping the weapon (weapon-frame boxes)
-wbox(tg,0,-0.03,(0.115,0.13,0.115),M['steel'],taper=0.82,name='fistR')
-wbox(tg+0.075,0,-0.015,(0.10,0.045,0.115),M['dark'])
-wbox(thg+0.02,0,-0.035,(0.115,0.14,0.12),M['steel'],taper=0.82,name='fistL')
-wbox(thg+0.105,0,-0.02,(0.105,0.05,0.12),M['dark'])
-for v in (-0.05,-0.012,0.026):
-    wbox(tg+0.068,0,v,(0.02,0.095,0.014),M['dark'])
-    wbox(thg+0.02+0.077,0,v,(0.02,0.10,0.014),M['dark'])
-bevel(add_box('cuffR',wristR,(0.11,0.11,0.09),M['dark'],pitch=10),0.008)
-bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark'],pitch=-6),0.008)
-wcyl(thg+0.14,0,-0.06,0.012,0.03,M['dark'],pitch=90)      # sling loop front
+if WEAPON=='longrifle': BL,BR,ML,SC=0.78,0.034,0.10,True
+elif WEAPON=='heavy_stubber': BL,BR,ML,SC=0.30,0.048,0.12,False
+elif WEAPON=='autocannon': BL,BR,ML,SC=0.62,0.055,0.14,False
+else: BL,BR,ML,SC=0.52,0.030,0.10,True
+if BLADE:
+    wcyl(-0.16,0,0,0.024,0.20,M['leather'])                 # grip
+    wcyl(-0.27,0,0,0.034,0.06,M['brass'])                   # pommel
+    wbox(0.02,0,0,(0.16,0.06,0.05),M['brass'])              # guard
+    wbox(0.34,0,0,(0.025,0.56,0.10),M['steel'],taper=0.92)  # blade
+    wbox(0.64,0,0,(0.02,0.08,0.06),M['steel'])              # tip
+    if WEAPON=='chainblade':
+        wbox(0.34,0.035,0,(0.02,0.52,0.10),M['gun'])        # spine
+        for i in range(8):
+            wbox(0.14+i*0.06,-0.062,0,(0.02,0.04,0.03),M['gun'])
+        wcyl(-0.02,0.05,0,0.045,0.14,M['dark'],pitch=90)    # motor
+    wbox(0.0,0,0,(0.11,0.13,0.115),M['steel'],taper=0.82,name='fistR')
+    bevel(add_box('fistL',palmL,(0.10,0.12,0.11),M['steel'],taper=0.85),0.01)
+    bevel(add_box('cuffR',wristR,(0.11,0.11,0.09),M['dark']),0.008)
+    bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark']),0.008)
+else:
+    tg=-0.03; thg=0.23
+    wbox(tg-0.245,0,0.03,(0.075,0.06,0.13),M['gun'])          # buttplate
+    wbox(tg-0.175,0,0.015,(0.075,0.19,0.11),M['gun'])         # stock
+    wbox(tg-0.155,0,0.085,(0.065,0.21,0.05),M['gun'])          # comb
+    wbox(-0.01,0,0.0,(0.095,0.31,0.14),M['gun'])              # receiver
+    wbox(0.02,0.045,0.015,(0.012,0.08,0.045),M['dark'])       # ejection port
+    wcyl(0.10,0.052,0.03,0.009,0.055,M['dark'])               # charging handle
+    wbox(tg,0,-0.095,(0.055,0.075,0.15),M['dark'],pitch=16)   # pistol grip
+    wbox(0.03,0,-0.19,(0.075,0.13,0.20),M['gun'],pitch=-9)     # magazine
+    wbox(0.035,0,-0.17,(0.062,0.075,0.02),M['brass'],pitch=-9) # mag base
+    wbox(0.0,0,-0.065,(0.035,0.09,0.014),M['gun'])            # trigger guard
+    wbox(thg,0,-0.02,(0.08,0.34,0.125),M['dark'])            # handguard
+    wbox(thg+0.02,0.038,-0.02,(0.012,0.24,0.075),M['gun'])    # rail R
+    wbox(thg+0.02,-0.038,-0.02,(0.012,0.24,0.075),M['gun'])   # rail L
+    wbox(thg+0.18,0,0.0,(0.045,0.06,0.06),M['gun'])           # gas block
+    wcyl(thg+0.14+BL/2,0,0.0,BR,BL,M['gun'])                   # barrel
+    wcyl(thg+0.14+BL-0.02,0,0.0,BR*1.35,ML,M['dark'])          # muzzle
+    wbox(thg+0.26,0,0.04,(0.02,0.04,0.06),M['dark'])
+    wbox(thg+0.14+BL*0.55,0,-0.005,(0.06,0.14,0.06),M['dark']) # front sight
+    wbox(-0.03,0,0.085,(0.035,0.045,0.04),M['dark'])          # rear sight
+    if SC: wbox(-0.02,0,0.115,(0.05,0.20,0.05),M['dark'])            # scope body
+    if SC: wbox(-0.02,0.0,0.085,(0.035,0.07,0.05),M['steel'])        # scope mount
+    if SC: wcyl(-0.02+0.075,0,0.115,0.028,0.03,M['gun'])   # scope objective
+    if SC: wcyl(-0.02-0.085,0,0.115,0.024,0.03,M['gun'])    # scope ocular
+    wbox(0.05,0,-0.075,(0.02,0.46,0.016),M['leather'])        # sling strap
+    wcyl(tg-0.19,0,-0.03,0.012,0.03,M['dark'],pitch=90)       # sling loop rear
+    # gauntlet fists wrapping the weapon (weapon-frame boxes)
+    wbox(tg,0,-0.03,(0.115,0.13,0.115),M['steel'],taper=0.82,name='fistR')
+    wbox(tg+0.075,0,-0.015,(0.10,0.045,0.115),M['dark'])
+    wbox(thg+0.02,0,-0.035,(0.115,0.14,0.12),M['steel'],taper=0.82,name='fistL')
+    wbox(thg+0.105,0,-0.02,(0.105,0.05,0.12),M['dark'])
+    for v in (-0.05,-0.012,0.026):
+        wbox(tg+0.068,0,v,(0.02,0.095,0.014),M['dark'])
+        wbox(thg+0.02+0.077,0,v,(0.02,0.10,0.014),M['dark'])
+    bevel(add_box('cuffR',wristR,(0.11,0.11,0.09),M['dark'],pitch=10),0.008)
+    bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark'],pitch=-6),0.008)
+    wcyl(thg+0.14,0,-0.06,0.012,0.03,M['dark'],pitch=90)      # sling loop front
 
 # ---- bind gear, join, keyframe aim/idle, export ----
 def bone_for(n):
@@ -394,19 +517,20 @@ def bone_for(n):
     if l.startswith('fistr'): return 'hand.R'
     if l.startswith('fistl'): return 'hand.L'
     if l.startswith('w_') or l.startswith('wpn'): return 'hand.R'
-    for k in ('helmet','mask','visor','brow','resp','cheek','jaw','crest','neck','collar','hood','hose'):
+    for k in ('helmet','mask','visor','brow','resp','cheek','jaw','crest','neck','collar','hood','hose','brim','chin','slab','horn','eye'):
         if l.startswith(k): return 'spine.006'
     for s in ('L','R'):
         sf=s.lower()
         if l.startswith(('pauldron',)) and l.endswith(sf): return f'shoulder.{s}'
         if l.startswith(('armplate','elbowpad')) and l.endswith(sf): return f'upper_arm.{s}'
         if l.startswith(('cuff',)) and l.endswith(sf): return f'forearm.{s}'
+        if l.startswith(('shield',)) and l.endswith(sf): return f'forearm.{s}'
         if l.startswith(('thighplate','thighrim')) and l.endswith(sf): return f'thigh.{s}'
         if l.startswith(('kneepad','greave','shin')) and l.endswith(sf): return f'shin.{s}'
         if l.startswith(('boot','toecap','sole')) and l.endswith(sf): return f'foot.{s}'
-    for k in ('backpack','packspine','packvent','can','bedroll','antenna','vent','aquila','wing','emblem','chest','strap','gorget','cuirass','seal'):
+    for k in ('backpack','packspine','packvent','can','bedroll','antenna','vent','aquila','wing','emblem','chest','strap','gorget','cuirass','seal','thruster','nozzle','ammo','round','servo','banner'):
         if l.startswith(k): return 'spine.003'
-    for k in ('belt','buckle','pouch','tabard','holster','tasset'):
+    for k in ('belt','buckle','pouch','tabard','holster','tasset','robe','cloak'):
         if l.startswith(k): return 'spine'
     return 'spine.003'
 

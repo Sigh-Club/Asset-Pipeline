@@ -1,0 +1,7 @@
+{
+  "//": "Cinderborn base-mesh units: rust armour, ash-dark under-suit and blood-cloth robes as flat faction blocks; the library camo/weave aliases to static on the organic body at the 2 cm texel grid.",
+  "underlayer": "flat_cinder_underlayer",
+  "armour_primary": "flat_cinder_armour_primary",
+  "armour_secondary": "flat_cinder_armour_secondary",
+  "IOA_cloth_canvas": "flat_cinder_cloth"
+}
