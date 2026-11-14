@@ -33,6 +33,7 @@ _ap.add_argument('--robe', action='store_true')
 _ap.add_argument('--crest', action='store_true')
 _ap.add_argument('--horns', action='store_true')
 _ap.add_argument('--shield', default=None)
+_ap.add_argument('--body', default=None, help='body class: light|standard|heavy|elite|monolith')
 # P3 kit vocabulary (faction spec `add` list): additive, default off so every
 # existing unit variant is byte-identical unless it asks for the kit.
 _ap.add_argument('--pennants', action='store_true')
@@ -54,7 +55,10 @@ BRANDS=bool(A.brands or _CFG.get('brands'))
 VENTS=bool(A.vents or _CFG.get('vents'))
 CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
 BODY=_v('body','standard')
-HEIGHT={'light':1.82,'standard':1.90,'heavy':1.98,'monolith':2.15}.get(BODY,1.90)
+# Body classes come from the faction spec (FACTION_IDENTITY §Body class and unit
+# scale): 95% of units are human scale and only the top HP/armour/weapon tier uses
+# the elite frame (2.05-2.20 m).
+HEIGHT={'light':1.82,'standard':1.90,'heavy':1.98,'elite':2.12,'monolith':2.15}.get(BODY,1.90)
 HS=HEIGHT/1.90
 CREST=bool(A.crest or _CFG.get('crest')); HORNS=bool(A.horns or _CFG.get('horns'))
 print('VARIANT',HELM,SHOULDERS,BACK,WEAPON,'cloak',CLOAK,'robe',ROBE,'crest',CREST,'horns',HORNS,'shield',SHIELD)

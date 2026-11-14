@@ -221,8 +221,19 @@ vocabulary — this is the test of whether the kit generalises rather than produ
 - Shipped as `cinderborn_zealot_line_pixel.glb`: 45 colours, off-palette 0, 8 directions one
   component each, contract pass, guards 61/61 + 61/61 + 0, E2E 4/4. Visually distinct from the
   Directorate trooper in silhouette, palette and gear — the distinctiveness the method was adopted for.
-- Next in P3: the Directorate elite (elite frame), then Void Corsairs, then Wreckstorm (after ork
-  extraction), then Parasitic Bloom.
+**P3 — Iron Directorate elite (body-class proof) done (2026-11-19).** `--body elite` added as a first
+class body class (2.12 m, inside the spec's 2.05-2.20 band) alongside light/standard/heavy/monolith.
+The Ironclad Warden is built on it: slab helm, block pauldrons, tower shield, autocannon, crest,
+plate seams. Budgets: armour 1,164/2,500 · head 256/1,000 · pack 228/300 · weapon 480/500 PASS.
+Shipped as `iron_directorate_super_human_pixel.glb`.
+
+The three kits now in the library read as three different things — gold line trooper with pennant
+rack and rail emitter, taller gold/steel warden with a tower shield and autocannon, purple robed
+zealot with brand plates and a chainblade — which is the distinctiveness the method was adopted for,
+and the elite frame is used for exactly one unit at the top of the Directorate ladder.
+
+- Next in P3: Void Corsairs, then Wreckstorm (after `race_ork` extraction), then Parasitic Bloom, then
+  the remaining per-faction variants (each is now a config line, not a modelling job).
 
 **P2 — started.** `tools/blender/derive_head.py` implements the first derivation: strip the source
 head above the neck line, then add our vocabulary (dome, visor, crest, breather, neck ring) in the
