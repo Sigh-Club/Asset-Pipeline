@@ -40,6 +40,8 @@ _ap.add_argument('--pennants', action='store_true')
 _ap.add_argument('--seams', action='store_true')
 _ap.add_argument('--brands', action='store_true', help='Cinder: warped brand plates + ember edges')
 _ap.add_argument('--vents', action='store_true', help='Cinder: ash vents')
+_ap.add_argument('--scrap', action='store_true', help='Wreckstorm: bolted salvage plates')
+_ap.add_argument('--pistons', action='store_true', help='Wreckstorm: exposed pistons')
 _ap.add_argument('--report', action='store_true', help='print per-slot triangle budgets')
 A=_ap.parse_args(_args)
 import json as _json
@@ -53,12 +55,14 @@ PENNANTS=bool(A.pennants or _CFG.get('pennants'))
 SEAMS=bool(A.seams or _CFG.get('seams'))
 BRANDS=bool(A.brands or _CFG.get('brands'))
 VENTS=bool(A.vents or _CFG.get('vents'))
+SCRAP=bool(A.scrap or _CFG.get('scrap'))
+PISTONS=bool(A.pistons or _CFG.get('pistons'))
 CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
 BODY=_v('body','standard')
 # Body classes come from the faction spec (FACTION_IDENTITY §Body class and unit
 # scale): 95% of units are human scale and only the top HP/armour/weapon tier uses
 # the elite frame (2.05-2.20 m).
-HEIGHT={'light':1.82,'standard':1.90,'corsair':1.95,'heavy':1.98,'elite':2.12,'monolith':2.15}.get(BODY,1.90)
+HEIGHT={'light':1.82,'standard':1.90,'corsair':1.95,'heavy':1.98,'bulk':2.05,'elite':2.12,'monolith':2.15}.get(BODY,1.90)
 HS=HEIGHT/1.90
 CREST=bool(A.crest or _CFG.get('crest')); HORNS=bool(A.horns or _CFG.get('horns'))
 print('VARIANT',HELM,SHOULDERS,BACK,WEAPON,'cloak',CLOAK,'robe',ROBE,'crest',CREST,'horns',HORNS,'shield',SHIELD)
@@ -342,6 +346,17 @@ elif HELM=='hood':
     bevel(add_box('hoodmask',(0,-0.10,1.755),(0.16,0.11,0.17),M['dark'],pitch=-4),0.012)
     add_box('eyeL',(0.045,-0.158,1.80),(0.04,0.02,0.018),M['visor'])
     add_box('eyeR',(-0.045,-0.158,1.80),(0.04,0.02,0.018),M['visor'])
+if HELM=='jaw':
+    # "jaw": the lower face is an iron gob with a bolted bracket, the read every
+    # ork miniature shares. Kept as an over-built jawguard rather than a helmet.
+    rm(['mask','visor','visorhood','respL','respR','resphose','cheekL','cheekR','brow'])
+    bevel(add_box('irongob',(0,-0.105,1.735),(0.215,0.150,0.135),M['steel'],pitch=4),0.014)
+    add_box('gobteeth',(0,-0.178,1.720),(0.175,0.020,0.030),M['brass'])
+    add_box('gobbrow',(0,-0.140,1.815),(0.195,0.070,0.045),M['dark'],pitch=-10)
+    add_box('gobplateL',(0.098,-0.100,1.800),(0.030,0.120,0.075),M['steel'])
+    add_box('gobplateR',(-0.098,-0.100,1.800),(0.030,0.120,0.075),M['steel'])
+    for i in range(3):
+        add_cyl(f'gobbolt{i}',(0.070-i*0.070,-0.180,1.795),0.011,0.018,M['brass'],axis=Vector((0,1,0)),seg=4)
 if HELM=='fin':
     # swept fin crest: the Corsair read is a swept-back blade of a fin, not a
     # bristled crest. Three graduated fins, each raked back.
@@ -375,6 +390,19 @@ bevel(add_box('chestpouchR',(-0.115,-0.15,1.24),(0.075,0.055,0.075),M['leather']
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
     bevel(add_box(f'pauldronband_{side}',c+Vector((sgn*0.06,0.0,-0.125)),(0.155,0.215,0.022),M['steel'],roll=sgn*38),0.006)
+if SHOULDERS=='scrap':
+    # "strip symmetry": a big bolted plate on one side, a smaller patched one on the
+    # other, plus welded-on spikes on one shoulder only.
+    rm([f'{p}_{s}' for p in ('pauldron','pauldron2','pauldronrim','pauldronband') for s in ('L','R')])
+    c=shoulder['L']
+    add_box('scrappauldL',c+Vector((0.02,-0.01,0.02)),(0.26,0.30,0.13),M['steel'],pitch=-8,roll=16,taper=0.72)
+    add_box('scrapbandL',c+Vector((0.03,-0.02,-0.045)),(0.24,0.28,0.03),M['dark'],roll=16)
+    for i in range(3):
+        add_cyl(f'scrapspike{i}',c+Vector((0.06+i*0.03,0.05-i*0.06,0.09)),0.022,0.13,M['steel'],
+                axis=Vector((0.6,0.1,0.8)),seg=4)
+    c=shoulder['R']
+    add_box('scrappauldR',c+Vector((-0.01,0.0,0.0)),(0.20,0.24,0.10),M['dark'],pitch=-4,roll=-24,taper=0.8)
+    add_box('scrappatchR',c+Vector((-0.04,-0.03,-0.03)),(0.13,0.16,0.06),M['steel'],roll=-30,taper=0.75)
 if SHOULDERS=='swept':
     # "strip blocky pauldrons": smooth curved shells, raked back, with a single
     # hard-light seam instead of rims and rivets.
@@ -439,6 +467,31 @@ elif BACK=='brazier':
 elif BACK=='banner':
     add_cyl('bannerpole',(0.10,0.20,1.55),0.028,1.0,M['dark'],axis=Vector((0,0,1)),seg=8)
     add_box('bannercloth',(0.10,0.18,1.85),(0.03,0.28,0.36),M['cloth'])
+if SCRAP:
+    # "bolted plates" + "welded scrap": overlapping salvage slabs at different
+    # angles and sizes. The spec says to strip symmetry, so every plate on the left
+    # is a different size and rake from its opposite number.
+    for i,(sgn,dx,dy,dz,w,h,roll) in enumerate([
+            (1,0.115,-0.150,1.315,0.135,0.115,12),
+            (-1,-0.100,-0.160,1.235,0.115,0.100,-7),
+            (1,0.070,-0.175,1.145,0.095,0.085,18),
+            (-1,-0.140,-0.120,1.195,0.080,0.070,-14)]):
+        add_box(f'scrap{i}',(sgn*dx,dy,dz),(w,0.028,h),M['steel'],roll=sgn*roll,taper=0.86)
+        # bolts: two small studs per plate, deliberately not mirrored
+        for bx in (-0.28,0.31):
+            add_cyl(f'scrapbolt{i}_{bx}',(sgn*dx+bx*w,dy-0.020,dz+h*0.22),0.010,0.016,
+                    M['brass'],axis=Vector((0,1,0)),seg=4)
+    # ram prow: a wedge on the left shoulder that leads with a blunt nose
+    add_box('ramprow',shoulder['L']+Vector((0.10,-0.10,0.01)),(0.16,0.30,0.13),M['steel'],pitch=-14,roll=8,taper=0.55)
+    add_box('ramnose',shoulder['L']+Vector((0.16,-0.20,-0.01)),(0.10,0.10,0.10),M['brass'],taper=0.5)
+if PISTONS:
+    # "exposed pistons": bare actuator rods on the legs and the pack, with a sleeve
+    for i,(sgn,z) in enumerate([(1,0.86),(-1,0.80),(1,1.18)]):
+        hp=Lm['L' if sgn>0 else 'R']['hip']
+        add_cyl(f'piston{i}',(hp.x+sgn*0.11,hp.y+0.03,hp.z-z*0.42),0.020,0.16,M['dark'],
+                axis=Vector((sgn*0.15,0.1,1.0)),seg=6)
+        add_cyl(f'pistonsleeve{i}',(hp.x+sgn*0.11,hp.y+0.03,hp.z-z*0.42+0.06),0.030,0.07,M['steel'],
+                axis=Vector((sgn*0.15,0.1,1.0)),seg=6)
 if BRANDS:
     # "brand plates" + "warped plate edges": the Cinder read is asymmetric,
     # heat-warped plate with a glowing brand cut. Each plate is deliberately a
@@ -563,7 +616,8 @@ def wcyl(t,u,v,r,d,material,pitch=0.0,seg=10):
     Mw=frame.copy(); Mw.translation=bore+axis*t+right*u+up*v
     bmesh.ops.transform(bm,matrix=Mw,verts=bm.verts)
     return new_obj(f'wc_{t:+.2f}',bm,material)
-if WEAPON=='rail_rifle': BL,BR,ML,SC=0.40,0.036,0.10,False
+if WEAPON=='louda': BL,BR,ML,SC=0.34,0.030,0.11,False
+elif WEAPON=='rail_rifle': BL,BR,ML,SC=0.40,0.036,0.10,False
 elif WEAPON=='longrifle': BL,BR,ML,SC=0.78,0.034,0.10,True
 elif WEAPON=='heavy_stubber': BL,BR,ML,SC=0.30,0.048,0.12,False
 elif WEAPON=='autocannon': BL,BR,ML,SC=0.62,0.055,0.14,False
@@ -598,7 +652,28 @@ elif BLADE:
     bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark']),0.008)
 else:
     tg=-0.03; thg=0.23
-    if WEAPON=='rail_rifle':
+    if WEAPON=='louda':
+        # "loud barrels": a welded four-barrel cluster on a scrap receiver. Loud is
+        # the design brief, so the muzzles are oversized and the frame is crude.
+        wbox(tg-0.205,0,0.015,(0.075,0.055,0.125),M['steel'])       # butt plate
+        wbox(tg-0.13,0,0.01,(0.080,0.15,0.11),M['gun'])             # stock
+        wbox(-0.02,0,0.0,(0.105,0.26,0.145),M['gun'])               # receiver
+        wbox(-0.02,0.055,0.02,(0.030,0.16,0.060),M['dark'])         # welded side box
+        wbox(tg,0,-0.095,(0.055,0.075,0.15),M['dark'],pitch=16)     # grip
+        wbox(thg,0,-0.01,(0.095,0.28,0.125),M['gun'])               # barrel housing
+        for i,(u,v) in enumerate([(0.032,0.032),(-0.032,0.032),(0.032,-0.032),(-0.032,-0.032)]):
+            wcyl(thg+0.13+BL*0.5,u,v,BR,BL,M['dark'],seg=6)         # barrels
+            wcyl(thg+0.13+BL-0.01,u,v,BR*1.6,ML,M['steel'],seg=6)   # muzzles
+        wbox(thg+0.05,0,0.075,(0.030,0.10,0.030),M['steel'])        # crude sight
+        wbox(thg+0.12,0,-0.085,(0.070,0.14,0.045),M['brass'])       # scrap foregrip
+        # gauntlet fists wrapping the weapon (named as hands)
+        wbox(tg,0,-0.03,(0.125,0.14,0.125),M['steel'],taper=0.82,name='fistR')
+        wbox(tg+0.075,0,-0.015,(0.10,0.045,0.115),M['dark'],name='fistR2')
+        wbox(thg+0.02,0,-0.035,(0.125,0.15,0.13),M['steel'],taper=0.82,name='fistL')
+        wbox(thg+0.105,0,-0.02,(0.105,0.05,0.12),M['dark'],name='fistL2')
+        bevel(add_box('cuffR',wristR,(0.12,0.12,0.10),M['dark'],pitch=10),0.008)
+        bevel(add_box('cuffL',wristL,(0.12,0.12,0.10),M['dark'],pitch=-6),0.008)
+    elif WEAPON=='rail_rifle':
         # Directorate rail weapon: a lean industrial emitter — exposed twin rails,
         # cooling fins, a drum magazine and an optic rail. It has its own part list
         # (rather than decorating the generic rifle) because the weapon slot budget

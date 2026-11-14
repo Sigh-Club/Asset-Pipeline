@@ -248,9 +248,27 @@ Four kits now ship: Directorate line (gold, pennant rack, rail emitter), Directo
 tower shield, autocannon), Cinder zealot (purple, brand plates, brazier), Corsair raider (pale hull,
 swept fins, hard-light lance).
 
-- Next in P3: Wreckstorm (after `race_ork` extraction), then Parasitic Bloom, Radiant Concord and
-  Chrono Revenants, then the remaining per-faction variants (each is now a config line, not a
-  modelling job).
+**P3 — race_ork extracted; Wreckstorm scrapwalker done (2026-11-19).** The ork kit is no longer
+blocked: `extract_sga.py --all --match 'race_ork'` against the shipped archives produced **125
+`.model` files**, and `part_catalogue.py` now reads them as armour 31 (median 1,298 tris) / gun 27
+(288) / sword 9 (136) / head 3 + helm 1 (1,225/821) / backpack 5 (1,077). The classifier gained
+faction-specific synonyms (`shoota`, `deffgun`, `rokkit`, `choppa`, …) — before that, ork ranged
+wargear carried no slot word and landed in "other", so the kit read as almost weaponless.
+
+Wreckstorm vocabulary: `--body bulk` (2.05 m), `--helm jaw` (iron gob + bolted bracket), `--shoulders
+scrap` (a big bolted plate on one side, a smaller patched one on the other — the spec says strip
+symmetry), `--scrap` (overlapping salvage slabs with deliberately unmatched bolts, plus a ram prow),
+`--pistons` (bare actuator rods), `--weapon louda` (welded four-barrel cluster). Budgets: armour
+840/2,500 · head 124/1,000 · pack 228/300 · weapon 436/500 PASS. Shipped as
+`wreckstorm_clans_scrapwalker_brute_pixel.glb` on the rust-orange scrap ramp.
+
+**Five kits now ship:** Directorate line, Directorate elite, Cinder zealot, Corsair raider, Wreckstorm
+scrapwalker. Five factions have a flat palette derived from their own spec
+(`add_flat_faction_materials.py`), and the remaining two (Parasitic Bloom, Radiant Concord, Chrono
+Revenants) need theirs before their first kit.
+
+- Next in P3: Parasitic Bloom (organic — the one body class the hard-surface parts do not cover),
+  Radiant Concord, Chrono Revenants, then the remaining per-faction variants (each is a config line).
 
 **P2 — started.** `tools/blender/derive_head.py` implements the first derivation: strip the source
 head above the neck line, then add our vocabulary (dome, visor, crest, breather, neck ring) in the

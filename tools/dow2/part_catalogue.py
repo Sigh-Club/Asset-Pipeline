@@ -25,11 +25,25 @@ DEFAULT_SGA = Path("/run/media/talzanar/games/Projects/Decompilor/work/dow2-retr
 SLOTS = ("armour", "head", "helm", "shoulder", "pauldron", "backpack", "weapon",
          "gun", "sword", "claws", "shield")
 
+# Faction-specific part names that carry no slot word: ork ranged wargear is named
+# after the weapon ("shoota", "deffgun", "rokkit"), not after the slot, so those
+# files landed in "other" and the ork kit read as almost weaponless.
+SLOT_SYNONYMS = {
+    "gun": ("shoota", "slugga", "deffgun", "rokkit", "burna", "zzap", "blasta",
+            "lobba", "kannon", "kustom", "dakka"),
+    "sword": ("choppa", "claw", "big_choppa", "power_klaw", "weirdboy_staff"),
+    "armour": ("body", "wargear_body"),
+    "backpack": ("pole", "trophy", "banner"),
+}
+
 
 def classify(name: str) -> str:
     low = name.lower()
     for slot in SLOTS:
         if slot in low:
+            return slot
+    for slot, words in SLOT_SYNONYMS.items():
+        if any(w in low for w in words):
             return slot
     return "other"
 

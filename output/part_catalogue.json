@@ -1,0 +1,513 @@
+{
+ "source": "/run/media/talzanar/games/Projects/Decompilor/work/dow2-retribution/sga",
+ "races": {
+  "race_marine": {
+   "armour": {
+    "count": 31,
+    "tris_min": 32,
+    "tris_median": 2486,
+    "tris_max": 5590,
+    "examples": [
+     "power_armour_commander.model",
+     "power_armour_common.model",
+     "power_armour_cuirass_of_azariah.model",
+     "power_armour_epic.model",
+     "power_armour_gabriel.model"
+    ]
+   },
+   "backpack": {
+    "count": 12,
+    "tris_min": 254,
+    "tris_median": 518,
+    "tris_max": 930,
+    "examples": [
+     "bloodravens_banner.model",
+     "bloodravens_banner_aurelia.model",
+     "bloodravens_banner_hammer.model",
+     "space_marine_backpack.model",
+     "space_marine_banner.model"
+    ]
+   },
+   "claws": {
+    "count": 1,
+    "tris_min": 1276,
+    "tris_median": 1276,
+    "tris_max": 1276,
+    "examples": [
+     "terminator_lightning_claws_common.model"
+    ]
+   },
+   "gun": {
+    "count": 13,
+    "tris_min": 136,
+    "tris_median": 190,
+    "tris_max": 432,
+    "examples": [
+     "meltagun_common.model",
+     "meltagun_common_rubble.model",
+     "plasma_gun_common.model",
+     "plasma_gun_epic.model",
+     "plasma_gun_light_of_faith.model"
+    ]
+   },
+   "head": {
+    "count": 19,
+    "tris_min": 222,
+    "tris_median": 948,
+    "tris_max": 2248,
+    "examples": [
+     "assault_marine_head.model",
+     "assault_marine_head_broken.model",
+     "avitus_head.model",
+     "avitus_head.model",
+     "cyrus_head.model"
+    ]
+   },
+   "helm": {
+    "count": 1,
+    "tris_min": 734,
+    "tris_median": 734,
+    "tris_max": 734,
+    "examples": [
+     "force_commander_summerdlc_helmet.model"
+    ]
+   },
+   "other": {
+    "count": 251,
+    "tris_min": 20,
+    "tris_median": 370,
+    "tris_max": 9720,
+    "examples": [
+     "detonator_pack.model",
+     "fireball.model",
+     "grenade.model",
+     "hellfire_grenade.model",
+     "krak_missile.model"
+    ]
+   },
+   "shield": {
+    "count": 6,
+    "tris_min": 116,
+    "tris_median": 266,
+    "tris_max": 375,
+    "examples": [
+     "shield_wall.model",
+     "pow_shielding_of_righteousness.model",
+     "storm_shield_fc_common.model",
+     "storm_shield_fc_epic.model",
+     "storm_shield_fc_dark_angels.model"
+    ]
+   },
+   "sword": {
+    "count": 16,
+    "tris_min": 125,
+    "tris_median": 278,
+    "tris_max": 1460,
+    "examples": [
+     "chainsword_common.model",
+     "chainsword_common_rubble.model",
+     "chainsword_epic.model",
+     "chainsword_epic_rubble.model",
+     "chainsword_rare.model"
+    ]
+   },
+   "weapon": {
+    "count": 9,
+    "tris_min": 176,
+    "tris_median": 200,
+    "tris_max": 504,
+    "examples": [
+     "force_weapon_common.model",
+     "force_weapon_common_rubble.model",
+     "force_weapon_epic.model",
+     "force_weapon_epic_rubble.model",
+     "force_weapon_rare.model"
+    ]
+   }
+  },
+  "race_chaos": {
+   "armour": {
+    "count": 4,
+    "tris_min": 850,
+    "tris_median": 3268,
+    "tris_max": 4082,
+    "examples": [
+     "bloodletter_body.model",
+     "chaos_marine_armour_rare.model",
+     "chaos_sorcerer_armour_upgrade.model",
+     "chaos_lord_body.model"
+    ]
+   },
+   "backpack": {
+    "count": 9,
+    "tris_min": 948,
+    "tris_median": 1249,
+    "tris_max": 3102,
+    "examples": [
+     "chaos_marine_backpack_common.model",
+     "chaos_marine_backpack_epic.model",
+     "chaos_marine_backpack_rare.model",
+     "chaos_sorcerer_backpack_rare.model",
+     "chaos_sorcerer_backpack_common.model"
+    ]
+   },
+   "claws": {
+    "count": 1,
+    "tris_min": 808,
+    "tris_median": 808,
+    "tris_max": 808,
+    "examples": [
+     "chaos_lord_dual_lightning_claws.model"
+    ]
+   },
+   "gun": {
+    "count": 4,
+    "tris_min": 138,
+    "tris_median": 260,
+    "tris_max": 260,
+    "examples": [
+     "autogun_heretic_common.model",
+     "autogun_heretic_common_rubble.model",
+     "plasma_gun_common.model",
+     "plasma_gun_common_rubble.model"
+    ]
+   },
+   "head": {
+    "count": 13,
+    "tris_min": 1404,
+    "tris_median": 2189,
+    "tris_max": 2807,
+    "examples": [
+     "bloodletter_head01.model",
+     "bloodletter_head02.model",
+     "bloodletter_head03.model",
+     "bloodletter_head_leader.model",
+     "chaos_marine_common_head.model"
+    ]
+   },
+   "other": {
+    "count": 110,
+    "tris_min": 20,
+    "tris_median": 1263,
+    "tris_max": 14891,
+    "examples": [
+     "bile_spray.model",
+     "blastmaster.model",
+     "ch_terminator_cyclone_missile.model",
+     "fireball.model",
+     "grenade_barrage.model"
+    ]
+   },
+   "sword": {
+    "count": 9,
+    "tris_min": 135,
+    "tris_median": 322,
+    "tris_max": 1044,
+    "examples": [
+     "chainsword_common.model",
+     "chainsword_common_rubble.model",
+     "daemon_sword_common.model",
+     "power_sword_chaos_lord.model",
+     "power_sword_common.model"
+    ]
+   },
+   "weapon": {
+    "count": 2,
+    "tris_min": 194,
+    "tris_median": 194,
+    "tris_max": 194,
+    "examples": [
+     "force_weapon_common.model",
+     "force_weapon_common_rubble.model"
+    ]
+   }
+  },
+  "race_eldar": {
+   "armour": {
+    "count": 38,
+    "tris_min": 2648,
+    "tris_median": 5880,
+    "tris_max": 11240,
+    "examples": [
+     "banshee_armour_common.model",
+     "banshee_armour_common_campaign.model",
+     "banshee_armour_epic.model",
+     "banshee_armour_epic_campaign.model",
+     "banshee_armour_rare.model"
+    ]
+   },
+   "gun": {
+    "count": 1,
+    "tris_min": 604,
+    "tris_median": 604,
+    "tris_max": 604,
+    "examples": [
+     "fusion_gun.model"
+    ]
+   },
+   "head": {
+    "count": 29,
+    "tris_min": 314,
+    "tris_median": 592,
+    "tris_max": 1370,
+    "examples": [
+     "autarch_head_rare.model",
+     "autarch_head_unique.model",
+     "banshee_exarch_head_common.model",
+     "banshee_exarch_head_epic.model",
+     "banshee_exarch_head_rare.model"
+    ]
+   },
+   "other": {
+    "count": 61,
+    "tris_min": 184,
+    "tris_median": 935,
+    "tris_max": 9078,
+    "examples": [
+     "sheild_deploy.model",
+     "eldar_base.model",
+     "eldar_planetport.model",
+     "forward_base.model",
+     "warp_generator.model"
+    ]
+   },
+   "sword": {
+    "count": 7,
+    "tris_min": 234,
+    "tris_median": 240,
+    "tris_max": 348,
+    "examples": [
+     "powersword_common.model",
+     "powersword_common_rubble.model",
+     "powersword_common_left.model",
+     "powersword_common_left_rubble.model",
+     "eldar_stinging_sword_common.model"
+    ]
+   }
+  },
+  "race_tyranid": {
+   "armour": {
+    "count": 41,
+    "tris_min": 338,
+    "tris_median": 5866,
+    "tris_max": 12902,
+    "examples": [
+     "carnifex_armour_common.model",
+     "carnifex_armour_epic.model",
+     "carnifex_armour_rare.model",
+     "genestealer_armour_common.model",
+     "hive_tyrant_alpha_armour_epic.model"
+    ]
+   },
+   "claws": {
+    "count": 9,
+    "tris_min": 588,
+    "tris_median": 804,
+    "tris_max": 904,
+    "examples": [
+     "carnifex_claws.model",
+     "carnifex_crushing_claws_common.model",
+     "carnifex_crushing_claws_rare.model",
+     "genestealer_rending_claws.model",
+     "genestealer_scything_claws.model"
+    ]
+   },
+   "other": {
+    "count": 50,
+    "tris_min": 20,
+    "tris_median": 1258,
+    "tris_max": 5844,
+    "examples": [
+     "barbed_strangler_seed.model",
+     "bio_plasma_blast.model",
+     "burrow_trap.model",
+     "tyrannoform_tower.model",
+     "tyrannoform_tower_rubble.model"
+    ]
+   },
+   "sword": {
+    "count": 2,
+    "tris_min": 6736,
+    "tris_median": 6736,
+    "tris_max": 6736,
+    "examples": [
+     "bonesword.model",
+     "bonesword_glow.model"
+    ]
+   }
+  },
+  "race_ig": {
+   "armour": {
+    "count": 24,
+    "tris_min": 162,
+    "tris_median": 3933,
+    "tris_max": 18203,
+    "examples": [
+     "ogyrn_armour_unlocked.model",
+     "cadian_armour.model",
+     "cadian_armour_camo_1.model",
+     "catachan_armour.model",
+     "commissar_armour.model"
+    ]
+   },
+   "gun": {
+    "count": 26,
+    "tris_min": 148,
+    "tris_median": 249,
+    "tris_max": 5536,
+    "examples": [
+     "meltagun_common.model",
+     "plasma_gun_common.model",
+     "hellgun.model",
+     "hellgun_rubble.model",
+     "hotshot_lasgun.model"
+    ]
+   },
+   "head": {
+    "count": 4,
+    "tris_min": 720,
+    "tris_median": 946,
+    "tris_max": 1052,
+    "examples": [
+     "ig_ogyrn_bonehead.model",
+     "commissar_lord_head.model",
+     "general_head.model",
+     "death_korps_ogyrn_bonehead.model"
+    ]
+   },
+   "other": {
+    "count": 160,
+    "tris_min": 10,
+    "tris_median": 796,
+    "tris_max": 13920,
+    "examples": [
+     "crippling_volley.model",
+     "forward_base.model",
+     "ig_base.model",
+     "ig_bunker.model",
+     "ig_bunker_rubble.model"
+    ]
+   },
+   "sword": {
+    "count": 3,
+    "tris_min": 181,
+    "tris_median": 280,
+    "tris_max": 320,
+    "examples": [
+     "ig_chainsword_common.model",
+     "ig_power_sword_common.model",
+     "inquisitor_power_sword_short.model"
+    ]
+   },
+   "weapon": {
+    "count": 5,
+    "tris_min": 459,
+    "tris_median": 704,
+    "tris_max": 6773,
+    "examples": [
+     "cadian_heavy_weapons_trooper.model",
+     "heavy weapons tripods.model",
+     "heavy_weapon_autocannon.model",
+     "heavy_weapons_tripods.model",
+     "heavy_weapons_lascannon.model"
+    ]
+   }
+  },
+  "race_ork": {
+   "armour": {
+    "count": 31,
+    "tris_min": 214,
+    "tris_median": 1298,
+    "tris_max": 2543,
+    "examples": [
+     "nob_body.model",
+     "nob_freebooter_body.model",
+     "kommandoboyz_armour_common.model",
+     "kommandoboyz_armour_epic.model",
+     "kommandoboyz_armour_rare.model"
+    ]
+   },
+   "backpack": {
+    "count": 5,
+    "tris_min": 160,
+    "tris_median": 1077,
+    "tris_max": 2879,
+    "examples": [
+     "waggh_banner.model",
+     "waggh_banner_rubble.model",
+     "boss_pole_unique.model",
+     "mekboy_boss_pole.model",
+     "war_boss_pole.model"
+    ]
+   },
+   "gun": {
+    "count": 27,
+    "tris_min": 20,
+    "tris_median": 288,
+    "tris_max": 1576,
+    "examples": [
+     "rokkit_missile.model",
+     "zzap.model",
+     "big_shoota_common.model",
+     "big_shoota_common_rubble.model",
+     "big_shoota_nob_rare.model"
+    ]
+   },
+   "head": {
+    "count": 3,
+    "tris_min": 1084,
+    "tris_median": 1225,
+    "tris_max": 1800,
+    "examples": [
+     "nob_brakka_head.model",
+     "nob_sliksnik_head.model",
+     "warboss_head_01.model"
+    ]
+   },
+   "helm": {
+    "count": 1,
+    "tris_min": 821,
+    "tris_median": 821,
+    "tris_max": 821,
+    "examples": [
+     "mekboy_tellyporta_helmet.model"
+    ]
+   },
+   "other": {
+    "count": 43,
+    "tris_min": 20,
+    "tris_median": 2032,
+    "tris_max": 16844,
+    "examples": [
+     "dynamite_pack.model",
+     "electric_ball.model",
+     "looted_autocannon.model",
+     "mine.model",
+     "stikkbomb.model"
+    ]
+   },
+   "sword": {
+    "count": 9,
+    "tris_min": 132,
+    "tris_median": 136,
+    "tris_max": 2243,
+    "examples": [
+     "choppa_common.model",
+     "choppa_common_rubble.model",
+     "choppa_nob_epic.model",
+     "choppa_nob_rare.model",
+     "choppa_rare.model"
+    ]
+   },
+   "weapon": {
+    "count": 1,
+    "tris_min": 2770,
+    "tris_median": 2770,
+    "tris_max": 2770,
+    "examples": [
+     "battlewagon_weapons.model"
+    ]
+   }
+  }
+ }
+}

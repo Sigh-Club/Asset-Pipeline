@@ -1,0 +1,7 @@
+{
+  "//": "Wreckstorm Clans base-mesh units: the large-coverage slots take the faction's rust-orange scrap ramp (FACTION_IDENTITY: rust orange + soot). The library's flat_cinder_* set is close but is the Cinder read; this keeps each faction's ramp its own.",
+  "underlayer": "flat_wreckstorm_clans_underlayer",
+  "armour_primary": "flat_wreckstorm_clans_armour_primary",
+  "armour_secondary": "flat_wreckstorm_clans_armour_secondary",
+  "IOA_cloth_canvas": "flat_wreckstorm_clans_cloth"
+}
