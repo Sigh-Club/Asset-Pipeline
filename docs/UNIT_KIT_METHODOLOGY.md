@@ -133,6 +133,21 @@ Wreckstorm (after ork extraction) → Parasitic Bloom.
 
 ## 6. Decisions
 
+- **Choice:** the line trooper carries the **pennant rack** and not the drone pack. **Rejected:**
+  both on one unit (464 tris in a 300 budget) and neither (loses the faction's upright-ranks read).
+  **Because:** the pack slot budget is the constraint that forces a per-unit choice, which is the
+  point of a part library — vocabulary is a menu, not a checklist. **Check:** `--report` pack slot
+  ≤300. **Revisit when:** the pack budget is revised with a measured argument.
+- **Choice:** the rail weapon is its own lean part list. **Rejected:** decorating the generic rifle.
+  **Because:** the generic rifle alone measured 576 tris against a 500 budget; a variant built on top
+  of it cannot fit. **Check:** `--report` weapon slot ≤500. **Revisit when:** the weapon budget is
+  raised by a measurement.
+- **Choice:** flat per-faction colours for the three large-coverage slots. **Rejected:** the textured
+  per-faction library materials. **Because:** at the 2 cm texel grid on curved organic surfaces they
+  palette-lock to a static speckle; the flat colour is what makes the armour plates read. **Check:**
+  the 8-direction palette-lock frames (off-palette 0) plus a human look at the contact sheet.
+  **Revisit when:** the texel grid is fine enough for the woven textures to resolve.
+
 - **Choice:** derive-and-reshape kits. **Rejected:** importing whole meshes (copy-paste, no part
   vocabulary); from-scratch sculpting (months before the first unit, kept as a later upgrade for hero
   units). **Because:** the reference games are kits; derivation keeps the anatomy and rig quality
@@ -157,6 +172,38 @@ budgets.
 `output/part_catalogue.json`: marine armour 31 / head 19 / pack 8 / gun 13 / sword 15; chaos 2 / 13 /
 9 / 4 / 9; eldar 38 / 29; tyranid 41 / claws 9; guard 24 / head 4 / gun 26. Orks are still not
 extracted (0 models) — required before Wreckstorm.
+
+**P3 — Iron Directorate line trooper done (2026-11-19).** The kit vocabulary in the faction spec
+(`add` list) is now authored geometry, measured per slot:
+
+| Slot | Measured | Budget | Verdict |
+|---|---|---|---|
+| armour (pauldrons, apron plates, seams, insignia) | 1,257 | 2,500 | PASS |
+| head (helm, visor, crest, breather, neck ring) | 280 | 1,000 | PASS |
+| pack (mount + 2-pole pennant rack) | 152 | 300 | PASS |
+| weapon (rail emitter, drum magazine, rails, fins) | 488 | 500 | PASS |
+
+- `tools/blender/base_unit_build.py` gained the vocabulary behind flags: `--weapon rail_rifle`
+  (own lean part list — the generic rifle alone measured **576**, over the 500 budget, so decorating
+  it was never going to fit), `--pennants` (the rack replaces the bulky pack contents; a standard
+  bearer carries the rack, not a rucksack), `--seams` (inset plate seams + the industrial apron), and
+  `--back drone` (a lean drone pack, 2 micro-drones, in the library for specialist variants).
+- `--report` is the P3 check: it classifies every authored object into its slot and prints measured
+  tris against `configs/factions/<faction>.json` budgets, largest offenders included. It is the gate
+  that caught the generic rifle's pre-existing overspend.
+- **Palette defect found and fixed while shipping.** The faction-agnostic material map baked
+  `armour_primary` to the library's blue-grey `flat_armour_primary`, so a Directorate trooper shipped
+  blue while every gate passed (off-palette 0). `tools/add_flat_faction_materials.py` derives
+  `IOA_flat_<faction>_<slot>` from the faction spec's own palette, and
+  `configs/materials/base_unit_material_map_iron_directorate.json` maps the three large-coverage slots
+  to it. Trap recorded: a copied material has no users and Blender **drops it on save** — the first run
+  printed the colours and saved nothing until `use_fake_user` was set.
+- Shipped as `iron_directorate_ig_human_pixel.glb` (line infantry), `UNIT_ASSET_REV 20261119`:
+  512² atlas, 41-45 colours per frame, off-palette 0, 8 directions with one connected component each,
+  GLB contract pass, guards 61/61 + 61/61 + 0, Jest 628/628, E2E 6/6. Verified in-engine (screenshot:
+  gold armour, pennant rack, rail weapon, AMMO 8/8 dock readout).
+- Next in P3: the Directorate elite (elite frame), then Sons of Cinder, then Void Corsairs. Extract
+  `race_ork` before any Wreckstorm work.
 
 **P2 — started.** `tools/blender/derive_head.py` implements the first derivation: strip the source
 head above the neck line, then add our vocabulary (dome, visor, crest, breather, neck ring) in the

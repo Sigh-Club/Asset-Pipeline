@@ -1,0 +1,6 @@
+{
+  "//": "Iron Directorate base-mesh units: the large-coverage slots take the faction's flat gold ramp (FACTION_IDENTITY: gold/blue industrial). The generic map baked these slots blue-grey, so a Directorate trooper read as blue while every gate passed. Underlayer stays the spec's dark blue. Leather, brass, gunmetal and the emissive visor keep their library textures.",
+  "underlayer": "flat_iron_directorate_underlayer",
+  "armour_primary": "flat_iron_directorate_armour_primary",
+  "armour_secondary": "flat_iron_directorate_armour_secondary"
+}

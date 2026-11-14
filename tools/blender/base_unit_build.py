@@ -33,6 +33,11 @@ _ap.add_argument('--robe', action='store_true')
 _ap.add_argument('--crest', action='store_true')
 _ap.add_argument('--horns', action='store_true')
 _ap.add_argument('--shield', default=None)
+# P3 kit vocabulary (faction spec `add` list): additive, default off so every
+# existing unit variant is byte-identical unless it asks for the kit.
+_ap.add_argument('--pennants', action='store_true')
+_ap.add_argument('--seams', action='store_true')
+_ap.add_argument('--report', action='store_true', help='print per-slot triangle budgets')
 A=_ap.parse_args(_args)
 import json as _json
 _CFG_PATH=Path('configs/units')/f'{A.faction}.json'
@@ -41,6 +46,8 @@ def _v(name,default):
     return getattr(A,name,None) or _CFG.get(name,default)
 HELM=_v('helm','visor'); SHOULDERS=_v('shoulders','block'); BACK=_v('back','pack')
 WEAPON=_v('weapon','rifle'); SHIELD=_v('shield',None)
+PENNANTS=bool(A.pennants or _CFG.get('pennants'))
+SEAMS=bool(A.seams or _CFG.get('seams'))
 CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
 BODY=_v('body','standard')
 HEIGHT={'light':1.82,'standard':1.90,'heavy':1.98,'monolith':2.15}.get(BODY,1.90)
@@ -290,7 +297,7 @@ def rm(names):
         if o: bpy.data.objects.remove(o,do_unlink=True)
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
-    bevel(add_box(f'pauldron_{side}',c+Vector((sgn*0.01,0.0,0.015)),(0.19,0.25,0.09),M['steel'],pitch=-6,roll=sgn*18,taper=0.78,taper_y=0.82))
+    bevel(add_box(f'pauldron_{side}',c+Vector((sgn*0.025,0.0,0.015)),(0.23,0.28,0.105),M['steel'],pitch=-6,roll=sgn*18,taper=0.78,taper_y=0.82))
     bevel(add_box(f'pauldron2_{side}',c+Vector((sgn*0.035,0.0,-0.045)),(0.17,0.23,0.075),M['dark'],pitch=-4,roll=sgn*30,taper=0.8,taper_y=0.85))
     bevel(add_box(f'pauldronrim_{side}',c+Vector((sgn*0.055,0.0,-0.10)),(0.14,0.20,0.045),M['steel'],roll=sgn*38,taper=0.85))
     bevel(add_cap(f'kneepad_{side}',knee[side]+Vector((0,-0.06,0.0)),(0.075,0.07,0.075),-0.02,M['steel']))
@@ -382,9 +389,56 @@ elif BACK=='servo':
     rm(['canR','bedroll'])
     for i,(a,b) in enumerate([((0.12,0.22,1.45),(0.28,0.10,1.55)),((0.28,0.10,1.55),(0.34,-0.08,1.36)),((0.34,-0.08,1.36),(0.30,-0.20,1.20))]):
         d=Vector(b)-Vector(a); add_cyl(f'servo{i}',(Vector(a)+Vector(b))/2,0.032,d.length,M['steel'],axis=d.normalized(),seg=8)
+elif BACK=='drone':
+    # "drone packs": the Directorate fields support drones. Two micro-drones on
+    # booms read as a distinct silhouette from behind. Kept lean (boxes, not
+    # discs) because the pack slot budget is 300 tris — the P3 check measures it.
+    rm(['canL','canR','bedroll','ventL','ventR'])
+    for sgn in (1,-1):
+        d=Vector((sgn*0.27,0.225,1.53))
+        add_cyl(f'droneboom{sgn}',(sgn*0.19,0.20,1.42),0.018,0.22,M['dark'],
+                axis=Vector((sgn*0.55,0.15,0.82)),seg=6)
+        add_cyl(f'dronebody{sgn}',d,0.052,0.075,M['steel'],axis=Vector((0,0,1)),seg=8)
+        add_box(f'dronerotor{sgn}',d+Vector((0,0,0.055)),(0.15,0.15,0.010),M['dark'])
+        add_box(f'droneeye{sgn}',d+Vector((0,-0.052,0.0)),(0.045,0.03,0.03),M['visor'])
 elif BACK=='banner':
     add_cyl('bannerpole',(0.10,0.20,1.55),0.028,1.0,M['dark'],axis=Vector((0,0,1)),seg=8)
     add_box('bannercloth',(0.10,0.18,1.85),(0.03,0.28,0.36),M['cloth'])
+if SEAMS or PENNANTS:
+    # industrial plate apron: the faction reads as armoured ranks, and the bare
+    # base-mesh hips read as a civilian. Front, sides and back plates.
+    for i,(dx,dy,dz,w,d) in enumerate([(0.0,-0.155,0.90,0.24,0.05),(0.155,-0.10,0.92,0.11,0.13),
+                                       (-0.155,-0.10,0.92,0.11,0.13),(0.0,0.155,0.92,0.26,0.05)]):
+        add_box(f'seamskirt{i}',(dx,dy,dz),(w,d,0.26),M['steel'] if i%2==0 else M['dark'],taper=0.88)
+        add_box(f'seamskirtlip{i}',(dx,dy,dz-0.14),(w*1.04,d*1.04,0.03),M['brass'])
+if PENNANTS:
+    # "pennant racks": the faction's upright-ranks read comes from tall, narrow
+    # banners on the back. Two staggered poles + cloth pennants, kept inside the
+    # pack budget (300 tris) — measured by --report.
+    # The rack mounts on the back, so the bulky pack contents come off: the pack
+    # slot then holds the mount box plus the rack, inside the 300 tris budget.
+    rm(['canL','canR','bedroll','ventL','ventR','packvent','packtop'])
+    for i,(px,py,ph,pc) in enumerate([(0.115,0.235,1.02,M['cloth']),(-0.115,0.235,0.92,M['cloth'])]):
+        add_cyl(f'pennantpole{i}',(px,py,1.35+ph*0.35),0.016,ph,M['dark'],axis=Vector((0,0,1)),seg=6)
+        add_cyl(f'pennanttip{i}',(px,py,1.35+ph*0.35+ph*0.5),0.022,0.05,M['brass'],axis=Vector((0,0,1)),seg=6)
+        # cloth hangs from the top third: a thin tapered plane, not a box, so the
+        # silhouette edge is a pennant rather than a slab
+        add_box(f'pennantcloth{i}',(px+0.045,py+0.005,1.35+ph*0.35+ph*0.30),
+                (0.09,0.008,0.26),pc,taper=0.35)
+        add_box(f'pennantbar{i}',(px,py,1.35+ph*0.35+ph*0.30+0.135),(0.11,0.012,0.014),M['brass'])
+if SEAMS:
+    # "plate seams": inset strips that break the flat armour faces into plates.
+    # Placed on the chest, both thigh plates and both pauldrons.
+    for i,z in enumerate((1.40,1.31,1.22)):
+        add_box(f'seamchest{i}',(0,-0.183,z),(0.20-0.02*i,0.012,0.014),M['dark'])
+    for side,sgn in (('L',1),('R',-1)):
+        hp,kp=Lm[side]["hip"],Lm[side]["knee"]
+        mid=(hp+kp)*0.5
+        for i,dz in enumerate((0.09,0.0,-0.09)):
+            add_box(f'seamthigh{side}{i}',mid+Vector((sgn*0.015,-0.135,dz)),(0.10,0.012,0.012),M['dark'])
+        c=shoulder[side]
+        for i,dz in enumerate((0.03,-0.03)):
+            add_box(f'seampauld{side}{i}',c+Vector((sgn*0.085,-0.02,dz)),(0.012,0.20,0.012),M['dark'])
 bevel(add_box('chestridge',(0,-0.145,1.33),(0.20,0.05,0.16),M['steel'],pitch=-6),0.012)
 bevel(add_box('gorget',(0,-0.02,1.505),(0.26,0.14,0.06),M['dark'],pitch=-8),0.012)
 bevel(add_box('strapL',(0.10,-0.135,1.43),(0.05,0.04,0.20),M['leather'],roll=8),0.008)
@@ -445,15 +499,16 @@ def wbox(t,u,v,s,material,pitch=0.0,taper=1.0,name=None):
     Mw=frame.copy(); Mw.translation=bore+axis*t+right*u+up*v
     bmesh.ops.transform(bm,matrix=Mw,verts=vs)
     return new_obj(name or f'w_{t:+.2f}_{u:+.2f}_{v:+.2f}',bm,material)
-def wcyl(t,u,v,r,d,material,pitch=0.0):
-    bm=bmesh.new(); bmesh.ops.create_cone(bm,cap_ends=True,segments=10,radius1=r,radius2=r,depth=d)
+def wcyl(t,u,v,r,d,material,pitch=0.0,seg=10):
+    bm=bmesh.new(); bmesh.ops.create_cone(bm,cap_ends=True,segments=seg,radius1=r,radius2=r,depth=d)
     R=Matrix.Rotation(math.radians(-90),4,'X')
     bmesh.ops.transform(bm,matrix=R,verts=bm.verts)
     if pitch: bmesh.ops.transform(bm,matrix=Matrix.Rotation(math.radians(pitch),4,'X'),verts=bm.verts)
     Mw=frame.copy(); Mw.translation=bore+axis*t+right*u+up*v
     bmesh.ops.transform(bm,matrix=Mw,verts=bm.verts)
     return new_obj(f'wc_{t:+.2f}',bm,material)
-if WEAPON=='longrifle': BL,BR,ML,SC=0.78,0.034,0.10,True
+if WEAPON=='rail_rifle': BL,BR,ML,SC=0.40,0.036,0.10,False
+elif WEAPON=='longrifle': BL,BR,ML,SC=0.78,0.034,0.10,True
 elif WEAPON=='heavy_stubber': BL,BR,ML,SC=0.30,0.048,0.12,False
 elif WEAPON=='autocannon': BL,BR,ML,SC=0.62,0.055,0.14,False
 else: BL,BR,ML,SC=0.52,0.030,0.10,True
@@ -474,29 +529,83 @@ if BLADE:
     bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark']),0.008)
 else:
     tg=-0.03; thg=0.23
-    wbox(tg-0.245,0,0.03,(0.075,0.06,0.13),M['gun'])          # buttplate
-    wbox(tg-0.175,0,0.015,(0.075,0.19,0.11),M['gun'])         # stock
-    wbox(tg-0.155,0,0.085,(0.065,0.21,0.05),M['gun'])          # comb
-    wbox(-0.01,0,0.0,(0.095,0.31,0.14),M['gun'])              # receiver
-    wbox(0.02,0.045,0.015,(0.012,0.08,0.045),M['dark'])       # ejection port
-    wcyl(0.10,0.052,0.03,0.009,0.055,M['dark'])               # charging handle
-    wbox(tg,0,-0.095,(0.055,0.075,0.15),M['dark'],pitch=16)   # pistol grip
-    wbox(0.03,0,-0.19,(0.075,0.13,0.20),M['gun'],pitch=-9)     # magazine
-    wbox(0.035,0,-0.17,(0.062,0.075,0.02),M['brass'],pitch=-9) # mag base
-    wbox(0.0,0,-0.065,(0.035,0.09,0.014),M['gun'])            # trigger guard
-    wbox(thg,0,-0.02,(0.08,0.34,0.125),M['dark'])            # handguard
-    wbox(thg+0.02,0.038,-0.02,(0.012,0.24,0.075),M['gun'])    # rail R
-    wbox(thg+0.02,-0.038,-0.02,(0.012,0.24,0.075),M['gun'])   # rail L
-    wbox(thg+0.18,0,0.0,(0.045,0.06,0.06),M['gun'])           # gas block
-    wcyl(thg+0.14+BL/2,0,0.0,BR,BL,M['gun'])                   # barrel
-    wcyl(thg+0.14+BL-0.02,0,0.0,BR*1.35,ML,M['dark'])          # muzzle
-    wbox(thg+0.26,0,0.04,(0.02,0.04,0.06),M['dark'])
-    wbox(thg+0.14+BL*0.55,0,-0.005,(0.06,0.14,0.06),M['dark']) # front sight
-    wbox(-0.03,0,0.085,(0.035,0.045,0.04),M['dark'])          # rear sight
-    if SC: wbox(-0.02,0,0.115,(0.05,0.20,0.05),M['dark'])            # scope body
-    if SC: wbox(-0.02,0.0,0.085,(0.035,0.07,0.05),M['steel'])        # scope mount
-    if SC: wcyl(-0.02+0.075,0,0.115,0.028,0.03,M['gun'])   # scope objective
-    if SC: wcyl(-0.02-0.085,0,0.115,0.024,0.03,M['gun'])    # scope ocular
+    if WEAPON=='rail_rifle':
+        # Directorate rail weapon: a lean industrial emitter — exposed twin rails,
+        # cooling fins, a drum magazine and an optic rail. It has its own part list
+        # (rather than decorating the generic rifle) because the weapon slot budget
+        # is 500 tris and the generic rifle alone measured 576 (P3 check).
+        # The gauntlet fists are named fistR/fistL so the slot report counts them as
+        # hands, not weapon.
+        wbox(tg-0.215,0,0.02,(0.070,0.055,0.115),M['gun'])          # buttplate
+        wbox(tg-0.15,0,0.01,(0.070,0.16,0.10),M['gun'])             # stock
+        wbox(-0.02,0,0.0,(0.090,0.28,0.125),M['gun'])               # receiver
+        wbox(tg,0,-0.090,(0.050,0.070,0.14),M['dark'],pitch=16)     # pistol grip
+        wbox(thg,0,-0.015,(0.075,0.30,0.105),M['dark'])             # shroud
+        wbox(thg+0.02,0,0.048,(0.026,0.26,0.016),M['steel'])        # top rail
+        for i in range(2):
+            wbox(thg+0.04+i*0.09,0,0.062,(0.020,0.016,0.012),M['steel'])   # rail teeth
+            wbox(thg+0.10+i*0.09,0.045,-0.005,(0.026,0.085,0.026),M['steel'])   # fins R
+            wbox(thg+0.10+i*0.09,-0.045,-0.005,(0.026,0.085,0.026),M['steel'])  # fins L
+        wcyl(0.02,0,-0.185,0.070,0.050,M['gun'],pitch=90,seg=8)     # drum magazine
+        wcyl(0.02,0.0,-0.185,0.026,0.058,M['brass'],pitch=90,seg=8) # drum hub
+        wcyl(thg+0.14+BL/2,0,0.0,BR,BL,M['gun'],seg=8)               # rail barrel
+        wcyl(thg+0.14+BL-0.02,0,0.0,BR*1.3,ML,M['dark'],seg=8)       # muzzle
+        wcyl(thg+0.14+BL*0.45,0,0.012,BR*0.55,BL*0.5,M['visor'],seg=8)  # exposed core
+        wbox(-0.055,0,0.080,(0.085,0.040,0.030),M['dark'])           # rear optic
+        wbox(-0.010,0,0.098,(0.018,0.050,0.018),M['visor'])          # optic lens
+        # gauntlet fists wrapping the weapon (named as hands, see above)
+        wbox(tg,0,-0.03,(0.115,0.13,0.115),M['steel'],taper=0.82,name='fistR')
+        wbox(tg+0.075,0,-0.015,(0.10,0.045,0.115),M['dark'],name='fistR2')
+        wbox(thg+0.02,0,-0.035,(0.115,0.14,0.12),M['steel'],taper=0.82,name='fistL')
+        wbox(thg+0.105,0,-0.02,(0.105,0.05,0.12),M['dark'],name='fistL2')
+        for v in (-0.05,-0.012,0.026):
+            wbox(tg+0.068,0,v,(0.02,0.095,0.014),M['dark'],name='fistRf')
+            wbox(thg+0.02+0.077,0,v,(0.02,0.10,0.014),M['dark'],name='fistLf')
+        bevel(add_box('cuffR',wristR,(0.11,0.11,0.09),M['dark'],pitch=10),0.008)
+        bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark'],pitch=-6),0.008)
+    else:
+        tg=-0.03; thg=0.23
+        wbox(tg-0.245,0,0.03,(0.075,0.06,0.13),M['gun'])          # buttplate
+        wbox(tg-0.175,0,0.015,(0.075,0.19,0.11),M['gun'])         # stock
+        wbox(tg-0.155,0,0.085,(0.065,0.21,0.05),M['gun'])          # comb
+        wbox(-0.01,0,0.0,(0.095,0.31,0.14),M['gun'])              # receiver
+        wbox(0.02,0.045,0.015,(0.012,0.08,0.045),M['dark'])       # ejection port
+        wcyl(0.10,0.052,0.03,0.009,0.055,M['dark'])               # charging handle
+        wbox(tg,0,-0.095,(0.055,0.075,0.15),M['dark'],pitch=16)   # pistol grip
+        if WEAPON!='rail_rifle':
+            wbox(0.03,0,-0.19,(0.075,0.13,0.20),M['gun'],pitch=-9)     # magazine
+            wbox(0.035,0,-0.17,(0.062,0.075,0.02),M['brass'],pitch=-9) # mag base
+        wbox(0.0,0,-0.065,(0.035,0.09,0.014),M['gun'])            # trigger guard
+        wbox(thg,0,-0.02,(0.08,0.34,0.125),M['dark'])            # handguard
+        wbox(thg+0.02,0.038,-0.02,(0.012,0.24,0.075),M['gun'])    # rail R
+        wbox(thg+0.02,-0.038,-0.02,(0.012,0.24,0.075),M['gun'])   # rail L
+        wbox(thg+0.18,0,0.0,(0.045,0.06,0.06),M['gun'])           # gas block
+        wcyl(thg+0.14+BL/2,0,0.0,BR,BL,M['gun'])                   # barrel
+        wcyl(thg+0.14+BL-0.02,0,0.0,BR*1.35,ML,M['dark'])          # muzzle
+        wbox(thg+0.26,0,0.04,(0.02,0.04,0.06),M['dark'])
+        wbox(thg+0.14+BL*0.55,0,-0.005,(0.06,0.14,0.06),M['dark']) # front sight
+        wbox(-0.03,0,0.085,(0.035,0.045,0.04),M['dark'])          # rear sight
+        if SC: wbox(-0.02,0,0.115,(0.05,0.20,0.05),M['dark'])            # scope body
+        if SC: wbox(-0.02,0.0,0.085,(0.035,0.07,0.05),M['steel'])        # scope mount
+        if SC: wcyl(-0.02+0.075,0,0.115,0.028,0.03,M['gun'])   # scope objective
+        if SC: wcyl(-0.02-0.085,0,0.115,0.024,0.03,M['gun'])    # scope ocular
+        if WEAPON=='rail_rifle':
+            # Directorate rail weapon: exposed twin rails, cooling slots along the
+            # barrel shroud, drum magazine, and an optic rail instead of a scope.
+            for i in range(6):
+                wbox(thg+0.10+i*0.055,0.052,-0.005,(0.030,0.10,0.030),M['steel'])   # cooling fins R
+                wbox(thg+0.10+i*0.055,-0.052,-0.005,(0.030,0.10,0.030),M['steel'])  # cooling fins L
+            wbox(thg+0.05,0,0.055,(0.030,0.30,0.020),M['dark'])      # top rail
+            for i in range(5):
+                wbox(thg+0.02+i*0.06,0,0.072,(0.024,0.018,0.014),M['steel'])        # rail teeth
+            wcyl(0.03,0,-0.215,0.075,0.055,M['gun'],pitch=90)        # drum magazine
+            wcyl(0.03,0.0,-0.215,0.030,0.062,M['brass'],pitch=90)    # drum hub
+            for i in range(6):
+                a=math.radians(i*60)
+                wbox(0.03+math.cos(a)*0.055,0.0,-0.215+math.sin(a)*0.055,(0.012,0.062,0.012),M['dark'])
+            wbox(-0.055,0,0.085,(0.10,0.045,0.035),M['dark'])        # rear optic block
+            wbox(-0.005,0,0.105,(0.02,0.06,0.02),M['visor'])         # optic lens
+            wcyl(thg+0.14+BL*0.5,0,0.0,BR*0.55,BL*0.9,M['visor'])     # exposed energy core
     wbox(0.05,0,-0.075,(0.02,0.46,0.016),M['leather'])        # sling strap
     wcyl(tg-0.19,0,-0.03,0.012,0.03,M['dark'],pitch=90)       # sling loop rear
     # gauntlet fists wrapping the weapon (weapon-frame boxes)
@@ -510,6 +619,56 @@ else:
     bevel(add_box('cuffR',wristR,(0.11,0.11,0.09),M['dark'],pitch=10),0.008)
     bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark'],pitch=-6),0.008)
     wcyl(thg+0.14,0,-0.06,0.012,0.03,M['dark'],pitch=90)      # sling loop front
+
+# ---- P3 check: per-slot triangle budgets ------------------------------------
+# The kit method spends detail per slot (armour/head/pack/weapon), so the budget is
+# checked per slot rather than per unit. Object names carry the slot; the numbers
+# come from configs/factions/<faction>.json (P0), so the check and the spec cannot
+# drift. Runs before the join, while the parts are still separable.
+_SLOT_PREFIXES = {
+    'weapon': ('w_', 'wc_', 'wpn'),
+    'head': ('helmet', 'mask', 'visor', 'visorhood', 'brow', 'resp', 'cheek', 'jaw',
+             'neck', 'collar', 'crest', 'hood', 'brim', 'chin', 'slab', 'horn', 'eye'),
+    'pack': ('backpack', 'pack', 'can', 'bedroll', 'vent', 'thruster', 'nozzle',
+             'ammobox', 'round', 'servo', 'banner', 'drone', 'pennant'),
+    'armour': ('pauldron', 'kneepad', 'elbowpad', 'thighplate', 'thighrim', 'armplate',
+               'chestridge', 'gorget', 'chestpouch', 'holster', 'toecap', 'sole',
+               'shield', 'seam', 'emblem', 'buckle', 'tabard', 'belt'),
+}
+def _slot_of(name):
+    low = name.lower()
+    for slot, prefixes in _SLOT_PREFIXES.items():
+        if any(low.startswith(p) for p in prefixes):
+            return slot
+    return 'other'
+def _tris(o):
+    return sum(len(p.vertices) - 2 for p in o.data.polygons)
+if A.report:
+    budgets = (_json.loads((Path('configs/factions') / f'{A.faction}.json').read_text())
+               .get('budgets', {}) if (Path('configs/factions') / f'{A.faction}.json').exists() else {})
+    totals = {}
+    parts_by_slot = {}
+    for o in bpy.data.objects:
+        if o.type != 'MESH':
+            continue
+        slot = _slot_of(o.name)
+        totals[slot] = totals.get(slot, 0) + _tris(o)
+        parts_by_slot.setdefault(slot, []).append((_tris(o), o.name))
+    print('KIT-SLOT-REPORT', A.faction, A.unit)
+    failed = False
+    for slot in ('armour', 'head', 'pack', 'weapon', 'body', 'other'):
+        if slot not in totals:
+            continue
+        budget = budgets.get(slot)
+        got = totals[slot]
+        verdict = 'n/a' if not budget else ('PASS' if got <= budget else 'OVER')
+        if verdict == 'OVER':
+            failed = True
+        print(f'  {slot:8s} {got:6d} tris  budget {budget if budget else "-":>6}  {verdict}')
+        if verdict == 'OVER':
+            top = sorted(parts_by_slot.get(slot, []), reverse=True)[:5]
+            print('     largest:', ', '.join(f'{n}={t}' for t, n in top))
+    print('KIT-BUDGETS', 'FAIL' if failed else 'PASS')
 
 # ---- bind gear, join, keyframe aim/idle, export ----
 def bone_for(n):
