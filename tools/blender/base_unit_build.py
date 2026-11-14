@@ -58,7 +58,7 @@ BODY=_v('body','standard')
 # Body classes come from the faction spec (FACTION_IDENTITY §Body class and unit
 # scale): 95% of units are human scale and only the top HP/armour/weapon tier uses
 # the elite frame (2.05-2.20 m).
-HEIGHT={'light':1.82,'standard':1.90,'heavy':1.98,'elite':2.12,'monolith':2.15}.get(BODY,1.90)
+HEIGHT={'light':1.82,'standard':1.90,'corsair':1.95,'heavy':1.98,'elite':2.12,'monolith':2.15}.get(BODY,1.90)
 HS=HEIGHT/1.90
 CREST=bool(A.crest or _CFG.get('crest')); HORNS=bool(A.horns or _CFG.get('horns'))
 print('VARIANT',HELM,SHOULDERS,BACK,WEAPON,'cloak',CLOAK,'robe',ROBE,'crest',CREST,'horns',HORNS,'shield',SHIELD)
@@ -150,7 +150,7 @@ for tgt in [(0.28,0.0,1.35),(0.39,0.0,1.10),(0.42,0.0,0.90),(0.05,0.0,1.30),(0.0
     ws=sorted([(g.weight, body.vertex_groups[g.group].name) for g in v.groups], reverse=True)[:5]
     print('WEIGHTS near',tgt,'->',[(round(w,3),n) for w,n in ws])
 # ---------------- P2 pose ----------------
-BLADE = WEAPON in ('blade','chainblade')
+BLADE = WEAPON in ('blade','chainblade','lance')
 if BLADE:
     stock=Vector((-0.10,-0.28,1.34))
     grip=Vector((-0.14,-0.30,1.34))
@@ -342,6 +342,12 @@ elif HELM=='hood':
     bevel(add_box('hoodmask',(0,-0.10,1.755),(0.16,0.11,0.17),M['dark'],pitch=-4),0.012)
     add_box('eyeL',(0.045,-0.158,1.80),(0.04,0.02,0.018),M['visor'])
     add_box('eyeR',(-0.045,-0.158,1.80),(0.04,0.02,0.018),M['visor'])
+if HELM=='fin':
+    # swept fin crest: the Corsair read is a swept-back blade of a fin, not a
+    # bristled crest. Three graduated fins, each raked back.
+    for i,(dz,ln,h) in enumerate([(0.02,0.26,0.075),(0.0,0.19,0.055),(-0.02,0.13,0.04)]):
+        add_box(f'fin{i}',(0,0.045+dz,1.90+h*0.5),(0.022,ln,h),M['steel'],pitch=-26,taper=0.45)
+    add_box('finspine',(0,0.02,1.895),(0.030,0.24,0.020),M['visor'],pitch=-8)
 if CREST:
     bevel(add_box('crest',(0,0.01,1.905),(0.03,0.16,0.055),M['brass']),0.008)
 if HORNS:
@@ -369,6 +375,15 @@ bevel(add_box('chestpouchR',(-0.115,-0.15,1.24),(0.075,0.055,0.075),M['leather']
 for side,sgn in (('L',1),('R',-1)):
     c=shoulder[side]
     bevel(add_box(f'pauldronband_{side}',c+Vector((sgn*0.06,0.0,-0.125)),(0.155,0.215,0.022),M['steel'],roll=sgn*38),0.006)
+if SHOULDERS=='swept':
+    # "strip blocky pauldrons": smooth curved shells, raked back, with a single
+    # hard-light seam instead of rims and rivets.
+    rm([f'{p}_{s}' for p in ('pauldron','pauldron2','pauldronrim','pauldronband') for s in ('L','R')])
+    for side,sgn in (('L',1),('R',-1)):
+        c=shoulder[side]
+        add_cap(f'sweptshell_{side}',c+Vector((sgn*0.02,0.0,0.02)),(0.135,0.175,0.115),-0.02,M['steel'],seg=10,rings=5)
+        add_box(f'sweptseam_{side}',c+Vector((sgn*0.02,-0.09,0.03)),(0.10,0.012,0.016),M['visor'],roll=sgn*10)
+        add_box(f'sweptfin_{side}',c+Vector((sgn*0.06,0.10,0.06)),(0.018,0.16,0.05),M['steel'],pitch=-30,taper=0.4)
 if SHOULDERS=='none':
     rm([f'{p}_{s}' for p in ('pauldron','pauldron2','pauldronrim','pauldronband') for s in ('L','R')])
 elif SHOULDERS=='plate':
@@ -553,7 +568,20 @@ elif WEAPON=='longrifle': BL,BR,ML,SC=0.78,0.034,0.10,True
 elif WEAPON=='heavy_stubber': BL,BR,ML,SC=0.30,0.048,0.12,False
 elif WEAPON=='autocannon': BL,BR,ML,SC=0.62,0.055,0.14,False
 else: BL,BR,ML,SC=0.52,0.030,0.10,True
-if BLADE:
+if BLADE and WEAPON=='lance':
+    # "hard-light blades": a slim shaft with an emissive edge and a lance tip.
+    wcyl(-0.14,0,0,0.022,0.18,M['leather'])                 # grip
+    wcyl(-0.23,0,0,0.028,0.05,M['brass'])                   # pommel
+    wbox(0.06,0,0,(0.055,0.42,0.045),M['steel'])            # shaft
+    wbox(0.10,0,0.030,(0.012,0.46,0.014),M['visor'])        # hard-light edge
+    wbox(0.10,0,-0.030,(0.012,0.46,0.014),M['visor'])
+    wbox(0.40,0,0,(0.030,0.20,0.030),M['steel'],taper=0.30) # lance tip
+    wbox(0.50,0,0,(0.012,0.10,0.012),M['visor'],taper=0.2)  # tip glow
+    wbox(0.0,0,0,(0.11,0.13,0.115),M['steel'],taper=0.82,name='fistR')
+    bevel(add_box('fistL',palmL,(0.10,0.12,0.11),M['steel'],taper=0.85),0.01)
+    bevel(add_box('cuffR',wristR,(0.11,0.11,0.09),M['dark']),0.008)
+    bevel(add_box('cuffL',wristL,(0.11,0.11,0.09),M['dark']),0.008)
+elif BLADE:
     wcyl(-0.16,0,0,0.024,0.20,M['leather'])                 # grip
     wcyl(-0.27,0,0,0.034,0.06,M['brass'])                   # pommel
     wbox(0.02,0,0,(0.16,0.06,0.05),M['brass'])              # guard

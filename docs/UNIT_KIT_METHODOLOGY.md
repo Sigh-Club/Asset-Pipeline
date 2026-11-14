@@ -232,8 +232,25 @@ rack and rail emitter, taller gold/steel warden with a tower shield and autocann
 zealot with brand plates and a chainblade — which is the distinctiveness the method was adopted for,
 and the elite frame is used for exactly one unit at the top of the Directorate ladder.
 
-- Next in P3: Void Corsairs, then Wreckstorm (after `race_ork` extraction), then Parasitic Bloom, then
-  the remaining per-faction variants (each is now a config line, not a modelling job).
+**P3 — Void Corsairs raider done (2026-11-19).** `--body corsair` (1.95 m, inside the spec's
+1.90-2.00 band) plus the faction's vocabulary: `--helm fin` (three graduated swept fins with an
+emissive spine), `--shoulders swept` (smooth curved shells replacing the blocky pauldrons the spec
+says to strip), `--weapon lance` (slim shaft with a hard-light edge and lance tip on the emissive
+slot). Budgets: armour 881/2,500 · head 280/1,000 · pack 228/300 · weapon 132/500 PASS. Shipped as
+`void_corsairs_eldar_pixel.glb` on the faction's pale hull palette.
+
+**Not implemented, recorded:** the spec's `mass 0.82` / `limb 1.12` proportions are not applied — the
+builder scales uniformly to the body class height, and non-uniform scaling would desynchronise the
+armature the limb markers are read from. The Corsair reads slim because the armour vocabulary is
+slimmer, not because the body is. Revisit when the base mesh has a per-class proportion rig.
+
+Four kits now ship: Directorate line (gold, pennant rack, rail emitter), Directorate elite (2.12 m,
+tower shield, autocannon), Cinder zealot (purple, brand plates, brazier), Corsair raider (pale hull,
+swept fins, hard-light lance).
+
+- Next in P3: Wreckstorm (after `race_ork` extraction), then Parasitic Bloom, Radiant Concord and
+  Chrono Revenants, then the remaining per-faction variants (each is now a config line, not a
+  modelling job).
 
 **P2 — started.** `tools/blender/derive_head.py` implements the first derivation: strip the source
 head above the neck line, then add our vocabulary (dome, visor, crest, breather, neck ring) in the

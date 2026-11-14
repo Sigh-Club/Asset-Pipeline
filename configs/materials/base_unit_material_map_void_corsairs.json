@@ -1,0 +1,7 @@
+{
+  "//": "Void Corsairs base-mesh units: the large-coverage slots take the faction's pale hull ramp (FACTION_IDENTITY: pale hull + cyan hard-light). The library's flat_armour_primary is blue-grey, which is the Directorate read, not this faction's near-white hull.",
+  "underlayer": "flat_void_corsairs_underlayer",
+  "armour_primary": "flat_void_corsairs_armour_primary",
+  "armour_secondary": "flat_void_corsairs_armour_secondary",
+  "IOA_cloth_canvas": "flat_void_corsairs_cloth"
+}
