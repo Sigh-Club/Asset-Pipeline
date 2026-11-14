@@ -147,11 +147,34 @@ Wreckstorm (after ork extraction) → Parasitic Bloom.
   budget. **Because:** budgets spent per slot keep the silhouette detail where it reads.
   **Check:** the per-slot table in P3.
 
-## 7. Current status
+## 7. Current status (2026-11-17, implementation started)
 
-- Source art extracted and decodable: 1,024 `.model` files across marine, chaos, eldar, tyranid and
-  guard. Orks not yet extracted.
-- Frames and clips exist for the human, elite, corsair and monster body classes (see
-  `CHARACTER_PIPELINE.md`), and 26 units ship on them.
-- Not started: P0–P7. Until P3 completes, shipped units remain derived whole meshes and are marked
-  as placeholders in the roster.
+**P0 — done.** `configs/factions/*.json` for all seven factions: silhouette and shape words,
+proportion bands, body classes, the elite rule, add/strip vocabulary, palette ramps and per-slot
+budgets.
+
+**P1 — done.** `tools/dow2/part_catalogue.py` measures the extracted library into
+`output/part_catalogue.json`: marine armour 31 / head 19 / pack 8 / gun 13 / sword 15; chaos 2 / 13 /
+9 / 4 / 9; eldar 38 / 29; tyranid 41 / claws 9; guard 24 / head 4 / gun 26. Orks are still not
+extracted (0 models) — required before Wreckstorm.
+
+**P2 — started.** `tools/blender/derive_head.py` implements the first derivation: strip the source
+head above the neck line, then add our vocabulary (dome, visor, crest, breather, neck ring) in the
+body's own contract material slot. Derived `ig_human_v2` runs the full chain — rig (35 bones),
+9 clips, `audit_rig` PASS, pixel pipeline OK.
+
+**Measured result, and the honest reading:** the head-only derivation gives a mean silhouette IoU of
+**0.95** against the source base (8 views, like-for-like unposed). A head is roughly 5% of a
+silhouette, so this is expected — it proves the loop, not the distinctiveness. Reaching the < 0.75
+target needs the torso, pauldrons, coat/limb mass and the weapon changed as well, which is P3.
+
+**Visual gate — built.** `tools/visual_check.py` renders 8 views, measures coverage, components and
+largest-piece fraction, compares against a `--source` with per-view IoU, and writes a contact sheet
+for human review. It is the check that would have caught the rigged-building and the jumbled-mesh
+defects that every numeric gate passed.
+
+Two measurement caveats recorded for P6:
+1. IoU must compare **like-for-like poses** (base vs base). Comparing a posed pixel asset against an
+   unposed base produced a misleading 0.74 for the same head-only change.
+2. A multi-material asset needs per-primitive index offsets in any geometry metric; a shared vertex
+   array produced a false 1.48 m edge until the check was fixed.

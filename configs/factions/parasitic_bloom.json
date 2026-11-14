@@ -1,0 +1,65 @@
+{
+ "faction": "parasitic_bloom",
+ "budgets": {
+  "armour": 2500,
+  "head": 1000,
+  "pack": 300,
+  "weapon": 500,
+  "body": 4500
+ },
+ "tier_ladder": [
+  "line",
+  "veteran",
+  "elite"
+ ],
+ "lineage": "Tyranids",
+ "silhouette": "bulbed organic curves, spore clusters, thorn limbs",
+ "silhouette_words": [
+  "bulbed",
+  "organic",
+  "thorned",
+  "sporing"
+ ],
+ "proportions": {
+  "height_m": [
+   1.6,
+   2.6
+  ],
+  "mass": 1.1,
+  "limb": 1.05,
+  "shoulder": 1.1
+ },
+ "body_classes": {
+  "line": "bloom",
+  "elite": "bloom"
+ },
+ "elite_rule": "creature scale is per creature, not a rank; the swarm stays small",
+ "add": [
+  "spore bulbs",
+  "thorn limbs",
+  "coral-bone ridges",
+  "membrane"
+ ],
+ "strip": [
+  "all metal",
+  "hard edges",
+  "rivets"
+ ],
+ "palette": {
+  "armour_primary": [
+   "#b8a98a",
+   "#d8c9a8",
+   "#efe6cf"
+  ],
+  "underlayer": [
+   "#2a3a2a",
+   "#3f5a3a",
+   "#5a7a4a"
+  ],
+  "accent_emissive": [
+   "#4a7a3a",
+   "#8fd06a",
+   "#d8ffb0"
+  ]
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "faction": "cinderborn",
+ "budgets": {
+  "armour": 2500,
+  "head": 1000,
+  "pack": 300,
+  "weapon": 500,
+  "body": 4500
+ },
+ "tier_ladder": [
+  "line",
+  "veteran",
+  "elite"
+ ],
+ "lineage": "Chaos Space Marines / Cultists",
+ "silhouette": "asymmetric branded plates, smoke, warped edges",
+ "silhouette_words": [
+  "asymmetric",
+  "branded",
+  "warped",
+  "burning"
+ ],
+ "proportions": {
+  "height_m": [
+   1.75,
+   1.95
+  ],
+  "mass": 1.05,
+  "limb": 1.0,
+  "shoulder": 1.05
+ },
+ "body_classes": {
+  "line": "human",
+  "elite": "elite"
+ },
+ "elite_rule": "only the top-tier champion; cultists and zealots are human scale",
+ "add": [
+  "brand plates",
+  "brazier packs",
+  "chain/ember weapons",
+  "warped plate edges",
+  "ash vents"
+ ],
+ "strip": [
+  "aquilas",
+  "clean symmetric edges",
+  "imperial purity seals"
+ ],
+ "palette": {
+  "armour_primary": [
+   "#160d1f",
+   "#4b1d6b",
+   "#7a4a9e"
+  ],
+  "underlayer": [
+   "#120a18",
+   "#300050",
+   "#4b1d6b"
+  ],
+  "accent_emissive": [
+   "#7a2a5a",
+   "#ff4dd8",
+   "#ff9ae8"
+  ]
+ }
+}

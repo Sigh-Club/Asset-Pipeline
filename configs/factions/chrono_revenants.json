@@ -1,0 +1,64 @@
+{
+ "faction": "chrono_revenants",
+ "budgets": {
+  "armour": 2500,
+  "head": 1000,
+  "pack": 300,
+  "weapon": 500,
+  "body": 4500
+ },
+ "tier_ladder": [
+  "line",
+  "veteran",
+  "elite"
+ ],
+ "lineage": "Necrons",
+ "silhouette": "monolith slabs, gauss rods, stasis rings",
+ "silhouette_words": [
+  "slab",
+  "monolith",
+  "gauss",
+  "timeless"
+ ],
+ "proportions": {
+  "height_m": [
+   1.9,
+   2.2
+  ],
+  "mass": 1.15,
+  "limb": 1.0,
+  "shoulder": 1.05
+ },
+ "body_classes": {
+  "line": "human",
+  "elite": "elite"
+ },
+ "elite_rule": "only the tomb constructs are elite scale",
+ "add": [
+  "slab plates",
+  "gauss rods",
+  "stasis rings",
+  "segmented spine"
+ ],
+ "strip": [
+  "organic curves",
+  "soft cloth"
+ ],
+ "palette": {
+  "armour_primary": [
+   "#2a3a2a",
+   "#4a6a4a",
+   "#7a9a7a"
+  ],
+  "underlayer": [
+   "#101810",
+   "#1a2a1a",
+   "#2a3a2a"
+  ],
+  "accent_emissive": [
+   "#3aa05a",
+   "#7affaa",
+   "#d8ffe0"
+  ]
+ }
+}

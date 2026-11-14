@@ -1,0 +1,67 @@
+{
+ "faction": "iron_directorate",
+ "budgets": {
+  "armour": 2500,
+  "head": 1000,
+  "pack": 300,
+  "weapon": 500,
+  "body": 4500
+ },
+ "tier_ladder": [
+  "line",
+  "veteran",
+  "elite"
+ ],
+ "lineage": "Imperial Guard / Militarum",
+ "silhouette": "upright ranks, pennant racks, industrial plate seams",
+ "silhouette_words": [
+  "upright",
+  "pennant",
+  "industrial",
+  "disciplined"
+ ],
+ "proportions": {
+  "height_m": [
+   1.75,
+   1.9
+  ],
+  "mass": 1.0,
+  "limb": 1.0,
+  "shoulder": 1.0
+ },
+ "body_classes": {
+  "line": "human",
+  "elite": "elite"
+ },
+ "elite_rule": "only the highest HP/armour/weapon unit; everything else human scale",
+ "add": [
+  "rail/laser barrels",
+  "drum magazines",
+  "pennant racks",
+  "drone packs",
+  "plate seams"
+ ],
+ "strip": [
+  "gothic arches",
+  "purity seals",
+  "aquilas",
+  "skulls"
+ ],
+ "palette": {
+  "armour_primary": [
+   "#8a6f2a",
+   "#c8a24a",
+   "#e8cf8a"
+  ],
+  "underlayer": [
+   "#16233a",
+   "#2a3f66",
+   "#3f5f8f"
+  ],
+  "accent_emissive": [
+   "#5a7fbf",
+   "#9fd0ff",
+   "#ffffff"
+  ]
+ }
+}

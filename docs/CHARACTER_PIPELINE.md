@@ -226,7 +226,10 @@ usual retarget sources.
 
 ## Certification gates (all required)
 
-0. Automated: `python3 tools/audit_rig.py <glb>` must PASS (bone-to-skin <= 9 cm, human limb
+0. Visual: `blender -b -P tools/visual_check.py -- --glb <glb> [--source <base>] --out <dir>` must
+   PASS and the contact sheet must be reviewed by a human. Numeric gates cannot see a jumble: it
+   still has valid UVs, a plausible tri count and one silhouette blob.
+0b. Automated: `python3 tools/audit_rig.py <glb>` must PASS (bone-to-skin <= 9 cm, human limb
    ratios, no unweighted vertices, no orphan body bones, hands near the weapon) and
    `python3 tools/glb_contract.py <glb> --kind unit` must PASS (<= 35,000 tris LOD0).
 
@@ -306,6 +309,12 @@ silhouette is still the source's. They are placeholders until the kit method in
     to yaw 0 and both sides faced the same way.
 13. **Spacing is a squad property.** Spacing each hostile from its paired player left the second
     hostile adjacent to another squad member; the stand-off is measured against the whole squad.
+15. **A gate can be wrong too.** The geometry check indexed all primitives' vertices with
+    primitive-local indices, producing a false 1.48 m edge, and a duplicate copy of the check
+    overwrote the corrected result. A gate that fails a known-good asset is a gate bug, not an asset
+    bug — investigate before changing the asset.
+16. **Joining a derived part duplicates the material datablock** (`armour_primary.001`) and the bake
+    cannot map it. Reuse the body's existing slot.
 14. **Whole-mesh import is copy-paste.** The models animate and certify, but the part vocabulary,
     tier ladder and silhouette belong to the source. That is what `UNIT_KIT_METHODOLOGY.md` fixes.
 

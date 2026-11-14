@@ -1,0 +1,65 @@
+{
+ "faction": "radiant_concord",
+ "budgets": {
+  "armour": 2500,
+  "head": 1000,
+  "pack": 300,
+  "weapon": 500,
+  "body": 4500
+ },
+ "tier_ladder": [
+  "line",
+  "veteran",
+  "elite"
+ ],
+ "lineage": "T'au",
+ "silhouette": "perfect geometry, chrome planes, targeting arrays",
+ "silhouette_words": [
+  "geometric",
+  "chrome",
+  "targeted",
+  "clean"
+ ],
+ "proportions": {
+  "height_m": [
+   1.7,
+   1.85
+  ],
+  "mass": 0.95,
+  "limb": 1.05,
+  "shoulder": 0.95
+ },
+ "body_classes": {
+  "line": "human",
+  "elite": "elite"
+ },
+ "elite_rule": "battlesuits are elite scale; infantry is human",
+ "add": [
+  "chrome planes",
+  "drone pods",
+  "targeting arrays",
+  "smooth seams"
+ ],
+ "strip": [
+  "grime",
+  "asymmetry",
+  "ornament"
+ ],
+ "palette": {
+  "armour_primary": [
+   "#cfd6da",
+   "#eef3f5",
+   "#ffffff"
+  ],
+  "underlayer": [
+   "#2a3138",
+   "#3f4a54",
+   "#5a6874"
+  ],
+  "accent_emissive": [
+   "#2a8fa8",
+   "#5fd8f0",
+   "#d0f8ff"
+  ]
+ }
+}

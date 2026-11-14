@@ -1,0 +1,66 @@
+{
+ "faction": "void_corsairs",
+ "budgets": {
+  "armour": 2500,
+  "head": 1000,
+  "pack": 300,
+  "weapon": 500,
+  "body": 4500
+ },
+ "tier_ladder": [
+  "line",
+  "veteran",
+  "elite"
+ ],
+ "lineage": "Eldar / Corsair princes",
+ "silhouette": "swept fins, hard-light edges, tall slim frame",
+ "silhouette_words": [
+  "swept",
+  "slim",
+  "hard-light",
+  "precise"
+ ],
+ "proportions": {
+  "height_m": [
+   1.9,
+   2.0
+  ],
+  "mass": 0.82,
+  "limb": 1.12,
+  "shoulder": 0.9
+ },
+ "body_classes": {
+  "line": "corsair",
+  "elite": "corsair"
+ },
+ "elite_rule": "no elite frame: the silhouette difference is fins and mass, not scale",
+ "add": [
+  "swept fin crests",
+  "hard-light blades",
+  "smooth curved plates",
+  "holo-projectors"
+ ],
+ "strip": [
+  "bulk",
+  "rivets",
+  "heavy boots",
+  "blocky pauldrons"
+ ],
+ "palette": {
+  "armour_primary": [
+   "#b9c6cf",
+   "#e6eef4",
+   "#ffffff"
+  ],
+  "underlayer": [
+   "#1b2733",
+   "#2f4356",
+   "#48627a"
+  ],
+  "accent_emissive": [
+   "#2fa6c9",
+   "#5fe0ff",
+   "#d8fbff"
+  ]
+ }
+}
