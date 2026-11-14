@@ -1,7 +1,7 @@
 {
-  "//": "Cinderborn base-mesh units: rust armour, ash-dark under-suit and blood-cloth robes as flat faction blocks; the library camo/weave aliases to static on the organic body at the 2 cm texel grid.",
-  "underlayer": "flat_cinder_underlayer",
-  "armour_primary": "flat_cinder_armour_primary",
-  "armour_secondary": "flat_cinder_armour_secondary",
-  "IOA_cloth_canvas": "flat_cinder_cloth"
+  "//": "Sons of Cinder base-mesh units: the large-coverage slots take the faction's flat witchfire-purple ramp (FACTION_IDENTITY: cinder grey + purple/pink witchfire). The library's flat_cinder_* set is rust-red, which is the Wreckstorm read, not this faction's. Underlayer stays the spec's near-black purple.",
+  "underlayer": "flat_cinderborn_underlayer",
+  "armour_primary": "flat_cinderborn_armour_primary",
+  "armour_secondary": "flat_cinderborn_armour_secondary",
+  "IOA_cloth_canvas": "flat_cinderborn_cloth"
 }

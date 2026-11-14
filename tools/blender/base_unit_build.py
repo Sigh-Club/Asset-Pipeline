@@ -37,6 +37,8 @@ _ap.add_argument('--shield', default=None)
 # existing unit variant is byte-identical unless it asks for the kit.
 _ap.add_argument('--pennants', action='store_true')
 _ap.add_argument('--seams', action='store_true')
+_ap.add_argument('--brands', action='store_true', help='Cinder: warped brand plates + ember edges')
+_ap.add_argument('--vents', action='store_true', help='Cinder: ash vents')
 _ap.add_argument('--report', action='store_true', help='print per-slot triangle budgets')
 A=_ap.parse_args(_args)
 import json as _json
@@ -48,6 +50,8 @@ HELM=_v('helm','visor'); SHOULDERS=_v('shoulders','block'); BACK=_v('back','pack
 WEAPON=_v('weapon','rifle'); SHIELD=_v('shield',None)
 PENNANTS=bool(A.pennants or _CFG.get('pennants'))
 SEAMS=bool(A.seams or _CFG.get('seams'))
+BRANDS=bool(A.brands or _CFG.get('brands'))
+VENTS=bool(A.vents or _CFG.get('vents'))
 CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
 BODY=_v('body','standard')
 HEIGHT={'light':1.82,'standard':1.90,'heavy':1.98,'monolith':2.15}.get(BODY,1.90)
@@ -401,9 +405,42 @@ elif BACK=='drone':
         add_cyl(f'dronebody{sgn}',d,0.052,0.075,M['steel'],axis=Vector((0,0,1)),seg=8)
         add_box(f'dronerotor{sgn}',d+Vector((0,0,0.055)),(0.15,0.15,0.010),M['dark'])
         add_box(f'droneeye{sgn}',d+Vector((0,-0.052,0.0)),(0.045,0.03,0.03),M['visor'])
+elif BACK=='brazier':
+    # "brazier packs": an open ember bowl on a cage frame. The glow is the
+    # accent_emissive slot, so it survives the palette lock as a witchfire read.
+    rm(['canL','canR','bedroll','ventL','ventR'])
+    # mounted clear of the robe cone (top radius ~0.18 at z~1.48) so the ember
+    # bowl is not swallowed by the cloth
+    add_cyl('brazierbase',(0,0.30,1.46),0.055,0.10,M['steel'],axis=Vector((0,0,1)),seg=6)
+    add_cyl('brazierbowl',(0,0.30,1.545),0.105,0.075,M['dark'],axis=Vector((0,0,1)),seg=10)
+    add_cyl('brazierember',(0,0.30,1.570),0.082,0.030,M['visor'],axis=Vector((0,0,1)),seg=10)
+    for i in range(4):
+        a=math.radians(45+i*90)
+        add_cyl(f'brazierbar{i}',(math.cos(a)*0.10,0.30+math.sin(a)*0.10,1.585),0.010,0.16,M['steel'],axis=Vector((0,0,1)),seg=4)
 elif BACK=='banner':
     add_cyl('bannerpole',(0.10,0.20,1.55),0.028,1.0,M['dark'],axis=Vector((0,0,1)),seg=8)
     add_box('bannercloth',(0.10,0.18,1.85),(0.03,0.28,0.36),M['cloth'])
+if BRANDS:
+    # "brand plates" + "warped plate edges": the Cinder read is asymmetric,
+    # heat-warped plate with a glowing brand cut. Each plate is deliberately a
+    # different size and rotation on each side — symmetry is what the faction
+    # spec says to strip.
+    for i,(sgn,dx,dy,dz,w,d,roll) in enumerate([
+            (1,0.105,-0.150,1.335,0.115,0.030,14),
+            (-1,-0.090,-0.155,1.245,0.095,0.026,-9),
+            (1,0.125,-0.120,1.185,0.075,0.024,22)]):
+        add_box(f'brandplate{i}',(sgn*dx,dy,dz),(w,d,0.115),M['steel'],roll=sgn*roll,taper=0.82)
+        # the brand itself: a narrow emissive cut across the plate
+        add_box(f'brandcut{i}',(sgn*dx,dy-0.014,dz),(w*0.62,d*0.5,0.014),M['visor'],roll=sgn*roll)
+    # warped edges: skewed lip strips along the shoulder and chest plates
+    for sgn in (1,-1):
+        c=shoulder['L'] if sgn>0 else shoulder['R']
+        add_box(f'warplip{sgn}',c+Vector((sgn*0.045,-0.02,-0.055)),(0.16,0.21,0.018),M['steel'],roll=sgn*26,taper=0.72)
+if VENTS:
+    # "ash vents": short stacks with an ember mouth, on the back and shoulders.
+    for i,(sgn,dy,dz) in enumerate([(1,0.205,1.42),(-1,0.205,1.42),(1,0.185,1.24)]):
+        add_cyl(f'ashvent{i}',(sgn*0.09,dy,dz),0.026,0.10,M['dark'],axis=Vector((sgn*0.25,0.55,0.8)),seg=6)
+        add_cyl(f'ashmouth{i}',(sgn*0.09+0.012,dy+0.026,dz+0.045),0.030,0.014,M['visor'],axis=Vector((sgn*0.25,0.55,0.8)),seg=6)
 if SEAMS or PENNANTS:
     # industrial plate apron: the faction reads as armoured ranks, and the bare
     # base-mesh hips read as a civilian. Front, sides and back plates.

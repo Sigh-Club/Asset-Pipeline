@@ -202,8 +202,27 @@ extracted (0 models) — required before Wreckstorm.
   512² atlas, 41-45 colours per frame, off-palette 0, 8 directions with one connected component each,
   GLB contract pass, guards 61/61 + 61/61 + 0, Jest 628/628, E2E 6/6. Verified in-engine (screenshot:
   gold armour, pennant rack, rail weapon, AMMO 8/8 dock readout).
-- Next in P3: the Directorate elite (elite frame), then Sons of Cinder, then Void Corsairs. Extract
-  `race_ork` before any Wreckstorm work.
+**P3 — Sons of Cinder line zealot done (2026-11-19).** Second faction, same method, different
+vocabulary — this is the test of whether the kit generalises rather than producing one good unit:
+
+| Slot | Measured | Budget | Verdict |
+|---|---|---|---|
+| armour (asymmetric brand plates + warped lips) | 969 | 2,500 | PASS |
+| head (hood, horns) | 230 | 1,000 | PASS |
+| pack (brazier bowl, cage bars, mount) | 48 | 300 | PASS |
+| weapon (chainblade) | 252 | 500 | PASS |
+
+- New vocabulary: `--brands` (asymmetric warped plate with an emissive brand cut — symmetry is what
+  the Cinder spec says to strip), `--vents` (ash stacks with ember mouths), `--back brazier` (open
+  ember bowl on a cage frame; the glow is the accent_emissive slot so it survives the palette lock).
+- The brazier first sat inside the robe cone (top radius 0.18 at z 1.48) and was invisible from every
+  angle; it is mounted at y 0.30 / z 1.55 now. The robe also baked tan — the library canvas — so
+  `add_flat_faction_materials.py` gained a `cloth` slot from the faction's own underlayer ramp.
+- Shipped as `cinderborn_zealot_line_pixel.glb`: 45 colours, off-palette 0, 8 directions one
+  component each, contract pass, guards 61/61 + 61/61 + 0, E2E 4/4. Visually distinct from the
+  Directorate trooper in silhouette, palette and gear — the distinctiveness the method was adopted for.
+- Next in P3: the Directorate elite (elite frame), then Void Corsairs, then Wreckstorm (after ork
+  extraction), then Parasitic Bloom.
 
 **P2 — started.** `tools/blender/derive_head.py` implements the first derivation: strip the source
 head above the neck line, then add our vocabulary (dome, visor, crest, breather, neck ring) in the

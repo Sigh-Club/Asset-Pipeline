@@ -50,6 +50,9 @@ SLOT_SOURCE = {
     "armour_primary": ("armour_primary", 1),
     "armour_secondary": ("armour_primary", 0),
     "underlayer": ("underlayer", 0),
+    # cloth: robes and tabards. The library canvas is tan, which reads as Imperial
+    # Guard webbing; a faction's robe has to take the faction's own dark ramp.
+    "cloth": ("underlayer", 1),
 }
 
 template = bpy.data.materials.get("IOA_flat_armour_primary")
