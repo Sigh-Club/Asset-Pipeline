@@ -186,7 +186,7 @@ def profile_texture(profile_id: str) -> dict:
             "gates": resolved.get("gates", [])}
 
 
-def check(path: Path, profile_id: str) -> dict:
+def check(path: Path, profile_id: str, density_tol: float | None = None) -> dict:
     from PIL import Image
     prof = profile_texture(profile_id)
     tex = prof["texture"]
@@ -246,7 +246,12 @@ def check(path: Path, profile_id: str) -> dict:
         atlas.update(best)
 
     failures = []
-    _tol = HI_DENSITY_TOL if atlas_px >= 512 and target_texel >= 0.02 else DENSITY_TOL
+    # The caller (the asset guard) knows whether this is a hi-class part assembly
+    # and passes its tolerance; the atlas-size proxy is only the fallback.
+    if density_tol is not None:
+        _tol = density_tol
+    else:
+        _tol = HI_DENSITY_TOL if atlas_px >= 512 and target_texel >= 0.02 else DENSITY_TOL
     if abs(deviation) > _tol:
         failures.append(f"texel_density: {implied:.6f} m2/texel is {deviation:+.1%} from "
                         f"the profile's {target_texel ** 2:.6f}")
@@ -384,12 +389,15 @@ def main() -> int:
     ap.add_argument("--profile", default="pixel_3d")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--density-tol", type=float, default=None,
+                    help="override the texel-density tolerance (the asset guard passes the "
+                         "class-appropriate value; part assemblies need a wider band)")
     args = ap.parse_args()
     if args.selftest:
         return selftest()
     if not args.glb:
         raise SystemExit("give a GLB or --selftest")
-    r = check(Path(args.glb), args.profile)
+    r = check(Path(args.glb), args.profile, args.density_tol)
     if args.json:
         print(json.dumps(r, indent=2))
     else:

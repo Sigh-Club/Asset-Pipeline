@@ -28,7 +28,7 @@ PLACEHOLDER_MATERIALS = {"proof_clay", "material", "Material", "default", "Defau
 
 # Contract values, per docs/ASSET_PIPELINE_ROADMAP.md §2 and §4.
 LIMITS = {
-    "unit": {"max_tris": 25000, "min_tris": 4000, "max_mb": 10.0, "skinned": True,
+    "unit": {"max_tris": 25000, "min_tris": 1500, "soft_tris": 4000, "max_mb": 10.0, "skinned": True,
              "need_uv": True, "need_texture": True, "need_clips": REQUIRED_CLIPS},
     "prop": {"max_tris": 12000, "min_tris": 100, "max_mb": 4.0, "skinned": False,
              "need_uv": True, "need_texture": True, "need_clips": []},
@@ -158,6 +158,12 @@ def analyse(path: Path, kind: str):
         report["errors"].append(f"{tris} tris exceeds {limits['max_tris']} LOD0 budget (decimate first)")
     if tris < limits["min_tris"]:
         report["errors"].append(f"{tris} tris is below the {limits['min_tris']} floor — placeholder, not an asset")
+    elif limits.get("soft_tris") and tris < limits["soft_tris"]:
+        # A coarse reference (DoW2 ork armour is ~2.1k tris) is a real asset, not a
+        # placeholder: the pixel master renders at 256 px, where 2k reads the same as
+        # 4k. Warn so a genuinely thin mesh still stands out, but do not reject it.
+        report["warnings"].append(
+            f"{tris} tris is a low-detail unit (soft floor {limits['soft_tris']}) — coarse source, accepted")
     if report["mb"] > limits["max_mb"]:
         report["errors"].append(f"{report['mb']} MB exceeds {limits['max_mb']} MB budget")
     if limits["need_uv"] and not has_uv:

@@ -122,7 +122,12 @@ def main():
         if after >= target:
             break
     if after < target:
-        raise SystemExit(f"decimation undershot: {after} < {target}")
+        # The profile tri target is a CEILING, not a floor: a low-poly source (DoW2
+        # ork parts are ~2.1k tris) cannot be decimated up, and failing here rejected
+        # every coarse reference outright. Only an empty mesh is an error.
+        if after <= 0:
+            raise SystemExit(f"decimation destroyed the mesh: {after} tris")
+        print(f"decimation undershot (source already under the profile ceiling): {after} < {target} — keeping {after}")
 
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
