@@ -1,5 +1,8 @@
 # Character pipeline standard
 
+> Unit design method: `UNIT_KIT_METHODOLOGY.md` (derive-and-reshape kits, human-scale directive).
+> This document is the rig, animation and certification standard that any kit must meet.
+
 This is the authoritative standard for IoA unit assets: humans, near-human aliens, creatures and
 monsters. It exists because the first base-mesh route (2026-11-13) passed every automated gate while
 producing box hands, tube limbs and a statue-like rig. The gates measured pixels; they did not measure
@@ -252,16 +255,59 @@ usual retarget sources.
   gear with inverse-delta compensation. **Because:** compensation only holds for the baked pose and
   displaced the primitives when the rig changed.
 
-## Migration status
+## Current status (2026-11-17)
 
-- Done: MPFB2 installed and proven in Blender 5.1; `tools/blender/mpfb_unit_build.py` creates the
-  human, adds the 137-bone rig, derives landmarks from the skeleton, decimates after rigging, solves
-  the two-handed pose (0.000 m error) and curls the real finger bones.
-- Done: male morph, rest-pose bind export, anatomy gate (`tools/audit_rig.py`), contract budget for
-  full-anatomy units, mirrored feet and degenerate lames fixed, one unit certified end-to-end
-  (`output/gen/unit_mpfb`, 19,943 tris, 137 joints, 9 clips, 0 off-palette).
-- Next: batch the 20 humanoid units, add normal/AO to the pixel material, retarget real clips, then
-  rebuild the gear kit tighter to the MPFB proportions (upper arms and face are still exposed).
+**Shipped and certified:** 61 pixel assets pass `guard:glb` and `guard:pixel`; Jest 624/624;
+pixel-tier and full-loop-demo E2E 3/3. Of those, 26 units are built on the frames below; the rest are
+the earlier authored primitive kit and the props.
+
+| Asset | Body class | Source | Tris | Joints | Clips |
+|---|---|---|---|---|---|
+| `iron_directorate_ig_human_pixel.glb` | human | DoW2 `commissar_armour` | 4,114 | 35 | 9 |
+| `iron_directorate_super_human_pixel.glb` | elite | DoW2 `power_armour_ultramarines_commander` | 5,479 | 35 | 9 |
+| `void_corsairs_eldar_pixel.glb` | corsair | DoW2 `farseer_armour_common` | 7,463 | 35 | 9 |
+| `parasitic_bloom_carnifex_pixel.glb` | bloom | DoW2 carnifex (4 parts) | 9,423 | 35 | 9 |
+| `cinderborn_chaos_heretic_pixel.glb` | human | DoW2 `heretic_wordbearers` | 4,471 | 35 | 9 |
+| `cinderborn_chaos_marine_pixel.glb` | elite | DoW2 `wordbearers_marine` | 4,264 | 35 | 9 |
+
+Every one of these is a **derived whole mesh**: the anatomy and animation are sound, but the
+silhouette is still the source's. They are placeholders until the kit method in
+`UNIT_KIT_METHODOLOGY.md` replaces them with assembled parts.
+
+## Lessons learned (each cost a shipped defect)
+
+1. **Verify the source is the body, not scenery.** `ig_base.model` and `space_marine_base.model` are
+   the Imperial Guard and Space Marine *base buildings*. Two frames were rigged architecture before
+   anyone looked at a render. Check by bbox proportions (tall/narrow), never by filename.
+2. **A jumble passes every pixel gate.** Contract, silhouette and palette checks measure tris, UVs
+   and colour; a mesh exploded into 1.9 m triangles is still one blob with valid UVs. Geometry is
+   now measured directly: `audit_rig.py` fails any edge longer than 35% of the model span.
+3. **Multi-payload models need per-payload vertex offsets.** `chunky_mesh.py` offset faces by the
+   model base only, so every payload after the first referenced the wrong vertices.
+4. **Do not trust Blender's automatic binding on shipped meshes.** Heat weighting and envelope
+   binding both return empty groups; distance-plus-radius weighting works, and a distance-resolved
+   coverage fallback prevents dead joints.
+5. **Small bones out-compete large ones under distance-only weighting.** The jaw captured 66% of the
+   commissar mesh (hat and shoulders) until weighting was scaled by the template's bone radius.
+6. **Decimation protection is inert in Blender 5.1.** The Decimate modifier ignores its vertex group,
+   and separating hands before decimating also fights the ratio. Plain uniform decimation behaves.
+7. **Export with live IK writes the constrained pose as the rest pose.** Bake the result, clear the
+   constraints, clear the pose, then export with `export_rest_position_armature`.
+8. **The OBJ importer creates one object per material group.** Deleting the extras silently dropped
+   up to 44% of a mesh. Join them.
+9. **Texel density and readability need real thresholds.** Shipped part assemblies pack at ~32% atlas
+   utilisation (hi tolerance 65%); a character legitimately renders as body + gear, so readability
+   requires a dominant body (largest piece ≥90%), not one blob.
+10. **The catalogue and the cache are part of shipping.** A replaced model that the catalogue does
+    not reference is invisible; without a cache revision the browser keeps the old master.
+11. **The backend is a compiled binary.** Go changes do not reach the test server until
+    `backend_server` is rebuilt and restarted.
+12. **Facing must be populated.** `ComponentBasedUnit.facing` was never set, so every unit defaulted
+    to yaw 0 and both sides faced the same way.
+13. **Spacing is a squad property.** Spacing each hostile from its paired player left the second
+    hostile adjacent to another squad member; the stand-off is measured against the whole squad.
+14. **Whole-mesh import is copy-paste.** The models animate and certify, but the part vocabulary,
+    tier ladder and silhouette belong to the source. That is what `UNIT_KIT_METHODOLOGY.md` fixes.
 
 ## Test-mode parity (MANDATORY — no exceptions)
 
