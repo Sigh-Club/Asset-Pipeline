@@ -49,7 +49,15 @@ body = max(meshes, key=lambda o: len(o.data.vertices))
 for o in meshes:
     if o is not body:
         bpy.data.objects.remove(o, do_unlink=True)
-print("MESH", body.name, len(body.data.vertices), "verts", len(body.data.polygons), "polys")
+# bake any import transform: the fit and the weighting must share one space, or
+# every vertex ends up nearest the bone at the origin (measured: thigh_L owned
+# 30% of the mesh and the legs exploded on every clip)
+bpy.ops.object.select_all(action="DESELECT")
+body.select_set(True)
+bpy.context.view_layer.objects.active = body
+bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+print("MESH", body.name, len(body.data.vertices), "verts", len(body.data.polygons), "polys",
+      "scale", tuple(round(v, 4) for v in body.scale))
 
 # ------------------------------------------------------------------ fit
 lo = Vector((min(v.co.x for v in body.data.vertices),
@@ -139,7 +147,7 @@ for s in TPL.get("sockets", []):
 # of trusting the template's pose. Shipped bases are A-posed or T-posed and the
 # fingertips/feet are the reliable landmarks.
 if not A.no_fit:
-    world_co = [body.matrix_world @ v.co for v in body.data.vertices]
+    world_co = [v.co for v in body.data.vertices]
     zmax = max(p.z for p in world_co)
     for side, sgn in (("L", 1), ("R", -1)):
         clav = created.get(f"clavicle_{side}")
@@ -204,8 +212,10 @@ import math
 from mathutils import Vector as _V
 
 deform_bones = [b for b in arm.data.bones if b.use_deform]
-segments = [(b.name, arm.matrix_world @ b.head_local, arm.matrix_world @ b.tail_local)
-            for b in deform_bones]
+segments = [(b.name, b.head_local, b.tail_local) for b in deform_bones]
+# bone radius is the template's authored capture size: a small detail bone (jaw)
+# must not out-compete the head for the skull/helmet surface
+radius_of = {s["name"]: float(s.get("radius", 0.08)) for s in TPL["bones"]}
 for name, _h, _t in segments:
     if name not in body.vertex_groups:
         body.vertex_groups.new(name=name)
@@ -223,9 +233,9 @@ POWER = 4.0
 MAXB = 3
 weighted = {b.name: 0 for b in deform_bones}
 for v in body.data.vertices:
-    p = body.matrix_world @ v.co
+    p = v.co
     ds = sorted(((seg_dist(p, a, b), n) for n, a, b in segments))[:MAXB]
-    ws = [(1.0 / max(1e-4, d) ** POWER, n) for d, n in ds]
+    ws = [((radius_of.get(n, 0.08) / max(1e-4, d)) ** POWER, n) for d, n in ds]
     total = sum(w for w, _ in ws) or 1.0
     for w, n in ws:
         w /= total
@@ -245,7 +255,7 @@ for name in orphan_names:
     if not seg:
         continue
     _n, a, b = seg
-    ranked = sorted(((seg_dist(body.matrix_world @ v.co, a, b), v.index)
+    ranked = sorted(((seg_dist(v.co, a, b), v.index)
                      for v in body.data.vertices))[:max(4, len(body.data.vertices) // 200)]
     for d, vi in ranked:
         if vi not in claims or d < claims[vi][0]:
