@@ -345,6 +345,195 @@
         "seam",
         "palette_compliance"
       ]
+    },
+    {
+      "id": "cover_sandbag_wall_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "sandbag_wall_01",
+        "height_m": 0.82,
+        "source": "dow2:sandbag_wall_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "leather_tan"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "cover_barricade_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "construction_barricade",
+        "height_m": 1.1,
+        "source": "dow2:construction_barricade"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "cover_container_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "container_sb_01",
+        "height_m": 1.35,
+        "source": "dow2:container_sb_01"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "cover_generator_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "generator_medium",
+        "height_m": 1.9,
+        "source": "dow2:generator_medium"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "cover_wall_segment_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "high_wall_sb_01",
+        "height_m": 2.1,
+        "source": "dow2:high_wall_sb_01"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "black_polymer"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "cover_pillar_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "coloseum_pillar_cover",
+        "height_m": 2.3,
+        "source": "dow2:coloseum_pillar_cover"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "deco_barrel_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "barrel_01",
+        "height_m": 0.88,
+        "source": "dow2:barrel_01"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "deco_rock_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "rock_cover_03",
+        "height_m": 1.2,
+        "source": "dow2:rock_cover_03"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
+    },
+    {
+      "id": "deco_pipe_stack_b",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "pixel_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "pipe_raised_straight_01",
+        "height_m": 1.5,
+        "source": "dow2:pipe_raised_straight_01"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "texel_grid",
+        "palette_compliance",
+        "readability"
+      ]
     }
   ]
 }

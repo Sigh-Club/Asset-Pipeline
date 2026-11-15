@@ -385,6 +385,95 @@
         "timing"
       ],
       "//": "High-detail pixel 3D tier for base-mesh authored units: real human anatomy, body-derived armour shells and a held weapon need 9-14k tris and a 512 atlas at the same 2 cm texel grid. Contract change is measured A/B against pixel_3d (see docs/PIXEL_UNIT_PROGRAMME.md)."
+    },
+    "pixel_3d_prop_coarse": {
+      "label": "Pixel-textured 3D prop at coarse texel density (large authored cover)",
+      "representation": "mesh_3d",
+      "geometry": {
+        "tris_max": 4000,
+        "tris_min": 100,
+        "shading": "flat",
+        "uv": "texel_grid"
+      },
+      "texture": {
+        "texel_world_m": 0.04
+      },
+      "render": {
+        "directions": 1
+      },
+      "pixel": {
+        "palette_id": "grimdark_3d",
+        "dither": "bayer4",
+        "outline": 0.0,
+        "selout": true
+      },
+      "animation": {
+        "fps_authored": 12,
+        "clips": {
+          "idle": {
+            "frames": [
+              2,
+              6
+            ]
+          },
+          "walk": {
+            "frames": [
+              4,
+              8
+            ]
+          },
+          "run": {
+            "frames": [
+              4,
+              8
+            ]
+          },
+          "aim": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "fire": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "reload": {
+            "frames": [
+              6,
+              10
+            ]
+          },
+          "hit": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "death": {
+            "frames": [
+              6,
+              12
+            ]
+          },
+          "melee": {
+            "frames": [
+              4,
+              8
+            ]
+          }
+        }
+      },
+      "gates": [
+        "glb_contract",
+        "texel_grid",
+        "palette_compliance",
+        "readability",
+        "timing"
+      ],
+      "extends": "pixel_3d"
     }
   }
 }

@@ -50,6 +50,21 @@ def parse_args():
     ap.add_argument("--masks", action="store_true",
                     help="also render normal / AO / emission masks per direction")
     ap.add_argument("--samples", type=int, default=1, help="1 = no antialiasing")
+    # Imported-mesh route: a decoded shipped-game prop (DoW2 `.model` -> OBJ) is
+    # normalised into the same contract the parametric recipes produce. This is how a
+    # shipped-game silhouette becomes a pixel prop without hand-modelling it.
+    ap.add_argument("--obj", help="import this OBJ instead of building a parametric recipe")
+    ap.add_argument("--height", type=float, default=0.0,
+                    help="target height in metres for an imported mesh (0 = keep source scale)")
+    ap.add_argument("--target-tris", type=int, default=600,
+                    help="decimation budget for an imported mesh")
+    ap.add_argument("--profile-override", default="",
+                    help="use this style profile instead of the request's (large props "
+                         "need a coarser texel grid than the 256 px atlas can hold at 0.02 m)")
+    ap.add_argument("--max-footprint", type=float, default=2.2,
+                    help="clamp the longest horizontal dimension (metres). Cover occupies "
+                         "ONE cell (TILE_SIZE 2.4 m in the renderer): a prop wider than its "
+                         "cell overhangs the neighbours and blows the texel budget.")
     return ap.parse_args(argv)
 
 
@@ -349,6 +364,80 @@ RECIPES = {
 }
 
 
+def build_imported(req: dict, obj_path: Path, height: float, target_tris: int,
+                   max_footprint: float = 2.2):
+    """Import a shipped-game prop OBJ and normalise it into our prop contract.
+
+    The shipped mesh is the modelling reference (the same rule dow2_base.py applies to
+    units): import, join the submeshes, ground it, centre it on its footprint, scale to
+    the target height, then decimate to the prop budget. No rig, no material work —
+    the pixel atlas stage re-authors the surface.
+    """
+    import math
+
+    bpy.ops.wm.obj_import(filepath=str(obj_path))
+    meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    if not meshes:
+        raise SystemExit(f"no mesh in {obj_path}")
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in meshes:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    if len(meshes) > 1:
+        bpy.ops.object.join()
+        print(f"JOINED {len(meshes)} imported groups")
+    obj = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    # shipped meshes come in their own units and orientation: ground, centre, scale
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.remove_doubles(threshold=0.001)
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    verts = [obj.matrix_world @ v.co for v in obj.data.vertices]
+    min_v = Vector((min(v.x for v in verts), min(v.y for v in verts), min(v.z for v in verts)))
+    max_v = Vector((max(v.x for v in verts), max(v.y for v in verts), max(v.z for v in verts)))
+    # DoW2 world objects are authored Z-up in the extracted OBJ (verified on the
+    # sandbag wall, high wall, container, generator and barricade: their height axis is
+    # Z). Do NOT guess an up-axis from the bounding box — a long low prop (the raised
+    # pipe run, 8.3 x 7.9 x 1.2) trips a Y-span heuristic and gets stood on its end.
+
+    size = max_v - min_v
+    scale = 1.0
+    if height > 0 and size.z > 1e-6:
+        scale = height / size.z
+    # A cover prop occupies one tile: clamp the footprint so the silhouette stays inside
+    # its cell (and the texel budget stays reachable at 0.02 m/texel).
+    if max_footprint > 0:
+        longest = max(size.x, size.y) * scale
+        if longest > max_footprint:
+            scale *= max_footprint / longest
+    obj.scale = (scale, scale, scale)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    verts = [obj.matrix_world @ v.co for v in obj.data.vertices]
+    min_v = Vector((min(v.x for v in verts), min(v.y for v in verts), min(v.z for v in verts)))
+    max_v = Vector((max(v.x for v in verts), max(v.y for v in verts), max(v.z for v in verts)))
+    centre = Vector(((min_v.x + max_v.x) / 2, (min_v.y + max_v.y) / 2, min_v.z))
+    obj.location = (obj.location.x - centre.x, obj.location.y - centre.y, obj.location.z - centre.z)
+    bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+
+    tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+    if target_tris and tris > target_tris:
+        ratio = target_tris / float(tris)
+        mod = obj.modifiers.new("decimate", type="DECIMATE")
+        mod.ratio = max(0.02, ratio)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+        tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+    print(f"IMPORTED {obj_path.name} height={height} tris={tris}")
+
+    for p in obj.data.polygons:
+        p.use_smooth = False
+    return obj, "imported"
+
+
 def build_mesh(req: dict):
     kind = req.get("kind", "prop")
     recipe = req.get("params", {}).get("recipe") or {
@@ -457,12 +546,18 @@ def unwrap(obj, texel_world_m: float):
 def main():
     args = parse_args()
     req = load_request(Path(args.request).resolve(), args.id)
+    if args.profile_override:
+        req = dict(req, profile=args.profile_override)
     prof = profile_of(req)
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
 
     clear_scene()
-    obj, recipe = build_mesh(req)
+    if args.obj:
+        obj, recipe = build_imported(req, Path(args.obj).resolve(), args.height,
+                                     args.target_tris, args.max_footprint)
+    else:
+        obj, recipe = build_mesh(req)
     mats = assign_materials(obj, req, Path(args.library).resolve() if args.library else None)
     assign_slots(obj, req, recipe, len(obj.data.materials))
     texel = prof.get("texture", {}).get("texel_world_m", 0.02)
