@@ -1,0 +1,4547 @@
+[
+ {
+  "unit": "chrono_revenants_sepulchre_warden",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "chrono_revenants_tomb_obelisk",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "chrono_revenants_undying_cohort",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "chrono_revenants_void_reaper",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "cinderborn_ash_stalker",
+  "failures": [
+   "proportions deviate 23% from the source [0.774, 1.0, 0.493] (ours [1.0, 1.0, 0.508])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     1.0,
+     0.508
+    ],
+    "source": [
+     0.774,
+     1.0,
+     0.493
+    ],
+    "max_dev": 0.226
+   },
+   {
+    "check": "triangles",
+    "ours": 4047,
+    "source": 0,
+    "ratio": 4047.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "bloodletter_body.model"
+ },
+ {
+  "unit": "cinderborn_ashbound_artificer",
+  "failures": [
+   "proportions deviate 21% from the source [0.714, 1.0, 0.387] (ours [0.855, 1.0, 0.599])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.855,
+     1.0,
+     0.599
+    ],
+    "source": [
+     0.714,
+     1.0,
+     0.387
+    ],
+    "max_dev": 0.212
+   },
+   {
+    "check": "triangles",
+    "ours": 2936,
+    "source": 0,
+    "ratio": 2936.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_aspiring_champion.model"
+ },
+ {
+  "unit": "cinderborn_chaos_heretic",
+  "failures": [
+   "no DoW2 source part found for mesh 'cinderborn_chaos_heretic'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "cinderborn_chaos_marine",
+  "failures": [
+   "no DoW2 source part found for mesh 'cinderborn_chaos_marine'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "cinderborn_cinder_wraith",
+  "failures": [
+   "proportions deviate 22% from the source [0.735, 1.0, 0.47] (ours [0.951, 1.0, 0.667])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.951,
+     1.0,
+     0.667
+    ],
+    "source": [
+     0.735,
+     1.0,
+     0.47
+    ],
+    "max_dev": 0.216
+   },
+   {
+    "check": "triangles",
+    "ours": 2050,
+    "source": 0,
+    "ratio": 2050.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_lord.model"
+ },
+ {
+  "unit": "cinderborn_pyre_immolator",
+  "failures": [
+   "proportions deviate 22% from the source [0.735, 1.0, 0.47] (ours [0.866, 1.0, 0.693])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.866,
+     1.0,
+     0.693
+    ],
+    "source": [
+     0.735,
+     1.0,
+     0.47
+    ],
+    "max_dev": 0.223
+   },
+   {
+    "check": "triangles",
+    "ours": 2480,
+    "source": 0,
+    "ratio": 2480.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_lord_body.model"
+ },
+ {
+  "unit": "cinderborn_son_of_cinder",
+  "failures": [
+   "proportions deviate 23% from the source [0.649, 1.0, 0.464] (ours [0.746, 1.0, 0.693])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.746,
+     1.0,
+     0.693
+    ],
+    "source": [
+     0.649,
+     1.0,
+     0.464
+    ],
+    "max_dev": 0.229
+   },
+   {
+    "check": "triangles",
+    "ours": 12540,
+    "source": 0,
+    "ratio": 12540.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_lord_word_bearers.model"
+ },
+ {
+  "unit": "cinderborn_warlord",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_chaos_chaos_marine'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "cinderborn_zealot_captain",
+  "failures": [
+   "proportions deviate 32% from the source [0.867, 1.0, 0.387] (ours [0.8, 1.0, 0.707])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.8,
+     1.0,
+     0.707
+    ],
+    "source": [
+     0.867,
+     1.0,
+     0.387
+    ],
+    "max_dev": 0.32
+   },
+   {
+    "check": "triangles",
+    "ours": 3769,
+    "source": 0,
+    "ratio": 3769.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_sorcerer_ls_common.model"
+ },
+ {
+  "unit": "cinderborn_zealot_line",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.915,
+     1.0,
+     0.592
+    ],
+    "source": [
+     0.919,
+     1.0,
+     0.569
+    ],
+    "max_dev": 0.023
+   },
+   {
+    "check": "triangles",
+    "ours": 2202,
+    "source": 0,
+    "ratio": 2202.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "eliphas_common.model"
+ },
+ {
+  "unit": "iron_directorate_aegis_artillery",
+  "failures": [
+   "proportions deviate 30% from the source [0.517, 1.0, 0.292] (ours [0.772, 1.0, 0.589])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.772,
+     1.0,
+     0.589
+    ],
+    "source": [
+     0.517,
+     1.0,
+     0.292
+    ],
+    "max_dev": 0.297
+   },
+   {
+    "check": "triangles",
+    "ours": 4332,
+    "source": 0,
+    "ratio": 4332.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "commissar_armour.model"
+ },
+ {
+  "unit": "iron_directorate_ashrim_raiders",
+  "failures": [
+   "proportions deviate 26% from the source [0.509, 1.0, 0.36] (ours [0.765, 1.0, 0.619])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.765,
+     1.0,
+     0.619
+    ],
+    "source": [
+     0.509,
+     1.0,
+     0.36
+    ],
+    "max_dev": 0.259
+   },
+   {
+    "check": "triangles",
+    "ours": 2652,
+    "source": 0,
+    "ratio": 2652.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "death_korps_infantry.model"
+ },
+ {
+  "unit": "iron_directorate_assault_breachers",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.831,
+     0.456
+    ],
+    "source": [
+     1.0,
+     0.802,
+     0.4
+    ],
+    "max_dev": 0.056
+   },
+   {
+    "check": "triangles",
+    "ours": 3933,
+    "source": 0,
+    "ratio": 3933.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "death_korps_ogryn.model"
+ },
+ {
+  "unit": "iron_directorate_command_officer",
+  "failures": [
+   "proportions deviate 31% from the source [0.516, 1.0, 0.82] (ours [0.831, 1.0, 0.553])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.831,
+     1.0,
+     0.553
+    ],
+    "source": [
+     0.516,
+     1.0,
+     0.82
+    ],
+    "max_dev": 0.315
+   },
+   {
+    "check": "triangles",
+    "ours": 2856,
+    "source": 0,
+    "ratio": 2856.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "deathkorps_lord_general.model"
+ },
+ {
+  "unit": "iron_directorate_ig_human",
+  "failures": [
+   "proportions deviate 30% from the source [0.517, 1.0, 0.292] (ours [0.772, 1.0, 0.589])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.772,
+     1.0,
+     0.589
+    ],
+    "source": [
+     0.517,
+     1.0,
+     0.292
+    ],
+    "max_dev": 0.297
+   },
+   {
+    "check": "triangles",
+    "ours": 4332,
+    "source": 0,
+    "ratio": 4332.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "commissar_armour.model"
+ },
+ {
+  "unit": "iron_directorate_logistics_engineer",
+  "failures": [
+   "proportions deviate 22% from the source [0.602, 1.0, 0.512] (ours [0.826, 1.0, 0.685])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.826,
+     1.0,
+     0.685
+    ],
+    "source": [
+     0.602,
+     1.0,
+     0.512
+    ],
+    "max_dev": 0.224
+   },
+   {
+    "check": "triangles",
+    "ours": 3687,
+    "source": 0,
+    "ratio": 3687.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "general_armour_epic.model"
+ },
+ {
+  "unit": "iron_directorate_pathfinder_scouts",
+  "failures": [
+   "proportions deviate 31% from the source [0.586, 1.0, 0.225] (ours [0.844, 1.0, 0.53])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.844,
+     1.0,
+     0.53
+    ],
+    "source": [
+     0.586,
+     1.0,
+     0.225
+    ],
+    "max_dev": 0.305
+   },
+   {
+    "check": "triangles",
+    "ours": 2666,
+    "source": 0,
+    "ratio": 2666.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ig_armour.model"
+ },
+ {
+  "unit": "iron_directorate_storm_talons",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.66,
+     0.328
+    ],
+    "source": [
+     1.0,
+     0.722,
+     0.161
+    ],
+    "max_dev": 0.167
+   },
+   {
+    "check": "triangles",
+    "ours": 6133,
+    "source": 0,
+    "ratio": 6133.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ig_armour_texture_mirror_test.model"
+ },
+ {
+  "unit": "iron_directorate_super_human",
+  "failures": [
+   "proportions deviate 23% from the source [0.567, 1.0, 0.382] (ours [0.701, 1.0, 0.613])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.701,
+     1.0,
+     0.613
+    ],
+    "source": [
+     0.567,
+     1.0,
+     0.382
+    ],
+    "max_dev": 0.231
+   },
+   {
+    "check": "triangles",
+    "ours": 5697,
+    "source": 0,
+    "ratio": 5697.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "power_armour_ultramarines_commander.model"
+ },
+ {
+  "unit": "iron_directorate_suppression_team",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.829,
+     0.401
+    ],
+    "source": [
+     1.0,
+     0.799,
+     0.29
+    ],
+    "max_dev": 0.111
+   },
+   {
+    "check": "triangles",
+    "ours": 3149,
+    "source": 0,
+    "ratio": 3149.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ig_ogyrn.model"
+ },
+ {
+  "unit": "parasitic_bloom_carapace_warden",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.496,
+     0.616,
+     1.0
+    ],
+    "source": [
+     0.487,
+     0.637,
+     1.0
+    ],
+    "max_dev": 0.021
+   },
+   {
+    "check": "triangles",
+    "ours": 6812,
+    "source": 0,
+    "ratio": 6812.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "carnifex_armour_carnage.model"
+ },
+ {
+  "unit": "parasitic_bloom_carnifex",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.524,
+     0.567,
+     1.0
+    ],
+    "source": [
+     0.496,
+     0.616,
+     1.0
+    ],
+    "max_dev": 0.049
+   },
+   {
+    "check": "triangles",
+    "ours": 9423,
+    "source": 0,
+    "ratio": 9423.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "carnifex_armour_common.model"
+ },
+ {
+  "unit": "parasitic_bloom_hunger_crawlers",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.976,
+     0.929
+    ],
+    "source": [
+     1.0,
+     0.976,
+     0.929
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3247,
+    "source": 0,
+    "ratio": 3247.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "genestealer_armour_common.model"
+ },
+ {
+  "unit": "parasitic_bloom_psi_lynx",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "source": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 7373,
+    "source": 0,
+    "ratio": 7373.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "hive_tyrant_alpha_armour_glow.model"
+ },
+ {
+  "unit": "parasitic_bloom_soul_weaver",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "source": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 7373,
+    "source": 0,
+    "ratio": 7373.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "hive_tyrant_armour_glow.model"
+ },
+ {
+  "unit": "parasitic_bloom_void_swarm_titan",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.471,
+     0.601,
+     1.0
+    ],
+    "source": [
+     0.471,
+     0.601,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3800,
+    "source": 0,
+    "ratio": 3800.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "hormagaunt_armour_glow.model"
+ },
+ {
+  "unit": "parasitic_bloom_voidmaw_monstrosity",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.702,
+     0.807,
+     1.0
+    ],
+    "source": [
+     0.702,
+     0.807,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 6147,
+    "source": 0,
+    "ratio": 6147.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "lictor_armour_glow.model"
+ },
+ {
+  "unit": "radiant_concord_atmos_battlesuit",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.59,
+     1.0,
+     0.458
+    ],
+    "source": [
+     0.59,
+     1.0,
+     0.458
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 6494,
+    "source": 0,
+    "ratio": 6494.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_armoured_crisis_suit.model"
+ },
+ {
+  "unit": "radiant_concord_radiant_android",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.566,
+     1.0,
+     0.44
+    ],
+    "source": [
+     0.566,
+     1.0,
+     0.44
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 6172,
+    "source": 0,
+    "ratio": 6172.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_command_crisis_suit.model"
+ },
+ {
+  "unit": "radiant_concord_spear_strike",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "source": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 5976,
+    "source": 0,
+    "ratio": 5976.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_light_crisis_suit.model"
+ },
+ {
+  "unit": "radiant_concord_targeter_flock",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "source": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 5976,
+    "source": 0,
+    "ratio": 5976.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_default_crisis_suit.model"
+ },
+ {
+  "unit": "void_corsairs_eldar",
+  "failures": [
+   "proportions deviate 22% from the source [0.454, 1.0, 0.337] (ours [0.678, 1.0, 0.499])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.678,
+     1.0,
+     0.499
+    ],
+    "source": [
+     0.454,
+     1.0,
+     0.337
+    ],
+    "max_dev": 0.224
+   },
+   {
+    "check": "triangles",
+    "ours": 7647,
+    "source": 0,
+    "ratio": 7647.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_common.model"
+ },
+ {
+  "unit": "void_corsairs_hulk_frigate",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.821,
+     1.0,
+     0.352
+    ],
+    "source": [
+     0.66,
+     1.0,
+     0.39
+    ],
+    "max_dev": 0.161
+   },
+   {
+    "check": "triangles",
+    "ours": 4174,
+    "source": 0,
+    "ratio": 4174.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "autarch.model"
+ },
+ {
+  "unit": "void_corsairs_neon_runner",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.821,
+     1.0,
+     0.352
+    ],
+    "source": [
+     0.66,
+     1.0,
+     0.39
+    ],
+    "max_dev": 0.161
+   },
+   {
+    "check": "triangles",
+    "ours": 4174,
+    "source": 0,
+    "ratio": 4174.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "autarch_legendary.model"
+ },
+ {
+  "unit": "void_corsairs_tech_priest",
+  "failures": [
+   "proportions deviate 26% from the source [0.518, 1.0, 0.246] (ours [0.78, 1.0, 0.442])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.78,
+     1.0,
+     0.442
+    ],
+    "source": [
+     0.518,
+     1.0,
+     0.246
+    ],
+    "max_dev": 0.262
+   },
+   {
+    "check": "triangles",
+    "ours": 3528,
+    "source": 0,
+    "ratio": 3528.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_armour_common.model"
+ },
+ {
+  "unit": "void_corsairs_void_corsair_raider",
+  "failures": [
+   "proportions deviate 26% from the source [0.518, 1.0, 0.246] (ours [0.78, 1.0, 0.442])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.78,
+     1.0,
+     0.442
+    ],
+    "source": [
+     0.518,
+     1.0,
+     0.246
+    ],
+    "max_dev": 0.262
+   },
+   {
+    "check": "triangles",
+    "ours": 3528,
+    "source": 0,
+    "ratio": 3528.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_armour_common_campaign.model"
+ },
+ {
+  "unit": "void_corsairs_voidblade_assassin",
+  "failures": [
+   "proportions deviate 26% from the source [0.534, 1.0, 0.273] (ours [0.796, 1.0, 0.433])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.796,
+     1.0,
+     0.433
+    ],
+    "source": [
+     0.534,
+     1.0,
+     0.273
+    ],
+    "max_dev": 0.262
+   },
+   {
+    "check": "triangles",
+    "ours": 4423,
+    "source": 0,
+    "ratio": 4423.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_armour_epic_campaign.model"
+ },
+ {
+  "unit": "wreckstorm_clans_detonation_crew",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.628,
+     0.381
+    ],
+    "source": [
+     1.0,
+     0.563,
+     0.349
+    ],
+    "max_dev": 0.065
+   },
+   {
+    "check": "triangles",
+    "ours": 7724,
+    "source": 0,
+    "ratio": 7724.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "incognito_boy_space_marine.model"
+ },
+ {
+  "unit": "wreckstorm_clans_junk_goliath",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.707,
+     0.426
+    ],
+    "source": [
+     1.0,
+     0.722,
+     0.457
+    ],
+    "max_dev": 0.031
+   },
+   {
+    "check": "triangles",
+    "ours": 1741,
+    "source": 0,
+    "ratio": 1741.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "loota_leader_armour_common.model"
+ },
+ {
+  "unit": "wreckstorm_clans_scrap_boy",
+  "failures": [
+   "no DoW2 source part found for mesh 'ork_boy.027'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "wreckstorm_clans_scrapwalker_brute",
+  "failures": [
+   "proportions deviate 19% from the source [0.998, 0.952, 1.0] (ours [0.818, 1.0, 0.814])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.818,
+     1.0,
+     0.814
+    ],
+    "source": [
+     0.998,
+     0.952,
+     1.0
+    ],
+    "max_dev": 0.186
+   },
+   {
+    "check": "triangles",
+    "ours": 1993,
+    "source": 0,
+    "ratio": 1993.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "nob_kommando_armour_common.model"
+ },
+ {
+  "unit": "wreckstorm_clans_titan_fist",
+  "failures": [
+   "proportions deviate 37% from the source [1.0, 0.495, 0.315] (ours [1.0, 0.809, 0.683])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.809,
+     0.683
+    ],
+    "source": [
+     1.0,
+     0.495,
+     0.315
+    ],
+    "max_dev": 0.368
+   },
+   {
+    "check": "triangles",
+    "ours": 2464,
+    "source": 0,
+    "ratio": 2464.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "rokkit_pistol.model"
+ },
+ {
+  "unit": "wreckstorm_clans_warboss",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.947,
+     1.0,
+     0.823
+    ],
+    "source": [
+     0.947,
+     1.0,
+     0.822
+    ],
+    "max_dev": 0.001
+   },
+   {
+    "check": "triangles",
+    "ours": 1742,
+    "source": 0,
+    "ratio": 1742.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "storm_nob_armour_common.model"
+ },
+ {
+  "unit": "wreckstorm_clans_wreckstorm_biker",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.735,
+     0.495
+    ],
+    "source": [
+     1.0,
+     0.798,
+     0.518
+    ],
+    "max_dev": 0.063
+   },
+   {
+    "check": "triangles",
+    "ours": 2854,
+    "source": 0,
+    "ratio": 2854.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warboss_armour_common.model"
+ },
+ {
+  "unit": "dow_chaos_bloodletter_body",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.944,
+     1.0,
+     0.66
+    ],
+    "source": [
+     0.774,
+     1.0,
+     0.493
+    ],
+    "max_dev": 0.17
+   },
+   {
+    "check": "triangles",
+    "ours": 3621,
+    "source": 0,
+    "ratio": 3621.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "bloodletter_body.model"
+ },
+ {
+  "unit": "dow_chaos_chaos_aspiring_champion",
+  "failures": [
+   "proportions deviate 21% from the source [0.714, 1.0, 0.387] (ours [0.923, 1.0, 0.559])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.923,
+     1.0,
+     0.559
+    ],
+    "source": [
+     0.714,
+     1.0,
+     0.387
+    ],
+    "max_dev": 0.209
+   },
+   {
+    "check": "triangles",
+    "ours": 2936,
+    "source": 0,
+    "ratio": 2936.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_aspiring_champion.model"
+ },
+ {
+  "unit": "dow_chaos_chaos_lord",
+  "failures": [
+   "proportions deviate 26% from the source [0.735, 1.0, 0.47] (ours [1.0, 0.976, 0.601])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.976,
+     0.601
+    ],
+    "source": [
+     0.735,
+     1.0,
+     0.47
+    ],
+    "max_dev": 0.265
+   },
+   {
+    "check": "triangles",
+    "ours": 2050,
+    "source": 0,
+    "ratio": 2050.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_lord.model"
+ },
+ {
+  "unit": "dow_chaos_chaos_lord_body",
+  "failures": [
+   "proportions deviate 20% from the source [0.735, 1.0, 0.47] (ours [0.927, 1.0, 0.665])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.927,
+     1.0,
+     0.665
+    ],
+    "source": [
+     0.735,
+     1.0,
+     0.47
+    ],
+    "max_dev": 0.195
+   },
+   {
+    "check": "triangles",
+    "ours": 2480,
+    "source": 0,
+    "ratio": 2480.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_lord_body.model"
+ },
+ {
+  "unit": "dow_chaos_chaos_lord_word_bearers",
+  "failures": [
+   "proportions deviate 21% from the source [0.649, 1.0, 0.464] (ours [0.8, 1.0, 0.678])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.8,
+     1.0,
+     0.678
+    ],
+    "source": [
+     0.649,
+     1.0,
+     0.464
+    ],
+    "max_dev": 0.214
+   },
+   {
+    "check": "triangles",
+    "ours": 12540,
+    "source": 0,
+    "ratio": 12540.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_lord_word_bearers.model"
+ },
+ {
+  "unit": "dow_chaos_chaos_marine",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_chaos_chaos_marine'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "dow_chaos_chaos_marine_armour",
+  "failures": [
+   "proportions deviate 26% from the source [0.533, 1.0, 0.289] (ours [0.615, 1.0, 0.55])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.615,
+     1.0,
+     0.55
+    ],
+    "source": [
+     0.533,
+     1.0,
+     0.289
+    ],
+    "max_dev": 0.261
+   },
+   {
+    "check": "triangles",
+    "ours": 2968,
+    "source": 0,
+    "ratio": 2968.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_marine_armour_rare.model"
+ },
+ {
+  "unit": "dow_chaos_chaos_sorcerer",
+  "failures": [
+   "proportions deviate 30% from the source [0.867, 1.0, 0.387] (ours [0.857, 1.0, 0.686])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.857,
+     1.0,
+     0.686
+    ],
+    "source": [
+     0.867,
+     1.0,
+     0.387
+    ],
+    "max_dev": 0.299
+   },
+   {
+    "check": "triangles",
+    "ours": 3769,
+    "source": 0,
+    "ratio": 3769.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_sorcerer_ls_common.model"
+ },
+ {
+  "unit": "dow_chaos_eliphas",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.972,
+     1.0,
+     0.53
+    ],
+    "source": [
+     0.919,
+     1.0,
+     0.569
+    ],
+    "max_dev": 0.053
+   },
+   {
+    "check": "triangles",
+    "ours": 2202,
+    "source": 0,
+    "ratio": 2202.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "eliphas_common.model"
+ },
+ {
+  "unit": "dow_chaos_heretic",
+  "failures": [
+   "proportions deviate 24% from the source [0.547, 1.0, 0.304] (ours [0.713, 1.0, 0.547])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.713,
+     1.0,
+     0.547
+    ],
+    "source": [
+     0.547,
+     1.0,
+     0.304
+    ],
+    "max_dev": 0.243
+   },
+   {
+    "check": "triangles",
+    "ours": 5712,
+    "source": 0,
+    "ratio": 5712.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "heretic.model"
+ },
+ {
+  "unit": "dow_chaos_heretic_wordbearers",
+  "failures": [
+   "proportions deviate 24% from the source [0.588, 1.0, 0.421] (ours [0.762, 1.0, 0.66])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.762,
+     1.0,
+     0.66
+    ],
+    "source": [
+     0.588,
+     1.0,
+     0.421
+    ],
+    "max_dev": 0.239
+   },
+   {
+    "check": "triangles",
+    "ours": 4633,
+    "source": 0,
+    "ratio": 4633.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "heretic_wordbearers.model"
+ },
+ {
+  "unit": "dow_chaos_noise_marine",
+  "failures": [
+   "proportions deviate 26% from the source [0.594, 1.0, 0.322] (ours [0.783, 1.0, 0.587])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.783,
+     1.0,
+     0.587
+    ],
+    "source": [
+     0.594,
+     1.0,
+     0.322
+    ],
+    "max_dev": 0.265
+   },
+   {
+    "check": "triangles",
+    "ours": 4573,
+    "source": 0,
+    "ratio": 4573.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "noise_marine_rare.model"
+ },
+ {
+  "unit": "dow_chaos_plague_marine",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_chaos_plague_marine'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "dow_chaos_wordbearers_havoc",
+  "failures": [
+   "proportions deviate 20% from the source [0.538, 1.0, 0.403] (ours [0.739, 1.0, 0.403])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.739,
+     1.0,
+     0.403
+    ],
+    "source": [
+     0.538,
+     1.0,
+     0.403
+    ],
+    "max_dev": 0.201
+   },
+   {
+    "check": "triangles",
+    "ours": 5791,
+    "source": 0,
+    "ratio": 5791.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "wordbearers_havoc.model"
+ },
+ {
+  "unit": "dow_chaos_wordbearers_marine",
+  "failures": [
+   "proportions deviate 22% from the source [0.6, 1.0, 0.45] (ours [0.818, 1.0, 0.626])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.818,
+     1.0,
+     0.626
+    ],
+    "source": [
+     0.6,
+     1.0,
+     0.45
+    ],
+    "max_dev": 0.218
+   },
+   {
+    "check": "triangles",
+    "ours": 4426,
+    "source": 0,
+    "ratio": 4426.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "wordbearers_marine.model"
+ },
+ {
+  "unit": "dow_chaos_wordbearers_sorcerer",
+  "failures": [
+   "proportions deviate 22% from the source [0.498, 1.0, 0.349] (ours [0.721, 1.0, 0.385])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.721,
+     1.0,
+     0.385
+    ],
+    "source": [
+     0.498,
+     1.0,
+     0.349
+    ],
+    "max_dev": 0.223
+   },
+   {
+    "check": "triangles",
+    "ours": 4404,
+    "source": 0,
+    "ratio": 4404.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "wordbearers_sorcerer.model"
+ },
+ {
+  "unit": "dow_eldar_autarch",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.698,
+     1.0,
+     0.318
+    ],
+    "source": [
+     0.66,
+     1.0,
+     0.39
+    ],
+    "max_dev": 0.072
+   },
+   {
+    "check": "triangles",
+    "ours": 4174,
+    "source": 0,
+    "ratio": 4174.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "autarch.model"
+ },
+ {
+  "unit": "dow_eldar_autarch_legendary",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.698,
+     1.0,
+     0.318
+    ],
+    "source": [
+     0.66,
+     1.0,
+     0.39
+    ],
+    "max_dev": 0.072
+   },
+   {
+    "check": "triangles",
+    "ours": 4174,
+    "source": 0,
+    "ratio": 4174.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "autarch_legendary.model"
+ },
+ {
+  "unit": "dow_eldar_autarch_ulthwe",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.698,
+     1.0,
+     0.318
+    ],
+    "source": [
+     0.66,
+     1.0,
+     0.39
+    ],
+    "max_dev": 0.072
+   },
+   {
+    "check": "triangles",
+    "ours": 4970,
+    "source": 0,
+    "ratio": 4970.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "autarch_ulthwe.model"
+ },
+ {
+  "unit": "dow_eldar_banshee_armour",
+  "failures": [
+   "proportions deviate 33% from the source [0.518, 1.0, 0.246] (ours [0.844, 1.0, 0.367])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.844,
+     1.0,
+     0.367
+    ],
+    "source": [
+     0.518,
+     1.0,
+     0.246
+    ],
+    "max_dev": 0.326
+   },
+   {
+    "check": "triangles",
+    "ours": 3528,
+    "source": 0,
+    "ratio": 3528.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_armour_common.model"
+ },
+ {
+  "unit": "dow_eldar_banshee_armour_common_campaign",
+  "failures": [
+   "proportions deviate 33% from the source [0.518, 1.0, 0.246] (ours [0.844, 1.0, 0.367])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.844,
+     1.0,
+     0.367
+    ],
+    "source": [
+     0.518,
+     1.0,
+     0.246
+    ],
+    "max_dev": 0.326
+   },
+   {
+    "check": "triangles",
+    "ours": 3528,
+    "source": 0,
+    "ratio": 3528.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_armour_common_campaign.model"
+ },
+ {
+  "unit": "dow_eldar_banshee_armour_epic_campaign",
+  "failures": [
+   "proportions deviate 33% from the source [0.534, 1.0, 0.273] (ours [0.863, 1.0, 0.354])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.863,
+     1.0,
+     0.354
+    ],
+    "source": [
+     0.534,
+     1.0,
+     0.273
+    ],
+    "max_dev": 0.329
+   },
+   {
+    "check": "triangles",
+    "ours": 4423,
+    "source": 0,
+    "ratio": 4423.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_armour_epic_campaign.model"
+ },
+ {
+  "unit": "dow_eldar_banshee_exarch_armour",
+  "failures": [
+   "proportions deviate 33% from the source [0.534, 1.0, 0.264] (ours [0.863, 1.0, 0.346])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.863,
+     1.0,
+     0.346
+    ],
+    "source": [
+     0.534,
+     1.0,
+     0.264
+    ],
+    "max_dev": 0.329
+   },
+   {
+    "check": "triangles",
+    "ours": 3888,
+    "source": 0,
+    "ratio": 3888.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_exarch_armour_common.model"
+ },
+ {
+  "unit": "dow_eldar_banshee_exarch_armour_rare_campaign",
+  "failures": [
+   "proportions deviate 33% from the source [0.534, 1.0, 0.264] (ours [0.863, 1.0, 0.346])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.863,
+     1.0,
+     0.346
+    ],
+    "source": [
+     0.534,
+     1.0,
+     0.264
+    ],
+    "max_dev": 0.329
+   },
+   {
+    "check": "triangles",
+    "ours": 4423,
+    "source": 0,
+    "ratio": 4423.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "banshee_exarch_armour_rare_campaign.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour",
+  "failures": [
+   "proportions deviate 30% from the source [0.435, 1.0, 0.335] (ours [0.735, 1.0, 0.439])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.735,
+     1.0,
+     0.439
+    ],
+    "source": [
+     0.435,
+     1.0,
+     0.335
+    ],
+    "max_dev": 0.3
+   },
+   {
+    "check": "triangles",
+    "ours": 7647,
+    "source": 0,
+    "ratio": 7647.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_last_stand.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour_epic_rubble",
+  "failures": [
+   "proportions deviate 33% from the source [0.557, 1.0, 0.406] (ours [0.884, 1.0, 0.44])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.884,
+     1.0,
+     0.44
+    ],
+    "source": [
+     0.557,
+     1.0,
+     0.406
+    ],
+    "max_dev": 0.327
+   },
+   {
+    "check": "triangles",
+    "ours": 2832,
+    "source": 0,
+    "ratio": 2832.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_epic_rubble.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour_helmet",
+  "failures": [
+   "proportions deviate 29% from the source [0.407, 1.0, 0.297] (ours [0.699, 1.0, 0.414])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.699,
+     1.0,
+     0.414
+    ],
+    "source": [
+     0.407,
+     1.0,
+     0.297
+    ],
+    "max_dev": 0.292
+   },
+   {
+    "check": "triangles",
+    "ours": 4762,
+    "source": 0,
+    "ratio": 4762.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_helmet.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour_helmet_rubble",
+  "failures": [
+   "proportions deviate 33% from the source [0.557, 1.0, 0.406] (ours [0.884, 1.0, 0.44])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.884,
+     1.0,
+     0.44
+    ],
+    "source": [
+     0.557,
+     1.0,
+     0.406
+    ],
+    "max_dev": 0.327
+   },
+   {
+    "check": "triangles",
+    "ours": 2832,
+    "source": 0,
+    "ratio": 2832.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_helmet_rubble.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour_last_stand",
+  "failures": [
+   "proportions deviate 21% from the source [0.435, 1.0, 0.335] (ours [0.641, 1.0, 0.528])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.641,
+     1.0,
+     0.528
+    ],
+    "source": [
+     0.435,
+     1.0,
+     0.335
+    ],
+    "max_dev": 0.206
+   },
+   {
+    "check": "triangles",
+    "ours": 4821,
+    "source": 0,
+    "ratio": 4821.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_last_stand.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour_rare_rubble",
+  "failures": [
+   "proportions deviate 33% from the source [0.557, 1.0, 0.406] (ours [0.884, 1.0, 0.44])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.884,
+     1.0,
+     0.44
+    ],
+    "source": [
+     0.557,
+     1.0,
+     0.406
+    ],
+    "max_dev": 0.327
+   },
+   {
+    "check": "triangles",
+    "ours": 2832,
+    "source": 0,
+    "ratio": 2832.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_rare_rubble.model"
+ },
+ {
+  "unit": "dow_eldar_farseer_armour_taldeer",
+  "failures": [
+   "proportions deviate 26% from the source [0.454, 1.0, 0.44] (ours [0.71, 1.0, 0.564])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.71,
+     1.0,
+     0.564
+    ],
+    "source": [
+     0.454,
+     1.0,
+     0.44
+    ],
+    "max_dev": 0.256
+   },
+   {
+    "check": "triangles",
+    "ours": 6886,
+    "source": 0,
+    "ratio": 6886.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "farseer_armour_taldeer.model"
+ },
+ {
+  "unit": "dow_eldar_guardian",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_eldar_guardian'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "dow_eldar_guardian_ulthwe",
+  "failures": [
+   "proportions deviate 23% from the source [0.43, 1.0, 0.297] (ours [0.664, 1.0, 0.292])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.664,
+     1.0,
+     0.292
+    ],
+    "source": [
+     0.43,
+     1.0,
+     0.297
+    ],
+    "max_dev": 0.234
+   },
+   {
+    "check": "triangles",
+    "ours": 3360,
+    "source": 0,
+    "ratio": 3360.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "guardian_ulthwe.model"
+ },
+ {
+  "unit": "dow_eldar_ranger_armour",
+  "failures": [
+   "proportions deviate 21% from the source [0.793, 1.0, 0.399] (ours [1.0, 0.96, 0.566])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.96,
+     0.566
+    ],
+    "source": [
+     0.793,
+     1.0,
+     0.399
+    ],
+    "max_dev": 0.207
+   },
+   {
+    "check": "triangles",
+    "ours": 3228,
+    "source": 0,
+    "ratio": 3228.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ranger_armour_common.model"
+ },
+ {
+  "unit": "dow_eldar_ranger_exarch_armour",
+  "failures": [
+   "proportions deviate 21% from the source [0.793, 1.0, 0.399] (ours [1.0, 0.96, 0.566])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.96,
+     0.566
+    ],
+    "source": [
+     0.793,
+     1.0,
+     0.399
+    ],
+    "max_dev": 0.207
+   },
+   {
+    "check": "triangles",
+    "ours": 3410,
+    "source": 0,
+    "ratio": 3410.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ranger_exarch_armour_common.model"
+ },
+ {
+  "unit": "dow_eldar_warlock",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.896,
+     0.422
+    ],
+    "source": [
+     0.848,
+     1.0,
+     0.341
+    ],
+    "max_dev": 0.152
+   },
+   {
+    "check": "triangles",
+    "ours": 3920,
+    "source": 0,
+    "ratio": 3920.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warlock.model"
+ },
+ {
+  "unit": "dow_eldar_warlock_ulthwe",
+  "failures": [
+   "proportions deviate 22% from the source [0.621, 1.0, 0.253] (ours [0.839, 1.0, 0.41])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.839,
+     1.0,
+     0.41
+    ],
+    "source": [
+     0.621,
+     1.0,
+     0.253
+    ],
+    "max_dev": 0.218
+   },
+   {
+    "check": "triangles",
+    "ours": 3444,
+    "source": 0,
+    "ratio": 3444.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warlock_ulthwe.model"
+ },
+ {
+  "unit": "dow_eldar_warlock_ulthwe_seercouncil",
+  "failures": [
+   "proportions deviate 25% from the source [0.682, 1.0, 0.273] (ours [0.936, 1.0, 0.39])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.936,
+     1.0,
+     0.39
+    ],
+    "source": [
+     0.682,
+     1.0,
+     0.273
+    ],
+    "max_dev": 0.254
+   },
+   {
+    "check": "triangles",
+    "ours": 4074,
+    "source": 0,
+    "ratio": 4074.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warlock_ulthwe_seercouncil.model"
+ },
+ {
+  "unit": "dow_eldar_warp_spider_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.681,
+     1.0,
+     0.274
+    ],
+    "source": [
+     0.657,
+     1.0,
+     0.336
+    ],
+    "max_dev": 0.062
+   },
+   {
+    "check": "triangles",
+    "ours": 2645,
+    "source": 0,
+    "ratio": 2645.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warp_spider_armour_common.model"
+ },
+ {
+  "unit": "dow_eldar_warp_spider_armour_common_campaign",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.681,
+     1.0,
+     0.274
+    ],
+    "source": [
+     0.657,
+     1.0,
+     0.336
+    ],
+    "max_dev": 0.062
+   },
+   {
+    "check": "triangles",
+    "ours": 2645,
+    "source": 0,
+    "ratio": 2645.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warp_spider_armour_common_campaign.model"
+ },
+ {
+  "unit": "dow_eldar_warp_spider_armour_rare_campaign",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.681,
+     1.0,
+     0.274
+    ],
+    "source": [
+     0.657,
+     1.0,
+     0.336
+    ],
+    "max_dev": 0.062
+   },
+   {
+    "check": "triangles",
+    "ours": 2645,
+    "source": 0,
+    "ratio": 2645.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warp_spider_armour_rare_campaign.model"
+ },
+ {
+  "unit": "dow_eldar_warp_spider_exarch_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.678,
+     1.0,
+     0.281
+    ],
+    "source": [
+     0.657,
+     1.0,
+     0.345
+    ],
+    "max_dev": 0.064
+   },
+   {
+    "check": "triangles",
+    "ours": 4145,
+    "source": 0,
+    "ratio": 4145.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warp_spider_exarch_armour_common.model"
+ },
+ {
+  "unit": "dow_eldar_warp_spider_exarch_armour_rare_campaign",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.678,
+     1.0,
+     0.281
+    ],
+    "source": [
+     0.657,
+     1.0,
+     0.345
+    ],
+    "max_dev": 0.064
+   },
+   {
+    "check": "triangles",
+    "ours": 4145,
+    "source": 0,
+    "ratio": 4145.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warp_spider_exarch_armour_rare_campaign.model"
+ },
+ {
+  "unit": "dow_ig_catachan_sergeant",
+  "failures": [
+   "proportions deviate 34% from the source [0.52, 1.0, 0.249] (ours [0.859, 1.0, 0.478])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.859,
+     1.0,
+     0.478
+    ],
+    "source": [
+     0.52,
+     1.0,
+     0.249
+    ],
+    "max_dev": 0.339
+   },
+   {
+    "check": "triangles",
+    "ours": 2669,
+    "source": 0,
+    "ratio": 2669.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "catachan_sergeant.model"
+ },
+ {
+  "unit": "dow_ig_commissar_armour",
+  "failures": [
+   "proportions deviate 35% from the source [0.517, 1.0, 0.292] (ours [0.866, 1.0, 0.53])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.866,
+     1.0,
+     0.53
+    ],
+    "source": [
+     0.517,
+     1.0,
+     0.292
+    ],
+    "max_dev": 0.349
+   },
+   {
+    "check": "triangles",
+    "ours": 4332,
+    "source": 0,
+    "ratio": 4332.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "commissar_armour.model"
+ },
+ {
+  "unit": "dow_ig_death_korps_grenadier",
+  "failures": [
+   "proportions deviate 39% from the source [0.431, 1.0, 0.315] (ours [0.825, 1.0, 0.455])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.825,
+     1.0,
+     0.455
+    ],
+    "source": [
+     0.431,
+     1.0,
+     0.315
+    ],
+    "max_dev": 0.394
+   },
+   {
+    "check": "triangles",
+    "ours": 1478,
+    "source": 0,
+    "ratio": 1478.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "death_korps_grenadier.model"
+ },
+ {
+  "unit": "dow_ig_death_korps_infantry",
+  "failures": [
+   "proportions deviate 35% from the source [0.509, 1.0, 0.36] (ours [0.858, 1.0, 0.56])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.858,
+     1.0,
+     0.56
+    ],
+    "source": [
+     0.509,
+     1.0,
+     0.36
+    ],
+    "max_dev": 0.349
+   },
+   {
+    "check": "triangles",
+    "ours": 2652,
+    "source": 0,
+    "ratio": 2652.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "death_korps_infantry.model"
+ },
+ {
+  "unit": "dow_ig_death_korps_ogryn",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.761,
+     0.43
+    ],
+    "source": [
+     1.0,
+     0.802,
+     0.4
+    ],
+    "max_dev": 0.041
+   },
+   {
+    "check": "triangles",
+    "ours": 3933,
+    "source": 0,
+    "ratio": 3933.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "death_korps_ogryn.model"
+ },
+ {
+  "unit": "dow_ig_deathkorps_lord_general",
+  "failures": [
+   "proportions deviate 41% from the source [0.516, 1.0, 0.82] (ours [0.93, 1.0, 0.494])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.93,
+     1.0,
+     0.494
+    ],
+    "source": [
+     0.516,
+     1.0,
+     0.82
+    ],
+    "max_dev": 0.414
+   },
+   {
+    "check": "triangles",
+    "ours": 2856,
+    "source": 0,
+    "ratio": 2856.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "deathkorps_lord_general.model"
+ },
+ {
+  "unit": "dow_ig_general_armour",
+  "failures": [
+   "proportions deviate 32% from the source [0.602, 1.0, 0.512] (ours [0.924, 1.0, 0.617])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.924,
+     1.0,
+     0.617
+    ],
+    "source": [
+     0.602,
+     1.0,
+     0.512
+    ],
+    "max_dev": 0.322
+   },
+   {
+    "check": "triangles",
+    "ours": 3687,
+    "source": 0,
+    "ratio": 3687.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "general_armour_epic.model"
+ },
+ {
+  "unit": "dow_ig_ig_armour",
+  "failures": [
+   "proportions deviate 36% from the source [0.586, 1.0, 0.225] (ours [0.944, 1.0, 0.456])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.944,
+     1.0,
+     0.456
+    ],
+    "source": [
+     0.586,
+     1.0,
+     0.225
+    ],
+    "max_dev": 0.358
+   },
+   {
+    "check": "triangles",
+    "ours": 2666,
+    "source": 0,
+    "ratio": 2666.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ig_armour.model"
+ },
+ {
+  "unit": "dow_ig_ig_armour_texture_mirror_test",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.629,
+     0.293
+    ],
+    "source": [
+     1.0,
+     0.722,
+     0.161
+    ],
+    "max_dev": 0.132
+   },
+   {
+    "check": "triangles",
+    "ours": 6133,
+    "source": 0,
+    "ratio": 6133.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ig_armour_texture_mirror_test.model"
+ },
+ {
+  "unit": "dow_ig_ig_ogyrn",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.759,
+     0.376
+    ],
+    "source": [
+     1.0,
+     0.799,
+     0.29
+    ],
+    "max_dev": 0.086
+   },
+   {
+    "check": "triangles",
+    "ours": 3149,
+    "source": 0,
+    "ratio": 3149.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ig_ogyrn.model"
+ },
+ {
+  "unit": "dow_ig_lord_commissar_armour",
+  "failures": [
+   "proportions deviate 35% from the source [0.563, 1.0, 0.339] (ours [0.915, 1.0, 0.52])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.915,
+     1.0,
+     0.52
+    ],
+    "source": [
+     0.563,
+     1.0,
+     0.339
+    ],
+    "max_dev": 0.352
+   },
+   {
+    "check": "triangles",
+    "ours": 3896,
+    "source": 0,
+    "ratio": 3896.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "lord_commissar_armour_common.model"
+ },
+ {
+  "unit": "dow_ig_stormtrooper_armour",
+  "failures": [
+   "proportions deviate 34% from the source [0.545, 1.0, 0.198] (ours [0.881, 1.0, 0.452])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.881,
+     1.0,
+     0.452
+    ],
+    "source": [
+     0.545,
+     1.0,
+     0.198
+    ],
+    "max_dev": 0.336
+   },
+   {
+    "check": "triangles",
+    "ours": 2033,
+    "source": 0,
+    "ratio": 2033.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "stormtrooper_armour.model"
+ },
+ {
+  "unit": "dow_ig_stormtrooper_armour_forwb",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.686,
+     0.396
+    ],
+    "source": [
+     1.0,
+     0.773,
+     0.431
+    ],
+    "max_dev": 0.087
+   },
+   {
+    "check": "triangles",
+    "ours": 5806,
+    "source": 0,
+    "ratio": 5806.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "stormtrooper_armour_forwb.model"
+ },
+ {
+  "unit": "dow_ig_witchhunter_armour",
+  "failures": [
+   "proportions deviate 35% from the source [0.592, 1.0, 0.38] (ours [0.939, 1.0, 0.532])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.939,
+     1.0,
+     0.532
+    ],
+    "source": [
+     0.592,
+     1.0,
+     0.38
+    ],
+    "max_dev": 0.347
+   },
+   {
+    "check": "triangles",
+    "ours": 8545,
+    "source": 0,
+    "ratio": 8545.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "witchhunter_armour_common.model"
+ },
+ {
+  "unit": "dow_ig_witchhunter_armour_epic_textures",
+  "failures": [
+   "proportions deviate 35% from the source [0.577, 1.0, 0.271] (ours [0.922, 1.0, 0.478])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.922,
+     1.0,
+     0.478
+    ],
+    "source": [
+     0.577,
+     1.0,
+     0.271
+    ],
+    "max_dev": 0.345
+   },
+   {
+    "check": "triangles",
+    "ours": 16217,
+    "source": 0,
+    "ratio": 16217.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "witchhunter_armour_epic_textures.model"
+ },
+ {
+  "unit": "dow_ig_witchhunter_deathkorps",
+  "failures": [
+   "proportions deviate 36% from the source [0.59, 1.0, 0.271] (ours [0.949, 1.0, 0.445])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.949,
+     1.0,
+     0.445
+    ],
+    "source": [
+     0.59,
+     1.0,
+     0.271
+    ],
+    "max_dev": 0.359
+   },
+   {
+    "check": "triangles",
+    "ours": 8944,
+    "source": 0,
+    "ratio": 8944.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "witchhunter_deathkorps.model"
+ },
+ {
+  "unit": "dow_necron_necron_overlord",
+  "failures": [
+   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "dow_necron_night_bringer",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.536,
+     1.0,
+     0.515
+    ],
+    "source": [
+     0.536,
+     1.0,
+     0.515
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3215,
+    "source": 0,
+    "ratio": 3215.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "night_bringer.model"
+ },
+ {
+  "unit": "dow_ork_incognito_boy_space_marine",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.631,
+     0.376
+    ],
+    "source": [
+     1.0,
+     0.563,
+     0.349
+    ],
+    "max_dev": 0.068
+   },
+   {
+    "check": "triangles",
+    "ours": 7724,
+    "source": 0,
+    "ratio": 7724.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "incognito_boy_space_marine.model"
+ },
+ {
+  "unit": "dow_ork_kommandoboyz_armour",
+  "failures": [
+   "no DoW2 source part found for mesh 'shoota.001'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "dow_ork_loota_leader_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.727,
+     0.419
+    ],
+    "source": [
+     1.0,
+     0.722,
+     0.457
+    ],
+    "max_dev": 0.038
+   },
+   {
+    "check": "triangles",
+    "ours": 1741,
+    "source": 0,
+    "ratio": 1741.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "loota_leader_armour_common.model"
+ },
+ {
+  "unit": "dow_ork_nob_kommando_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.841,
+     1.0,
+     0.823
+    ],
+    "source": [
+     0.998,
+     0.952,
+     1.0
+    ],
+    "max_dev": 0.177
+   },
+   {
+    "check": "triangles",
+    "ours": 1993,
+    "source": 0,
+    "ratio": 1993.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "nob_kommando_armour_common.model"
+ },
+ {
+  "unit": "dow_ork_slugga_nob_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.935,
+     0.789
+    ],
+    "source": [
+     0.987,
+     1.0,
+     0.708
+    ],
+    "max_dev": 0.081
+   },
+   {
+    "check": "triangles",
+    "ours": 1703,
+    "source": 0,
+    "ratio": 1703.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "slugga_nob_armour_common.model"
+ },
+ {
+  "unit": "dow_ork_storm_nob_armour",
+  "failures": [
+   "proportions deviate 23% from the source [0.947, 1.0, 0.822] (ours [1.0, 0.773, 0.636])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.773,
+     0.636
+    ],
+    "source": [
+     0.947,
+     1.0,
+     0.822
+    ],
+    "max_dev": 0.227
+   },
+   {
+    "check": "triangles",
+    "ours": 2233,
+    "source": 0,
+    "ratio": 2233.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "storm_nob_armour_common.model"
+ },
+ {
+  "unit": "dow_ork_stormboyz_armour",
+  "failures": [
+   "no DoW2 source part found for mesh 'shoota.001'"
+  ],
+  "checks": []
+ },
+ {
+  "unit": "dow_ork_warboss_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.711,
+     0.479
+    ],
+    "source": [
+     1.0,
+     0.798,
+     0.518
+    ],
+    "max_dev": 0.087
+   },
+   {
+    "check": "triangles",
+    "ours": 2854,
+    "source": 0,
+    "ratio": 2854.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warboss_armour_common.model"
+ },
+ {
+  "unit": "dow_ork_warboss_armour_freebooter",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.732,
+     0.53
+    ],
+    "source": [
+     1.0,
+     0.743,
+     0.589
+    ],
+    "max_dev": 0.059
+   },
+   {
+    "check": "triangles",
+    "ours": 3045,
+    "source": 0,
+    "ratio": 3045.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warboss_armour_freebooter.model"
+ },
+ {
+  "unit": "dow_ork_weirdboy",
+  "failures": [
+   "proportions deviate 56% from the source [0.521, 1.0, 0.996] (ours [1.0, 0.757, 0.438])"
+  ],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.757,
+     0.438
+    ],
+    "source": [
+     0.521,
+     1.0,
+     0.996
+    ],
+    "max_dev": 0.558
+   },
+   {
+    "check": "triangles",
+    "ours": 4166,
+    "source": 0,
+    "ratio": 4166.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "weirdboy.model"
+ },
+ {
+  "unit": "dow_tau_airburst_fragmentation_launcher_left",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.25,
+     1.0,
+     0.401
+    ],
+    "source": [
+     0.25,
+     1.0,
+     0.401
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 863,
+    "source": 0,
+    "ratio": 863.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "airburst_fragmentation_launcher_left.model"
+ },
+ {
+  "unit": "dow_tau_airburst_fragmentation_launcher_right",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.25,
+     1.0,
+     0.401
+    ],
+    "source": [
+     0.25,
+     1.0,
+     0.401
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 863,
+    "source": 0,
+    "ratio": 863.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "airburst_fragmentation_launcher_right.model"
+ },
+ {
+  "unit": "dow_tau_burst_cannon_left",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.233,
+     1.0,
+     0.231
+    ],
+    "source": [
+     0.233,
+     1.0,
+     0.232
+    ],
+    "max_dev": 0.001
+   },
+   {
+    "check": "triangles",
+    "ours": 791,
+    "source": 0,
+    "ratio": 791.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "burst_cannon_left.model"
+ },
+ {
+  "unit": "dow_tau_burst_cannon_right",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.233,
+     1.0,
+     0.231
+    ],
+    "source": [
+     0.233,
+     1.0,
+     0.232
+    ],
+    "max_dev": 0.001
+   },
+   {
+    "check": "triangles",
+    "ours": 791,
+    "source": 0,
+    "ratio": 791.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "burst_cannon_right.model"
+ },
+ {
+  "unit": "dow_tau_missile_launcher_fragmentation",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.375,
+     0.447
+    ],
+    "source": [
+     1.0,
+     0.375,
+     0.447
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 972,
+    "source": 0,
+    "ratio": 972.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "missile_launcher_fragmentation.model"
+ },
+ {
+  "unit": "dow_tau_plasma_rifle_left",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.148,
+     1.0,
+     0.363
+    ],
+    "source": [
+     0.148,
+     1.0,
+     0.363
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 770,
+    "source": 0,
+    "ratio": 770.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "plasma_rifle_left.model"
+ },
+ {
+  "unit": "dow_tau_plasma_rifle_right",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.148,
+     1.0,
+     0.363
+    ],
+    "source": [
+     0.148,
+     1.0,
+     0.363
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 770,
+    "source": 0,
+    "ratio": 770.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "plasma_rifle_right.model"
+ },
+ {
+  "unit": "dow_tau_shield_iridium_plated_combat",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.285,
+     1.0,
+     0.499
+    ],
+    "source": [
+     0.285,
+     1.0,
+     0.499
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 986,
+    "source": 0,
+    "ratio": 986.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "shield_iridium_plated_combat.model"
+ },
+ {
+  "unit": "dow_tau_shield_repulser",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.373,
+     0.84,
+     1.0
+    ],
+    "source": [
+     0.373,
+     0.84,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 1518,
+    "source": 0,
+    "ratio": 1518.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "shield_repulser.model"
+ },
+ {
+  "unit": "dow_tau_shield_standard",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.304,
+     1.0,
+     1.0
+    ],
+    "source": [
+     0.304,
+     1.0,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 638,
+    "source": 0,
+    "ratio": 638.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "shield_standard.model"
+ },
+ {
+  "unit": "dow_tau_xv8_agile_crisis_suit",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "source": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 5976,
+    "source": 0,
+    "ratio": 5976.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_agile_crisis_suit.model"
+ },
+ {
+  "unit": "dow_tau_xv8_armoured_crisis_suit",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.59,
+     1.0,
+     0.458
+    ],
+    "source": [
+     0.59,
+     1.0,
+     0.458
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 6494,
+    "source": 0,
+    "ratio": 6494.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_armoured_crisis_suit.model"
+ },
+ {
+  "unit": "dow_tau_xv8_command_crisis_suit",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.566,
+     1.0,
+     0.44
+    ],
+    "source": [
+     0.566,
+     1.0,
+     0.44
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 6172,
+    "source": 0,
+    "ratio": 6172.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_command_crisis_suit.model"
+ },
+ {
+  "unit": "dow_tau_xv8_default_crisis_suit",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "source": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 5976,
+    "source": 0,
+    "ratio": 5976.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_default_crisis_suit.model"
+ },
+ {
+  "unit": "dow_tau_xv8_light_crisis_suit",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "source": [
+     0.575,
+     1.0,
+     0.453
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 5976,
+    "source": 0,
+    "ratio": 5976.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "xv8_light_crisis_suit.model"
+ },
+ {
+  "unit": "dow_tyranid_carnifex_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.496,
+     0.616,
+     1.0
+    ],
+    "source": [
+     0.487,
+     0.637,
+     1.0
+    ],
+    "max_dev": 0.021
+   },
+   {
+    "check": "triangles",
+    "ours": 6812,
+    "source": 0,
+    "ratio": 6812.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "carnifex_armour_carnage.model"
+ },
+ {
+  "unit": "dow_tyranid_genestealer_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.976,
+     0.929
+    ],
+    "source": [
+     1.0,
+     0.976,
+     0.929
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3247,
+    "source": 0,
+    "ratio": 3247.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "genestealer_armour_common.model"
+ },
+ {
+  "unit": "dow_tyranid_hive_tyrant_alpha_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "source": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 7373,
+    "source": 0,
+    "ratio": 7373.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "hive_tyrant_alpha_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_hive_tyrant_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "source": [
+     0.555,
+     0.599,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 7373,
+    "source": 0,
+    "ratio": 7373.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "hive_tyrant_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_hormagaunt_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.471,
+     0.601,
+     1.0
+    ],
+    "source": [
+     0.471,
+     0.601,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3800,
+    "source": 0,
+    "ratio": 3800.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "hormagaunt_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_lictor_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.702,
+     0.807,
+     1.0
+    ],
+    "source": [
+     0.702,
+     0.807,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 6147,
+    "source": 0,
+    "ratio": 6147.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "lictor_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_ravener_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.52,
+     0.562,
+     1.0
+    ],
+    "source": [
+     0.521,
+     0.562,
+     1.0
+    ],
+    "max_dev": 0.001
+   },
+   {
+    "check": "triangles",
+    "ours": 5473,
+    "source": 0,
+    "ratio": 5473.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "ravener_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_termagaunt_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.257,
+     0.481,
+     1.0
+    ],
+    "source": [
+     0.257,
+     0.481,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3867,
+    "source": 0,
+    "ratio": 3867.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "termagaunt_armour_common.model"
+ },
+ {
+  "unit": "dow_tyranid_tyrant_guard_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.619,
+     0.757,
+     1.0
+    ],
+    "source": [
+     0.619,
+     0.757,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 5572,
+    "source": 0,
+    "ratio": 5572.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "tyrant_guard_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_warrior_brood_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.394,
+     0.627,
+     1.0
+    ],
+    "source": [
+     0.394,
+     0.627,
+     1.0
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 3954,
+    "source": 0,
+    "ratio": 3954.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "warrior_brood_armour_glow.model"
+ },
+ {
+  "unit": "dow_tyranid_zoanthrope_armour",
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.263,
+     1.0,
+     0.536
+    ],
+    "source": [
+     0.263,
+     1.0,
+     0.536
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 4225,
+    "source": 0,
+    "ratio": 4225.0
+   },
+   {
+    "check": "skeleton",
+    "class": "creature",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "zoanthrope_armour_glow.model"
+ }
+]
