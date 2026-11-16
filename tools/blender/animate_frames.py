@@ -274,24 +274,47 @@ def clip_melee():
 # the engine's state machine selects by.
 
 
+def arms_ready():
+    """Both hands up on the weapon.
+
+    XCOM's cover poses are built around a shouldered rifle: the arms are up and the elbows
+    are bent, which is also what makes the attached weapon read as held rather than stuck to
+    the hand. `arms_down()` leaves the hands at the hips, which reads as standing at ease.
+    """
+    for side, sgn in (("L", 1), ("R", -1)):
+        ua = pose.get(f"upperarm_{side}")
+        if ua is None:
+            continue
+        rest = (bones[f"upperarm_{side}"].tail_local - bones[f"upperarm_{side}"].head_local)
+        if abs(rest.x) > abs(rest.z):
+            rot(ua, (0, 1, 0), sgn * 58)
+        rot(ua, (1, 0, 0), 48)
+        la = pose.get(f"lowerarm_{side}")
+        if la is not None:
+            rot(la, (1, 0, 0), -62)
+
+
 def _crouch(depth=1.0):
-    """Full low-cover crouch: hips down toward the heels, torso folded over the thighs."""
+    """Low-cover crouch: hips back and down, torso UPRIGHT against the wall.
+
+    XCOM's LowLeft/LowRight pose is not a deep squat — the soldier keeps its back to the wall
+    with the head up and the weapon shouldered, and only the legs fold. A forward-folded squat
+    (the DoW2 idle crouch) reads as hiding in the open instead of using the cover.
+    """
     reset()
-    arms_down()
+    arms_ready()
     for side in ("L", "R"):
         th = pose.get(f"thigh_{side}")
         sh = pose.get(f"shin_{side}")
         ft = pose.get(f"foot_{side}")
         if th is not None:
-            rot(th, (1, 0, 0), -84 * depth)
+            rot(th, (1, 0, 0), -68 * depth)
         if sh is not None:
-            rot(sh, (1, 0, 0), 108 * depth)
+            rot(sh, (1, 0, 0), 88 * depth)
         if ft is not None:
-            rot(ft, (1, 0, 0), -24 * depth)
-        ua = pose.get(f"upperarm_{side}")
-        if ua is not None:
-            rot(ua, (1, 0, 0), 22 * depth)
-    for name, deg in (("spine_01", 9), ("spine_02", 13), ("chest", 7)):
+            rot(ft, (1, 0, 0), -20 * depth)
+    # torso stays close to upright: the back is against the wall, not folded over the knees
+    for name, deg in (("spine_01", 5), ("spine_02", 7), ("chest", 3)):
         pb = pose.get(name)
         if pb is not None:
             rot(pb, (1, 0, 0), deg * depth)
@@ -300,7 +323,7 @@ def _crouch(depth=1.0):
     # in KNOWN-ISSUES; it is a cosmetic 3-6 cm there and a visible 46 cm here.)
     root = pose.get("root")
     if root is not None:
-        root.location = (0, -0.46 * depth, 0)
+        root.location = (0, -0.40 * depth, 0)
 
 
 def _lean(side, degrees):
@@ -340,7 +363,7 @@ def cover_high(side):
     """High cover: standing, leaning around the edge. No crouch — XCOM stands here."""
     for i, f in enumerate((1, 17, 33)):
         reset()
-        arms_down()
+        arms_ready()
         _lean(side, 8 + (1 if i == 1 else 0))
         for pb in pose:
             key(pb, f)
@@ -451,7 +474,7 @@ def cover_fire(side):
     """Fire from high cover: the standing lean holds, the arms take the recoil."""
     for i, f in enumerate((1, 5, 13)):
         reset()
-        arms_down()
+        arms_ready()
         _lean(side, 8)
         k = (0.0, 1.0, 0.3)[i]
         for s in ("L", "R"):
