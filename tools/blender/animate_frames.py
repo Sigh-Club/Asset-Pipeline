@@ -36,6 +36,12 @@ arms = [o for o in bpy.data.objects if o.type == "ARMATURE"]
 if not arms:
     raise SystemExit("no armature in the GLB")
 arm = arms[0]
+# Drop any clips the incoming GLB already carries. Without this the authored set is added
+# on top of the imported one and the export accumulates duplicates (measured: 25 clips
+# instead of 16), so a rebuild looks like it worked while the engine sees stale actions.
+for _act in list(bpy.data.actions):
+    bpy.data.actions.remove(_act)
+arm.animation_data_clear()
 bpy.context.view_layer.objects.active = arm
 bpy.context.scene.render.fps = A.fps
 
@@ -257,6 +263,102 @@ def clip_melee():
             key(pb, f)
 
 
+# ---------------------------------------------------------------- cover family
+# XCOM's own taxonomy (XComAnimNodeCover: eAnimCover_LowLeft/LowRight/HighLeft/
+# HighRight). There is no crouch-open or crouch-high state in the shipped game: crouching
+# exists ONLY as a low-cover state, and high cover stands and leans. That is the rule the
+# owner asked for, and it is why this family is split the way it is.
+#
+# Tier A — authored here. Tier B (retargeted DoW2 motion) replaces the *motion* when the
+# hkx track decoder lands; the clip names stay, because they are the XCOM family members
+# the engine's state machine selects by.
+
+
+def _crouch(depth=1.0):
+    """Full low-cover crouch: hips down toward the heels, torso folded over the thighs."""
+    reset()
+    arms_down()
+    for side in ("L", "R"):
+        th = pose.get(f"thigh_{side}")
+        sh = pose.get(f"shin_{side}")
+        ft = pose.get(f"foot_{side}")
+        if th is not None:
+            rot(th, (1, 0, 0), -84 * depth)
+        if sh is not None:
+            rot(sh, (1, 0, 0), 108 * depth)
+        if ft is not None:
+            rot(ft, (1, 0, 0), -24 * depth)
+        ua = pose.get(f"upperarm_{side}")
+        if ua is not None:
+            rot(ua, (1, 0, 0), 22 * depth)
+    for name, deg in (("spine_01", 9), ("spine_02", 13), ("chest", 7)):
+        pb = pose.get(name)
+        if pb is not None:
+            rot(pb, (1, 0, 0), deg * depth)
+    # The root bone points up, so its local Y is world Z; a negative Y offset lowers the
+    # body. (The gait clips write the bob on local Z, which is horizontal — see the note
+    # in KNOWN-ISSUES; it is a cosmetic 3-6 cm there and a visible 46 cm here.)
+    root = pose.get("root")
+    if root is not None:
+        root.location = (0, -0.46 * depth, 0)
+
+
+def _lean(side, degrees):
+    """Roll the torso laterally about the body's forward axis — XCOM's cover lean."""
+    sgn = 1.0 if side == "L" else -1.0
+    for name, scale in (("spine_02", 1.0), ("spine_03", 0.7), ("chest", 0.5)):
+        pb = pose.get(name)
+        if pb is not None:
+            rot(pb, (0, 1, 0), sgn * degrees * scale)
+    hd = pose.get("head")
+    if hd is not None:
+        rot(hd, (0, 1, 0), -sgn * degrees * 0.35)
+
+
+def crouch_idle():
+    for i, f in enumerate((1, 17, 33)):
+        _crouch()
+        b = 1.4 if i == 1 else -1.0
+        for name in ("spine_01", "chest"):
+            pb = pose.get(name)
+            if pb is not None:
+                rot(pb, (1, 0, 0), b * 0.7)
+        for pb in pose:
+            key(pb, f)
+
+
+def cover_low(side):
+    """Low cover: crouched, back to the wall, leaning around the edge on `side`."""
+    for i, f in enumerate((1, 17, 33)):
+        _crouch()
+        _lean(side, 16 + (2 if i == 1 else 0))
+        for pb in pose:
+            key(pb, f)
+
+
+def cover_high(side):
+    """High cover: standing, leaning around the edge. No crouch — XCOM stands here."""
+    for i, f in enumerate((1, 17, 33)):
+        reset()
+        arms_down()
+        _lean(side, 20 + (2 if i == 1 else 0))
+        for pb in pose:
+            key(pb, f)
+
+
+def peek(side):
+    """Peek out from low cover: rise slightly and lean further, then settle back."""
+    for i, f in enumerate((1, 7, 13, 25)):
+        _crouch(depth=1.0 if i != 1 else 0.86)
+        _lean(side, 26 if i == 1 else 12)
+        if i == 1:
+            hd = pose.get("head")
+            if hd is not None:
+                rot(hd, (0, 0, 1), 10 if side == "L" else -10)
+        for pb in pose:
+            key(pb, f)
+
+
 CLIPS = {
     "aim": clip_aim,
     "idle": clip_idle,
@@ -267,6 +369,14 @@ CLIPS = {
     "hit": clip_hit,
     "death": clip_death,
     "melee": clip_melee,
+    # cover family — the state machine selects these by XCOM family name
+    "crouch_idle": crouch_idle,
+    "cover_low_l_idle": lambda: cover_low("L"),
+    "cover_low_r_idle": lambda: cover_low("R"),
+    "cover_high_l_idle": lambda: cover_high("L"),
+    "cover_high_r_idle": lambda: cover_high("R"),
+    "peek_l": lambda: peek("L"),
+    "peek_r": lambda: peek("R"),
 }
 
 arm.animation_data_create()
