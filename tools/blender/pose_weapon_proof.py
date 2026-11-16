@@ -63,28 +63,67 @@ hand_l = bone_world("hand_L")
 print(f"HANDS right={tuple(round(v, 3) for v in hand_r) if hand_r else None} "
       f"left={tuple(round(v, 3) for v in hand_l) if hand_l else None}")
 
-# ---- weapon: same placement the engine uses (grip at the right hand, barrel along
-# right→left). Imported separately and positioned in world space.
+# ---- weapon: same placement the engine uses (grip at the right hand, barrel along the body's
+# forward), then the same analytic two-bone IK for the support hand onto the foregrip.
 before = set(bpy.data.objects)
 bpy.ops.import_scene.gltf(filepath=str(Path(A.weapon).resolve()))
 weapon = next(o for o in bpy.data.objects if o not in before and o.type == "MESH")
 weapon.parent = None
 
-if hand_r and hand_l:
-    direction = (hand_l - hand_r)
-    print(f"BARREL axis (right->left) = {tuple(round(v, 3) for v in direction.normalized())}")
-    direction.normalize()
-    grip = hand_r + direction * 0.06
-    weapon.matrix_world = (
-        Quaternion(Vector((0, 0, 1)).cross(direction), Vector((0, 0, 1)).angle(direction)).to_matrix().to_4x4()
-        if direction.length > 1e-6 else weapon.matrix_world.copy()
-    )
-    # Blender is Z-up: the engine's +Z barrel maps to Blender's +Z as well, so the same
-    # setFromUnitVectors logic applies (rotate +Z onto the barrel direction).
-    rot = Vector((0, 0, 1)).rotation_difference(direction)
-    weapon.matrix_world = rot.to_matrix().to_4x4()
-    weapon.matrix_world.translation = grip
-bpy.context.view_layer.update()
+FORWARD = Vector((0, -1, 0))   # this rig's forward (gripping hands sit at negative Y)
+
+if hand_r:
+    weapon.matrix_world = Vector((0, 0, 1)).rotation_difference(FORWARD).to_matrix().to_4x4()
+    weapon.matrix_world.translation = hand_r
+    bpy.context.view_layer.update()
+    box = [weapon.matrix_world @ v.co for v in weapon.data.vertices]
+    zs = [v.z for v in box]
+    foregrip = hand_r + FORWARD * (max(zs) - min(zs)) * 0.45 + Vector((0, 0, 0.03))
+    print(f"FOREGRIP {tuple(round(v, 3) for v in foregrip)}")
+
+    # two-bone IK: upper arm -> forearm onto the foregrip, elbow placed by a pole hint
+    def bone_head(name):
+        pb = arm.pose.bones.get(name)
+        return arm.matrix_world @ pb.head if pb else None
+
+    def aim(pb, target):
+        if pb is None:
+            return
+        bpy.context.view_layer.update()
+        head = pb.matrix.translation.copy()
+        cur = (pb.matrix.to_3x3() @ Vector((0, 1, 0))).normalized()
+        des = (target - head)
+        if des.length < 1e-6:
+            return
+        rot = cur.rotation_difference(des.normalized())
+        m = rot.to_matrix().to_4x4() @ pb.matrix
+        m.translation = head
+        pb.matrix = m
+        bpy.context.view_layer.update()
+
+    up = arm.pose.bones.get("upperarm_L")
+    lo = arm.pose.bones.get("lowerarm_L")
+    if up and lo:
+        S = up.matrix.translation.copy()
+        E0 = lo.matrix.translation.copy()
+        H0 = arm.pose.bones["hand_L"].matrix.translation.copy()
+        l1 = (E0 - S).length
+        l2 = (H0 - E0).length
+        to = foregrip - S
+        d = max(abs(l1 - l2) + 0.01, min(to.length, l1 + l2 - 0.01))
+        dT = to.normalized()
+        cosA = max(-1.0, min(1.0, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))
+        a = __import__("math").acos(cosA)
+        hint = Vector((0.4, 0.2, -1)).normalized()
+        perp = (hint - dT * hint.dot(dT))
+        perp = perp.normalized() if perp.length > 1e-6 else Vector((1, 0, 0))
+        import math as _m
+        elbow = S + dT * (_m.cos(a) * l1) + perp * (_m.sin(a) * l1)
+        aim(up, elbow)
+        aim(lo, foregrip)
+        aim(arm.pose.bones.get("hand_L"), foregrip + dT * 0.1)
+        hand_l = bone_head("hand_L")
+        print(f"SUPPORT hand->foregrip = {(hand_l - foregrip).length:.3f} m")
 
 meshes = [o for o in bpy.data.objects if o.type == "MESH"]
 co = [o.matrix_world @ v.co for o in meshes for v in o.data.vertices]

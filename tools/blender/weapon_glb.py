@@ -76,11 +76,21 @@ if longest > 1e-6:
     obj.scale = (s, s, s)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
+# Origin at the TRIGGER GRIP, not at the centre. A weapon centred on its own bounding box,
+# placed at a hand, puts half of itself inside the soldier — which is exactly what shipped.
+# The grip of every weapon in this library is at the rear-bottom (behind the trigger, under
+# the barrel), so the rear-bottom corner becomes the origin: the right hand then holds the
+# weapon where a hand actually goes, and the barrel extends forward (+Z) from it.
 co = [v.co for v in obj.data.vertices]
 lo = Vector((min(c.x for c in co), min(c.y for c in co), min(c.z for c in co)))
 hi = Vector((max(c.x for c in co), max(c.y for c in co), max(c.z for c in co)))
-obj.location = (-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -(lo.z + hi.z) / 2)
+grip = Vector(((lo.x + hi.x) / 2, lo.y, lo.z))
+obj.location = -grip
 bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+co = [v.co for v in obj.data.vertices]
+lo = Vector((min(c.x for c in co), min(c.y for c in co), min(c.z for c in co)))
+hi = Vector((max(c.x for c in co), max(c.y for c in co), max(c.z for c in co)))
+print(f"WEAPON grip-at-origin: extents z={lo.z:.2f}..{hi.z:.2f} y={lo.y:.2f}..{hi.y:.2f}")
 
 tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
 
