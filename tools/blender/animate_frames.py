@@ -274,6 +274,61 @@ def clip_melee():
 # the engine's state machine selects by.
 
 
+def aim_bone(pb, target):
+    """Point a pose bone's own axis at a world-space target.
+
+    Authoring arms by guessing rotation angles does not converge: measured on the certified
+    pose, both hands stayed at y=0.072 (hanging at the sides) no matter which world-axis
+    rotation was applied, because the bone's rest orientation is not aligned to the world axes.
+    Aiming the bone at a target is the direct statement of the intent and cannot be misread.
+    """
+    if pb is None:
+        return
+    bpy.context.view_layer.update()
+    head = pb.matrix.translation.copy()
+    cur = (pb.matrix.to_3x3() @ Vector((0, 1, 0))).normalized()   # bone Y = its own direction
+    des = (Vector(target) - head)
+    if des.length < 1e-6:
+        return
+    des.normalize()
+    rot = cur.rotation_difference(des)
+    m = rot.to_matrix().to_4x4() @ pb.matrix
+    m.translation = head
+    pb.matrix = m
+    bpy.context.view_layer.update()
+
+
+def arms_hold(offset_r, offset_l):
+    """Both hands onto two grip points — a two-handed carry, stated as positions.
+
+    The right hand takes the pistol grip and the left the foregrip; each arm is aimed through
+    an elbow point partway to its grip so the elbow bends instead of the arm locking straight.
+    Offsets are relative to the CHEST, not to the world: an absolute target would be reached
+    from wherever the body is, so a crouch would leave the arms stretched up to standing height.
+    """
+    chest = pose.get("chest")
+    base = chest.matrix.translation.copy() if chest is not None else Vector((0, 0, 1.4))
+    grip_r = base + Vector(offset_r)
+    grip_l = base + Vector(offset_l)
+    for side, grip in (("R", grip_r), ("L", grip_l)):
+        ua = pose.get(f"upperarm_{side}")
+        la = pose.get(f"lowerarm_{side}")
+        hd = pose.get(f"hand_{side}")
+        if ua is None:
+            continue
+        shoulder = ua.matrix.translation.copy()
+        g = Vector(grip)
+        elbow = shoulder.lerp(g, 0.55)
+        # drop the elbow out and back so the arm reads as bent rather than as a rod
+        elbow.z -= 0.06
+        elbow.x += (-0.10 if side == "R" else 0.10)
+        aim_bone(ua, elbow)
+        if la is not None:
+            aim_bone(la, g)
+        if hd is not None:
+            aim_bone(hd, g + (g - elbow).normalized() * 0.12)
+
+
 def arms_ready():
     """Both hands up on the weapon.
 
@@ -302,7 +357,7 @@ def _crouch(depth=1.0):
     (the DoW2 idle crouch) reads as hiding in the open instead of using the cover.
     """
     reset()
-    arms_ready()
+    arms_hold((0.11, -0.26, -0.10), (-0.09, -0.46, -0.13))
     for side in ("L", "R"):
         th = pose.get(f"thigh_{side}")
         sh = pose.get(f"shin_{side}")
@@ -363,7 +418,7 @@ def cover_high(side):
     """High cover: standing, leaning around the edge. No crouch — XCOM stands here."""
     for i, f in enumerate((1, 17, 33)):
         reset()
-        arms_ready()
+        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
         _lean(side, 8 + (1 if i == 1 else 0))
         for pb in pose:
             key(pb, f)
