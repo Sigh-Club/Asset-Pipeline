@@ -157,10 +157,18 @@ if not A.no_fit:
         if not (clav and ua and la and hd):
             continue
         shoulder = clav.tail.copy()
-        upper_body = [p for p in world_co if p.z > shoulder.z - (zmax * 0.25)]
-        if not upper_body:
+        # Arm region, not "everything above the shoulder": a hunched ork's widest point above
+        # the shoulder is a pauldron, so the old filter picked a pauldron corner and the hand
+        # bone landed 15-47 cm outside the mesh. Restrict to the band an arm actually occupies
+        # (below the shoulder, above the hips) and take the farthest-out vertex there.
+        arm_band = [p for p in world_co
+                    if (zmax * 0.34) < p.z < (shoulder.z + zmax * 0.06)
+                    and (sgn * p.x) > (sgn * shoulder.x) - 0.05]
+        if not arm_band:
+            arm_band = [p for p in world_co if p.z > shoulder.z - (zmax * 0.25)]
+        if not arm_band:
             continue
-        tip = max(upper_body, key=lambda p: sgn * p.x)
+        tip = max(arm_band, key=lambda p: sgn * p.x)
         reach = (tip - shoulder).length
         if 0.25 < reach < 1.4:
             def at(f):
@@ -269,6 +277,19 @@ for name in orphan_names:
     weighted[name] = sum(1 for vi, (_d, n) in claims.items() if n == name)
     if weighted[name]:
         print("BIND coverage", name, weighted[name], "verts")
+
+# Second fallback: a bone whose nearest vertex was already claimed by a closer bone still
+# needs geometry, or it exports as a dead joint and the audit fails the unit. A vertex can
+# carry several influences, so share it instead of stripping the other bone.
+for name in [n for n, c in weighted.items() if c == 0]:
+    seg = next((x for x in segments if x[0] == name), None)
+    if not seg:
+        continue
+    _n, a, b = seg
+    d, vi = min((seg_dist(v.co, a, b), v.index) for v in body.data.vertices)
+    vgroups[name].add([vi], 0.5, "ADD")
+    weighted[name] = 1
+    print(f"BIND shared fallback {name} -> vert {vi} ({d:.3f} m)")
 
 orphans = [n for n, c in weighted.items() if c == 0]
 print("BIND orphan_deform_bones", len(orphans), orphans[:8])

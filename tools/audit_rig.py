@@ -185,11 +185,30 @@ def main(path):
     # every primitive: gear and body are separate materials, and the hands are
     # covered by the gauntlet primitives, not the body primitive.
     pos, joints, weights = [], [], []
-    for mesh in js["meshes"]:
+    # A GLB may carry more than one mesh node: a unit can hold a weapon bone-parented to the
+    # rig. Positions must be taken through THEIR OWN node's world matrix — the previous code
+    # applied the first mesh node's matrix to every vertex, which scrambled the body as soon as
+    # a second mesh existed (hand bones then appeared 40-90 cm "outside the mesh").
+    node_of_mesh = {}
+    for i, n in enumerate(js["nodes"]):
+        if "mesh" in n:
+            node_of_mesh.setdefault(n["mesh"], []).append(i)
+    world_nodes = node_world(js)
+    for mi, mesh in enumerate(js["meshes"]):
+        node_ids = node_of_mesh.get(mi, [])
+        mtx = world_nodes[node_ids[0]] if node_ids else None
         for prim in mesh["primitives"]:
-            pos += accessor(js, binc, prim["attributes"]["POSITION"])
-            joints += accessor(js, binc, prim["attributes"]["JOINTS_0"])
-            weights += accessor(js, binc, prim["attributes"]["WEIGHTS_0"])
+            attrs = prim["attributes"]
+            verts = accessor(js, binc, attrs["POSITION"])
+            if mtx is not None:
+                verts = [m_apply(mtx, v) for v in verts]
+            pos += verts
+            # A unit may carry STATIC props bone-parented to the rig (the baked weapon). Those
+            # primitives have no JOINTS_0/WEIGHTS_0 by design, and assuming every primitive is
+            # skinned crashed the audit on every weapon-bearing unit.
+            if "JOINTS_0" in attrs and "WEIGHTS_0" in attrs:
+                joints += accessor(js, binc, attrs["JOINTS_0"])
+                weights += accessor(js, binc, attrs["WEIGHTS_0"])
 
     if not js.get("skins"):
         print("FAIL\n  ERROR the GLB has no skin (the mesh was never bound to the rig)")
@@ -199,10 +218,7 @@ def main(path):
     # put the vertices in world space: the mesh node may carry a transform, and
     # comparing node-space vertices with world-space bones produces false
     # "bone outside mesh" failures (measured on the DoW2 carnifex base).
-    mesh_nodes = [i for i, n in enumerate(js["nodes"]) if "mesh" in n]
-    if mesh_nodes:
-        mm = world_nodes[mesh_nodes[0]]
-        pos = [m_apply(mm, v) for v in pos]
+    # (positions were already transformed per mesh node above)
     joint_nodes = skin["joints"]
     names = {i: js["nodes"][n].get("name", f"node{n}") for i, n in enumerate(joint_nodes)}
     world = node_world(js)
