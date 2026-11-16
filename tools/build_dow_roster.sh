@@ -30,6 +30,8 @@ case "$RACE" in
   race_eldar)    WEAPON=shuriken; FRAME=eldar.json ;;
   race_ork)      WEAPON=shoota;   FRAME=ork.json ;;
   race_tyranid)  WEAPON="";       FRAME=quadruped.json ;;
+  race_necron)   WEAPON="";       FRAME=human.json ;;
+  race_tau)      WEAPON="";       FRAME=machine.json ;;
   *) echo "unknown race $RACE"; exit 2 ;;
 esac
 
@@ -44,7 +46,11 @@ race, limit = sys.argv[1], int(sys.argv[2])
 ROOT = Path('/run/media/talzanar/games/Projects/Decompilor/work/dow2-retribution/sga_art')
 VARIANT = ('_common', '_epic', '_rare', '_glow', '_alpha', '_carnage', '_carnage_common')
 seen, rows = set(), []
-for m in sorted(ROOT.rglob(f'{race}/**/troops_wargear/armour/*/*.model')):
+# slot dirs are not uniform: race_tau ships `armor`, the rest `armour`
+cands = list(ROOT.rglob(f'{race}/**/troops_wargear/armour/*/*.model'))
+cands += list(ROOT.rglob(f'{race}/**/troops_wargear/armor/*/*.model'))
+cands += list(ROOT.rglob(f'{race}/**/troops_wargear/weapons/*/*.model'))
+for m in sorted(cands):
     base = m.stem
     canon = base
     for v in VARIANT:
