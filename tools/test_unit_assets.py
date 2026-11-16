@@ -43,9 +43,14 @@ def mesh_stats(p: Path):
     skins = js.get('skins') or [{}]
     joints = [names[i] for i in skins[0].get('joints', [])]
     meshes = [m.get('name', '') for m in js.get('meshes', [])]
-    tris = 0; lo = [1e9]*3; hi = [-1e9]*3
-    for m in js.get('meshes', []):
-        for pr in m.get('primitives', []):
+    # Per-mesh stats. The bbox must be the BODY's: measuring it across every mesh included the
+    # baked weapon, which inflated the box on exactly the armed factions (measured: every failing
+    # faction was armed, Tau and Tyranid — unarmed — all passed).
+    per_mesh = {}
+    for mesh in js.get('meshes', []):
+        name = mesh.get('name', '')
+        tris = 0; lo = [1e9]*3; hi = [-1e9]*3
+        for pr in mesh.get('primitives', []):
             a = js['accessors'][pr['attributes']['POSITION']]
             bv = js['bufferViews'][a['bufferView']]
             base = bv.get('byteOffset', 0) + a.get('byteOffset', 0)
@@ -55,8 +60,11 @@ def mesh_stats(p: Path):
                     lo[i] = min(lo[i], v[i]); hi[i] = max(hi[i], v[i])
             if 'indices' in pr:
                 tris += js['accessors'][pr['indices']]['count'] // 3
-    return dict(meshes=meshes, joints=joints, tris=tris,
-                dims=[round(hi[i]-lo[i], 3) for i in range(3)])
+        per_mesh[name] = dict(tris=tris, dims=[round(hi[i]-lo[i], 3) for i in range(3)])
+    body_name = max(per_mesh, key=lambda n: per_mesh[n]['tris']) if per_mesh else ''
+    body = per_mesh.get(body_name, {'tris': 0, 'dims': [0, 0, 0]})
+    return dict(meshes=meshes, joints=joints, tris=body['tris'], dims=body['dims'],
+                per_mesh=per_mesh)
 
 
 RACES = ('ig', 'chaos', 'eldar', 'ork', 'tyranid', 'necron', 'tau')
@@ -86,13 +94,15 @@ def resolve_source(name: str):
                 stem = stem[len(r) + 1:]
                 break
     all_parts = list(SGA.rglob('*.model'))
-    for p in all_parts:
-        if p.stem == stem:
-            return p
-    for p in all_parts:
-        if p.stem.startswith(stem):
-            return p
-    return None
+    # Prefer the geometry tree. `troops/<unit>.model` files are assembly references that carry no
+    # vertices — resolving to one of those made a unit look like it had no source at all.
+    def rank(p):
+        return (0 if '/troops_wargear/' in str(p) else 1, len(p.stem))
+    exact = sorted((p for p in all_parts if p.stem == stem), key=rank)
+    if exact:
+        return exact[0]
+    pref = sorted((p for p in all_parts if p.stem.startswith(stem)), key=rank)
+    return pref[0] if pref else None
 
 
 def source_stats(name: str):
@@ -112,18 +122,7 @@ def source_stats(name: str):
 def check(unit: Path):
     out = {'unit': unit.stem, 'failures': [], 'checks': []}
     ours = mesh_stats(unit)
-    # the BODY is the heaviest mesh; after a weapon bake meshes[0] is the weapon, and comparing a
-    # rifle's proportions to a torso's is what produced the bogus 49% deviations
-    sizes = {}
-    for m in ours['meshes']:
-        sizes[m] = 0
-    js, binc = glb(unit)
-    for mesh in js.get('meshes', []):
-        n = mesh.get('name', '')
-        for pr in mesh.get('primitives', []):
-            if 'indices' in pr:
-                sizes[n] = sizes.get(n, 0) + js['accessors'][pr['indices']]['count'] // 3
-    body = max(sizes, key=sizes.get) if sizes else ours['meshes'][0]
+    body = max(ours['per_mesh'], key=lambda n: ours['per_mesh'][n]['tris']) if ours['per_mesh'] else ''
     src = source_stats(body)
     if src is None:
         out['failures'].append(f'no DoW2 source part found for mesh {body!r}')
