@@ -21,6 +21,14 @@ ASSET="${1:?usage: build_pixel_asset.sh <out-name> <request-id> <kind>}"
 ID="${2:?request id required}"
 KIND="${3:?kind required}"
 REQ="configs/assets/examples.json"
+# Palette locking is a PIXEL-tier stage. A stylised/PBR profile carries real colours, so
+# the lock is skipped for any profile whose material_model is not "palette".
+MATERIAL_MODEL="$(python3 -c "import sys; sys.path.insert(0,'tools/style'); import profiles; print(profiles.resolve('${PROFILE:-pixel_3d}')['texture'].get('material_model','palette'))" 2>/dev/null || echo palette)"
+lock_palette() {
+  [ "$MATERIAL_MODEL" = "palette" ] || { echo "=== palette lock skipped ($MATERIAL_MODEL profile)"; return 0; }
+  lock_palette "$@"
+}
+
 LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
 OUT="output/gen/${ASSET}"
 BUILD="output/gen/build/${ID}"
@@ -43,11 +51,11 @@ tools/blender_run.sh --job bake -- -b -P tools/blender/bake_pixel_atlas.py -- \
   --profile pixel_3d --library "$LIB" --faction iron_directorate
 
 echo "=== 4/8 palette-lock atlas"
-python3 tools/style/palette_lock.py "$OUT/atlas/atlas_albedo.png" --profile pixel_3d \
+lock_palette "$OUT/atlas/atlas_albedo.png" --profile pixel_3d \
   --dither bayer4 --out-dir "$OUT/atlas" --suffix _pixel
 
 if [[ -f "$OUT/atlas/atlas_emission.png" ]]; then
-  python3 tools/style/palette_lock.py "$OUT/atlas/atlas_emission.png" --profile pixel_3d \
+  lock_palette "$OUT/atlas/atlas_emission.png" --profile pixel_3d \
     --dither none --out-dir "$OUT/atlas" --suffix _pixel
 fi
 
@@ -62,7 +70,7 @@ tools/blender_run.sh --job render -- -b -P tools/blender/render_pixel_master.py 
   --directions "$DIRS" --masks --anchor "$ANCHOR"
 
 echo "=== 7/8 palette-lock frames"
-python3 tools/style/palette_lock.py --dir "$OUT/render" --profile pixel_3d \
+lock_palette --dir "$OUT/render" --profile pixel_3d \
   --dither bayer4 --out-dir "$OUT/render_pixel" --suffix ""
 
 echo "=== 8/8 gates"

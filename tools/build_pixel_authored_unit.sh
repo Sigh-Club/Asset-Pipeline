@@ -23,6 +23,14 @@ cd "$ROOT"
 ASSET="${1:?usage: build_pixel_authored_unit.sh <out-name> <unit-id> <faction>}"
 ID="${2:?unit id required}"
 FACTION="${3:?faction required}"
+# Palette locking is a PIXEL-tier stage. A stylised/PBR profile carries real colours, so
+# the lock is skipped for any profile whose material_model is not "palette".
+MATERIAL_MODEL="$(python3 -c "import sys; sys.path.insert(0,'tools/style'); import profiles; print(profiles.resolve('${PROFILE:-pixel_3d}')['texture'].get('material_model','palette'))" 2>/dev/null || echo palette)"
+lock_palette() {
+  [ "$MATERIAL_MODEL" = "palette" ] || { echo "=== palette lock skipped ($MATERIAL_MODEL profile)"; return 0; }
+  lock_palette "$@"
+}
+
 LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
 PROFILE="${PROFILE:-pixel_3d}"
 MATERIAL_MAP="${MATERIAL_MAP:-}"
@@ -56,10 +64,10 @@ echo "=== 2b/8 denoise baked atlas"
 python3 tools/style/denoise_atlas.py "$OUT/atlas/atlas_albedo.png" --size 5
 
 echo "=== 3/8 palette-lock atlas"
-python3 tools/style/palette_lock.py "$OUT/atlas/atlas_albedo.png" --profile "$PROFILE" \
+lock_palette "$OUT/atlas/atlas_albedo.png" --profile "$PROFILE" \
   --dither none --out-dir "$OUT/atlas" --suffix _pixel
 if [[ -f "$OUT/atlas/atlas_emission.png" ]]; then
-  python3 tools/style/palette_lock.py "$OUT/atlas/atlas_emission.png" --profile "$PROFILE" \
+  lock_palette "$OUT/atlas/atlas_emission.png" --profile "$PROFILE" \
     --dither none --out-dir "$OUT/atlas" --suffix _pixel
 fi
 
@@ -73,12 +81,16 @@ tools/blender_run.sh --job render -- -b -P tools/blender/render_pixel_master.py 
   --masks --anchor bottom --action aim --keep-smooth --exclude-mesh Icosphere
 
 echo "=== 6/8 palette-lock frames"
-python3 tools/style/palette_lock.py --dir "$OUT/render" --profile "$PROFILE" \
+lock_palette --dir "$OUT/render" --profile "$PROFILE" \
   --dither none --out-dir "$OUT/render_pixel" --suffix ""
 
 echo "=== 7/8 gates"
 python3 tools/glb_contract.py "$OUT/${ID}_pixel.glb" --kind unit
-python3 tools/style/check_texel_grid.py "$OUT/${ID}_pixel.glb" --profile "$PROFILE"
+# Texel-grid and pixel-frame checks are PIXEL-tier gates; a stylised/PBR asset is checked
+# by the GLB contract plus the material maps instead.
+if [ "$MATERIAL_MODEL" = "palette" ]; then
+  python3 tools/style/check_texel_grid.py "$OUT/${ID}_pixel.glb" --profile "$PROFILE"
+fi
 python3 tools/style/check_pixel_asset.py --dir "$OUT/render_pixel" \
   --profile "$PROFILE" --kind unit
 python3 tools/style/check_master.py --dir "$OUT" --profile "$PROFILE" \

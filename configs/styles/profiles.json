@@ -474,6 +474,38 @@
         "timing"
       ],
       "extends": "pixel_3d"
+    },
+    "stylised_3d": {
+      "label": "Stylised PBR (shipping tier: blended base meshes, PBR-lite materials)",
+      "representation": "mesh_3d",
+      "geometry": {
+        "tris_max": 14000,
+        "tris_min": 400,
+        "shading": "pbr",
+        "uv": "pbr"
+      },
+      "texture": {
+        "atlas_px": 1024,
+        "material_model": "pbr",
+        "normal_map": true,
+        "ao": true,
+        "emission": true
+      },
+      "render": {
+        "directions": 1
+      },
+      "pixel": {
+        "palette_id": "grimdark_3d",
+        "dither": "none",
+        "outline": 0.0,
+        "selout": false
+      },
+      "gates": [
+        "glb_contract",
+        "palette_compliance",
+        "readability"
+      ],
+      "extends": "lowpoly_3d"
     }
   }
 }
