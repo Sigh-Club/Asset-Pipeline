@@ -1,4 +1,4 @@
-"""pixel_uv.py — texel-grid UV stage for the `pixel_3d` profile.
+"""palette_uv.py — texel-grid UV stage for the `palette_3d` profile.
 
 The profile's `texture.texel_world_m` is a contract: one texture pixel covers a
 fixed world area on every face of every asset. Without it, texels stretch across
@@ -17,7 +17,7 @@ What this does, on an existing mesh, in this order:
 If the asset's total surface area needs more texels than the atlas holds, this
 raises: silently lowering the density would break the contract.
 
-Used by `tools/blender/bake_pixel_atlas.py` (props/tiles) and the unit pixel
+Used by `tools/blender/bake_palette_atlas.py` (props/tiles) and the unit pixel
 stage; importing from two scripts is why it is a module.
 """
 from __future__ import annotations

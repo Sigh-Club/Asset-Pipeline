@@ -17,7 +17,7 @@ palette entry. `--selftest` builds a deliberately off-palette image and asserts
 the check fires.
 
 Usage:
-    python3 tools/style/palette_lock.py <img.png> --profile pixel_3d
+    python3 tools/style/palette_lock.py <img.png> --profile palette_3d
     python3 tools/style/palette_lock.py --dir <dir> --palette grimdark_64 \
         --dither bayer4 --out-dir <dir>/pixel
     python3 tools/style/palette_lock.py --selftest

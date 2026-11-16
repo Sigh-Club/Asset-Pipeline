@@ -17,10 +17,10 @@ Design rules:
 
 Usage:
     python3 tools/style/profiles.py list
-    python3 tools/style/profiles.py show hd_pixel_sprite
+    python3 tools/style/profiles.py show hd_sprite
     python3 tools/style/profiles.py validate
-    python3 tools/style/profiles.py gates pixel_sprite
-    python3 tools/style/profiles.py show pixel_sprite --json
+    python3 tools/style/profiles.py gates palette_sprite
+    python3 tools/style/profiles.py show palette_sprite --json
 """
 from __future__ import annotations
 

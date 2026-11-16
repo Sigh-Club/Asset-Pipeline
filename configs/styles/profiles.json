@@ -1,6 +1,6 @@
 {
   "//": "Style profiles. One profile selects the representation, budgets, shading model, pixel treatment and gate set for a whole asset. Stage tools read a profile; they never hard-code a style. Keys beginning with // are comments and are ignored by the validator.",
-  "//tris": "pixel_3d allows 4000 tris, not the 1200 typical of PSX props: tools/glb_contract.py floors a unit at 4000, so a pixel-tier unit below that cannot pass the engine contract. Prop recipes stay far under (barrel and lasrifle are 460).",
+  "//tris": "palette_3d allows 4000 tris, not the 1200 typical of PSX props: tools/glb_contract.py floors a unit at 4000, so a pixel-tier unit below that cannot pass the engine contract. Prop recipes stay far under (barrel and lasrifle are 460).",
   "schema_version": 1,
   "defaults": {
     "render": {
@@ -26,7 +26,7 @@
     "readability": "asset distinguishes from its neighbours at final camera distance"
   },
   "profiles": {
-    "aaa_3d": {
+    "pbr_3d": {
       "label": "AAA-style 3D unit/prop (current path)",
       "representation": "mesh_3d",
       "geometry": {
@@ -83,7 +83,7 @@
         "readability"
       ]
     },
-    "pixel_3d": {
+    "palette_3d": {
       "label": "Pixel-textured 3D (PSX/retro 3D, fixed texel grid)",
       "representation": "mesh_3d",
       "geometry": {
@@ -176,7 +176,7 @@
         "timing"
       ]
     },
-    "pixel_sprite": {
+    "palette_sprite": {
       "label": "Pixel sprite, house style (8-direction isometric)",
       "representation": "sprite_2d",
       "render": {
@@ -263,9 +263,9 @@
         "sheet_budget"
       ]
     },
-    "hd_pixel_sprite": {
+    "hd_sprite": {
       "label": "High-detail pixel sprite (modern HD pixel, 2x house canvas)",
-      "extends": "pixel_sprite",
+      "extends": "palette_sprite",
       "render": {
         "directions": 8,
         "size_px": [
@@ -292,7 +292,7 @@
         "readability"
       ]
     },
-    "pixel_3d_hi": {
+    "palette_3d_hi": {
       "label": "Pixel-textured 3D, high-detail tier (base-mesh units, 512 atlas)",
       "representation": "mesh_3d",
       "geometry": {
@@ -384,9 +384,9 @@
         "readability",
         "timing"
       ],
-      "//": "High-detail pixel 3D tier for base-mesh authored units: real human anatomy, body-derived armour shells and a held weapon need 9-14k tris and a 512 atlas at the same 2 cm texel grid. Contract change is measured A/B against pixel_3d (see docs/PIXEL_UNIT_PROGRAMME.md)."
+      "//": "High-detail pixel 3D tier for base-mesh authored units: real human anatomy, body-derived armour shells and a held weapon need 9-14k tris and a 512 atlas at the same 2 cm texel grid. Contract change is measured A/B against palette_3d (see docs/PIXEL_UNIT_PROGRAMME.md)."
     },
-    "pixel_3d_prop_coarse": {
+    "palette_3d_prop_coarse": {
       "label": "Pixel-textured 3D prop at coarse texel density (large authored cover)",
       "representation": "mesh_3d",
       "geometry": {
@@ -473,7 +473,7 @@
         "readability",
         "timing"
       ],
-      "extends": "pixel_3d"
+      "extends": "palette_3d"
     },
     "stylised_3d": {
       "label": "Stylised PBR (shipping tier: blended base meshes, PBR-lite materials)",

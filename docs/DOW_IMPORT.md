@@ -1,5 +1,27 @@
 # DoW Asset Import — Dawn of War models → IoA pixel/render pipeline
 
+> **Status 2026-11-21 — superseded on one point, kept as a reference and a tool.**
+> This document covers the **Dawn of War I** path (SGA v2, WHM v4, RSH atlases). Its
+> 2026-11-09 retirement note said *"DoW geometry is not shipped"*, which is **no
+> longer true and was only ever true of the DoW1 route**. As of 2026-11-21 the
+> shipped roster contains **7 DoW-derived unit meshes** — 6 from Dawn of War II
+> (`ig_human`, `super_human`, `eldar`, `carnifex`, `chaos_heretic`, `chaos_marine`)
+> and 1 from Dawn of War I (`scrap_boy`).
+>
+> **The current model strategy, stated plainly:** we import DoW2 unit models where
+> the import certifies, and we then **overlay** them — IoA palette, IoA silhouette
+> parts, IoA material library — so the shipped asset reads as an IoA faction unit
+> rather than a Relic one. Where the DoW2 source lacks the pose or motion we need,
+> we apply **XCOM 2 animation layers** on top. Canonical statement and the full
+> measured inventory: `Imperium-of-Ash/docs/game-design/MODEL_PORT_AND_ANIMATION_PLAN.md`.
+>
+> What remains true from the retirement note: the DoW1 `tools/dow/` route is not a
+> unit path, and the DoW1/DoW2 extractors stay valuable because (a) their measured
+> budgets are the quality reference and (b) they are the cheapest way to study how
+> Relic built a unit. The live unit route is the **DoW2** one —
+> `tools/dow2/chunky_mesh.py`, `tools/blender/dow2_base.py`, `tools/blender/rig_template.py`,
+> `tools/build_base_frames.sh`.
+
 Import authentic Relic Dawn of War assets (SGA v2 archives) as geometry and
 material sources, render them through the IoA pipeline, and/or convert to
 palette-locked pixel sprites (PZ sub-pipeline variant).

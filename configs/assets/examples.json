@@ -6,7 +6,7 @@
       "id": "iron_directorate_barrel_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "height_m": 0.88,
         "diameter_m": 0.58,
@@ -33,7 +33,7 @@
       "id": "iron_directorate_lasrifle",
       "kind": "weapon",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "length_m": 1.05,
         "receiver_w_m": 0.07,
@@ -56,7 +56,7 @@
       "id": "ash_tree_dead_a",
       "kind": "foliage",
       "route": "procedural_organic",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "height_m": 4.2,
         "trunk_radius_m": 0.16,
@@ -79,7 +79,7 @@
       "id": "hab_block_b1",
       "kind": "building",
       "route": "parametric_modular",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "footprint_m": [
           6,
@@ -108,7 +108,7 @@
       "id": "unit_line_infantry_a",
       "kind": "unit",
       "route": "image_to_3d",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "height_m": 1.9,
         "base": "line_infantry",
@@ -150,7 +150,7 @@
       "id": "squad_roster_icon_vet",
       "kind": "ui_icon",
       "route": "pixel_ui",
-      "profile": "hd_pixel_sprite",
+      "profile": "hd_sprite",
       "params": {
         "canvas_px": [
           64,
@@ -171,7 +171,7 @@
       "id": "tile_floor_industrial_a",
       "kind": "tile",
       "route": "parametric_modular",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "tile_m": 2.0,
         "surface": "deck_plate",
@@ -195,7 +195,7 @@
       "id": "cover_crate_stack_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "cover",
         "shape": "crate_stack",
@@ -217,7 +217,7 @@
       "id": "cover_sandbag_row_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "cover",
         "shape": "sandbag_row",
@@ -239,7 +239,7 @@
       "id": "cover_barricade_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "cover",
         "shape": "barricade",
@@ -261,7 +261,7 @@
       "id": "cover_machine_block_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "cover",
         "shape": "machine_block",
@@ -283,7 +283,7 @@
       "id": "cover_shield_wall_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "cover",
         "shape": "shield_wall",
@@ -305,7 +305,7 @@
       "id": "cover_column_a",
       "kind": "prop",
       "route": "parametric_hard_surface",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "cover",
         "shape": "column",
@@ -326,7 +326,7 @@
       "id": "tile_floor_industrial_b",
       "kind": "tile",
       "route": "parametric_modular",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "tile_m": 2.4,
         "surface": "deck_plate",
@@ -350,7 +350,7 @@
       "id": "cover_sandbag_wall_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "sandbag_wall_01",
@@ -371,7 +371,7 @@
       "id": "cover_barricade_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "construction_barricade",
@@ -392,7 +392,7 @@
       "id": "cover_container_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "container_sb_01",
@@ -413,7 +413,7 @@
       "id": "cover_generator_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "generator_medium",
@@ -434,7 +434,7 @@
       "id": "cover_wall_segment_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "high_wall_sb_01",
@@ -455,7 +455,7 @@
       "id": "cover_pillar_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "coloseum_pillar_cover",
@@ -476,7 +476,7 @@
       "id": "deco_barrel_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "barrel_01",
@@ -497,7 +497,7 @@
       "id": "deco_rock_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "rock_cover_03",
@@ -518,7 +518,7 @@
       "id": "deco_pipe_stack_b",
       "kind": "prop",
       "route": "imported_mesh",
-      "profile": "pixel_3d",
+      "profile": "palette_3d",
       "params": {
         "recipe": "imported",
         "shape": "pipe_raised_straight_01",
@@ -765,6 +765,206 @@
         "shape": "stone_stairs_wide",
         "height_m": 1.2,
         "source": "dow2:stone_stairs_wide"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_tree_burned",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "burned_tree_01",
+        "height_m": 4.5,
+        "source": "dow2:burned_tree_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "bone_chitin"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_tree_fallen",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "burned_fallen_tree_01",
+        "height_m": 1.2,
+        "source": "dow2:burned_fallen_tree_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "bone_chitin"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_rock_large",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "volcanicrock_04_lrg",
+        "height_m": 1.8,
+        "source": "dow2:volcanicrock_04_lrg"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_rock_sulfur",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "sulfur_rock_02_med",
+        "height_m": 1.3,
+        "source": "dow2:sulfur_rock_02_med"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_crystal_quartz",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "quartzcrystal_01_lrg",
+        "height_m": 2.2,
+        "source": "dow2:quartzcrystal_01_lrg"
+      },
+      "materials": {
+        "body": "iron_directorate__accent_emissive",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_statue_judgement",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "statue_judgement_01",
+        "height_m": 4.0,
+        "source": "dow2:statue_judgement_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_statue_small",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "small_statue_sb_01",
+        "height_m": 2.4,
+        "source": "dow2:small_statue_sb_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_pipe_large",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "pipe_large_01_dust",
+        "height_m": 1.6,
+        "source": "dow2:pipe_large_01_dust"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "rust_iron"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_ruin_pillar",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "ruin_pillar_04",
+        "height_m": 3.2,
+        "source": "dow2:ruin_pillar_04"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_ruin_wall",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "wall_ruined_02",
+        "height_m": 2.6,
+        "source": "dow2:wall_ruined_02"
       },
       "materials": {
         "body": "iron_directorate__underlayer",

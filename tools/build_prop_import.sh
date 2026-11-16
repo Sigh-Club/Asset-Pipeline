@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# build_pixel_prop_import.sh — the `pixel_3d` master route for a prop whose geometry is
+# build_prop_import.sh — the `palette_3d` master route for a prop whose geometry is
 # a shipped-game mesh (DoW2 `.model` decoded to OBJ) instead of a parametric recipe.
 #
-# Same stages as build_pixel_asset.sh (texel grid -> bake -> palette lock -> final GLB
+# Same stages as build_asset.sh (texel grid -> bake -> palette lock -> final GLB
 # -> 8-direction master -> gates); only the build stage differs, so an imported prop is
 # held to exactly the contract the parametric props are.
 #
 # Usage:
-#   tools/build_pixel_prop_import.sh cover8_sandbag cover_sandbag_wall_b /tmp/props/sandbag_wall_01.obj 0.82
+#   tools/build_prop_import.sh cover8_sandbag cover_sandbag_wall_b /tmp/props/sandbag_wall_01.obj 0.82
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-ASSET="${1:?usage: build_pixel_prop_import.sh <out-name> <request-id> <obj> <height-m>}"
+ASSET="${1:?usage: build_prop_import.sh <out-name> <request-id> <obj> <height-m>}"
 ID="${2:?request id required}"
 OBJ="${3:?source obj required}"
 HEIGHT="${4:?target height in metres required}"
-PROFILE="${5:-pixel_3d}"
+PROFILE="${5:-palette_3d}"
 TRIS="${6:-}"
 if [ -z "$TRIS" ]; then
-  if [ "$PROFILE" = "pixel_3d" ] || [ "$PROFILE" = "pixel_3d_hi" ] || [ "$PROFILE" = "pixel_3d_prop_coarse" ]; then TRIS=600; else TRIS=2500; fi
+  if [ "$PROFILE" = "palette_3d" ] || [ "$PROFILE" = "palette_3d_hi" ] || [ "$PROFILE" = "palette_3d_prop_coarse" ]; then TRIS=600; else TRIS=2500; fi
 fi
 MATERIAL_MODEL="$(python3 -c "import sys; sys.path.insert(0,'tools/style'); import profiles; print(profiles.resolve('$PROFILE')['texture'].get('material_model','palette'))" 2>/dev/null || echo palette)"
 lock_palette() {
@@ -41,11 +41,11 @@ tools/blender_run.sh --job script -- -b -P tools/blender/parametric_prop.py -- \
   --profile-override "$PROFILE" >/dev/null
 
 echo "=== 2/8 texel grid"
-tools/blender_run.sh --job uv -- -b -P tools/blender/bake_pixel_atlas.py -- \
+tools/blender_run.sh --job uv -- -b -P tools/blender/bake_palette_atlas.py -- \
   --stage texel --glb "$BUILD/$ID.glb" --out "$OUT" --id "$ID" --profile "$PROFILE"
 
 echo "=== 3/8 bake atlas"
-tools/blender_run.sh --job bake -- -b -P tools/blender/bake_pixel_atlas.py -- \
+tools/blender_run.sh --job bake -- -b -P tools/blender/bake_palette_atlas.py -- \
   --stage albedo --glb "$OUT/${ID}_texel.glb" --out "$OUT" --id "$ID" \
   --profile "$PROFILE" --library "$LIB" --faction iron_directorate
 
@@ -60,11 +60,11 @@ lock_palette "$OUT/atlas/atlas_albedo.png" --profile "$PROFILE" \
   --dither bayer4 --out-dir "$OUT/atlas" --suffix _pixel
 
 echo "=== 5/8 final GLB"
-tools/blender_run.sh --job script -- -b -P tools/blender/bake_pixel_atlas.py -- \
+tools/blender_run.sh --job script -- -b -P tools/blender/bake_palette_atlas.py -- \
   --stage final --glb "$OUT/${ID}_texel.glb" --out "$OUT" --id "$ID" --profile "$PROFILE"
 
 echo "=== 6/8 8-direction master"
-tools/blender_run.sh --job render -- -b -P tools/blender/render_pixel_master.py -- \
+tools/blender_run.sh --job render -- -b -P tools/blender/render_master.py -- \
   --glb "$OUT/${ID}_pixel.glb" --out "$OUT" --id "$ID" --size "$SIZE" \
   --directions "$DIRS" --masks --anchor centre
 
@@ -78,7 +78,7 @@ if [ "$MATERIAL_MODEL" = "palette" ]; then
   python3 tools/style/check_texel_grid.py "$OUT/${ID}_pixel.glb" --profile "$PROFILE"
 fi
 if [ "$MATERIAL_MODEL" = "palette" ]; then
-  python3 tools/style/check_pixel_asset.py --dir "$OUT/render_pixel" --profile "$PROFILE" --kind cover
+  python3 tools/style/check_palette_asset.py --dir "$OUT/render_pixel" --profile "$PROFILE" --kind cover
 fi
 python3 tools/style/check_master.py --dir "$OUT" --profile "$PROFILE" \
   --expect-directions "$DIRS" --require-distinct

@@ -1,5 +1,5 @@
 {
- "//": "Pixel-tier box-projection world-size multipliers. Default 1.0: the band-limited albedo_pixel variants (tools/pbr/build_pixel_variants.py) already match the texel budget, so changing the projection size would move the surface off that budget. Kept as recorded data because a material whose feature pitch is still wrong at the texel grid needs a documented per-material multiplier, not a code fork.",
+ "//": "Pixel-tier box-projection world-size multipliers. Default 1.0: the band-limited albedo_pixel variants (tools/pbr/build_palette_variants.py) already match the texel budget, so changing the projection size would move the surface off that budget. Kept as recorded data because a material whose feature pitch is still wrong at the texel grid needs a documented per-material multiplier, not a code fork.",
  "schema_version": 1,
  "materials": {
   "iron_directorate__metal_trim": {

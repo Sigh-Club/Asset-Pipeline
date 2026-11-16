@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""bake_pixel_atlas.py — texel-grid UV, baked atlas and palette-locked material
-build for the `pixel_3d` profile.
+"""bake_palette_atlas.py — texel-grid UV, baked atlas and palette-locked material
+build for the `palette_3d` profile.
 
 Three stages, because the palette lock must run in system Python (Blender's
 bundled PIL is not dependable) and because baking must be a separate GPU job:
 
     # 1. texel grid: uniform world-size texels, lattice-snapped UVs
-    tools/blender_run.sh --job uv -- -b -P tools/blender/bake_pixel_atlas.py -- \
-        --stage texel --glb <asset>.glb --out output/gen/<asset> --profile pixel_3d
+    tools/blender_run.sh --job uv -- -b -P tools/blender/bake_palette_atlas.py -- \
+        --stage texel --glb <asset>.glb --out output/gen/<asset> --profile palette_3d
 
     # 2. bake the box-projected library materials into that atlas (Cycles, colour only)
-    tools/blender_run.sh --job bake -- -b -P tools/blender/bake_pixel_atlas.py -- \
+    tools/blender_run.sh --job bake -- -b -P tools/blender/bake_palette_atlas.py -- \
         --stage albedo --glb <asset>_texel.glb --out ... --library <library.blend> \
-        --faction iron_directorate --profile pixel_3d
+        --faction iron_directorate --profile palette_3d
 
     # 3. lock the atlas to the profile palette (system python)
-    python3 tools/style/palette_lock.py <out>/atlas/atlas_albedo.png --profile pixel_3d \
+    python3 tools/style/palette_lock.py <out>/atlas/atlas_albedo.png --profile palette_3d \
         --dither bayer4 --out-dir <out>/atlas --suffix _pixel
 
     # 4. build palette-locked materials and export the GLB
-    tools/blender_run.sh --job script -- -b -P tools/blender/bake_pixel_atlas.py -- \
-        --stage final --glb <asset>_texel.glb --out ... --profile pixel_3d
+    tools/blender_run.sh --job script -- -b -P tools/blender/bake_palette_atlas.py -- \
+        --stage final --glb <asset>_texel.glb --out ... --profile palette_3d
 
 The GLB that leaves stage 4 carries a 256 px palette atlas with nearest filtering
 and no PBR maps — the pixel tier's material model (STYLE_RESEARCH §6).
@@ -37,7 +37,7 @@ import bpy
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools" / "blender"))
-import pixel_uv  # noqa: E402
+import palette_uv  # noqa: E402
 
 
 def parse_args():
@@ -104,7 +104,7 @@ def library_items_from(names, faction: str, mapping: dict | None) -> dict:
 def stage_texel(args, prof):
     obj = import_mesh(Path(args.glb).resolve())
     tex = prof.get("texture", {})
-    report = pixel_uv.unwrap_and_grid(
+    report = palette_uv.unwrap_and_grid(
         obj, float(tex.get("texel_world_m", 0.02)), int(tex.get("atlas_px", 256)))
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -116,16 +116,16 @@ def stage_texel(args, prof):
                               export_format="GLB", export_yup=True,
                               export_animations=True, export_animation_mode="ACTIONS",
                               export_anim_slide_to_zero=True)
-    pixel_uv.write_report(out, report, {"source": str(Path(args.glb).resolve()),
+    palette_uv.write_report(out, report, {"source": str(Path(args.glb).resolve()),
                                         "texel_glb": str(dest)})
     print(f"TEXEL {dest}  density {report['implied_world_area_per_texel']} m2/texel "
           f"util {report['utilisation']:.1%} islands {report['islands']}")
 
 
-PIXEL_SCALE = ROOT / "configs" / "materials" / "pixel_scale.json"
+PIXEL_SCALE = ROOT / "configs" / "materials" / "palette_scale.json"
 
 
-def apply_pixel_scale(mats: dict) -> dict:
+def apply_palette_scale(mats: dict) -> dict:
     """Scale each library material's box projection for the pixel tier.
 
     A physically correct 30 cm buckle panel puts its features at ~3 texels on a
@@ -212,7 +212,7 @@ def stage_albedo(args, prof):
         if m:
             m.name = "IMP_" + m.name
     lib = _load_library_materials(Path(args.library).resolve(), sorted(set(items.values())))
-    scaled = apply_pixel_scale(lib)
+    scaled = apply_palette_scale(lib)
 
     for i, name in enumerate(old_slots):
         if name in items:

@@ -13,11 +13,11 @@ AAA, low-poly, pixel-3D and HD pixel selectable without four parallel pipelines.
 
 | id | Representation | Budget | Gates |
 |---|---|---|---|
-| `aaa_3d` | 3D mesh | ≤25k tris, 2K PBR, 1 direction | contract, seam, flatness, style |
+| `pbr_3d` | 3D mesh | ≤25k tris, 2K PBR, 1 direction | contract, seam, flatness, style |
 | `lowpoly_3d` | 3D mesh | ≤3k tris, 512 palette, cel | contract, palette, readability |
-| `pixel_3d` | 3D mesh | ≤4k tris, 256, texel grid 2 cm | contract, texel grid, palette, readability, timing |
-| `pixel_sprite` | 8-direction sprite | 96×128, rotbile palette, bayer4 | palette, silhouette, directions, timing, sheet |
-| `hd_pixel_sprite` | 8-direction sprite | 192×256, bayer2, 5-step ramps | as above + readability |
+| `palette_3d` | 3D mesh | ≤4k tris, 256, texel grid 2 cm | contract, texel grid, palette, readability, timing |
+| `palette_sprite` | 8-direction sprite | 96×128, rotbile palette, bayer4 | palette, silhouette, directions, timing, sheet |
+| `hd_sprite` | 8-direction sprite | 192×256, bayer2, 5-step ramps | as above + readability |
 
 ## Schema
 
@@ -57,10 +57,10 @@ Rules enforced by the validator:
 
 ```bash
 python3 tools/style/profiles.py list
-python3 tools/style/profiles.py show hd_pixel_sprite
+python3 tools/style/profiles.py show hd_sprite
 python3 tools/style/profiles.py validate            # every profile
-python3 tools/style/profiles.py validate pixel_3d
-python3 tools/style/profiles.py gates pixel_sprite
+python3 tools/style/profiles.py validate palette_3d
+python3 tools/style/profiles.py gates palette_sprite
 ```
 
 Exit code 1 with `ERROR <path>: <reason>` lines on any invalid profile.
@@ -80,8 +80,8 @@ tools/blender_run.sh --job render -- -b -P tools/blender/parametric_prop.py -- \
     --out output/props/barrel --render --library <library.blend>
 
 # pixel gate: palette drift + silhouette integrity
-python3 tools/style/check_pixel_asset.py output/props/barrel/render/<file>.png \
-    --profile pixel_3d --kind prop
+python3 tools/style/check_palette_asset.py output/props/barrel/render/<file>.png \
+    --profile palette_3d --kind prop
 ```
 
 ## Stage wiring
@@ -93,18 +93,18 @@ Implemented (2026-11-10):
 | `retopo_unit.py --profile` | `geometry.tris_max` (LOD0 budget) |
 | `decimate_unit.py --profile` | `geometry.tris_max` (pixel-tier LOD) |
 | `bake_unit_atlas.py --profile` | `texture.atlas_px` (AAA atlas) |
-| `bake_pixel_atlas.py --stage texel --profile` | `texture.texel_world_m`, `texture.atlas_px`; raises if the surface area does not fit the atlas at that density |
-| `bake_pixel_atlas.py --stage final --profile` | `texture.atlas_px`, `material_model: palette` (one palette material, `Closest` filtering, no PBR maps) |
+| `bake_palette_atlas.py --stage texel --profile` | `texture.texel_world_m`, `texture.atlas_px`; raises if the surface area does not fit the atlas at that density |
+| `bake_palette_atlas.py --stage final --profile` | `texture.atlas_px`, `material_model: palette` (one palette material, `Closest` filtering, no PBR maps) |
 | `palette_lock.py --profile` | `pixel.palette_id` (and refuses an unregistered palette) |
-| `render_pixel_master.py` / `master_render.py` | canvas size and direction count are passed by the driver from the profile |
+| `render_master.py` / `master_render.py` | canvas size and direction count are passed by the driver from the profile |
 
-`render.directions`/`size_px` still come from the driver because `pixel_3d`
+`render.directions`/`size_px` still come from the driver because `palette_3d`
 declares `directions: 1` (the in-engine mesh needs no turnaround); the master set
 is a render product, so `--directions 8` is explicit at the capture stage.
 
 Explicit CLI flags still override every profile value.
 
-## pixel_3d budget change (2026-11-10)
+## palette_3d budget change (2026-11-10)
 
 `geometry.tris_max` moved from 1200 to 4000. Choice (not Rejected: 1200, the PSX
 figure) — Because: `tools/glb_contract.py` floors a unit at 4000 tris, so a
@@ -112,7 +112,7 @@ pixel-tier unit below that cannot pass the engine contract, and the contract is 
 engine's authority, not the art tier's. Weapon/prop recipes stay far below the
 budget (barrel and lasrifle are 460 tris each).
 
-## pixel_3d palette (2026-11-10)
+## palette_3d palette (2026-11-10)
 
 `pixel.palette_id` is now `grimdark_3d` (`assets/palettes/grimdark_3d.gpl`):
 `grimdark_64` plus a completed neutral/steel ramp. Measured cause: `grimdark_64`

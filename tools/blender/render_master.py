@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""render_pixel_master.py — capture the 8-direction pixel master from a baked,
+"""render_master.py — capture the 8-direction pixel master from a baked,
 palette-locked GLB.
 
-This is the last 3D stage of the `pixel_3d` route and it is deliberately thin:
-the look is decided by the texel-grid atlas (bake_pixel_atlas.py) and the palette
+This is the last 3D stage of the `palette_3d` route and it is deliberately thin:
+the look is decided by the texel-grid atlas (bake_palette_atlas.py) and the palette
 lock (palette_lock.py). This script only guarantees the capture conditions the
 technique needs — one constant scale across the set, no antialiasing, flat
 shading, and normal/AO/emission masks saved as data.
 
-    tools/blender_run.sh --job render -- -b -P tools/blender/render_pixel_master.py -- \
+    tools/blender_run.sh --job render -- -b -P tools/blender/render_master.py -- \
         --glb output/gen/<asset>/<asset>_pixel.glb --out output/gen/<asset> \
         --size 256 --directions 8 --masks --anchor bottom
 
 Follow with:
-    python3 tools/style/palette_lock.py --dir <out>/render --profile pixel_3d \
+    python3 tools/style/palette_lock.py --dir <out>/render --profile palette_3d \
         --dither bayer4 --out-dir <out>/pixel_masters --suffix ""
 """
 from __future__ import annotations

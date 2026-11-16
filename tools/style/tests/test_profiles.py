@@ -30,12 +30,12 @@ class ProfileTests(unittest.TestCase):
 
     def test_registry_covers_the_requested_style_range(self):
         ids = set(self.cfg["profiles"])
-        for required in ("aaa_3d", "lowpoly_3d", "pixel_3d", "pixel_sprite",
-                         "hd_pixel_sprite"):
+        for required in ("pbr_3d", "lowpoly_3d", "palette_3d", "palette_sprite",
+                         "hd_sprite"):
             self.assertIn(required, ids)
 
     def test_extends_inherits_and_overrides(self):
-        derived = profiles.resolve("hd_pixel_sprite", self.cfg)
+        derived = profiles.resolve("hd_sprite", self.cfg)
         self.assertEqual(derived["render"]["size_px"], [192, 256])
         self.assertEqual(derived["animation"]["fps_authored"], 12)
         self.assertIn("idle", derived["animation"]["clips"])
@@ -43,7 +43,7 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("extends", derived)
 
     def test_defaults_are_applied(self):
-        resolved = profiles.resolve("aaa_3d", self.cfg)
+        resolved = profiles.resolve("pbr_3d", self.cfg)
         self.assertFalse(resolved["render"]["aa"])
         self.assertEqual(resolved["animation"]["fps_authored"], 12)
 
@@ -59,26 +59,26 @@ class ProfileTests(unittest.TestCase):
             profiles.resolve("a", cfg)
 
     def test_unknown_key_is_rejected(self):
-        bad = profiles.resolve("pixel_sprite", self.cfg)
+        bad = profiles.resolve("palette_sprite", self.cfg)
         bad["geometry"] = {"tris_max": 10, "tris_min": 1, "shading": "flat",
                            "uv": "none", "tris_maX": 99}
         errors = profiles.validate(bad, self.cfg)
         self.assertTrue(any("unknown key 'tris_maX'" in e for e in errors), errors)
 
     def test_unknown_gate_is_rejected(self):
-        bad = profiles.resolve("pixel_sprite", self.cfg)
+        bad = profiles.resolve("palette_sprite", self.cfg)
         bad["gates"] = ["palette_compliance", "vibes"]
         errors = profiles.validate(bad, self.cfg)
         self.assertTrue(any("unknown gate 'vibes'" in e for e in errors), errors)
 
     def test_texel_grid_requires_world_size(self):
-        bad = profiles.resolve("pixel_3d", self.cfg)
+        bad = profiles.resolve("palette_3d", self.cfg)
         del bad["texture"]["texel_world_m"]
         errors = profiles.validate(bad, self.cfg)
         self.assertTrue(any("texel_world_m" in e for e in errors), errors)
 
     def test_sprite_profile_requires_canvas_and_palette(self):
-        bad = profiles.resolve("pixel_sprite", self.cfg)
+        bad = profiles.resolve("palette_sprite", self.cfg)
         del bad["render"]["size_px"]
         del bad["pixel"]["palette_id"]
         errors = profiles.validate(bad, self.cfg)
@@ -86,13 +86,13 @@ class ProfileTests(unittest.TestCase):
         self.assertTrue(any("palette_id" in e for e in errors), errors)
 
     def test_unknown_palette_is_rejected(self):
-        bad = profiles.resolve("pixel_sprite", self.cfg)
+        bad = profiles.resolve("palette_sprite", self.cfg)
         bad["pixel"]["palette_id"] = "not_a_palette"
         errors = profiles.validate(bad, self.cfg)
         self.assertTrue(any("unknown palette_id" in e for e in errors), errors)
 
     def test_animation_budget_shape_is_enforced(self):
-        bad = profiles.resolve("pixel_sprite", self.cfg)
+        bad = profiles.resolve("palette_sprite", self.cfg)
         bad["animation"]["clips"]["walk"] = {"frames": [10, 6]}
         errors = profiles.validate(bad, self.cfg)
         self.assertTrue(any("animation.walk" in e for e in errors), errors)

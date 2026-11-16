@@ -261,8 +261,16 @@ usual retarget sources.
 ## Current status (2026-11-17)
 
 **Shipped and certified:** 61 pixel assets pass `guard:glb` and `guard:pixel`; Jest 624/624;
-pixel-tier and full-loop-demo E2E 3/3. Of those, 26 units are built on the frames below; the rest are
-the earlier authored primitive kit and the props.
+pixel-tier and full-loop-demo E2E 3/3. Of those, **7 units are built on the frames below**; the rest are
+the earlier authored primitive kit and the props. (Corrected 2026-11-21: this line previously said 26.
+Measured from the shipped GLBs by rig signature — 7 socketed-frame, 16 `Human.rig`, 25 `unit_rig`. The
+remaining 41 unit masters were never modelled on a frame; they are box mosaics.)
+
+The **overlay strategy** that replaces "these are placeholders until the kit method lands": import a
+DoW2 model where the import certifies, then overlay it with IoA palette, IoA silhouette parts and the
+IoA material library; where the DoW2 source lacks the pose or motion, apply an **XCOM 2 animation
+layer** on top. Canonical statement and phased plan:
+`Imperium-of-Ash/docs/game-design/MODEL_PORT_AND_ANIMATION_PLAN.md`.
 
 | Asset | Body class | Source | Tris | Joints | Clips |
 |---|---|---|---|---|---|
@@ -274,8 +282,10 @@ the earlier authored primitive kit and the props.
 | `cinderborn_chaos_marine_pixel.glb` | elite | DoW2 `wordbearers_marine` | 4,264 | 35 | 9 |
 
 Every one of these is a **derived whole mesh**: the anatomy and animation are sound, but the
-silhouette is still the source's. They are placeholders until the kit method in
-`UNIT_KIT_METHODOLOGY.md` replaces them with assembled parts.
+silhouette is still the source's. They are the 7 units the overlay pass starts from — not a finished
+state. The overlay (IoA palette + IoA silhouette parts + IoA materials, with XCOM 2 animation layers
+where the DoW2 source has no pose) is what makes them IoA units rather than Relic ones. Plan:
+`Imperium-of-Ash/docs/game-design/MODEL_PORT_AND_ANIMATION_PLAN.md`.
 
 ## Lessons learned (each cost a shipped defect)
 

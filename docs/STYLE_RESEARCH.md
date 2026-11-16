@@ -224,7 +224,7 @@ seam scores).
 ## 8. What is missing
 
 1. **A per-asset style profile** that selects representation and budget
-   (`pixel_sprite` / `pixel_3d` / `lowpoly_3d` / `aaa_3d`) and drives every stage.
+   (`palette_sprite` / `palette_3d` / `lowpoly_3d` / `pbr_3d`) and drives every stage.
 2. **The 3D master art direction** for pixel targets: exaggerated silhouette, flat
    cel shading, thick ink, authored AO/edge highlights, emission/reflection masks
    exported with the frames (the Boltgun recipe).
@@ -332,7 +332,7 @@ different profile palette and shading.
 
 ## 14. Measured pixel-tier findings (2026-11-10)
 
-The first full `pixel_3d` run produced four certified masters (§8a of
+The first full `palette_3d` run produced four certified masters (§8a of
 `3D_ASSETS.md`). What follows is measured on those runs, not inferred from the
 shipped games; it refines the technique standard where the plan above was
 optimistic.
@@ -341,7 +341,7 @@ optimistic.
    sampling a downscale is not a filter.** Baking the photo-derived library
    straight onto the texel grid produced blue/grey camouflage on the barrel
    (measured: the metal-trim atlas read as noise at 2 texels per buckle feature).
-   The fix that worked is a delivered mip level: `build_pixel_variants.py` writes
+   The fix that worked is a delivered mip level: `build_palette_variants.py` writes
    each material at `2 × tile_m / texel_m` px (32–100 px here) with LANCZOS, and
    the bake samples that. This is the texture-side equivalent of Boltgun's
    "detail too fine is reduced to an impression of the object".
@@ -377,7 +377,7 @@ optimistic.
    transform too. Mask passes must zero exposure, look and transform.
 8. **Gate negative controls are cheap and changed the result three times.** Building a
    deliberately broken GLB for `check_texel_grid.py` and a broken frame for
-   `check_pixel_asset.py` caught two checker bugs before they could certify a bad
+   `check_palette_asset.py` caught two checker bugs before they could certify a bad
    asset (a UV-layer reference invalidated by a Blender operator reported
    1e56 m²/texel; a palette loaded as 0..1 floats produced an all-black control;
    a reused variable name silently disabled the UV-lattice check until the

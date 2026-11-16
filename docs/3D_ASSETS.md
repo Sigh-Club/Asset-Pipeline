@@ -5,6 +5,14 @@ half of the asset pipeline (GLB units, materials, environments). The 2D sprite
 path (8-direction renders, atlases, palette) is documented in
 [`BLENDER_WORKFLOW.md`](BLENDER_WORKFLOW.md) and `PIPELINE_V2.md`.
 
+**Unit strategy (2026-11-21, canonical).** For units we **overlay imported DoW2 models** and
+apply **XCOM 2 animation layers where the DoW2 models are lacking**, to fit our style and engine.
+Import gives anatomy, a named 93-bone Biped skeleton and gear bones; the overlay (IoA palette,
+IoA silhouette parts, IoA materials) gives identity; the animation layer supplies the poses DoW2
+has no clip for (lateral cover lean, peek, cover enter/exit, high-cover lean, flinch, panic).
+The environment/prop path below is unchanged. Canonical statement, measured source inventory and
+phased plan: `Imperium-of-Ash/docs/game-design/MODEL_PORT_AND_ANIMATION_PLAN.md`.
+
 Authorities: `Imperium-of-Ash/docs/game-design/FACTION_IDENTITY.md` (art rules),
 `UNIT_ROSTER.md` (what exists), `3D_COMBAT_MIGRATION.md` §4 (GLB contract),
 `ASSET_PIPELINE_ROADMAP.md` (quality bar and programme state).
@@ -216,7 +224,7 @@ Known limits, recorded:
 ## 8. Style profiles, asset requests and the pixel gate (2026-11-09)
 
 Style is selectable, not hard-coded. `configs/styles/profiles.json` defines
-`aaa_3d`, `lowpoly_3d`, `pixel_3d`, `pixel_sprite` and `hd_pixel_sprite`, each
+`pbr_3d`, `lowpoly_3d`, `palette_3d`, `palette_sprite` and `hd_sprite`, each
 with geometry/texture/render/animation budgets and the gate set that accepts the
 asset. `tools/style/profiles.py` validates them (unknown keys, cycles, palette
 ids, budgets); `docs/STYLE_PROFILES.md` is the schema reference.
@@ -233,8 +241,8 @@ request per asset with a **route**:
 | `pixel_ui` | icons, portraits, panels | `pz/pixel` |
 
 Proof run (2026-11-09): `iron_directorate_barrel_a`, `iron_directorate_lasrifle`
-and `tile_floor_industrial_a` built from requests at `pixel_3d`, rendered 256²
-without antialiasing, palette-checked (`tools/style/check_pixel_asset.py`: drift
+and `tile_floor_industrial_a` built from requests at `palette_3d`, rendered 256²
+without antialiasing, palette-checked (`tools/style/check_palette_asset.py`: drift
 0.022–0.034, one component, fill in range). Outputs under `output/props/<id>/`.
 
 The pixel gate measures palette drift in Oklab and silhouette integrity (component
@@ -242,7 +250,7 @@ count, bounding-box fill per asset kind). It is the pixel-tier counterpart to
 `glb_contract.py`: PBR seam/flatness gates are meaningless for a palette-locked
 asset. Human readability review is still required.
 
-### 8a. The pixel-master route (2026-11-10) — `pixel_3d` end to end
+### 8a. The pixel-master route (2026-11-10) — `palette_3d` end to end
 
 The 2026-11-09 proof produced *smooth-shaded* masters with palette drift 0.02–0.04:
 correct geometry, wrong tier. The pixel look needs a texel grid, a band-limited
@@ -250,19 +258,19 @@ material source and a palette lock, and those are now stages with gates rather
 than intentions. Two drivers run the whole route:
 
 ```bash
-tools/build_pixel_asset.sh <out-name> <request-id> <prop|weapon|tile>
-tools/build_pixel_unit.sh  <out-name> <unit-id> <textured-unit.glb> [faction]
+tools/build_asset.sh <out-name> <request-id> <prop|weapon|tile>
+tools/build_unit.sh  <out-name> <unit-id> <textured-unit.glb> [faction]
 ```
 
 | Stage | Tool | What it enforces |
 |---|---|---|
-| texel grid | `tools/blender/pixel_uv.py` (via `bake_pixel_atlas.py --stage texel`) | uniform `texel_world_m` density per island, UVs snapped to the atlas texel lattice, density contract ±25 % |
-| material source | `tools/pbr/build_pixel_variants.py` → `build_blender_library.py --pixel` | albedo band-limited to `2 × tile_m / texel_m` px so one texel samples an averaged texel, not a random sub-texel value |
-| bake | `bake_pixel_atlas.py --stage albedo` | albedo via a base-colour→emission reroute (a metallic material has no diffuse component, so `DIFFUSE` bakes black), plus an emission atlas |
+| texel grid | `tools/blender/palette_uv.py` (via `bake_palette_atlas.py --stage texel`) | uniform `texel_world_m` density per island, UVs snapped to the atlas texel lattice, density contract ±25 % |
+| material source | `tools/pbr/build_palette_variants.py` → `build_blender_library.py --pixel` | albedo band-limited to `2 × tile_m / texel_m` px so one texel samples an averaged texel, not a random sub-texel value |
+| bake | `bake_palette_atlas.py --stage albedo` | albedo via a base-colour→emission reroute (a metallic material has no diffuse component, so `DIFFUSE` bakes black), plus an emission atlas |
 | palette lock | `tools/style/palette_lock.py` | Oklab nearest-palette with ordered dither, binary alpha, despeckle; every opaque pixel must be an exact palette entry |
-| final GLB | `bake_pixel_atlas.py --stage final` | one palette material, `Closest` filtering, no PBR maps, flat shading |
-| master | `tools/blender/render_pixel_master.py` + `master_render.py` | 8 directions at the profile canvas, no AA, one constant scale across the set, pose chosen explicitly, normal/AO/emission masks in Raw |
-| gates | `check_texel_grid.py`, `check_pixel_asset.py`, `check_master.py`, `glb_contract.py` | see below |
+| final GLB | `bake_palette_atlas.py --stage final` | one palette material, `Closest` filtering, no PBR maps, flat shading |
+| master | `tools/blender/render_master.py` + `master_render.py` | 8 directions at the profile canvas, no AA, one constant scale across the set, pose chosen explicitly, normal/AO/emission masks in Raw |
+| gates | `check_texel_grid.py`, `check_palette_asset.py`, `check_master.py`, `glb_contract.py` | see below |
 
 Certified 2026-11-10 (all four green, negative controls recorded in §8b):
 
@@ -283,7 +291,7 @@ multiply (decoded lengths 0.58–0.75) until `pass_materials.py` reset it. That 
 the third instance of the same class of bug; the module now owns the discipline for
 every renderer.
 
-`build_pixel_unit.sh` takes the faction as its 4th argument (default
+`build_unit.sh` takes the faction as its 4th argument (default
 `iron_directorate`): the bake maps bare slot names to `<faction>__<slot>`, so
 shipping a non-Directorate unit without it silently bakes Directorate materials.
 `decimate_unit.py` also cleans before decimating now (weld, delete loose/degenerate,
@@ -319,11 +327,11 @@ column) and the deck module was re-cut at the engine's 2.4 m cell:
 | deck module 2.4 m | `output/gen/tile8_24` | 380 | +0.36 % | 256² | 0 | tile |
 
 All seven pass `glb_contract.py` (prop/tile), `check_texel_grid.py` (0 % off-lattice,
-0 off-palette), `check_pixel_asset.py` and `check_master.py` (8 directions, distinct).
+0 off-palette), `check_palette_asset.py` and `check_master.py` (8 directions, distinct).
 
 **Two tool defects the kit exposed, fixed here:**
 
-1. **`pixel_uv.py` left every UV off the texel lattice whenever island packing
+1. **`palette_uv.py` left every UV off the texel lattice whenever island packing
    translated an island.** The snap ran *before* `pack_islands`, which then
    translated islands by arbitrary (fractional-texel) offsets — the column came out
    100 % off-lattice with a filtered atlas while its own report claimed
@@ -331,7 +339,7 @@ All seven pass `glb_contract.py` (prop/tile), `check_texel_grid.py` (0 % off-lat
    translation by the mean fractional offset, which preserves island shape) and
    recording `islands_relattices` in the stage report. Negative control: the
    unpatched column fails `check_texel_grid.py`, the patched one passes.
-2. **`check_pixel_asset.py` rejected correct boxy cover.** Its `prop` bbox-fill
+2. **`check_palette_asset.py` rejected correct boxy cover.** Its `prop` bbox-fill
    range (0.25–0.95) assumes a rounded prop; a crate or wall seen edge-on
    legitimately fills 0.96–1.00 of its bounding box. A separate `cover` kind
    (0.20–1.00) was added instead of loosening `prop` for every prop.
@@ -348,7 +356,7 @@ atlas (recorded in their request params).
 | `check_master.py --selftest` | flat normals, antialiased alpha, identical views, wrong resolution, uniform AO → each rejected; correct set accepted |
 | `check_texel_grid.py --selftest` | wrong density, off-lattice UVs, off-palette atlas, wrong atlas size → each rejected; correct GLB accepted |
 | `palette_lock.py --selftest` | off-palette input flagged, single hand-edited pixel flagged after locking, soft alpha rejected; locked output is exact |
-| `check_pixel_asset.py --selftest` | off-palette render, two-component silhouette, stringy silhouette, empty canvas → each rejected; palette-locked single shape accepted |
+| `check_palette_asset.py --selftest` | off-palette render, two-component silhouette, stringy silhouette, empty canvas → each rejected; palette-locked single shape accepted |
 
 Run them all before trusting a green run:
 
@@ -356,7 +364,7 @@ Run them all before trusting a green run:
 python3 tools/style/check_master.py --selftest
 python3 tools/style/check_texel_grid.py --selftest
 python3 tools/style/palette_lock.py --selftest
-python3 tools/style/check_pixel_asset.py --selftest
+python3 tools/style/check_palette_asset.py --selftest
 ```
 
 Known limits of this tier, recorded in `docs/KNOWN-ISSUES.md`: the automated
@@ -396,7 +404,7 @@ quota or GPU generation, and carries role gear as real geometry.
 
 ```bash
 # mesh + authored-weight rig + texel/atlas/palette/master/gates
-BUILD_RIG=1 tools/build_pixel_authored_unit.sh unit_<id> <unit-id> <faction>
+BUILD_RIG=1 tools/build_authored_unit.sh unit_<id> <unit-id> <faction>
 ```
 
 - `configs/units/<faction>.json` — unit configs (body preset, helm, shoulders, back, weapon,

@@ -12,7 +12,7 @@ Masks are rendered through `pass_materials.py`: Raw view transform, uint8
 thresholds, the two bugs documented there.
 
 Shared by `parametric_prop.py` (build-then-render) and
-`render_pixel_master.py` (render an already-baked GLB).
+`render_master.py` (render an already-baked GLB).
 """
 from __future__ import annotations
 

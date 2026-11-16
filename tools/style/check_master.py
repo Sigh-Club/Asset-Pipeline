@@ -19,8 +19,8 @@ Checks (each one is a way this pipeline can silently be wrong):
 That is the point: a checker that has never failed is not evidence.
 
 Usage:
-    python3 tools/style/check_master.py --dir output/props/barrel8 --profile pixel_3d
-    python3 tools/style/check_master.py --dir output/props/rifle8 --profile pixel_3d \
+    python3 tools/style/check_master.py --dir output/props/barrel8 --profile palette_3d
+    python3 tools/style/check_master.py --dir output/props/rifle8 --profile palette_3d \
         --require-distinct
     python3 tools/style/check_master.py --selftest
 """
@@ -191,7 +191,7 @@ def selftest() -> int:
         "normal": (128, 128, 128, 255), "ao": (200, 200, 200, 255),
         "emission": (0, 0, 0, 0)}[kind])
     d = make_case("flatnorm", lambda i: _solid(size, (10, 10, 10, 255)), flat_mask)
-    r = check_set(d, "pixel_sprite", True)
+    r = check_set(d, "palette_sprite", True)
     cases.append(("flat normals rejected for the right reason",
                   any("median length" in f for f in r["failures"])))
 
@@ -201,19 +201,19 @@ def selftest() -> int:
         a[:16, :, 3] = 128
         return a
     d = make_case("aa", aa_view, good_mask)
-    r = check_set(d, "pixel_sprite", True)
+    r = check_set(d, "palette_sprite", True)
     cases.append(("antialiasing rejected",
                   any("no_antialiasing" in f for f in r["failures"])))
 
     # 3. identical views with --require-distinct -> distinct_views must fail
     d = make_case("same", lambda i: _solid(size, (10, 10, 10, 255)), good_mask)
-    r = check_set(d, "pixel_sprite", True)
+    r = check_set(d, "palette_sprite", True)
     cases.append(("identical views rejected",
                   any("distinct_views" in f for f in r["failures"])))
 
     # 4. wrong resolution -> resolution must fail
     d = make_case("size", lambda i: _solid((48, 48), (10, 10, 10, 255)), good_mask)
-    r = check_set(d, "pixel_sprite", True)
+    r = check_set(d, "palette_sprite", True)
     cases.append(("wrong resolution rejected",
                   any("resolution" in f for f in r["failures"])))
 
@@ -224,7 +224,7 @@ def selftest() -> int:
         return _solid(size, {"normal": (128, 128, 255, 255),
                              "emission": (0, 0, 0, 0)}[kind])
     d = make_case("ao", lambda i: _solid(size, (10, 10, 10, 255)), bad_ao)
-    r = check_set(d, "pixel_sprite", True)
+    r = check_set(d, "palette_sprite", True)
     cases.append(("uniform AO rejected",
                   any("ao_informative" in f for f in r["failures"])))
 
@@ -250,7 +250,7 @@ def selftest() -> int:
         return a
 
     d = make_case("good", good_view, good_varying)
-    r = check_set(d, "pixel_sprite", True)
+    r = check_set(d, "palette_sprite", True)
     cases.append(("correct set accepted",
                   r["verdict"] == "PASS" and not r["failures"]))
 
@@ -266,7 +266,7 @@ def selftest() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir")
-    ap.add_argument("--profile", default="pixel_3d")
+    ap.add_argument("--profile", default="palette_3d")
     ap.add_argument("--require-distinct", action="store_true")
     ap.add_argument("--expect-directions", type=int,
                     help="override the expected view count (mesh pixel-master sets use 8)")

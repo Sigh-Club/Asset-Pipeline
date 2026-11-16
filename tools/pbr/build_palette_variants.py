@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""build_pixel_variants.py — band-limit library albedos to the pixel tier's texel
+"""build_palette_variants.py — band-limit library albedos to the pixel tier's texel
 budget.
 
 A 1024 px material tile projected onto a 2 cm texel grid is a 50:1 downscale.
@@ -15,8 +15,8 @@ This writes `<item>/albedo_pixel.png` (and `emissive_pixel.png`) sized at
 untouched.
 
 Usage:
-    python3 tools/pbr/build_pixel_variants.py --texel-m 0.02
-    python3 tools/pbr/build_pixel_variants.py --texel-m 0.02 --only metal_trim
+    python3 tools/pbr/build_palette_variants.py --texel-m 0.02
+    python3 tools/pbr/build_palette_variants.py --texel-m 0.02 --only metal_trim
 """
 from __future__ import annotations
 

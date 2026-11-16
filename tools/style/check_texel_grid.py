@@ -19,8 +19,8 @@ off-lattice one and a wrong-palette one — and asserts each check fires. A gate
 that has never failed on bad input is not evidence.
 
 Usage:
-    python3 tools/style/check_texel_grid.py <asset.glb> --profile pixel_3d
-    python3 tools/style/check_texel_grid.py <asset.glb> --profile pixel_3d --json
+    python3 tools/style/check_texel_grid.py <asset.glb> --profile palette_3d
+    python3 tools/style/check_texel_grid.py <asset.glb> --profile palette_3d --json
     python3 tools/style/check_texel_grid.py --selftest
 """
 from __future__ import annotations
@@ -347,24 +347,24 @@ def selftest() -> int:
     cases = []
 
     write_glb(d / "good.glb", pos, good_uv, tris, atlas)
-    r = check(d / "good.glb", "pixel_3d")
+    r = check(d / "good.glb", "palette_3d")
     cases.append(("correct texel grid accepted", r["verdict"] == "PASS"))
 
     write_glb(d / "density.glb", pos, good_uv, tris, atlas, uv_scale=2.0)
-    r = check(d / "density.glb", "pixel_3d")
+    r = check(d / "density.glb", "palette_3d")
     cases.append(("wrong texel density rejected",
                   any("texel_density" in f for f in r["failures"])))
 
     shifted = good_uv + (0.5 / 256.0)
     write_glb(d / "lattice.glb", pos, shifted, tris, atlas)
-    r = check(d / "lattice.glb", "pixel_3d")
+    r = check(d / "lattice.glb", "palette_3d")
     cases.append(("off-lattice UVs rejected",
                   any("uv_lattice" in f for f in r["failures"])))
 
     bad_atlas = atlas.copy()
     bad_atlas[10:20, 10:20, :3] = (3, 7, 11)
     write_glb(d / "palette.glb", pos, good_uv, tris, bad_atlas)
-    r = check(d / "palette.glb", "pixel_3d")
+    r = check(d / "palette.glb", "palette_3d")
     cases.append(("off-palette atlas rejected",
                   any("atlas_palette" in f for f in r["failures"])))
 
@@ -372,7 +372,7 @@ def selftest() -> int:
     small[..., :3] = pal[0]
     small[..., 3] = 255
     write_glb(d / "size.glb", pos, good_uv, tris, small)
-    r = check(d / "size.glb", "pixel_3d")
+    r = check(d / "size.glb", "palette_3d")
     cases.append(("wrong atlas size rejected",
                   any("atlas_size" in f for f in r["failures"])))
 
@@ -386,7 +386,7 @@ def selftest() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("glb", nargs="?")
-    ap.add_argument("--profile", default="pixel_3d")
+    ap.add_argument("--profile", default="palette_3d")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--density-tol", type=float, default=None,
