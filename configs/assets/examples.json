@@ -534,6 +534,246 @@
         "palette_compliance",
         "readability"
       ]
+    },
+    {
+      "id": "prop_wreck_predator",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "vehicle_wrecked_predator",
+        "height_m": 2.6,
+        "source": "dow2:vehicle_wrecked_predator"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_wreck_dreadnaught",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "wrecked_dreadnaught",
+        "height_m": 2.4,
+        "source": "dow2:wrecked_dreadnaught"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_wreck_wartrukk",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "wrecked_ork_wartrukk",
+        "height_m": 2.6,
+        "source": "dow2:wrecked_ork_wartrukk"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "rust_iron"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_barbed_wire",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "barbed_wire_01",
+        "height_m": 0.9,
+        "source": "dow2:barbed_wire_01"
+      },
+      "materials": {
+        "body": "iron_directorate__metal_trim",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_tank_trap",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "tanktrap_02",
+        "height_m": 1.1,
+        "source": "dow2:tanktrap_02"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "rust_iron"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_trench",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "concrete_trench_01",
+        "height_m": 1.0,
+        "source": "dow2:concrete_trench_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_ruin_block",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "building_rubble_8x8",
+        "height_m": 1.6,
+        "source": "dow2:building_rubble_8x8"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_broken_pipe",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "u_broken_pipe_01",
+        "height_m": 1.0,
+        "source": "dow2:u_broken_pipe_01"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "rust_iron"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_street_lamp",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "lamp_street_tall_01",
+        "height_m": 3.2,
+        "source": "dow2:lamp_street_tall_01"
+      },
+      "materials": {
+        "body": "iron_directorate__armour_secondary",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_banner_post",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "banner_post_01",
+        "height_m": 2.6,
+        "source": "dow2:banner_post_01"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "brass_worn"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_gate_ironbars",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "gate_ironbars_large_01",
+        "height_m": 2.4,
+        "source": "dow2:gate_ironbars_large_01"
+      },
+      "materials": {
+        "body": "iron_directorate__metal_trim",
+        "trim": "gunmetal_polished"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
+    },
+    {
+      "id": "prop_stairs_stone",
+      "kind": "prop",
+      "route": "imported_mesh",
+      "profile": "stylised_3d",
+      "params": {
+        "recipe": "imported",
+        "shape": "stone_stairs_wide",
+        "height_m": 1.2,
+        "source": "dow2:stone_stairs_wide"
+      },
+      "materials": {
+        "body": "iron_directorate__underlayer",
+        "trim": "stone_grey"
+      },
+      "gates": [
+        "glb_contract",
+        "readability"
+      ]
     }
   ]
 }
