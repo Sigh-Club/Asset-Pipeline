@@ -86,3 +86,7 @@ datasets/*/eval/
 
 # === Licensed audio source library (raw, ~120 GB; derived bank is committed) ===
 assets/_audio_library/
+
+# === Extracted shipped-game sources (regenerable via tools/extract_sources.py) ===
+assets/sources/
+!assets/sources/manifest.json
