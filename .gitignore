@@ -90,3 +90,4 @@ assets/_audio_library/
 # === Extracted shipped-game sources (regenerable via tools/extract_sources.py) ===
 assets/sources/
 !assets/sources/manifest.json
+AGENTS.md
