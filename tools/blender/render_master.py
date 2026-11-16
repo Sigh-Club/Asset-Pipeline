@@ -9,7 +9,7 @@ technique needs — one constant scale across the set, no antialiasing, flat
 shading, and normal/AO/emission masks saved as data.
 
     tools/blender_run.sh --job render -- -b -P tools/blender/render_master.py -- \
-        --glb output/gen/<asset>/<asset>_pixel.glb --out output/gen/<asset> \
+        --glb output/gen/<asset>/<asset>.glb --out output/gen/<asset> \
         --size 256 --directions 8 --masks --anchor bottom
 
 Follow with:
@@ -36,7 +36,7 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--glb", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--id", help="asset id (default: glb stem without _pixel)")
+    ap.add_argument("--id", help="asset id (default: glb stem without _palette)")
     ap.add_argument("--size", type=int, default=256)
     ap.add_argument("--directions", type=int, default=8, choices=(1, 4, 8))
     ap.add_argument("--masks", action="store_true")
@@ -56,7 +56,7 @@ def main():
     args = parse_args()
     glb = Path(args.glb).resolve()
     out = Path(args.out).resolve()
-    asset_id = args.id or glb.stem.replace("_pixel", "")
+    asset_id = args.id or glb.stem.replace("_palette", "")
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(glb))

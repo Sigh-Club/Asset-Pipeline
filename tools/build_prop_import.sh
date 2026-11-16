@@ -28,7 +28,7 @@ lock_palette() {
   lock_palette "$@"
 }
 REQ="configs/assets/examples.json"
-LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
+LIB="assets/materials/grimdark_scifi/grimdark_scifi_palette.blend"
 OUT="output/gen/${ASSET}"
 BUILD="output/gen/build/${ID}"
 DIRS=8
@@ -53,7 +53,7 @@ echo "=== 4/8 palette-lock atlas"
 # The final stage consumes the locked atlas name. For a non-palette profile the lock is a
 # pass-through: copy the baked atlas to the expected filename.
 if [ "$MATERIAL_MODEL" != "palette" ]; then
-  cp "$OUT/atlas/atlas_albedo.png" "$OUT/atlas/atlas_albedo_pixel.png"
+  cp "$OUT/atlas/atlas_albedo.png" "$OUT/atlas/atlas_albedo_palette.png"
   [ -f "$OUT/atlas/atlas_emission.png" ] && cp "$OUT/atlas/atlas_emission.png" "$OUT/atlas/atlas_emission_pixel.png"
 fi
 lock_palette "$OUT/atlas/atlas_albedo.png" --profile "$PROFILE" \

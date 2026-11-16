@@ -11,7 +11,7 @@ This script adds `IOA_flat_<faction>_<slot>` materials derived from the faction 
 (`configs/factions/<faction>.json`) so the bake has the right colour to sample. It is
 additive and idempotent: existing materials are updated in place, never duplicated.
 
-    blender -b assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend \
+    blender -b assets/materials/grimdark_scifi/grimdark_scifi_palette.blend \
         -P tools/add_flat_faction_materials.py -- --faction iron_directorate
 """
 from __future__ import annotations
@@ -26,7 +26,7 @@ import bpy
 ROOT = Path(__file__).resolve().parents[1]
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--faction", required=True)
-_ap.add_argument("--library", default="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend")
+_ap.add_argument("--library", default="assets/materials/grimdark_scifi/grimdark_scifi_palette.blend")
 _ap.add_argument("--save", action="store_true")
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 

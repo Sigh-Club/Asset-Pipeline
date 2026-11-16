@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tint_faction_pixel.py — rebuild a faction kit's pixel albedo on its identity ramp.
+"""tint_faction_palette.py — rebuild a faction kit's pixel albedo on its identity ramp.
 
 The image-generated material sheets are ash-toned by design ("ash-black with
 purple-pink witchfire heat staining"). At the 32-50 px pixel-variant size the
@@ -7,7 +7,7 @@ staining averages out, so the palette lock snaps the slot to grey and the whole
 faction reads as the Directorate. This preserves the source luminance and
 texture detail but maps it onto the faction's authoritative ramp.
 
-Writes `albedo_pixel.png` in place (original kept as `albedo_pixel_src.png`) and
+Writes `albedo_palette.png` in place (original kept as `albedo_palette_src.png`) and
 records the ramp in `pixel_tint.json`. Rebuild the pixel library afterwards:
     blender -b -P tools/pbr/build_blender_library.py -- --pixel --only cinderborn
 """
@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-CONFIG = ROOT / "configs" / "materials" / "faction_pixel_ramps.json"
+CONFIG = ROOT / "configs" / "materials" / "faction_palette_ramps.json"
 
 
 def hex_rgb(value: str):
@@ -87,11 +87,11 @@ def main():
     changed = []
     for slot, ramp in cfg["slots"].items():
         item = ROOT / "assets" / "materials" / "grimdark_scifi" / f"{args.faction}__{slot}"
-        path = item / "albedo_pixel.png"
+        path = item / "albedo_palette.png"
         if not path.exists():
-            print(f"skip {slot}: no albedo_pixel.png")
+            print(f"skip {slot}: no albedo_palette.png")
             continue
-        src = item / "albedo_pixel_src.png"
+        src = item / "albedo_palette_src.png"
         if not src.exists() and not args.dry_run:
             src.write_bytes(path.read_bytes())
         if args.dry_run:
@@ -99,7 +99,7 @@ def main():
             continue
         recolour(path, ramp)
         (item / "pixel_tint.json").write_text(json.dumps({
-            "ramp": ramp, "source": "albedo_pixel_src.png",
+            "ramp": ramp, "source": "albedo_palette_src.png",
             "because": "generated sheet is ash-toned; faction hue lost at pixel-variant size",
         }, indent=2) + "\n")
         changed.append(slot)

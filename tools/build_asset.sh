@@ -29,7 +29,7 @@ lock_palette() {
   lock_palette "$@"
 }
 
-LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
+LIB="assets/materials/grimdark_scifi/grimdark_scifi_palette.blend"
 OUT="output/gen/${ASSET}"
 BUILD="output/gen/build/${ID}"
 DIRS=8

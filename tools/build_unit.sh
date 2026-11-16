@@ -23,7 +23,7 @@ ASSET="${1:?usage: build_unit.sh <out-name> <unit-id> <textured-unit.glb>}"
 ID="${2:?unit id required}"
 SRC="${3:?source GLB required}"
 FACTION="${4:-iron_directorate}"
-LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
+LIB="assets/materials/grimdark_scifi/grimdark_scifi_palette.blend"
 OUT="output/gen/${ASSET}"
 
 echo "=== 1/8 decimate to the profile tri budget"

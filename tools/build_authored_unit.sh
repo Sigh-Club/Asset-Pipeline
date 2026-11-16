@@ -31,7 +31,7 @@ lock_palette() {
   lock_palette "$@"
 }
 
-LIB="assets/materials/grimdark_scifi/grimdark_scifi_pixel.blend"
+LIB="assets/materials/grimdark_scifi/grimdark_scifi_palette.blend"
 PROFILE="${PROFILE:-palette_3d}"
 MATERIAL_MAP="${MATERIAL_MAP:-}"
 SRC_DIR="output/units/${FACTION}/${ID}"

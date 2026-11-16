@@ -240,7 +240,7 @@ def main() -> int:
                     help="alpha islands smaller than this are dropped (degenerate "
                          "sliver cleanup; 1 disables)")
     ap.add_argument("--out-dir", help="write locked PNGs here (default: beside source)")
-    ap.add_argument("--suffix", default="_pixel")
+    ap.add_argument("--suffix", default="_palette")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()

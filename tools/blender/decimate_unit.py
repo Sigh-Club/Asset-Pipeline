@@ -131,7 +131,7 @@ def main():
 
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    asset_id = args.id or Path(args.glb).stem.replace("_texel", "").replace("_pixel", "")
+    asset_id = args.id or Path(args.glb).stem.replace("_texel", "").replace("_palette", "")
     dest = out / f"{asset_id}_lod.glb"
     bpy.ops.object.select_all(action="SELECT")
     armatures = [o for o in bpy.data.objects if o.type == "ARMATURE"]

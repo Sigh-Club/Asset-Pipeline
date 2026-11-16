@@ -43,7 +43,7 @@ def parse_args():
                     help="library tree to build from (default: the shipped library)")
     ap.add_argument("--pixel", action="store_true",
                     help="build the pixel-tier library from the band-limited "
-                         "albedo_pixel/emissive_pixel variants (no PBR maps)")
+                         "albedo_palette/emissive_palette variants (no PBR maps)")
     ap.add_argument("--out-name", default="grimdark_scifi.blend")
     return ap.parse_args(argv)
 
@@ -88,8 +88,8 @@ def build_material(item_dir: Path, meta: dict, scale: float, pixel: bool = False
     def tex_node(filename, non_colour, y):
         if pixel:
             stem = Path(filename).stem
-            if (item_dir / f"{stem}_pixel.png").exists():
-                filename = f"{stem}_pixel.png"
+            if (item_dir / f"{stem}_palette.png").exists():
+                filename = f"{stem}_palette.png"
         path = item_dir / filename
         if not path.exists():
             return None

@@ -16,7 +16,7 @@ bundled PIL is not dependable) and because baking must be a separate GPU job:
 
     # 3. lock the atlas to the profile palette (system python)
     python3 tools/style/palette_lock.py <out>/atlas/atlas_albedo.png --profile palette_3d \
-        --dither bayer4 --out-dir <out>/atlas --suffix _pixel
+        --dither bayer4 --out-dir <out>/atlas --suffix _palette
 
     # 4. build palette-locked materials and export the GLB
     tools/blender_run.sh --job script -- -b -P tools/blender/bake_palette_atlas.py -- \
@@ -293,11 +293,11 @@ def stage_final(args, prof):
     obj = import_mesh(Path(args.glb).resolve())
     out = Path(args.out).resolve()
     atlas_dir = out / "atlas"
-    albedo_path = atlas_dir / "atlas_albedo_pixel.png"
+    albedo_path = atlas_dir / "atlas_albedo_palette.png"
     if not albedo_path.exists():
         raise SystemExit(f"missing {albedo_path}; lock the atlas with "
                          f"tools/style/palette_lock.py first")
-    emission_path = atlas_dir / "atlas_emission_pixel.png"
+    emission_path = atlas_dir / "atlas_emission_palette.png"
     if not emission_path.exists():
         emission_path = atlas_dir / "atlas_emission.png"
 
@@ -306,7 +306,7 @@ def stage_final(args, prof):
         if emission_path.exists() else None
 
     # one material for the whole pixel tier: palette albedo, optional emission
-    mat = bpy.data.materials.new("pixel_palette")
+    mat = bpy.data.materials.new("palette_atlas")
     mat.use_nodes = True
     nt = mat.node_tree
     for n in list(nt.nodes):
@@ -331,7 +331,7 @@ def stage_final(args, prof):
     for poly in obj.data.polygons:
         poly.use_smooth = False
 
-    dest = out / f"{args.id or Path(args.glb).stem}_pixel.glb"
+    dest = out / f"{args.id or Path(args.glb).stem}.glb"
     bpy.ops.object.select_all(action="DESELECT")
     for o in bpy.data.objects:
         o.select_set(True)
@@ -344,7 +344,7 @@ def stage_final(args, prof):
                               export_anim_slide_to_zero=True)
     (out / "pixel_final_meta.json").write_text(json.dumps({
         "asset": args.id, "profile": args.profile,
-        "materials": ["pixel_palette"], "replaced_slots": old_slots,
+        "materials": ["palette_atlas"], "replaced_slots": old_slots,
         "albedo": str(albedo_path), "emission": str(emission_path)
         if emission_path.exists() else None,
         "interpolation": "Closest", "shading": "flat",

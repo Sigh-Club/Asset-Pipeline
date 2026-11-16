@@ -9,9 +9,9 @@ metal-trim sheet locked into blue/grey noise). The correct treatment is a mip
 level — deliver the material at the resolution the texel grid can actually
 represent, with 2x supersampling so the bake itself does not alias.
 
-This writes `<item>/albedo_pixel.png` (and `emissive_pixel.png`) sized at
+This writes `<item>/albedo_palette.png` (and `emissive_palette.png`) sized at
 `2 * round(tile_m / texel_m)` px, then `build_blender_library.py --pixel` builds
-`grimdark_scifi_pixel.blend` from them. The AAA library and its maps are
+`grimdark_scifi_palette.blend` from them. The AAA library and its maps are
 untouched.
 
 Usage:
@@ -71,13 +71,13 @@ def build_item(item_dir: Path, texel_m: float, supersample: int,
     std_before = float(arr[..., :3].std())
     arr[..., :3] = compress_contrast(arr[..., :3], contrast_keep)
     out = Image.fromarray(arr.clip(0, 255).astype(np.uint8), "RGBA")
-    out.save(item_dir / "albedo_pixel.png")
-    written = ["albedo_pixel.png"]
+    out.save(item_dir / "albedo_palette.png")
+    written = ["albedo_palette.png"]
     emissive = item_dir / "emissive.png"
     if emissive.exists():
         Image.open(emissive).convert("RGBA").resize((size, size), Image.LANCZOS).save(
-            item_dir / "emissive_pixel.png")
-        written.append("emissive_pixel.png")
+            item_dir / "emissive_palette.png")
+        written.append("emissive_palette.png")
     report = {"size_px": size, "tile_m": tile_m, "texel_m": texel_m,
               "texels_per_tile": round(tile_m / texel_m, 2),
               "supersample": supersample, "written": written,

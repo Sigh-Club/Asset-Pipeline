@@ -506,6 +506,102 @@
         "readability"
       ],
       "extends": "lowpoly_3d"
+    },
+    "palette_3d_creature": {
+      "label": "Palette 3D, large creature (4+ m body, coarse texel grid)",
+      "representation": "mesh_3d",
+      "geometry": {
+        "tris_max": 16000,
+        "tris_min": 100,
+        "shading": "flat",
+        "uv": "texel_grid"
+      },
+      "texture": {
+        "atlas_px": 512,
+        "material_model": "palette",
+        "normal_map": false,
+        "ao": false,
+        "emission": true,
+        "texel_world_m": 0.03
+      },
+      "render": {
+        "directions": 1
+      },
+      "pixel": {
+        "palette_id": "grimdark_3d",
+        "dither": "bayer4",
+        "outline": 0.0,
+        "selout": true
+      },
+      "animation": {
+        "fps_authored": 12,
+        "clips": {
+          "idle": {
+            "frames": [
+              2,
+              6
+            ]
+          },
+          "walk": {
+            "frames": [
+              4,
+              8
+            ]
+          },
+          "run": {
+            "frames": [
+              4,
+              8
+            ]
+          },
+          "aim": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "fire": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "reload": {
+            "frames": [
+              6,
+              10
+            ]
+          },
+          "hit": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "death": {
+            "frames": [
+              6,
+              12
+            ]
+          },
+          "melee": {
+            "frames": [
+              4,
+              8
+            ]
+          }
+        }
+      },
+      "gates": [
+        "glb_contract",
+        "texel_grid",
+        "palette_compliance",
+        "readability",
+        "timing"
+      ],
+      "//": "High-detail pixel 3D tier for base-mesh authored units: real human anatomy, body-derived armour shells and a held weapon need 9-14k tris and a 512 atlas at the same 2 cm texel grid. Contract change is measured A/B against palette_3d (see docs/PIXEL_UNIT_PROGRAMME.md).",
+      "notes": "Palette 3D, large creature (4+ m body). The 0.02 m/texel grid contracts a 33 m2 silhouette into more texels than a 512 atlas packs, so the grid is coarser by design; correct scale comes first, texel density follows the silhouette area.",
+      "extends": "palette_3d_hi"
     }
   }
 }
