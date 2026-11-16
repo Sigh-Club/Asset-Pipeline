@@ -98,10 +98,16 @@ def sample(anim, frame, skip_stale=False):
     return pose_overrides(anim, u, skip_stale)
 
 
-def pose_overrides(anim, u):
-    """Interpolated local pos/quat per bone at normalised time u in [0,1]."""
+def pose_overrides(anim, u, skip_stale=False):
+    """Interpolated local pos/quat per bone at normalised time u in [0,1].
+
+    skip_stale: stale-flagged keys are placeholders; applying them detaches
+    limbs (empirical). skip them to rest.
+    """
     pose = {}
     for name, track in anim["bones"].items():
+        if skip_stale and track.get("stale"):
+            continue
         pos = _interp(track["pos"], u)
         rot = _interp(track["rot"], u)
         if pos and rot:

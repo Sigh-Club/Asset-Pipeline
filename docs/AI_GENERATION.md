@@ -1,11 +1,28 @@
 # AI Generation Workflow
 
-## Imperium of Ash Asset Pipeline — GLM-5.2 Integration
+> **Updated 2026-11-09.** This document originally described a "scripts only, no
+> image models" policy. That is no longer the workflow: image models now supply
+> concept art, orthographic turnarounds and tileable albedo, and image-to-3D
+> supplies base meshes. What has not changed is the rule that **nothing generated
+> ships unmodified** — Blender is where an asset becomes a game asset.
 
 ## Role of AI in This Pipeline
 
-**GLM-5.2 is a pipeline architect and script writer, NOT a final asset generator.**
-It generates unit configs, writes Blender Python scripts, analyzes render quality, and troubleshoots API issues. Final sprites come from the Blender render pipeline — deterministic, palette-locked, git-trackable.
+| Stage | AI allowed? | Output |
+|---|---|---|
+| Concept art, faction/unit exploration | yes (Gemini) | PNG concepts, reviewed by a human/agent |
+| Orthographic turnaround for 3D reconstruction | yes (Gemini) | front/left/right/back PNGs |
+| Base mesh geometry | yes (img23d: Hunyuan3D / TripoSR) | dense GLB/OBJ — *not* game-ready |
+| Unwrapping, retopo, UV, rig, clips, LOD, export | no | deterministic Blender scripts |
+| Tileable material albedo | yes (Gemini) | albedo only; normal/roughness/metallic are derived locally |
+| PBR bakes, material library | no | Blender |
+| Final decision (does it look right?) | no | rendered PNG + in-engine footage, judged visually |
+
+LLM roles: writing and debugging the Blender/Python stages, generating JSON unit
+configs, reading the stage reports, and reviewing renders. That includes keeping up
+with Blender API changes (layered Actions, NLA strips, ChannelBag fcurves).
+
+### Why AI is not allowed to emit the final asset
 
 **Why not AI direct-to-sprite?**
 - Copyright risk: AI training data unclear, output not safely ownable

@@ -1,5 +1,15 @@
 # Asset-Pipeline for Imperium of Ash
 
+## Start here: which pipeline?
+
+| Target | Entry point | Doc |
+|---|---|---|
+| **3D combat units, materials, environments** (current) | `tools/blender_run.sh`, `tools/img23d/`, `tools/pbr/`, `tools/glb_contract.py` | [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md) |
+| 2D sprite atlases, tiles, UI, props (legacy, still active) | `tools/pipeline_cli.py` | this file, `docs/PIPELINE_V2.md` |
+
+The 3D path has an acceptance gate (`tools/glb_contract.py`) and a VRAM policy
+(`tools/gpu_policy.py`); the 2D path does not. One GPU job at a time on this box.
+
 **Multi-asset-type generation pipeline for grimdark tactical games.**
 
 Built for **Imperium of Ash** (IoA), a Warhammer 40K-inspired tactical combat game. Generates characters, tiles, UI elements, and props — all deterministic, all in-house, zero budget.
@@ -101,7 +111,8 @@ asset-pipeline/
 │
 ├── assets/
 │   ├── pbr_textures/                   # 10 procedural PBR material sets
-│   ├── materials/                      # Blender material library .blend
+│   ├── materials/                      # Blender material libraries
+│   │   └── grimdark_scifi/             #   3D PBR library + albedo/normal/rough/metal maps
 │   ├── palettes/                       # grimdark_64.gpl
 │   └── units/                          # Per-asset model + render output
 │
@@ -127,12 +138,20 @@ asset-pipeline/
 │   │   └── batch_pixelate.py           # Downscale + palette quantize
 │   │
 │   ├── pbr/
-│   │   └── gen_procedural_textures.py  # PBR texture generator (10 materials)
+│   │   ├── gen_procedural_textures.py  # PBR texture generator (10 materials)
+│   │   ├── build_material_manifest.py  # 3D library demand plan + prompts
+│   │   ├── derive_maps.py              # sheet -> seamless albedo/normal/rough/metal
+│   │   └── build_blender_library.py    # 3D material .blend (box projection)
+│   │
+│   ├── glb_contract.py                 # 3D acceptance gate (tris/UV/clips/skin)
+│   ├── gpu_policy.py                   # VRAM budgets, job profiles
+│   ├── blender_run.sh                  # VRAM-guarded Blender launcher
 │   │
 │   └── packer/
 │       └── pack_sprites.py             # Atlas packer + JSON metadata + LOD
 ├── docs/
-│   ├── PIPELINE_V2.md                  # Pipeline architecture reference
+│   ├── 3D_ASSETS.md                    # 3D asset tools, contract, GPU policy (start here)
+│   ├── PIPELINE_V2.md                  # Parametric/2D architecture reference
 │   ├── PARAMETRIC_CONFIG.md            # JSON config schema
 │   ├── BLENDER_WORKFLOW.md             # Blender setup guide
 │   ├── STYLE_GUIDE.md                  # Visual identity spec

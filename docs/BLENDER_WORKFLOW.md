@@ -2,6 +2,12 @@
 
 ## Imperium of Ash Asset Pipeline — 3D-to-2D Automation
 
+> **Scope:** this document covers the **2D sprite** path (8-direction renders,
+> atlases, palette, supersampling). For the **3D GLB** path — units, materials,
+> environments, the acceptance gate and the workstation memory policy — read
+> [`3D_ASSETS.md`](3D_ASSETS.md) instead. The two paths share Blender and the
+> material library but not their settings.
+
 ## Why Blender?
 
 The Python scripts are the operators. You never touch Blender's UI for repetitive tasks. Your job is ONLY:

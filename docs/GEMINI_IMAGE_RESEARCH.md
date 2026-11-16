@@ -117,7 +117,7 @@ These are the "tricks" that matter for our pipeline, in order of effect.
 | No alpha | inspect PNG channels | white bg + local key |
 | Baked lighting | compare two light directions | flat-light prompt for sources |
 | Identity drift across edits | side-by-side review | re-anchor, regenerate from winner |
-| Off-palette pixels | `check_pixel_asset.py` drift | palette injection + local quantise |
+| Off-palette pixels | `check_palette_asset.py` drift | palette injection + local quantise |
 | Anti-aliased "pixel art" | alpha/edge inspection, downscale test | 4K→nearest downsample, no AA prompt |
 | Sheet cropped / wrong ratio | pixel dimensions vs requested | ratio in prompt + UI |
 | Text typos | visual review at 1:1 | Pro model, short labels, edit fix |
@@ -143,7 +143,7 @@ Per unit: 1 turnaround sheet (Pro) + 1 material sheet (standard) + 1 concept
 - Turnarounds feed `tools/img23d` → retopo → profile build.
 - Material sheets feed `tools/pbr/derive_maps.py` (never trust Gemini for normals).
 - Style sheets become review targets; the palette gate is
-  `tools/style/check_pixel_asset.py`.
+  `tools/style/check_palette_asset.py`.
 - Every generation is recorded in `docs/game-design/ASSET_LEDGER.md` with the
   prompt and model used.
 

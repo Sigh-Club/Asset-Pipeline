@@ -243,3 +243,23 @@ mv latent decoder flattens; the carve IS the detail.
 Blender glb import rotates axes (Y-up->Z-up): after import, recompute extents
 and sort axes [widest,second,thinnest] before any scale-by-height, else the
 scale factor uses the depth axis and the print is 3x oversize (hit twice).
+
+---
+
+## Game-asset use (2026-11-09)
+
+The stage now feeds the **3D combat pipeline** as well as printing:
+
+    concept/orthos -> img23d -> inspect_mesh.py (decimate) -> uv_prepare.py (weld+UV)
+                   -> rig_unit_proof.py -> glb_contract.py
+
+Two consequences for this stage:
+
+- Output is used as a **base mesh**, not an asset. It arrives as triangle soup
+  (every triangle carries its own vertices) with no UVs and no PBR separation; the
+  weld in `uv_prepare.py` reduces a 20K-tri unit from ~60K verts to ~10K before
+  unwrapping. Never skip that step.
+- This is the most VRAM-hungry stage in the repo. It waits for free VRAM and loads
+  a CUDA sysmem-spill shim by default. Budgets, profiles and the one-job-at-a-time
+  rule are in [`3D_ASSETS.md`](3D_ASSETS.md) §4; check headroom with
+  `python3 tools/gpu_policy.py status` before a batch.

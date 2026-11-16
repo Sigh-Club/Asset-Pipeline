@@ -1,5 +1,9 @@
 # Rendering Standards — the research record for the IoA sprite bake (2026-10-23)
 
+> **Scope 2026-11-09:** applies to the **2D sprite bake** (8-direction, supersampled
+> atlases). 3D GLB previews and in-engine footage are judged by
+> [`3D_ASSETS.md`](3D_ASSETS.md) §5, not by these rules.
+
 > **Purpose**: the researched state of the art for 3D→2D isometric sprite production,
 > the golden-standard rules, and an audit of OUR pipeline (`tools/blender/render_8dir_v2.py`,
 > the batch queue, and the defringe/pack post chain) against each. Every rule cites its

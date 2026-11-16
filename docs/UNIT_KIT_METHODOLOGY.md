@@ -1,8 +1,17 @@
 # Unit kit methodology — authoring IoA units instead of importing them
 
-> Status: **adopted 2026-11-17**, implementation not started. Supersedes "import a shipped mesh and
-> recolour it" as the unit route. Owner: asset pipeline. Related: `CHARACTER_PIPELINE.md` (rig and
-> certification standard), `Imperium-of-Ash/docs/game-design/FACTION_IDENTITY.md` (design authority).
+> Status: **adopted 2026-11-17**, implementation not started. Owner: asset pipeline. Related:
+> `CHARACTER_PIPELINE.md` (rig and certification standard),
+> `Imperium-of-Ash/docs/game-design/FACTION_IDENTITY.md` (design authority).
+>
+> **Scope correction 2026-11-21.** This document previously said it *supersedes* "import a shipped
+> mesh and recolour it" as the unit route. That framing was too strong and is now narrowed. The unit
+> route is **import + overlay**: import a DoW2 model where the import certifies, then overlay it with
+> kit parts, IoA palette and IoA materials, and apply XCOM 2 animation layers where DoW2 has no clip.
+> The kit method in this document **is the overlay mechanism** — it is what turns an imported DoW2
+> body into an IoA unit, not a replacement for importing. What it correctly supersedes is
+> *recolour-only*: a palette swap is not an overlay. Canonical strategy and phased plan:
+> `Imperium-of-Ash/docs/game-design/MODEL_PORT_AND_ANIMATION_PLAN.md`.
 
 ## 1. Why this exists
 

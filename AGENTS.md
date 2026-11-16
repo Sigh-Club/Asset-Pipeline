@@ -358,3 +358,10 @@ convenience). Rules:
   edit the Python tables, never the JS.
 - Keep generation outputs in explicit `--out` paths (or `~/Downloads/` for
   review) — no rogue files in the repo.
+
+# test-mode parity
+
+- Every asset, model, animation, material or runtime change MUST be passed to test mode in the
+  same change: rebuild `frontend/dist`, bump `UNIT_ASSET_REV`, verify the served bytes match disk
+  at `http://localhost:8080`, and re-run the guards, Jest and the pixel-tier/full-loop E2E.
+  A change that exists only in source is not done.

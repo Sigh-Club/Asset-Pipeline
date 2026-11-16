@@ -1,5 +1,11 @@
 # Parametric Unit Config Reference
 
+> **Status 2026-11-09:** the parametric path is **retired for characters** (the
+> output was a disconnected kitbash) and remains valid for **hard-surface props
+> and vehicles**. Character units are now built from image-to-3D meshes — see
+> [`3D_ASSETS.md`](3D_ASSETS.md). The JSON schema below still describes the prop
+> and vehicle configs in `configs/`.
+
 ## Imperium of Ash Asset Pipeline — JSON Config Schema
 
 ## Overview

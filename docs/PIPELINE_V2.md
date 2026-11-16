@@ -1,4 +1,10 @@
-# Pipeline Architecture
+# Pipeline Architecture — parametric / 2D (v3)
+
+> **Status 2026-11-09:** superseded for combat units by the 3D GLB pipeline
+> ([`3D_ASSETS.md`](3D_ASSETS.md)). Still current for tiles, UI, PBR material
+> generation and any parametric prop. The parametric **character** path is retired
+> (kitbash parts, see `ASSET_PIPELINE_ROADMAP.md` §1); its generator remains useful
+> for hard-surface props.
 
 ## Imperium of Ash Asset Pipeline — v3: Multi-Asset-Type Parametric PBR Generation
 

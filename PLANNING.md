@@ -1,6 +1,12 @@
 # Asset Pipeline — Quality Target & Roadmap
 
-**Last updated**: 2026-07-24
+> **Status 2026-11-09:** this is the **sprite-era** plan (v2/v3 parametric 2D
+> pipeline) and much of it is still accurate for that path. For the current 3D
+> programme, read [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md); for live work items,
+> [`TODO.md`](TODO.md). Faction naming here predates the ratified keys
+> (`radiant_concord`, `chrono_revenants`, …) — FACTION_IDENTITY.md wins.
+
+**Last updated**: 2026-07-24 (sprite programme); 3D scope added 2026-11-09
 
 ## Executive Summary
 

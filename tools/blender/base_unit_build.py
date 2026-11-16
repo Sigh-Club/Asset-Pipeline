@@ -9,7 +9,7 @@ and an export with library-compatible material slots for the pixel atlas bake.
     blender -b -P tools/blender/base_unit_build.py -- \
         --faction iron_directorate --unit line_infantry --export
 
-Then run tools/build_pixel_authored_unit.sh with PROFILE=pixel_3d_hi and
+Then run tools/build_authored_unit.sh with PROFILE=palette_3d_hi and
 MATERIAL_MAP=configs/materials/base_unit_material_map.json.
 """
 import argparse, bpy, math, addon_utils, statistics
@@ -42,6 +42,7 @@ _ap.add_argument('--brands', action='store_true', help='Cinder: warped brand pla
 _ap.add_argument('--vents', action='store_true', help='Cinder: ash vents')
 _ap.add_argument('--scrap', action='store_true', help='Wreckstorm: bolted salvage plates')
 _ap.add_argument('--pistons', action='store_true', help='Wreckstorm: exposed pistons')
+_ap.add_argument('--no-limbplate', action='store_true', help='skip the limb armour wraps')
 _ap.add_argument('--report', action='store_true', help='print per-slot triangle budgets')
 A=_ap.parse_args(_args)
 import json as _json
@@ -58,6 +59,10 @@ VENTS=bool(A.vents or _CFG.get('vents'))
 SCRAP=bool(A.scrap or _CFG.get('scrap'))
 PISTONS=bool(A.pistons or _CFG.get('pistons'))
 CLOAK=bool(A.cloak or _CFG.get('cloak')); ROBE=bool(A.robe or _CFG.get('robe'))
+# Limb armour is the default for hard-surface kits: a bare base-mesh limb under
+# plates is what made the first kit shipment read as non-human. Robed units keep
+# their cloth silhouette instead.
+LIMB = not A.no_limbplate and not ROBE and not CLOAK
 BODY=_v('body','standard')
 # Body classes come from the faction spec (FACTION_IDENTITY §Body class and unit
 # scale): 95% of units are human scale and only the top HP/armour/weapon tier uses
@@ -288,6 +293,20 @@ def add_cyl(name,c,r,d,material,axis=Vector((0,0,1)),seg=10):
 def add_cone(name,c,r1,r2,d,material,seg=12):
     bm=bmesh.new(); bmesh.ops.create_cone(bm,cap_ends=True,segments=seg,radius1=r1,radius2=r2,depth=d)
     bmesh.ops.translate(bm,vec=c,verts=bm.verts)
+    return new_obj(name,bm,material)
+
+def add_wrap(name,a,b,r1,r2,material,seg=8):
+    # Tapered armour sleeve between two limb markers. The base mesh is a slim nude
+    # human, so a hard-surface kit that only adds plates reads as an armature with
+    # armour strapped on; a wrap closes the limb silhouette.
+    a,b=Vector(a),Vector(b)
+    d=b-a
+    if d.length<1e-5: return None
+    bm=bmesh.new()
+    bmesh.ops.create_cone(bm,cap_ends=True,segments=seg,radius1=r1,radius2=r2,depth=d.length)
+    R=d.normalized().to_track_quat('Z','Y').to_matrix().to_4x4()
+    bmesh.ops.transform(bm,matrix=R,verts=bm.verts)
+    bmesh.ops.translate(bm,vec=(a+b)*0.5,verts=bm.verts)
     return new_obj(name,bm,material)
 
 def add_cap(name,c,rad,cut,material,seg=14,rings=8):
@@ -562,6 +581,21 @@ for side,sgn in (('L',1),('R',-1)):
     sh,el=shoulder[side],elbow[side]
     am=(sh+el)*0.5
     bevel(add_box(f'armplate_{side}',am+Vector((sgn*0.055,0.0,0.0)),(0.075,0.115,0.17),M['steel'],pitch=50,taper=0.8),0.01)
+if LIMB:
+    # Full limb armour: the hard-surface kits used to leave the base mesh's bare
+    # arms and shins showing, so a human-scale trooper read as a stick figure with
+    # plates. Robed units are exempt (the cloth already fills the silhouette).
+    for side,sgn in (('L',1),('R',-1)):
+        sh,el=Lm[side]['shoulder'],Lm[side]['elbow']
+        el2,wr=Lm[side]['elbow'],Lm[side]['wrist']
+        hp,kn=Lm[side]['hip'],Lm[side]['knee']
+        kn2,an=Lm[side]['knee'],Lm[side]['ankle']
+        add_wrap(f'armplate_upper_{side}',sh,el,0.098,0.078,M['steel'])
+        add_wrap(f'cuff_vambrace_{side}',el2,wr,0.080,0.062,M['dark'])
+        add_wrap(f'thighplate_wrap_{side}',hp,kn,0.128,0.098,M['steel'])
+        add_wrap(f'greave_{side}',kn2,an,0.100,0.070,M['steel'])
+        bevel(add_cap(f'kneepad_cap_{side}',Lm[side]['knee']+Vector((sgn*0.012,-0.030,0.010)),(0.082,0.078,0.070),-0.02,M['steel']),0.008)
+        bevel(add_cap(f'elbowpad_cap_{side}',Lm[side]['elbow']+Vector((sgn*0.020,0.010,0.0)),(0.075,0.072,0.070),-0.02,M['dark']),0.008)
 add_cyl('belt',(0,0.0,1.035),0.20,0.05,M['leather'],axis=Vector((0,0,1)),seg=18)
 add_box('buckle',(0,-0.152,1.035),(0.07,0.022,0.055),M['brass'])
 for i,(x,y) in enumerate([(-0.13,-0.135),(0.0,-0.155),(0.13,-0.135)]):
