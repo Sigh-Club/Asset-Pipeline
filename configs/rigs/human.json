@@ -1,6 +1,7 @@
 {
  "name": "human",
  "class": "human",
+ "source_up_axis": "y",
  "pose": "t",
  "reference": {
   "source": "DoW2 ig_base.model / DoW DE guardsman",

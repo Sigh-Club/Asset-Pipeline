@@ -1,6 +1,7 @@
 {
  "name": "monster",
  "class": "creature",
+ "source_up_axis": "y",
  "reference": {
   "source": "DoW DE daemonprince.whm / kroot_shaper.whm",
   "bones": [

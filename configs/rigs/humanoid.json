@@ -1,6 +1,7 @@
 {
  "name": "humanoid",
  "class": "human",
+ "source_up_axis": "y",
  "reference": {
   "source": "DoW2 marine parts / DoW DE guardsman / XCOM EU soldier",
   "bones": [

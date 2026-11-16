@@ -1,6 +1,7 @@
 {
  "name": "quadruped",
  "class": "creature",
+ "source_up_axis": "y",
  "reference": {
   "source": "DoW DE kroot_hounds.whm / krootox.whm",
   "bones": [

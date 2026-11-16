@@ -1,6 +1,7 @@
 {
  "name": "super_human",
  "class": "human",
+ "source_up_axis": "y",
  "pose": "t",
  "reference": {
   "source": "DoW2 space_marine_base.model",

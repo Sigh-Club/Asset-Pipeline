@@ -1,6 +1,7 @@
 {
  "name": "eldar",
  "class": "human",
+ "source_up_axis": "y",
  "pose": "t",
  "reference": {
   "source": "DoW2 guardian_common.model",
