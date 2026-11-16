@@ -175,30 +175,101 @@ class Packfile:
                 break
         return defs
 
-    # -------------------------------------------------------------- objects
-    def objects(self):
-        """Yield (class_name, object_offset) for every object in the data section.
+    # ------------------------------------------------------------- skeleton
+    def skeleton(self) -> dict | None:
+        """Decode the skeleton this packfile carries.
 
-        The v7 data section stores an object table: `u32 count` then, per object, the
-        type index and the object's offset. Objects are returned in table order, which is
-        the order the game reads them, so a skeleton always precedes its animation.
+        Verified layout for packfile v4 (Havok 4.5.1), measured on
+        fb_crouch_idle_01.hkx: a u32 bone count, then the skeleton name, then the
+        parentIndices array as int16 (one -1 root, every parent index < its child index),
+        then the referencePose as 70 records of 48 bytes (rotation quaternion, scale,
+        translation), then the bone-name string pool. The offsets are found by structure
+        rather than assumed, because the object table layout differs from later packfile
+        versions and guessing it is what stalled the first attempt.
         """
-        sec = self.sections["__data__"]
-        pos = sec.offset
-        end = sec.offset + sec.size
-        count = struct.unpack_from("<I", self.raw, pos)[0]
-        pos += 4
-        if count == 0 or count > 1_000_000:
-            raise HkxError(f"implausible object count {count} at {sec.offset:#x}")
-        names = self._type_names()
-        for _ in range(count):
-            if pos + 8 > end:
-                break
-            type_index, offset = struct.unpack_from("<II", self.raw, pos)
-            pos += 8
-            name = names[type_index] if type_index < len(names) else f"<{type_index}>"
-            yield name, sec.offset + offset
+        import math
+        raw = self.raw
+        data = self.sections.get("__data__")
+        if data is None:
+            return None
+        lo, hi = data.offset, data.offset + data.size
 
+        # bone count + skeleton name: a u32 count followed by a printable NUL-padded name
+        count = name = None
+        for off in range(lo, hi - 32, 4):
+            n = struct.unpack_from("<I", raw, off)[0]
+            if not (4 <= n <= 512):
+                continue
+            field = raw[off + 0x10:off + 0x20]
+            if len(field) < 16:
+                continue
+            text = field.split(b"\x00")[0]
+            if not (2 <= len(text) <= 15) or not all(32 <= b < 127 for b in text):
+                continue
+            # parents must follow: int16 array with exactly one -1 and every parent < index
+            pstart = off + 0x20
+            try:
+                parents = list(struct.unpack_from(f"<{n}h", raw, pstart))
+            except struct.error:
+                continue
+            if sum(1 for p in parents if p == -1) != 1:
+                continue
+            if not all(p < i for i, p in enumerate(parents) if p >= 0):
+                continue
+            count, name, parents_at = n, text.decode("ascii"), pstart
+            break
+        if count is None:
+            return None
+
+        # reference pose: `count` consecutive 48-byte records whose first four floats are a
+        # unit quaternion. Scanning for the structure beats assuming the offset.
+        def unit(off: int) -> bool:
+            q = struct.unpack_from("<4f", raw, off)
+            return 0.9 < math.sqrt(sum(v * v for v in q)) < 1.1
+
+        # A candidate only counts if the bytes immediately after the pose open a printable
+        # string: the bone-name pool sits directly behind the reference pose, and that is what
+        # rejects the false candidates the quaternion test alone accepts (measured: an earlier
+        # run locked onto a zeroed run and reported every pose as 0,0,0).
+        def opens_string(off: int) -> bool:
+            chunk = raw[off:off + 8]
+            return len(chunk) >= 4 and all(32 <= b < 127 for b in chunk[:4])
+
+        pose_at = None
+        for off in range(parents_at + count * 2, hi - count * 48, 4):
+            if sum(1 for i in range(count) if unit(off + i * 48)) < count - 2:
+                continue
+            if opens_string(off + count * 48):
+                pose_at = off
+                break
+        if pose_at is None:
+            return None
+
+        # bone names: the string pool after the pose
+        pool_at = pose_at + count * 48
+        names = []
+        cursor = pool_at
+        while cursor < hi and len(names) < count:
+            end = raw.find(b"\x00", cursor)
+            if end < 0:
+                break
+            text = raw[cursor:end].decode("ascii", "replace")
+            if 1 <= len(text) <= 31 and all(32 <= ord(c) < 127 for c in text):
+                names.append(text)
+                cursor = end + 1 + ((32 - ((end + 1 - cursor) % 32)) % 32 if False else 0)
+                cursor = end + 1
+            else:
+                cursor += 1
+        return {
+            "name": name,
+            "bone_count": count,
+            "parents": parents,
+            "bone_names": self.skeleton_bones() or names[:count],
+            "reference_pose_offset": pose_at,
+            "reference_pose": [
+                struct.unpack_from("<12f", raw, pose_at + i * 48) for i in range(count)
+            ],
+        }
 
     # ------------------------------------------------------------- skeleton
     def skeleton_bones(self) -> list[str]:
