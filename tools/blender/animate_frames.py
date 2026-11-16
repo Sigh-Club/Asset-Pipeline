@@ -331,7 +331,7 @@ def cover_low(side):
     """Low cover: crouched, back to the wall, leaning around the edge on `side`."""
     for i, f in enumerate((1, 17, 33)):
         _crouch()
-        _lean(side, 16 + (2 if i == 1 else 0))
+        _lean(side, 7 + (1 if i == 1 else 0))
         for pb in pose:
             key(pb, f)
 
@@ -341,7 +341,7 @@ def cover_high(side):
     for i, f in enumerate((1, 17, 33)):
         reset()
         arms_down()
-        _lean(side, 20 + (2 if i == 1 else 0))
+        _lean(side, 8 + (1 if i == 1 else 0))
         for pb in pose:
             key(pb, f)
 
@@ -350,7 +350,7 @@ def peek(side):
     """Peek out from low cover: rise slightly and lean further, then settle back."""
     for i, f in enumerate((1, 7, 13, 25)):
         _crouch(depth=1.0 if i != 1 else 0.86)
-        _lean(side, 26 if i == 1 else 12)
+        _lean(side, 12 if i == 1 else 5)
         if i == 1:
             hd = pose.get("head")
             if hd is not None:
@@ -374,11 +374,11 @@ def cover_switch(side_from, high=False):
         else:
             _crouch()
         if i == 0:
-            _lean(side_from, 18)
+            _lean(side_from, 8)
         elif i == 2:
-            _lean(other, 18)
+            _lean(other, 8)
         else:
-            _lean(side_from, 2)
+            _lean(side_from, 1)
         for pb in pose:
             key(pb, f)
 
@@ -414,6 +414,88 @@ def flinch(amount=1.0):
             key(pb, f)
 
 
+def cover_exit(angle, stay=False, low=True):
+    """Leave cover by `angle` degrees from the cover plane.
+
+    XComAnimNodeBlendByExitCoverType names the variants (Zero, Ninety, OneEighty,
+    Ninety_Stay, Zero_LowCoverStepOut) and XCOM 2 selects them against
+    StepOutAngleThreshold=40 (0 = parallel to the cover, 90 = perpendicular). The clip
+    rises out of the crouch, unwinds the lean, and turns the body by the exit angle so the
+    departure reads as leaving a specific edge rather than standing up.
+    """
+    for i, f in enumerate((1, 7, 13)):
+        depth = (1.0, 0.55, 0.0)[i] if low else 0.0
+        if low:
+            _crouch(depth=depth)
+        else:
+            reset()
+            arms_down()
+        _lean("L", max(0.0, 7 - i * 3))
+        twist = angle * (i / 2.0) * 0.35
+        for name in ("spine_02", "chest"):
+            pb = pose.get(name)
+            if pb is not None:
+                rot(pb, (0, 0, 1), twist)
+        hd = pose.get("head")
+        if hd is not None:
+            rot(hd, (0, 0, 1), twist * 0.6)
+        if stay and i == 2:
+            root = pose.get("root")
+            if root is not None:
+                root.location = (0, 0, 0)
+        for pb in pose:
+            key(pb, f)
+
+
+def cover_fire(side):
+    """Fire from high cover: the standing lean holds, the arms take the recoil."""
+    for i, f in enumerate((1, 5, 13)):
+        reset()
+        arms_down()
+        _lean(side, 8)
+        k = (0.0, 1.0, 0.3)[i]
+        for s in ("L", "R"):
+            ua = pose.get(f"upperarm_{s}")
+            if ua is not None:
+                rot(ua, (1, 0, 0), -8 * k)
+            la = pose.get(f"lowerarm_{s}")
+            if la is not None:
+                rot(la, (1, 0, 0), -6 * k)
+        sp = pose.get("spine_02")
+        if sp is not None:
+            rot(sp, (1, 0, 0), -5 * k)
+        for pb in pose:
+            key(pb, f)
+
+
+def panic_pose(phase):
+    """BlendByPanic: start (break posture), loop (shaking), stop (recover)."""
+    for i, f in enumerate((1, 13, 25)):
+        reset()
+        arms_down()
+        k = 1.0 if phase == "start" else (0.7 if phase == "loop" else 0.25)
+        for s in ("L", "R"):
+            ua = pose.get(f"upperarm_{s}")
+            if ua is not None:
+                rot(ua, (0, 1, 0), (1 if s == "L" else -1) * 70 * k)
+            la = pose.get(f"lowerarm_{s}")
+            if la is not None:
+                rot(la, (1, 0, 0), -40 * k)
+        for name, deg in (("spine_01", -8), ("spine_02", -12), ("chest", -6)):
+            pb = pose.get(name)
+            if pb is not None:
+                rot(pb, (1, 0, 0), deg * k)
+        hd = pose.get("head")
+        if hd is not None:
+            rot(hd, (0, 0, 1), (6 if i == 1 else -6) * k)
+        if phase == "loop" and i == 1:
+            root = pose.get("root")
+            if root is not None:
+                root.location = (0, 0, 0.02)
+        for pb in pose:
+            key(pb, f)
+
+
 CLIPS = {
     "aim": clip_aim,
     "idle": clip_idle,
@@ -437,6 +519,16 @@ CLIPS = {
     "flanked_idle": flanked_idle,
     "flinch_a": lambda: flinch(1.0),
     "flinch_b": lambda: flinch(0.6),
+    "cover_high_l_fire": lambda: cover_fire("L"),
+    "cover_high_r_fire": lambda: cover_fire("R"),
+    "cover_exit_zero": lambda: cover_exit(0),
+    "cover_exit_ninety": lambda: cover_exit(90),
+    "cover_exit_oneeighty": lambda: cover_exit(180),
+    "cover_exit_ninety_stay": lambda: cover_exit(90, stay=True),
+    "cover_exit_low_stepout": lambda: cover_exit(0, low=True),
+    "panic_start": lambda: panic_pose("start"),
+    "panic_loop": lambda: panic_pose("loop"),
+    "panic_stop": lambda: panic_pose("stop"),
 }
 
 arm.animation_data_create()
