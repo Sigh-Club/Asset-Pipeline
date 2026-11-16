@@ -68,6 +68,10 @@ def rot(pb, world_axis, degrees):
 
 def key(pb, frame):
     pb.keyframe_insert("rotation_quaternion", frame=frame)
+    # Location must be keyed too. The crouch lowers the root (`root.location = -0.40`) so the feet
+    # stay on the deck when the legs fold; keying only rotation silently dropped that drop, which
+    # is why the measured crouch had the feet 0.58 m in the air and the pelvis unchanged.
+    pb.keyframe_insert("location", frame=frame)
 
 
 def reset():
@@ -100,7 +104,7 @@ def gait(swing=24, knee=42, bob=0.03, lean=4, arm=18):
     phase = [0, 1, 0, -1, 0]
     for i, f in enumerate(frames):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         s = phase[i]
         for side, sgn in (("L", 1), ("R", -1)):
             th = pose.get(f"thigh_{side}")
@@ -129,7 +133,7 @@ def gait(swing=24, knee=42, bob=0.03, lean=4, arm=18):
 def clip_idle():
     for i, f in enumerate((1, 13, 25)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         breathe = 1.5 if i != 1 else -1.0
         for name in ("spine_01", "spine_02", "chest"):
             pb = pose.get(name)
@@ -149,7 +153,7 @@ def clip_idle():
 def clip_aim():
     for i, f in enumerate((1, 9)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         # raise both arms forward into a two-handed aim
         for side, sgn in (("L", 1), ("R", -1)):
             ua = pose.get(f"upperarm_{side}")
@@ -170,7 +174,7 @@ def clip_aim():
 def clip_fire():
     for i, f in enumerate((1, 3, 6, 12)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         kick = {0: 0, 1: 9, 2: 3, 3: 0}[i]
         for side, sgn in (("L", 1), ("R", -1)):
             ua = pose.get(f"upperarm_{side}")
@@ -191,7 +195,7 @@ def clip_fire():
 def clip_reload():
     for i, f in enumerate((1, 8, 16, 24)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         drop = {0: 0, 1: 25, 2: 25, 3: 0}[i]
         for side, sgn in (("L", 1), ("R", -1)):
             ua = pose.get(f"upperarm_{side}")
@@ -208,7 +212,7 @@ def clip_reload():
 def clip_hit():
     for i, f in enumerate((1, 5, 12)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         back = {0: 0, 1: 14, 2: 4}[i]
         sp = pose.get("spine_02")
         if sp is not None:
@@ -227,7 +231,7 @@ def clip_hit():
 def clip_death():
     for i, f in enumerate((1, 10, 24)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         fall = {0: 0, 1: 40, 2: 88}[i]
         root = pose.get("root")
         if root is not None:
@@ -247,7 +251,7 @@ def clip_death():
 def clip_melee():
     for i, f in enumerate((1, 7, 12, 18)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         swing = {0: 0, 1: -60, 2: 35, 3: 0}[i]
         ua = pose.get("upperarm_R")
         la = pose.get("lowerarm_R")
@@ -357,7 +361,7 @@ def _crouch(depth=1.0):
     (the DoW2 idle crouch) reads as hiding in the open instead of using the cover.
     """
     reset()
-    arms_hold((0.11, -0.26, -0.10), (-0.09, -0.46, -0.13))
+    arms_hold((0.11, -0.18, -0.10), (-0.09, -0.58, -0.13))
     for side in ("L", "R"):
         th = pose.get(f"thigh_{side}")
         sh = pose.get(f"shin_{side}")
@@ -418,7 +422,7 @@ def cover_high(side):
     """High cover: standing, leaning around the edge. No crouch — XCOM stands here."""
     for i, f in enumerate((1, 17, 33)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         _lean(side, 8 + (1 if i == 1 else 0))
         for pb in pose:
             key(pb, f)
@@ -448,7 +452,7 @@ def cover_switch(side_from, high=False):
     for i, f in enumerate((1, 7, 13)):
         if high:
             reset()
-            arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+            arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         else:
             _crouch()
         if i == 0:
@@ -507,7 +511,7 @@ def cover_exit(angle, stay=False, low=True):
             _crouch(depth=depth)
         else:
             reset()
-            arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+            arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         _lean("L", max(0.0, 7 - i * 3))
         twist = angle * (i / 2.0) * 0.35
         for name in ("spine_02", "chest"):
@@ -550,7 +554,7 @@ def panic_pose(phase):
     """BlendByPanic: start (break posture), loop (shaking), stop (recover)."""
     for i, f in enumerate((1, 13, 25)):
         reset()
-        arms_hold((0.11, -0.26, -0.03), (-0.09, -0.46, -0.06))
+        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
         k = 1.0 if phase == "start" else (0.7 if phase == "loop" else 0.25)
         for s in ("L", "R"):
             ua = pose.get(f"upperarm_{s}")
