@@ -359,6 +359,61 @@ def peek(side):
             key(pb, f)
 
 
+def cover_switch(side_from, high=False):
+    """XCOM's SwitchSidesLL2LR / SwitchSidesHL2HR: cross from one lean to the other.
+
+    The soldier keeps its back to the wall and swings the torso across the middle of the
+    wall, so the clip is one pass through neutral — playing it as a cross-fade instead
+    reads as a slide, which is why the shipped game has dedicated clips for it.
+    """
+    other = "R" if side_from == "L" else "L"
+    for i, f in enumerate((1, 7, 13)):
+        if high:
+            reset()
+            arms_down()
+        else:
+            _crouch()
+        if i == 0:
+            _lean(side_from, 18)
+        elif i == 2:
+            _lean(other, 18)
+        else:
+            _lean(side_from, 2)
+        for pb in pose:
+            key(pb, f)
+
+
+def flanked_idle():
+    """Self-flanked: the cover set is broken. Crouched, no lean, head scanning."""
+    for i, f in enumerate((1, 13, 25, 37)):
+        _crouch(depth=0.9)
+        # no lateral lean — there is no longer a safe side — and the head sweeps
+        hd = pose.get("head")
+        if hd is not None:
+            rot(hd, (0, 0, 1), (12, -10, 8, 0)[i])
+        ch = pose.get("chest")
+        if ch is not None:
+            rot(ch, (0, 0, 1), (4, -3, 3, 0)[i])
+        for pb in pose:
+            key(pb, f)
+
+
+def flinch(amount=1.0):
+    """A round that lands: torso snaps back, head jerks, then recovers."""
+    for i, f in enumerate((1, 4, 10)):
+        _crouch(depth=0.9)
+        k = (1.0, 1.0, 0.25)[i] * amount
+        for name, deg in (("spine_01", -10), ("spine_02", -14), ("chest", -8)):
+            pb = pose.get(name)
+            if pb is not None:
+                rot(pb, (1, 0, 0), deg * k)
+        hd = pose.get("head")
+        if hd is not None:
+            rot(hd, (1, 0, 0), -16 * k)
+        for pb in pose:
+            key(pb, f)
+
+
 CLIPS = {
     "aim": clip_aim,
     "idle": clip_idle,
@@ -377,6 +432,11 @@ CLIPS = {
     "cover_high_r_idle": lambda: cover_high("R"),
     "peek_l": lambda: peek("L"),
     "peek_r": lambda: peek("R"),
+    "cover_switch_ll_lr": lambda: cover_switch("L", high=False),
+    "cover_switch_hl_hr": lambda: cover_switch("L", high=True),
+    "flanked_idle": flanked_idle,
+    "flinch_a": lambda: flinch(1.0),
+    "flinch_b": lambda: flinch(0.6),
 }
 
 arm.animation_data_create()
