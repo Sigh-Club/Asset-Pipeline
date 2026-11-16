@@ -28,7 +28,8 @@ _ap.add_argument("--out", required=True)
 _ap.add_argument("--id", required=True)
 _ap.add_argument("--clip", default="idle")
 _ap.add_argument("--frame", type=int, default=1)
-_ap.add_argument("--hand", default="hand_R")
+_ap.add_argument("--bone", "--hand", dest="hand", default="hand_R",
+                help="bone to attach to: hand_R for weapons, head/chest/spine for gear")
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -57,7 +58,7 @@ hand_pos = rest.translation.copy()
 print(f"HAND {A.hand} world={tuple(round(v, 3) for v in hand_pos)}")
 
 # drop any weapon already baked in (re-baking must not stack a second rifle in the hand)
-KNOWN = ("lasgun", "bolter", "shuriken", "shoota")
+KNOWN = ("lasgun", "bolter", "shuriken", "shoota", "rokkit", "burna", "staff", "horns")
 for o in list(bpy.data.objects):
     if o.type == "MESH" and o.name.split(".")[0] in KNOWN:
         bpy.data.objects.remove(o, do_unlink=True)
