@@ -38,6 +38,7 @@ death — each with its timing and its events, triggerable from our action syste
 | clips | **partial — the real gap** | see §3 |
 | weapon hold | **approximate** | `WEAPON_HOLD` is authored; the 1:1 method is the shipped weapon model bound identity to `Bip01 R Weapon` (its geometry is authored in character space at the hand) |
 | fidelity gate | **working** | `tools/rig_fidelity.py` measures tear / inversion / interpenetration / collapse **and fails a mesh that does not move** |
+| source assets for users | **working** | `tools/sources/pack_sources.py` + `fetch_sources.py`; `dow2-unit-sources-v1` published as a release asset (285 files, 8.4 MB compressed, hash-pinned) — the pipeline runs with **no DoW2 install** |
 | engine side (IoA repo) | **done for this work** | loadout-aware clip resolution, source-material passthrough, per-battle command log; 665 jest, Go suites green |
 
 ### What builds correctly today
@@ -106,7 +107,9 @@ Measured, on the same body:
 ## 6. Commands (dry-run verified 2026-11-17)
 
 ```bash
-export DOW2_RETRIB=/run/media/talzanar/games/Projects/Decompilor/work/dow2-retribution
+# source assets: no DoW2 install needed — hash-pinned release download
+python3 tools/sources/fetch_sources.py --out ~/dow2-sources
+export DOW2_RETRIB=~/dow2-sources
 IG=$DOW2_RETRIB/sga_art/000_data/DATA/art/race_ig
 
 # one unit from the shipped data

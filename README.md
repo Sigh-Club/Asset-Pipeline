@@ -6,7 +6,7 @@
 |---|---|---|
 | **DoW2 source import → game-ready units** (current work) | `tools/build_source_lab_all.sh`, `tools/blender/dow2_build_unit.py`, `tools/rig_fidelity.py` | [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md), [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) |
 | 3D units from generated art (img23d) | `tools/blender_run.sh`, `tools/img23d/`, `tools/pbr/`, `tools/glb_contract.py` | [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md) |
-| 2D sprite atlases, tiles, UI, props (legacy, still active) | `tools/pipeline_cli.py` | this file, `docs/PIPELINE_V2.md` |
+| 2D sprite atlases, tiles, UI, props (**legacy** — only the Phaser fallback reads them) | `tools/pipeline_cli.py` | this file, `docs/PIPELINE_V2.md` |
 | Investigating a rig interactively (Blender MCP) | `docs/BLENDER_MCP.md` | that file |
 
 The 3D paths have acceptance gates (`tools/glb_contract.py`, `tools/rig_fidelity.py`) and a VRAM
@@ -50,13 +50,21 @@ file's own `referencePose`**. Full state and next steps:
 
 ## Run it
 
-Requires Blender 5.1 on `PATH`, Python 3 with Pillow, and the extracted DoW2 art (see
-`docs/DOW2_STANCE_REFERENCE.md` for where it lives). Paths are overridable with `DOW2_RETRIB` and
-`DOW2_ART`.
+Requires Blender 5.1 on `PATH` and Python 3 with Pillow. **You do not need Dawn of War II installed:**
+the exact subset of the shipped data the pipeline reads (285 files, 8.4 MB compressed) is published as a
+release asset, with a hash-pinned fetcher.
 
 ```bash
-# the shipped art root (contains race_*/troops and race_*/troops_wargear)
-export DOW2_RETRIB=/run/media/talzanar/games/Projects/Decompilor/work/dow2-retribution
+# 1. get the source assets (no game install needed) — verifies sha256 before unpacking
+python3 tools/sources/fetch_sources.py --out ~/dow2-sources
+export DOW2_RETRIB=~/dow2-sources
+```
+
+See [`docs/SOURCE_ASSETS.md`](docs/SOURCE_ASSETS.md) for exactly what is in that package, how to rebuild
+it, and the licensing/provenance posture.
+
+```bash
+# DOW2_RETRIB is either the fetched source pack or your own extracted game data
 IG=$DOW2_RETRIB/sga_art/000_data/DATA/art/race_ig
 
 # build one unit from the shipped data (parts + rig + shipped clips + textures)
@@ -151,14 +159,23 @@ python3 tools/pipeline_cli.py doctor
 
 The pipeline is a unified orchestrator that routes commands to specialised sub-pipelines:
 
+**The product is a 3D isometric game.** The combat scene is a Three.js renderer with a pitched
+perspective camera over a 2 m-tile board, and units are 3D GLB meshes with a skeleton and animation
+clips. There is **no 2D sprite path in the product** and **no pixel-art model tier**: the Phaser view is
+a fallback behind `?three=0`, and the only thing "pixel" about a model is the optional palette-locked
+atlas on our *own* generated masters — a texture treatment on a 3D mesh, not a pixel sprite.
+
 | Asset Type | Entry Point | Input → Output |
 |------------|-------------|----------------|
-| **Characters** | `pipeline_cli.py character` | JSON config → rigged .blend → 208 rendered frames → palette-locked atlas |
-| **Tiles** | `pipeline_cli.py tile` | Tile set def → .blend model → rendered tile textures |
+| **Units (3D, current)** | `tools/build_source_lab.sh`, `tools/blender/dow2_build_unit.py` | shipped DoW2 wargear + skeleton + clips + textures → rigged, textured, animated `.glb` |
+| **Units (3D, generated art)** | `tools/blender_run.sh`, `tools/img23d/`, `tools/pbr/` | generated concept/orthos → base mesh → retopo → rig → bake → `.glb` |
+| **PBR Materials** | `tools/pipeline_cli.py materials` | Math noise → PBR texture maps → Blender material library |
+| **Tiles / props (3D)** | `tools/blender/parametric_prop.py`, the prop-import route | authored or imported geometry → `.glb` kit pieces |
+| **2D atlases (legacy)** | `pipeline_cli.py character` | JSON config → rigged .blend → 208 rendered frames → palette-locked atlas |
 | **UI elements** | `pipeline_cli.py ui` | Theme config → Pillow-generated PNG sprites (buttons, panels, dividers, icons) |
-| **PBR Materials** | `pipeline_cli.py materials` | Math noise → PBR texture maps → Blender material library |
 
-All deterministic, all scriptable, all free. Use the unified CLI — never run generators/renderers directly.
+All deterministic, all scriptable, all free. The 3D routes are gated (`glb_contract.py`,
+`rig_fidelity.py`); the legacy atlas route is gated by `critic.py`.
 
 ## Repository Layout
 
@@ -278,13 +295,25 @@ The pipeline has evolved through three generations:
 
 ## Design Philosophy
 
-1. **Pre-rendered 3D to 2D**: The Fallout/Diablo 2 method. Models exist in 3D, sprites are derived.
-2. **True 8 Directions**: No mirroring. All 8 compass points individually rendered.
-3. **Palette-Locked**: All sprites use the `grimdark_64` palette. Visual consistency is mandatory.
-4. **Fully Automated**: Single CLI command → complete asset set. Zero manual Blender clicking.
-5. **Deterministic**: Same config + same scripts = identical output. Git-trackable, reproducible.
-6. **10 Materials**: Each faction has distinct PBR material sets. Faction coding through materials, not geometry.
-7. **Quality Gates**: Every render passes automated critic analysis before being declared done.
+1. **3D, isometric, in-engine.** Units are real meshes with real skeletons, rendered by Three.js in a
+   pitched perspective tactical view. Nothing is pre-rendered to a sprite.
+2. **Copy the shipped game where a shipped game exists.** A DoW2 body is authored geometry with a
+   shipped rig, skin weights, materials and animation; importing it beats generating an approximation.
+   Generated art is for what no game ships (our own factions' silhouettes, props, environments).
+3. **Faction identity comes from mesh, material and silhouette** — not from a palette filter applied to
+   everything. An imported asset keeps its source colour scheme.
+4. **Fully Automated**: single command → complete asset set. Zero manual Blender clicking.
+5. **Deterministic**: same config + same scripts = identical output. Git-trackable, reproducible.
+6. **Measured, not asserted.** Every stage has a numeric gate, and every pose or silhouette also gets a
+   render — a rigid mesh measures 0 % tearing, so a number alone is never acceptance.
+7. **Provenance is preserved.** A clip keeps its shipped name (`fb_idle_stand_01`, not `idle`) so it can
+   always be traced back to the file it came from.
+
+### Legacy 2D rules (sprite atlases only — do not apply these to GLB work)
+
+- Pre-rendered 3D to 2D (the Fallout/Diablo 2 method); true 8 directions, no mirroring; palette-locked
+  to `grimdark_64`; 96×128 character frames at 12 FPS. These describe the Phaser fallback's atlases,
+  which no longer define the product's look.
 
 ## Render Queue & Dashboard
 
@@ -373,16 +402,29 @@ The queue system is resilient:
 
 ## IoA Integration
 
-- **Game Engine**: React frontend + Phaser 3.90
-- **Grid System**: Isometric, 2:1 ratio tiles, multi-level Z-axis
-- **Character Frame Size**: 96×128 px
-- **Animation Frame Rate**: 12 FPS (retro tactical feel)
-- **Atlas Format**: Phaser multi-atlas (PNG + JSON, RGBA8888, pivot at bottom-center)
-- **Sync Command**: `python3 tools/pipeline_cli.py sync --target <ioa_atlases_path>`
+- **Game**: React frontend + **Three.js** combat renderer (3D). `frontend/src/three/` is the product
+  renderer; the Phaser view survives only as a fallback (`?three=0` or
+  `localStorage ioa_combat_renderer=phaser`).
+- **View**: isometric tactical framing with a **pitched perspective camera** (XCOM-style), not an ortho
+  camera and not a 2D projection.
+- **Board**: 3D grid, **2 m tiles** (`frontend/src/three/gridMath.ts`), metres throughout.
+- **Units**: `.glb` meshes with a skeleton and named clips, loaded from
+  `frontend/public/assets/models/units/` (48 IoA masters) and `.../units/dow/` (97 imported DoW2
+  bodies). The rig lab under `.../units/lab/` holds the source-built DoW2 units.
+- **Animation**: real-time skeletal animation driven by the action state machine; clips are the shipped
+  DoW2 names resolved through `frontend/src/three/unitLoadouts.ts`.
+- **Legacy 2D atlas format** (Phaser fallback only): multi-atlas PNG + JSON, RGBA8888, pivot
+  bottom-centre, 96×128 frames at 12 FPS; synced with
+  `python3 tools/pipeline_cli.py sync --target <ioa_atlases_path>`.
 
-## Current Output (v0.4.0)
+## Current Output
 
-**34 units** across 7 factions (2 playable + 5 NPC), including 28 humanoid + 6 non-humanoid (vehicles, creatures, insectoids). Each unit has 8 directions × 5 animations:
+**145 unit GLBs**: 48 IoA faction units plus 97 imported DoW2 troop bodies (IG, Chaos, Eldar, Ork,
+Tyranid, Necron, Tau), each carrying a skeleton and a clip set. The rig lab holds six source-built DoW2
+units built end to end from the shipped data.
+
+The sprite-era table below is retained for the legacy atlas route (34 configs × 8 directions × 5
+animations); it no longer describes what the game renders:
 
 | Faction | Playable | Units | Status |
 |---------|----------|-------|--------|
