@@ -83,11 +83,35 @@ while IFS=$'\t' read -r name path verts; do
   id="dow_${LABEL}_${name}"
   obj="$TMP/$id.obj"
   python3 tools/dow2/chunky_mesh.py "$path" -o "$obj" >/dev/null 2>&1 || { echo -e "$id\tDECODE_FAIL" >> "$TMP/report.tsv"; continue; }
+  # The unit's own DoW2 skeleton (its Bip01 rig, hierarchy and reference pose). This is the
+  # authoritative fit: the mesh was authored against it, so no template fit is involved.
+  partstem="$(basename "$(dirname "$path")")"
+  # Use the shipped skeleton only where one actually fits this body (measured against the mesh,
+  # within 12% of its height). Races whose troop directories carry no skeleton file -- the eldar
+  # troops have only clips, and a clip's reference pose is whatever the animator posed -- fall
+  # back to the template fit rather than being bent onto a crouch pose.
+  skel_hkx="$(python3 tools/dow2/skeleton.py --find --strict --art "$SGA/000_data/DATA/art" \
+      --race "$RACE" --part "$partstem" --obj "$obj" \
+      --height "$(python3 -c "import json;print(json.load(open('configs/rigs/$FRAME'))['height_m'])")" \
+      --out - 2>/dev/null | tail -1 || true)"
+  if [ -n "$skel_hkx" ] && [ -f "$skel_hkx" ]; then
+    python3 tools/dow2/skeleton.py --hkx "$skel_hkx" --obj "$obj" \
+      --height "$(python3 -c "import json;print(json.load(open('configs/rigs/$FRAME'))['height_m'])")" \
+      --up-axis "$(python3 -c "import json;print(json.load(open('configs/rigs/$FRAME')).get('source_up_axis','y'))")" \
+      --out "$TMP/$id.skeleton.json" >/dev/null 2>&1 \
+      || { echo -e "$id\tSKELETON_FAIL" >> "$TMP/report.tsv"; continue; }
+  fi
   timeout 300 blender -b -P tools/blender/dow2_base.py -- --obj "$obj" --out "$TMP" --id "$id" \
     --rig "configs/rigs/$FRAME" --target-tris 16000 >/dev/null 2>&1 || { echo -e "$id\tBASE_FAIL" >> "$TMP/report.tsv"; continue; }
   mkdir -p "$TMP/$id"
-  timeout 300 blender -b -P tools/blender/rig_template.py -- --template "configs/rigs/$FRAME" \
-    --mesh "$TMP/${id}_base.glb" --out "$TMP/$id" --id "$id" >/dev/null 2>&1 || { echo -e "$id\tRIG_FAIL" >> "$TMP/report.tsv"; continue; }
+  if [ -f "$TMP/$id.skeleton.json" ]; then
+    timeout 300 blender -b -P tools/blender/rig_template.py -- --template "configs/rigs/$FRAME" \
+      --skeleton "$TMP/$id.skeleton.json" \
+      --mesh "$TMP/${id}_base.glb" --out "$TMP/$id" --id "$id" >/dev/null 2>&1 || { echo -e "$id\tRIG_FAIL" >> "$TMP/report.tsv"; continue; }
+  else
+    timeout 300 blender -b -P tools/blender/rig_template.py -- --template "configs/rigs/$FRAME" \
+      --mesh "$TMP/${id}_base.glb" --out "$TMP/$id" --id "$id" >/dev/null 2>&1 || { echo -e "$id\tRIG_FAIL" >> "$TMP/report.tsv"; continue; }
+  fi
   timeout 300 blender -b -P tools/blender/animate_frames.py -- --glb "$TMP/$id/${id}_rigged.glb" \
     --out "$TMP/$id" --id "$id" >/dev/null 2>&1 || { echo -e "$id\tCLIP_FAIL" >> "$TMP/report.tsv"; continue; }
   cp "$TMP/$id/${id}_animated.glb" "$OUT/$id.glb"
@@ -97,7 +121,11 @@ while IFS=$'\t' read -r name path verts; do
       --out "$OUT" --id "$id" --clip idle --frame 1 >/dev/null 2>&1 || { echo -e "$id\tBAKE_FAIL" >> "$TMP/report.tsv"; continue; }
   fi
   # grep returns non-zero when it finds nothing, and `set -e` would kill the whole run
-  verdict=$(python3 tools/audit_rig.py "$OUT/$id.glb" 2>&1 | grep -E "^(PASS|FAIL)" | head -1 || true)
+  if [ -f "$TMP/$id.skeleton.json" ]; then
+    verdict=$(python3 tools/audit_rig.py "$OUT/$id.glb" --skeleton "$TMP/$id.skeleton.json" 2>&1 | grep -E "^(PASS|FAIL)" | head -1 || true)
+  else
+    verdict=$(python3 tools/audit_rig.py "$OUT/$id.glb" 2>&1 | grep -E "^(PASS|FAIL)" | head -1 || true)
+  fi
   [ -n "$verdict" ] || verdict="NO_VERDICT"
   echo -e "$id\t$verdict" >> "$TMP/report.tsv"
   echo "[$n/$TOTAL] $id $verdict"

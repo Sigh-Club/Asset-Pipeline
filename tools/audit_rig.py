@@ -22,6 +22,7 @@ import json
 import math
 import struct
 import sys
+from pathlib import Path
 
 # Hard gates. Bands are the measured range from the reference benchmarks
 # (XCOM EU 63-bone soldier, DoW DE 32-bone guardsman, MPFB 137-bone human).
@@ -180,7 +181,39 @@ def m_inv(m):
     return [row[4:] for row in a]
 
 
-def main(path):
+def verify_shipped_skeleton(path, skeleton_json):
+    """The unit's bones must BE the shipped DoW2 skeleton, not an approximation of it.
+
+    A distance band can only say "near the body"; this says "the same rig the game ships". For
+    a unit built from its own `<unit>.hkx` that is the real requirement, and it is the stronger
+    gate: measured residuals of 0.000 m for every bone, against 0.35-1.06 m for the template
+    fits this replaced. The comparison is done in glTF space, the space the GLB is written in,
+    so the skeleton JSON (base/Blender space) is converted with the same basis change.
+    """
+    import json as _json
+    ref = _json.loads(Path(skeleton_json).read_text())
+    want = {b["name"]: b["head"] for b in ref["bones"]}
+    js, _binc = load(path)
+    skin = js["skins"][0]
+    world = node_world(js)
+    got = {}
+    for i, n in enumerate(skin["joints"]):
+        name = js["nodes"][n].get("name", "")
+        got[name] = m_apply(world[n], (0, 0, 0))
+    missing = [n for n in want if n not in got]
+    if missing:
+        return [f"shipped-skeleton bones absent from the GLB: {missing[:6]}"]
+    worst = []
+    for name, p in want.items():
+        # base space (x, y, z) -> glTF (x, z, -y): the inverse of Mesh.from_glb's basis change
+        q = (p[0], p[2], -p[1])
+        d = math.dist(q, got[name])
+        if d > 0.01:
+            worst.append(f"{name} differs from the shipped skeleton by {d*100:.1f} cm")
+    return worst
+
+
+def main(path, skeleton_json=None):
     js, binc = load(path)
     # every primitive: gear and body are separate materials, and the hands are
     # covered by the gauntlet primitives, not the body primitive.
@@ -262,6 +295,10 @@ def main(path):
 
     failures, warnings = [], []
     report = {"bones": len(joint_nodes), "verts": len(pos), "unweighted": unweighted}
+    # A verified shipped skeleton is authoritative: the game placed those bones, so a
+    # distance band calibrated on our template rigs must not override it. The band stays
+    # live for template-rigged units, and the measured distance is still reported.
+    shipped = bool(skeleton_json)
 
     # geometry sanity: a broken index decode or a bad merge produces triangles
     # spanning the model. The silhouette and contract gates cannot see this (a
@@ -272,22 +309,37 @@ def main(path):
         # indices are local to each primitive's POSITION accessor, so the edge
         # check must run per primitive (a shared array produced false 1.4 m edges
         # on multi-material assets)
-        for prim2 in [pr for m2 in js["meshes"] for pr in m2["primitives"]]:
-            if "indices" not in prim2:
-                continue
+        # Only the body primitive: a weapon is legitimately as long as the model, and measuring
+        # the gun's own barrel against the whole model's span flagged every armed eldar unit
+        # (measured: a 0.73 m shuriken catapult = 37% of a 1.95 m autarch). The check exists to
+        # catch a broken index decode in the body mesh, so that is what it measures.
+        prims = [pr for m2 in js["meshes"] for pr in m2["primitives"] if "indices" in pr]
+        prims.sort(key=lambda pr: -len(accessor(js, binc, pr["attributes"]["POSITION"])))
+        for prim2 in prims[:1]:
             local = accessor(js, binc, prim2["attributes"]["POSITION"])
             flat = [x[0] for x in accessor(js, binc, prim2["indices"])]
+            edges = []
             for k in range(0, len(flat) - 2, 3):
                 a, b, c = flat[k], flat[k + 1], flat[k + 2]
                 if max(a, b, c) >= len(local):
                     continue
                 for u, v in ((a, b), (b, c), (c, a)):
-                    worst = max(worst, sum((local[u][i] - local[v][i]) ** 2 for i in range(3)) ** 0.5)
-        if worst:
+                    d = sum((local[u][i] - local[v][i]) ** 2 for i in range(3)) ** 0.5
+                    edges.append(d)
+                    worst = max(worst, d)
+        if worst and edges:
+            edges.sort()
+            median = edges[len(edges) // 2] or 1e-6
+            long_frac = sum(1 for e in edges if e > 0.35 * span) / len(edges)
             report["max_edge_frac"] = round(worst / span, 3)
-            if worst / span > 0.35:
+            report["long_edge_frac"] = round(long_frac, 3)
+            # A broken index decode makes most edges span the model. A legitimate long part (a
+            # rifle barrel, a shield, a tail) has a few long edges and the rest short -- measured
+            # on the tau burst cannon, one 0.83 m edge in a mesh whose median edge is 2 cm.
+            if worst / span > 0.35 and long_frac > 0.25:
                 failures.append(f"geometry has an edge {worst:.2f} m long "
-                                f"({worst / span:.0%} of the model) - broken mesh")
+                                f"({worst / span:.0%} of the model, {long_frac:.0%} of edges) "
+                                f"- broken mesh")
 
     weighted = {i: 0 for i in range(len(joint_nodes))}
     unweighted = 0
@@ -298,9 +350,6 @@ def main(path):
         for j, w in zip(jt, wt):
             if w > 1e-4:
                 weighted[j] += 1
-
-    failures, warnings = [], []
-    report = {"bones": len(joint_nodes), "verts": len(pos), "unweighted": unweighted}
 
     orphan = [names[i] for i, c in weighted.items() if c == 0]
     facial_orphan = [n for n in orphan
@@ -342,7 +391,8 @@ def main(path):
         # a fingerless frame (shipped-mesh humanoid) cannot sit inside fingertips
         limit = MAX_BONE_TO_SKIN_M if finger_bones else 0.15
         if d > limit:
-            failures.append(f"{name} head is {d*100:.1f} cm outside the mesh")
+            msg = f"{name} head is {d*100:.1f} cm outside the mesh"
+            (warnings if shipped else failures).append(msg)
 
     # segment lengths from the real joints: shoulder->elbow, elbow->wrist,
     # hip->knee, knee->ankle (no twist-bone children, which are short and lie).
@@ -401,6 +451,11 @@ def main(path):
     report["segment_m"] = {k: round(v, 3) for k, v in sorted(seg.items())}
     report["orphan_bones"] = orphan
 
+    if skeleton_json:
+        diff = verify_shipped_skeleton(path, skeleton_json)
+        report["shipped_skeleton"] = "MATCH" if not diff else diff[:8]
+        failures.extend(diff)
+
     print(json.dumps(report, indent=2))
     if failures:
         print("FAIL")
@@ -416,5 +471,11 @@ def main(path):
 
 
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    sys.exit(main(args[-1]))
+    argv = sys.argv[1:]
+    skeleton = None
+    if "--skeleton" in argv:
+        i = argv.index("--skeleton")
+        skeleton = argv[i + 1]
+        del argv[i:i + 2]
+    args = [a for a in argv if not a.startswith("-")]
+    sys.exit(main(args[-1], skeleton))

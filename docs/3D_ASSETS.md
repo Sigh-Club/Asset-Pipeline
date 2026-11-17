@@ -417,9 +417,9 @@ BUILD_RIG=1 tools/build_authored_unit.sh unit_<id> <unit-id> <faction>
   to `RightHand`. `melee` grows the blade from the right-hand socket.
 - `tools/blender/rig_unit_proof.py --bind authored --hold <pose>` — binds the authored vertex
   groups (no distance weights) and builds the same 22-bone/9-clip rig.
-- `tools/pbr/tint_faction_pixel.py` — rebuilds a faction kit's pixel albedo on its identity ramp
+- `tools/pbr/tint_faction_palette.py` — rebuilds a faction kit's pixel albedo on its identity ramp
   when the generated sheet is ash-toned and the hue is lost at the pixel-variant size
-  (`configs/materials/faction_pixel_ramps.json`).
+  (`configs/materials/faction_palette_ramps.json`).
 
 Art rules applied: silhouette first, exaggerated role proportions, chamfered planes, no surface
 greebles outside the 4,000–4,800 tri budget. The engine floor is filled with hidden interior

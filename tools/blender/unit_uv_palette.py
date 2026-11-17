@@ -14,6 +14,8 @@ import bpy
 ap = argparse.ArgumentParser()
 ap.add_argument("--glb", required=True); ap.add_argument("--out", required=True)
 ap.add_argument("--id", required=True); ap.add_argument("--colour", default="0x6b6b6b")
+ap.add_argument("--tones", help="comma-separated hex tones; fills the atlas in bands so the unit "
+                "reads with the tonal range of its own DoW2 texture instead of one flat colour")
 A = ap.parse_args(sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else [])
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -37,7 +39,20 @@ else:
     hexv = A.colour.replace("0x", "").replace("#", "")
     r, g, b = (int(hexv[i:i+2], 16) / 255.0 for i in (0, 2, 4))
 img = bpy.data.images.new("palette_atlas", width=ATLAS, height=ATLAS, alpha=False)
-img.pixels = [r, g, b, 1.0] * (ATLAS*ATLAS); img.pack()
+if A.tones:
+    tones = []
+    for t in A.tones.split(","):
+        h = t.strip().replace("0x", "").replace("#", "")
+        if len(h) == 6:
+            tones.append(tuple(int(h[i:i+2], 16) / 255.0 for i in (0, 2, 4)))
+    px = []
+    for y in range(ATLAS):
+        band = min(len(tones) - 1, y * len(tones) // ATLAS)
+        px += [*tones[band], 1.0] * ATLAS
+    img.pixels = px
+else:
+    img.pixels = [r, g, b, 1.0] * (ATLAS*ATLAS)
+img.pack()
 
 WEAPONS = ("lasgun","bolter","shuriken","shoota")
 done = 0

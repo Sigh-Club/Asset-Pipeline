@@ -4,15 +4,88 @@
 
 | Target | Entry point | Doc |
 |---|---|---|
-| **3D combat units, materials, environments** (current) | `tools/blender_run.sh`, `tools/img23d/`, `tools/pbr/`, `tools/glb_contract.py` | [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md) |
+| **DoW2 source import → game-ready units** (current work) | `tools/build_source_lab_all.sh`, `tools/blender/dow2_build_unit.py`, `tools/rig_fidelity.py` | [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md), [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) |
+| 3D units from generated art (img23d) | `tools/blender_run.sh`, `tools/img23d/`, `tools/pbr/`, `tools/glb_contract.py` | [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md) |
 | 2D sprite atlases, tiles, UI, props (legacy, still active) | `tools/pipeline_cli.py` | this file, `docs/PIPELINE_V2.md` |
+| Investigating a rig interactively (Blender MCP) | `docs/BLENDER_MCP.md` | that file |
 
-The 3D path has an acceptance gate (`tools/glb_contract.py`) and a VRAM policy
-(`tools/gpu_policy.py`); the 2D path does not. One GPU job at a time on this box.
+The 3D paths have acceptance gates (`tools/glb_contract.py`, `tools/rig_fidelity.py`) and a VRAM
+policy (`tools/gpu_policy.py`); the 2D path does not. One GPU job at a time on this box.
 
-**Multi-asset-type generation pipeline for grimdark tactical games.**
+---
 
-Built for **Imperium of Ash** (IoA), a Warhammer 40K-inspired tactical combat game. Generates characters, tiles, UI elements, and props — all deterministic, all in-house, zero budget.
+# Current work: importing Dawn of War II units
+
+The active programme is **copying DoW2 units into the game 1:1** — shipped geometry, materials,
+weapons, skeleton and animation — and then using them in a **turn-based** combat game. DoW2 is an RTS,
+so its locomotion cycles are not what we need: we want its **action library** (aim, fire, reload,
+melee, grenade, leap, throw, ability-cast, hit, death), with timings and events, triggerable from our
+action system.
+
+## Where it stands (honest status)
+
+| piece | state |
+|---|---|
+| geometry, UVs, shipped skin weights | **working** — `tools/dow2/chunky_mesh.py` decodes positions, UVs and the per-vertex bone indices/weights |
+| unit assembly from the shipped wargear | **working** — `tools/dow2/parts.py` resolves `render_models` (armour + head + accessories) and de-duplicates quality tiers |
+| materials | **working for the diffuse channel** — `tools/dow2/dds_to_png.py` + material-name resolution; the other channels (`_nrm`, `_spc`, `_ocl`, `_emi`) are not wired yet |
+| skeleton | **working** — `tools/hkx/hkxread.py` decodes `hkSkeleton` (bones, parents, reference pose) |
+| rig + skinning | **working** — optimal one-to-one assignment of the shipped bone indices, source textures applied |
+| clips | **partial, and this is the real gap** — see below |
+| weapon hold | authored per weapon in `WEAPON_HOLD`; a true 1:1 needs the shipped weapon model bound identity to `Bip01 R Weapon` (geometry is authored in character space at the hand) |
+
+**Why clips are partial.** Each shipped clip file carries a skeleton whose *reference pose is that
+clip's pose*, plus delta-compressed tracks. We currently use the reference pose, so a unit is exact
+for the clip it was rigged from and approximate for the rest of its loadout. Measured: rigging on
+`guardsman.hkx` and applying `fb_idle_stand_01` gives every bone a ~180° delta (a frame difference,
+not a pose) and 23 % torn edges; rigging on `fb_idle_stand_01.hkx` itself measures **0.000 torn /
+0.000 inverted** and renders a complete, textured guardsman holding a lasgun.
+
+The fix is to decode the animation tracks. `hkAnimationBinding` and
+`hkDeltaCompressedSkeletalAnimation` are both present in the files; the header is located
+(`fb_idle_stand_01`: type 2, 7.333 s, 46 tracks, numberOfPoses 221, blockSize 8, implied 30.1 fps) and
+the remaining work is the quantisation/block decode, validated by requiring **frame 0 to reproduce the
+file's own `referencePose`**. Full state and next steps:
+[`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md).
+
+## Run it
+
+Requires Blender 5.1 on `PATH`, Python 3 with Pillow, and the extracted DoW2 art (see
+`docs/DOW2_STANCE_REFERENCE.md` for where it lives). Paths are overridable with `DOW2_RETRIB` and
+`DOW2_ART`.
+
+```bash
+# the shipped art root (contains race_*/troops and race_*/troops_wargear)
+export DOW2_RETRIB=/run/media/talzanar/games/Projects/Decompilor/work/dow2-retribution
+IG=$DOW2_RETRIB/sga_art/000_data/DATA/art/race_ig
+
+# build one unit from the shipped data (parts + rig + shipped clips + textures)
+tools/build_source_lab.sh dow_ig_guardsman \
+  "$DOW2_RETRIB/attrib-decoded/wargear/wargear/core/race_imperial_guard/armor/flak_common.txt" \
+  "$IG/troops/gaurdsman/animations/range_burst/fb_idle_stand_01.hkx" \
+  "$IG/troops/gaurdsman/animations/range_burst" \
+  ../Imperium-of-Ash/frontend/public/assets/models/weapons/lasgun.glb 1.85
+
+# the whole lab set (one unit per faction, with the per-unit table and its documented gaps)
+tools/build_source_lab_all.sh
+
+# the gate that decides whether a build is usable: tear / inversion / interpenetration / displacement
+python3 tools/rig_fidelity.py output/source_lab/work/dow_ig_guardsman/dow_ig_guardsman.glb --clip fb_idle_stand_01
+```
+
+`tools/rig_fidelity.py` fails a mesh that tears **or that does not move** — a rigid mesh measures 0 %
+tearing and is not a passing unit.
+
+## Read next
+
+- [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md) — how DoW2 units actually stand,
+  the loadout rule, the part-assembly rule, and the four import rules that work (R1–R4).
+- [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) — the clip format, the located
+  header, and the exact next steps.
+- [`docs/BLENDER_MCP.md`](docs/BLENDER_MCP.md) — when to drive Blender interactively through MCP and
+  when not to.
+
+---
 
 ## Project Zomboid Icon Forge (PZ — not IoA)
 

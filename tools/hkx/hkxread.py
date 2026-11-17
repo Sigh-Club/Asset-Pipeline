@@ -105,13 +105,26 @@ class Packfile:
         return found
 
     def census(self) -> dict[str, int]:
-        """Class name -> object count, read from the object stream."""
-        counts: dict[str, int] = {}
-        try:
-            for name, _offset in self.objects():
-                counts[name] = counts.get(name, 0) + 1
-        except HkxError:
+        """Class name -> occurrence count in the data section.
+
+        Counted from the class-name pool rather than the object stream: the object table layout
+        differs between skeleton-only and clip packfiles, and a census that crashes on one of
+        them is worse than a rough one (it did: `objects()` was referenced but never defined).
+        """
+        sec = self.sections.get("__classnames__")
+        if sec is None:
             return {}
+        blob = self.raw[sec.offset:sec.offset + sec.size]
+        counts: dict[str, int] = {}
+        for part in blob.split(b"\x00"):
+            if len(part) < 6:
+                continue
+            try:
+                text = part[4:].decode("ascii")
+            except UnicodeDecodeError:
+                continue
+            if text[:2] == "hk" or text[:3] == "hkx":
+                counts[text] = counts.get(text, 0) + 1
         return dict(sorted(counts.items(), key=lambda kv: -kv[1]))
 
     # ---------------------------------------------------------------- types
@@ -177,15 +190,23 @@ class Packfile:
 
     # ------------------------------------------------------------- skeleton
     def skeleton(self) -> dict | None:
-        """Decode the skeleton this packfile carries.
+        """Decode the skeleton this packfile carries, clip file or skeleton-only file.
 
-        Verified layout for packfile v4 (Havok 4.5.1), measured on
-        fb_crouch_idle_01.hkx: a u32 bone count, then the skeleton name, then the
-        parentIndices array as int16 (one -1 root, every parent index < its child index),
-        then the referencePose as 70 records of 48 bytes (rotation quaternion, scale,
-        translation), then the bone-name string pool. The offsets are found by structure
-        rather than assumed, because the object table layout differs from later packfile
-        versions and guessing it is what stalled the first attempt.
+        Layout, confirmed against the shipped files and the published Havok type description:
+
+          * a bone count, then a 16-byte NUL-padded skeleton name;
+          * the parentIndices array as int16 (exactly one -1, every parent index below its
+            child's), immediately after the name field;
+          * the reference pose as ``count`` records of 48 bytes: translation vec4, quaternion
+            vec4, scale vec4 — the hkQsTransform layout the Havok docs and the Skyrim/FO4
+            format notes both describe ("translation + quaternion + scale, vec4-padded to 48
+            bytes"). The quaternion therefore sits at +16, not at +0;
+          * the bone-name string pool directly behind the pose.
+
+        An earlier version scanned for unit quaternions at +0 and so locked onto the block 16
+        bytes late: every record then read the quaternion as its translation, which is why the
+        composed skeleton sat metres off its own mesh (measured on the carnifex: 4.86 units
+        mean bone-to-mesh, against 0.32 units with the block start corrected).
         """
         import math
         raw = self.raw
@@ -194,84 +215,124 @@ class Packfile:
             return None
         lo, hi = data.offset, data.offset + data.size
 
-        # bone count + skeleton name: a u32 count followed by a printable NUL-padded name
-        count = name = None
+        # 1. the bone-name table: a printable 16-byte field preceded by the bone count and
+        #    followed by a valid int16 parent array
+        found = None
         for off in range(lo, hi - 32, 4):
-            n = struct.unpack_from("<I", raw, off)[0]
-            if not (4 <= n <= 512):
-                continue
-            field = raw[off + 0x10:off + 0x20]
-            if len(field) < 16:
-                continue
+            field = raw[off:off + 16]
             text = field.split(b"\x00")[0]
             if not (2 <= len(text) <= 15) or not all(32 <= b < 127 for b in text):
                 continue
-            # parents must follow: int16 array with exactly one -1 and every parent < index
-            pstart = off + 0x20
-            try:
-                parents = list(struct.unpack_from(f"<{n}h", raw, pstart))
-            except struct.error:
-                continue
-            if sum(1 for p in parents if p == -1) != 1:
-                continue
-            if not all(p < i for i, p in enumerate(parents) if p >= 0):
-                continue
-            count, name, parents_at = n, text.decode("ascii"), pstart
-            break
-        if count is None:
+            for width in (4, 8):
+                if off - width < lo:
+                    continue
+                n = struct.unpack_from("<I", raw, off - width)[0]
+                if not (4 <= n <= 512) or off + 16 + n * 2 > hi:
+                    continue
+                parents = list(struct.unpack_from(f"<{n}h", raw, off + 16))
+                if sum(1 for x in parents if x == -1) != 1:
+                    continue
+                if not all(x < i for i, x in enumerate(parents) if x >= 0):
+                    continue
+                found = (n, text.decode("ascii"), parents, off + 16 + n * 2)
+                break
+            if found:
+                break
+        if not found:
             return None
+        count, name, parents, parents_end = found
 
-        # reference pose: `count` consecutive 48-byte records whose first four floats are a
-        # unit quaternion. Scanning for the structure beats assuming the offset.
+        # 2. the reference pose. Two record layouts exist in the shipped corpus and neither can
+        #    be assumed: the clip files store translation/quaternion/scale (quaternion at +16),
+        #    while a unit's own skeleton file stores quaternion/scale/translation (quaternion at
+        #    +0). Both are scored on their own invariants -- a unit quaternion in the quaternion
+        #    slot and a (1,1,1) scale in the scale slot for every record -- and the layout that
+        #    satisfies them is the one used. Measured: assuming the clip layout on
+        #    guardsman.hkx read the quaternion as the translation and put the skeleton metres
+        #    off the mesh.
+        import math
+
         def unit(off: int) -> bool:
             q = struct.unpack_from("<4f", raw, off)
             return 0.9 < math.sqrt(sum(v * v for v in q)) < 1.1
 
-        # A candidate only counts if the bytes immediately after the pose open a printable
-        # string: the bone-name pool sits directly behind the reference pose, and that is what
-        # rejects the false candidates the quaternion test alone accepts (measured: an earlier
-        # run locked onto a zeroed run and reported every pose as 0,0,0).
-        def opens_string(off: int) -> bool:
-            chunk = raw[off:off + 8]
-            return len(chunk) >= 4 and all(32 <= b < 127 for b in chunk[:4])
+        def unit_scale(off: int) -> bool:
+            sx, sy, sz = struct.unpack_from("<3f", raw, off)
+            return all(abs(v - 1.0) < 0.02 for v in (sx, sy, sz))
 
-        pose_at = None
-        for off in range(parents_at + count * 2, hi - count * 48, 4):
-            if sum(1 for i in range(count) if unit(off + i * 48)) < count - 2:
-                continue
-            if opens_string(off + count * 48):
-                pose_at = off
-                break
-        if pose_at is None:
+        LAYOUTS = {
+            "translation,quaternion,scale": {"q": 16, "s": 32, "t": 0},
+            "quaternion,scale,translation": {"q": 0, "s": 16, "t": 32},
+        }
+        best = None
+        # the pose block is 4-byte aligned but the parent array ends on a 2-byte boundary, so
+        # the scan has to start at the next aligned offset or it steps over the block entirely
+        for off in range((parents_end + 3) & ~3, hi - count * 48, 4):
+            for layout, slot in LAYOUTS.items():
+                score = sum(1 for i in range(count)
+                            if unit(off + i * 48 + slot["q"])
+                            and unit_scale(off + i * 48 + slot["s"]))
+                if best is None or score > best[0]:
+                    best = (score, off, layout)
+        if best is None or best[0] < count - 2:
             return None
+        _score, pose_at, layout = best
 
-        # bone names: the string pool after the pose
-        pool_at = pose_at + count * 48
-        names = []
-        cursor = pool_at
-        while cursor < hi and len(names) < count:
-            end = raw.find(b"\x00", cursor)
-            if end < 0:
-                break
-            text = raw[cursor:end].decode("ascii", "replace")
-            if 1 <= len(text) <= 31 and all(32 <= ord(c) < 127 for c in text):
-                names.append(text)
-                cursor = end + 1 + ((32 - ((end + 1 - cursor) % 32)) % 32 if False else 0)
-                cursor = end + 1
-            else:
-                cursor += 1
+        # 3. bone names: fixed 32-byte NUL-padded records directly behind the pose block (the
+        #    pool may carry a 16-byte lead-in). The regex fallback is kept because the stride
+        #    is not documented anywhere; it found every name on the trooper files and one short
+        #    on the creature files, which is why the structured read is tried first.
+        names = self._pool_names(pose_at + count * 48, count) or self.skeleton_bones() or []
+        slot = LAYOUTS[layout]
+        poses = []
+        for i in range(count):
+            rec = struct.unpack_from("<12f", raw, pose_at + i * 48)
+            poses.append({
+                "translation": list(rec[slot["t"] // 4: slot["t"] // 4 + 3]),
+                "rotation": list(rec[slot["q"] // 4: slot["q"] // 4 + 4]),
+                "scale": list(rec[slot["s"] // 4: slot["s"] // 4 + 3]),
+            })
         return {
             "name": name,
             "bone_count": count,
             "parents": parents,
-            "bone_names": self.skeleton_bones() or names[:count],
+            "bone_names": names[:count],
             "reference_pose_offset": pose_at,
-            "reference_pose": [
-                struct.unpack_from("<12f", raw, pose_at + i * 48) for i in range(count)
-            ],
+            "reference_pose_layout": layout,
+            "reference_pose": poses,
         }
 
     # ------------------------------------------------------------- skeleton
+    def _pool_names(self, pool_at: int, count: int) -> list[str]:
+        """Read the bone-name pool behind the pose block, in bone order.
+
+        The pool is not fixed-stride: names are NUL-terminated and padded, and some bones
+        carry an extra 16-byte record behind the name (`AttachMarker_Bone` on the carnifex).
+        So the pool is walked as an ordered sequence of printable strings rather than sliced at
+        a stride -- a fixed 32-byte stride read the carnifex pool as empty, and the earlier
+        regex fallback silently dropped the one name that is not in the Bip01 family (37 of 38
+        bones named, which shifts every bone after it).
+        """
+        raw = self.raw
+        data = self.sections.get("__data__")
+        if data is None:
+            return []
+        hi = data.offset + data.size
+        names: list[str] = []
+        cur = pool_at
+        while cur < hi and len(names) < count:
+            end = raw.find(b"\x00", cur, min(hi, cur + 64))
+            if end < 0:
+                cur += 1
+                continue
+            text = raw[cur:end]
+            if 1 <= len(text) <= 31 and all(32 <= b < 127 for b in text):
+                names.append(text.decode("ascii"))
+                cur = end + 1
+            else:
+                cur += 1
+        return names if len(names) == count else []
+
     def skeleton_bones(self) -> list[str]:
         """Bone names of the skeleton this packfile carries.
 
@@ -315,3 +376,80 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def _u32(seg, off):
+    return struct.unpack_from("<I", seg, off)[0]
+
+
+def _f32(seg, off):
+    return struct.unpack_from("<f", seg, off)[0]
+
+
+def find_animation_header(seg, bone_count):
+    """Locate the hkSkeletalAnimation header: (offset, type, duration, numberOfTracks).
+
+    The packfile's object table is not decoded by this module, so the header is found by its own
+    signature instead: a u32 equal to the skeleton's bone count (numberOfTracks), preceded by a
+    plausible duration float and a valid animation type. Measured on `fb_idle_stand_01`: exactly one
+    hit, at data offset 5320, type 2 (HK_DELTA_COMPRESSED_ANIMATION), duration 7.333 s, 46 tracks —
+    the guardsman skeleton has 46 bones.
+    """
+    hits = []
+    for off in range(8, len(seg) - 16, 4):
+        if _u32(seg, off) != bone_count:
+            continue
+        dur = _f32(seg, off - 4)
+        typ = _u32(seg, off - 8)
+        if 0.05 < dur < 60.0 and typ in (0, 1, 2, 3):
+            hits.append((off - 8, typ, round(dur, 4), bone_count))
+    return hits
+
+
+def animation_fields(seg, header_off, verbose=False):
+    """Read the fields that follow the hkSkeletalAnimation base, in declaration order.
+
+    Declaration order comes from the file's own `__types__` table:
+      numberOfPoses, blockSize, qFormat, quantizedDataIdx, quantizedDataSize,
+      staticMaskIdx, staticMaskSize, staticDOFsIdx, staticDOFsSize,
+      totalBlockSize, lastBlockSize, dataBuffer
+
+    `Idx` values are offsets into the animation's own data buffer, which is why this is decodable
+    without relocating pointers.
+    """
+    fields = ("numberOfPoses", "blockSize", "qFormat", "quantizedDataIdx", "quantizedDataSize",
+              "staticMaskIdx", "staticMaskSize", "staticDOFsIdx", "staticDOFsSize",
+              "totalBlockSize", "lastBlockSize", "dataBuffer")
+    # The delta fields start 24 bytes after the header, not 12: measured by constraining the values
+    # to their declared semantics on `fb_idle_stand_01` — at +24 the block reads numberOfPoses=221,
+    # blockSize=8, which matches a 7.333 s clip at ~30 fps; at +12 blockSize would be 0, and at +20
+    # numberOfPoses would be 46 with blockSize 221 (blockSize larger than the pose count).
+    base = header_off + 24
+    out = {}
+    for i, name in enumerate(fields):
+        out[name] = _u32(seg, base + i * 4)
+    if verbose:
+        for i, name in enumerate(fields):
+            off = base + i * 4
+            print(f"    +{off:5d} {name:20s} {out[name]:10d}  ({out[name]:#010x})")
+    return out
+
+
+def decode_report(path, verbose=True):
+    """Everything the animation decoder can currently say about one clip file."""
+    p = Packfile.open(path)
+    sk = p.skeleton()
+    seg = p.raw[p.sections["__data__"].offset:p.sections["__data__"].offset + p.sections["__data__"].size]
+    bones = sk["bone_count"]
+    hits = find_animation_header(seg, bones)
+    rep = {"file": str(path), "bones": bones, "headers": hits}
+    if verbose:
+        print(f"{path}: {bones} bones, {len(hits)} animation header candidate(s)")
+        for h in hits:
+            print(f"  header at data offset {h[0]}: type={h[1]} duration={h[2]}s tracks={h[3]}")
+            fields = animation_fields(seg, h[0], verbose=True)
+            rep["fields"] = fields
+            # sanity: a 7.3 s clip at 30 fps is ~220 poses; blockSize is a small frame count
+            print(f"    -> implied fps if numberOfPoses frames: "
+                  f"{fields['numberOfPoses'] / max(1e-6, h[2]):.2f}")
+    return rep

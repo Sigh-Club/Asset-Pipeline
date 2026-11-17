@@ -81,11 +81,17 @@ BASE_FRAME_DONOR = {
 def resolve_source(name: str):
     """Find the DoW2 part a unit was built from.
 
+    Mesh names carry Blender's duplicate suffixes (``shoota.001``, ``ork_boy.027``) and the art
+    tree contains assembly references under ``troops/`` that carry no vertices, so resolution
+    strips the suffix and returns candidates in preference order; the caller keeps trying until
+    one actually decodes.
+
     The mesh inside our GLB is named after the unit id (dow_<race>_<part>, or the donor id for a
     swapped IoA unit), so the part is resolved by stripping the known prefixes and matching the
     remaining stem against the art tree — exact first, then as a prefix, which is what
     `carnifex_armour` -> `carnifex_armour_common.model` needs.
     """
+    name = name.split('.')[0]
     stem = BASE_FRAME_DONOR.get(name, name)
     if stem.startswith('dow_'):
         stem = stem[4:]
@@ -99,20 +105,22 @@ def resolve_source(name: str):
     def rank(p):
         return (0 if '/troops_wargear/' in str(p) else 1, len(p.stem))
     exact = sorted((p for p in all_parts if p.stem == stem), key=rank)
-    if exact:
-        return exact[0]
     pref = sorted((p for p in all_parts if p.stem.startswith(stem)), key=rank)
-    return pref[0] if pref else None
+    return exact + pref
 
 
 def source_stats(name: str):
-    hit = resolve_source(name)
-    hits = [hit] if hit else []
-    if not hits:
-        return None
-    ms = C.extract_model(hits[0])
-    pts = [v for m in ms for v in m['verts']]
-    if not pts:
+    # keep trying candidates: an assembly reference resolves but decodes to no vertices
+    for cand in resolve_source(name):
+        try:
+            ms = C.extract_model(cand)
+        except Exception:
+            continue
+        pts = [v for m in ms for v in m['verts']]
+        if pts:
+            hits = [cand]
+            break
+    else:
         return None
     span = [max(v[i] for v in pts) - min(v[i] for v in pts) for i in range(3)]
     tris = sum(len(m.get('tris', [])) for m in ms)
@@ -122,8 +130,17 @@ def source_stats(name: str):
 def check(unit: Path):
     out = {'unit': unit.stem, 'failures': [], 'checks': []}
     ours = mesh_stats(unit)
-    body = max(ours['per_mesh'], key=lambda n: ours['per_mesh'][n]['tris']) if ours['per_mesh'] else ''
-    src = source_stats(body)
+    WEAPONS = ('lasgun', 'bolter', 'shuriken', 'shoota', 'rokkit', 'burna', 'staff', 'horns')
+    candidates = [n for n in ours['per_mesh'] if n.split('.')[0] not in WEAPONS]
+    candidates.sort(key=lambda n: -ours['per_mesh'][n]['tris'])
+    body, src = '', None
+    for cand in candidates:
+        src = source_stats(cand)
+        if src:
+            body = cand
+            break
+    if src is None:
+        body = candidates[0] if candidates else ''
     if src is None:
         out['failures'].append(f'no DoW2 source part found for mesh {body!r}')
         return out

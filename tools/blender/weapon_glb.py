@@ -76,21 +76,41 @@ if longest > 1e-6:
     obj.scale = (s, s, s)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
-# Origin at the TRIGGER GRIP, not at the centre. A weapon centred on its own bounding box,
-# placed at a hand, puts half of itself inside the soldier — which is exactly what shipped.
-# The grip of every weapon in this library is at the rear-bottom (behind the trigger, under
-# the barrel), so the rear-bottom corner becomes the origin: the right hand then holds the
-# weapon where a hand actually goes, and the barrel extends forward (+Z) from it.
+# Origin at the RECEIVER end, muzzle forward.
+#
+# Measured on the first attempt: the weapons extended into NEGATIVE Z (lasgun -0.29..0.00) with
+# the origin at the thin end, so the hand was gripping the MUZZLE and the barrel pointed
+# backwards. Which end is which is a mass question, not an axis question — a rifle's receiver and
+# stock carry the geometry, the muzzle is a thin tube. The stock end becomes the origin and the
+# muzzle is pushed to +Z, which is the direction the engine aims.
+import math as _m
+def _profile(o):
+    zs = [v.co.z for v in o.data.vertices]
+    lo, hi = min(zs), max(zs)
+    span = hi - lo or 1.0
+    slices = [0] * 10
+    for z in zs:
+        slices[min(9, int((z - lo) / span * 10))] += 1
+    return lo, hi, slices
+
+lo, hi, slices = _profile(obj)
+stock_at_low = sum(slices[:3]) >= sum(slices[-3:])
+if not stock_at_low:
+    obj.rotation_euler = (0.0, _m.pi, 0.0)   # flip so the bulky end is at low Z
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+    lo, hi, slices = _profile(obj)
+print(f"WEAPON mass profile stock_at_low={stock_at_low} slices={slices}")
+
 co = [v.co for v in obj.data.vertices]
 lo = Vector((min(c.x for c in co), min(c.y for c in co), min(c.z for c in co)))
 hi = Vector((max(c.x for c in co), max(c.y for c in co), max(c.z for c in co)))
-grip = Vector(((lo.x + hi.x) / 2, lo.y, lo.z))
-obj.location = -grip
+# stock (receiver) end at the origin, barrel running to +Z
+obj.location = (-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)
 bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
 co = [v.co for v in obj.data.vertices]
 lo = Vector((min(c.x for c in co), min(c.y for c in co), min(c.z for c in co)))
 hi = Vector((max(c.x for c in co), max(c.y for c in co), max(c.z for c in co)))
-print(f"WEAPON grip-at-origin: extents z={lo.z:.2f}..{hi.z:.2f} y={lo.y:.2f}..{hi.y:.2f}")
+print(f"WEAPON origin-at-stock: barrel z={lo.z:.2f}..{hi.z:.2f} (muzzle at +Z)")
 
 tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
 

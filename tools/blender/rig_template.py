@@ -31,6 +31,8 @@ _ap.add_argument("--mesh", required=True)
 _ap.add_argument("--out", required=True)
 _ap.add_argument("--id", required=True)
 _ap.add_argument("--no-fit", action="store_true", help="keep template coordinates")
+_ap.add_argument("--skeleton", help="a DoW2 unit skeleton from tools/dow2/skeleton.py; "
+                                     "its bone positions are used verbatim (no template fit)")
 _ap.add_argument("--fit", choices=("uniform", "bbox"), default="uniform",
                  help="uniform (default) fits height and grounds; bbox stretches per axis")
 _ap.add_argument("--export", action="store_true", default=True)
@@ -38,6 +40,21 @@ A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else 
 
 TPL = json.loads((ROOT / A.template).read_text()) if not Path(A.template).is_absolute() \
     else json.loads(Path(A.template).read_text())
+
+# A DoW2 unit skeleton is the game's own rig for this body: names, hierarchy and reference
+# pose. When one is supplied it replaces the template's bone list wholesale and the template
+# fit below is skipped, because there is nothing left to infer -- the mesh was authored
+# against this skeleton. See tools/dow2/skeleton.py for the conversion into base-mesh space.
+PRESET = False
+if A.skeleton:
+    SK = json.loads(Path(A.skeleton).read_text())
+    TPL = {"bones": [{"name": b["name"], "head": b["head"], "tail": b["tail"],
+                      "parent": b.get("parent"), "deform": b.get("deform", True),
+                      "radius": b.get("radius", 0.05 if b["name"].startswith("socket") else 0.08)}
+                     for b in SK["bones"]],
+           "sockets": []}
+    PRESET = True
+    print(f"SKELETON {Path(A.skeleton).name}: {len(TPL['bones'])} bones from the shipped rig")
 
 # ------------------------------------------------------------------ scene
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -70,7 +87,7 @@ mesh_h = hi.z - lo.z
 tpl_pts = [Vector(b["head"]) for b in TPL["bones"]] + [Vector(b["tail"]) for b in TPL["bones"]]
 tlo = Vector((min(p.x for p in tpl_pts), min(p.y for p in tpl_pts), min(p.z for p in tpl_pts)))
 thi = Vector((max(p.x for p in tpl_pts), max(p.y for p in tpl_pts), max(p.z for p in tpl_pts)))
-if A.no_fit:
+if A.no_fit or PRESET:
     fit_scale = Vector((1, 1, 1))
     fit_off = Vector((0, 0, 0))
 elif A.fit == "bbox":
@@ -145,8 +162,9 @@ for s in TPL.get("sockets", []):
     sockets += 1
 # limb fitting: place the arm and leg chains along the mesh's own limbs instead
 # of trusting the template's pose. Shipped bases are A-posed or T-posed and the
-# fingertips/feet are the reliable landmarks.
-if not A.no_fit:
+# fingertips/feet are the reliable landmarks. Skipped for a DoW2 skeleton, whose
+# chains already sit on the body.
+if not A.no_fit and not PRESET:
     world_co = [v.co for v in body.data.vertices]
     zmax = max(p.z for p in world_co)
     for side, sgn in (("L", 1), ("R", -1)):
@@ -173,12 +191,22 @@ if not A.no_fit:
         if 0.25 < reach < 1.4:
             def at(f):
                 return shoulder + (tip - shoulder) * f
+            prev_hand = hd.head.copy()
             ua.head = shoulder
             ua.tail = at(0.45)
             la.head = ua.tail
             la.tail = at(0.80)
             hd.head = la.tail
             hd.tail = at(1.0)
+            # Fingers and thumbs ride the hand: the fit moves the arm chain, and leaving the
+            # digit bones at their template coordinates put them up to 54 cm from the mesh
+            # (measured on the eldar template: finger_index 41 cm outside the hand).
+            delta = hd.head - prev_hand
+            for prefix in ("thumb", "finger"):
+                for b in arm_data.edit_bones:
+                    if b.name.startswith(f"{prefix}") and b.name.endswith(f"_{side}"):
+                        b.head = b.head + delta
+                        b.tail = b.tail + delta
             print(f"FIT arm {side} reach={reach:.2f} tip=({tip.x:.2f},{tip.y:.2f},{tip.z:.2f})")
         # legs: the foot chain ends at the lowest vertex on that side
         th = created.get(f"thigh_{side}")
@@ -237,6 +265,14 @@ def seg_dist(p, a, b):
     return (p - (a + ab * t)).length
 
 
+def _has_weight(group, index):
+    try:
+        group.weight(index)
+        return True
+    except RuntimeError:
+        return False
+
+
 POWER = 4.0
 MAXB = 3
 weighted = {b.name: 0 for b in deform_bones}
@@ -256,7 +292,12 @@ print("BIND proximity groups", len(vgroups))
 # otherwise the rig has a dead joint. Claims are resolved by distance across all
 # orphan bones so one fallback cannot strip another (measured: the jaw stripped
 # the neck and the export lost it).
-orphan_names = [n for n, c in weighted.items() if c == 0]
+# A bone with one or two stray vertices is effectively dead: the glTF exporter keeps only the
+# four largest influences per vertex and prunes the rest, so a bone whose weights were all
+# marginal exports with none (measured: finger_middle_L/R on the deathkorps body, 0 vertices in
+# the GLB while Blender still held small weights). Treat "fewer than 2" as unweighted.
+MIN_BONE_VERTS = 2
+orphan_names = [n for n, c in weighted.items() if c < MIN_BONE_VERTS]
 claims = {}
 for name in orphan_names:
     seg = next((s for s in segments if s[0] == name), None)
@@ -280,19 +321,82 @@ for name in orphan_names:
 
 # Second fallback: a bone whose nearest vertex was already claimed by a closer bone still
 # needs geometry, or it exports as a dead joint and the audit fails the unit. A vertex can
-# carry several influences, so share it instead of stripping the other bone.
-for name in [n for n, c in weighted.items() if c == 0]:
+# carry several influences, so share it instead of stripping the other bone -- but the glTF
+# exporter keeps only four influences per vertex, so a fifth is silently dropped and the bone
+# still exports dead (measured: finger_middle_L/R on the deathkorps body). Drop the weakest
+# existing influence first.
+MAX_INFLUENCES = 4
+for name in [n for n, c in weighted.items() if c < MIN_BONE_VERTS]:
     seg = next((x for x in segments if x[0] == name), None)
     if not seg:
         continue
     _n, a, b = seg
     d, vi = min((seg_dist(v.co, a, b), v.index) for v in body.data.vertices)
+    present = [g for g in body.vertex_groups if g.name != name]
+    on_vert = []
+    for g in present:
+        try:
+            on_vert.append((g.weight(vi), g))
+        except RuntimeError:
+            continue
+    if len(on_vert) >= MAX_INFLUENCES:
+        _w, weakest = min(on_vert, key=lambda t: t[0])
+        weakest.remove([vi])
     vgroups[name].add([vi], 0.5, "ADD")
     weighted[name] = 1
     print(f"BIND shared fallback {name} -> vert {vi} ({d:.3f} m)")
 
-orphans = [n for n, c in weighted.items() if c == 0]
+# Recount from the vertex groups themselves rather than from the bookkeeping above: a bone can
+# look weighted in the counters and still export dead (the exporter keeps the four largest
+# influences per vertex, so a marginal influence is pruned silently). Anything short of
+# MIN_BONE_VERTS here is forced onto its nearest vertices at full weight.
+# The exporter keeps the four largest influences per vertex, so a marginal weight is dropped
+# on the way out. Counting it here made the forced fallback skip bones that then exported
+# dead (measured: finger_index_R on the ork kommandoboyz body, weight present in Blender,
+# zero vertices in the GLB). 0.02 is the floor for an influence that survives normalisation.
+SURVIVING_WEIGHT = 0.02
+
+
+def _real_counts():
+    counts = {g.name: 0 for g in body.vertex_groups}
+    for v in body.data.vertices:
+        for ge in v.groups:
+            if ge.weight >= SURVIVING_WEIGHT:
+                gname = body.vertex_groups[ge.group].name
+                if gname in counts:
+                    counts[gname] += 1
+    return counts
+
+
+real = _real_counts()
+short = [n for n in (s[0] for s in segments) if real.get(n, 0) < MIN_BONE_VERTS]
+forced_claims = set()
+for name in short:
+    seg = next((x for x in segments if x[0] == name), None)
+    if not seg:
+        continue
+    _n, a, b = seg
+    ranked = sorted(((seg_dist(v.co, a, b), v.index) for v in body.data.vertices))
+    # Each forced bone takes one vertex EXCLUSIVELY. Sharing the same four vertices between two
+    # forced digit bones gave five or more influences at weight 1.0, and the exporter's
+    # four-influence cap then dropped one of them at random (measured: finger_ring_R on the
+    # banshee body). One exclusive vertex is the honest rig for a fingertip and cannot be lost.
+    for _d, vi in ranked:
+        if vi in forced_claims:
+            continue
+        for g in body.vertex_groups:
+            if g.name != name and _has_weight(g, vi):
+                g.remove([vi])
+        vgroups[name].add([vi], 1.0, "REPLACE")
+        forced_claims.add(vi)
+        break
+    print(f"BIND forced {name} -> exclusive vertex")
+
+real = _real_counts()
+orphans = [n for n in (s[0] for s in segments) if real.get(n, 0) == 0]
 print("BIND orphan_deform_bones", len(orphans), orphans[:8])
+print("BIND per-bone vertices", {n: real.get(n, 0) for n in ("finger_middle_L", "hand_L", "chest")})
+print("BIND short after force", {n: real.get(n, 0) for n in short})
 
 # ------------------------------------------------------------------ export
 out = Path(A.out)

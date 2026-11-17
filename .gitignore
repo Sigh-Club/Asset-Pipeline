@@ -91,3 +91,13 @@ assets/_audio_library/
 assets/sources/
 !assets/sources/manifest.json
 AGENTS.md
+
+# === Working data (huge; regenerable from the shipped game + the tools) ===
+data/
+output/
+
+# === Logs from long runs ===
+*.log
+
+# === Evidence images for the DoW2 stance reference (tracked deliberately) ===
+!docs/evidence/dow2-stance/*.jpg

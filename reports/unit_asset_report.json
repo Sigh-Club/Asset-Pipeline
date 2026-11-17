@@ -1,31 +1,135 @@
 [
  {
   "unit": "chrono_revenants_sepulchre_warden",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "source": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 8766,
+    "source": 0,
+    "ratio": 8766.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "necron_overlord_common.model"
  },
  {
   "unit": "chrono_revenants_tomb_obelisk",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "source": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 8766,
+    "source": 0,
+    "ratio": 8766.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "necron_overlord_common.model"
  },
  {
   "unit": "chrono_revenants_undying_cohort",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "source": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 8766,
+    "source": 0,
+    "ratio": 8766.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "necron_overlord_common.model"
  },
  {
   "unit": "chrono_revenants_void_reaper",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "source": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 8766,
+    "source": 0,
+    "ratio": 8766.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "necron_overlord_common.model"
  },
  {
   "unit": "cinderborn_ash_stalker",
@@ -209,9 +313,37 @@
  {
   "unit": "cinderborn_warlord",
   "failures": [
-   "no DoW2 source part found for mesh 'dow_chaos_chaos_marine'"
+   "proportions deviate 20% from the source [0.513, 1.0, 0.323] (ours [0.714, 1.0, 0.373])"
   ],
-  "checks": []
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.714,
+     1.0,
+     0.373
+    ],
+    "source": [
+     0.513,
+     1.0,
+     0.323
+    ],
+    "max_dev": 0.201
+   },
+   {
+    "check": "triangles",
+    "ours": 2495,
+    "source": 0,
+    "ratio": 2495.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_marine_epic.model"
  },
  {
   "unit": "cinderborn_zealot_captain",
@@ -1285,7 +1417,7 @@
  {
   "unit": "wreckstorm_clans_titan_fist",
   "failures": [
-   "proportions deviate 68% from the source [1.0, 0.495, 0.315] (ours [0.872, 0.667, 1.0])"
+   "proportions deviate 37% from the source [0.966, 1.0, 0.634] (ours [0.872, 0.667, 1.0])"
   ],
   "checks": [
    {
@@ -1296,11 +1428,11 @@
      1.0
     ],
     "source": [
+     0.966,
      1.0,
-     0.495,
-     0.315
+     0.634
     ],
-    "max_dev": 0.685
+    "max_dev": 0.366
    },
    {
     "check": "triangles",
@@ -1315,7 +1447,7 @@
     "missing": []
    }
   ],
-  "source": "rokkit_pistol.model"
+  "source": "slugga_nob_armour_epic.model"
  },
  {
   "unit": "wreckstorm_clans_warboss",
@@ -1551,9 +1683,37 @@
  {
   "unit": "dow_chaos_chaos_marine",
   "failures": [
-   "no DoW2 source part found for mesh 'dow_chaos_chaos_marine'"
+   "proportions deviate 20% from the source [0.513, 1.0, 0.323] (ours [0.714, 1.0, 0.373])"
   ],
-  "checks": []
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.714,
+     1.0,
+     0.373
+    ],
+    "source": [
+     0.513,
+     1.0,
+     0.323
+    ],
+    "max_dev": 0.201
+   },
+   {
+    "check": "triangles",
+    "ours": 2495,
+    "source": 0,
+    "ratio": 2495.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "chaos_marine_epic.model"
  },
  {
   "unit": "dow_chaos_chaos_marine_armour",
@@ -1757,10 +1917,36 @@
  },
  {
   "unit": "dow_chaos_plague_marine",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_chaos_plague_marine'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.713,
+     1.0,
+     0.357
+    ],
+    "source": [
+     0.593,
+     1.0,
+     0.35
+    ],
+    "max_dev": 0.12
+   },
+   {
+    "check": "triangles",
+    "ours": 2774,
+    "source": 0,
+    "ratio": 2774.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "plague_marine_epic.model"
  },
  {
   "unit": "dow_chaos_wordbearers_havoc",
@@ -2358,10 +2544,36 @@
  },
  {
   "unit": "dow_eldar_guardian",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_eldar_guardian'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.457,
+     1.0,
+     0.316
+    ],
+    "source": [
+     0.43,
+     1.0,
+     0.297
+    ],
+    "max_dev": 0.027
+   },
+   {
+    "check": "triangles",
+    "ours": 2822,
+    "source": 0,
+    "ratio": 2822.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "guardian_epic.model"
  },
  {
   "unit": "dow_eldar_guardian_ulthwe",
@@ -3258,10 +3470,36 @@
  },
  {
   "unit": "dow_necron_necron_overlord",
-  "failures": [
-   "no DoW2 source part found for mesh 'dow_necron_necron_overlord'"
+  "failures": [],
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "source": [
+     0.619,
+     1.0,
+     0.339
+    ],
+    "max_dev": 0.0
+   },
+   {
+    "check": "triangles",
+    "ours": 8766,
+    "source": 0,
+    "ratio": 8766.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
   ],
-  "checks": []
+  "source": "necron_overlord_common.model"
  },
  {
   "unit": "dow_necron_night_bringer",
@@ -3332,9 +3570,37 @@
  {
   "unit": "dow_ork_kommandoboyz_armour",
   "failures": [
-   "no DoW2 source part found for mesh 'shoota.001'"
+   "proportions deviate 53% from the source [0.863, 1.0, 0.861] (ours [1.0, 0.507, 0.331])"
   ],
-  "checks": []
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.507,
+     0.331
+    ],
+    "source": [
+     0.863,
+     1.0,
+     0.861
+    ],
+    "max_dev": 0.53
+   },
+   {
+    "check": "triangles",
+    "ours": 815,
+    "source": 0,
+    "ratio": 815.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "kommandoboyz_armour_epic.model"
  },
  {
   "unit": "dow_ork_loota_leader_armour",
@@ -3473,9 +3739,37 @@
  {
   "unit": "dow_ork_stormboyz_armour",
   "failures": [
-   "no DoW2 source part found for mesh 'shoota.001'"
+   "proportions deviate 51% from the source [0.659, 1.0, 0.901] (ours [1.0, 0.49, 0.441])"
   ],
-  "checks": []
+  "checks": [
+   {
+    "check": "proportions",
+    "ours": [
+     1.0,
+     0.49,
+     0.441
+    ],
+    "source": [
+     0.659,
+     1.0,
+     0.901
+    ],
+    "max_dev": 0.51
+   },
+   {
+    "check": "triangles",
+    "ours": 815,
+    "source": 0,
+    "ratio": 815.0
+   },
+   {
+    "check": "skeleton",
+    "class": "humanoid",
+    "joints": 35,
+    "missing": []
+   }
+  ],
+  "source": "stormboyz_armour_epic.model"
  },
  {
   "unit": "dow_ork_warboss_armour",

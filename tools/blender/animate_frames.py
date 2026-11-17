@@ -104,7 +104,7 @@ def gait(swing=24, knee=42, bob=0.03, lean=4, arm=18):
     phase = [0, 1, 0, -1, 0]
     for i, f in enumerate(frames):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         s = phase[i]
         for side, sgn in (("L", 1), ("R", -1)):
             th = pose.get(f"thigh_{side}")
@@ -133,7 +133,19 @@ def gait(swing=24, knee=42, bob=0.03, lean=4, arm=18):
 def clip_idle():
     for i, f in enumerate((1, 13, 25)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        if not is_humanoid():
+            # creature rigs do not survive posed spines: keep the idle to a single small
+            # breathing offset on the pelvis, which stays inside the fitted bones
+            pel = pose.get("pelvis")
+            if pel is not None:
+                rot(pel, (1, 0, 0), (1.2 if i == 1 else -0.8))
+            for pb in pose:
+                key(pb, f)
+            continue
+        # The idle does NOT re-pose the arms. A fitted rig's rest pose is the pose its mesh was
+        # authored in; overriding the arms with template-relative grip targets is what folded
+        # several bodies (measured: the chaos marine's arms ended above its head). The idle keeps
+        # the arms where the body says they are and only breathes the spine, so it cannot fold.
         breathe = 1.5 if i != 1 else -1.0
         for name in ("spine_01", "spine_02", "chest"):
             pb = pose.get(name)
@@ -153,7 +165,7 @@ def clip_idle():
 def clip_aim():
     for i, f in enumerate((1, 9)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         # raise both arms forward into a two-handed aim
         for side, sgn in (("L", 1), ("R", -1)):
             ua = pose.get(f"upperarm_{side}")
@@ -174,7 +186,7 @@ def clip_aim():
 def clip_fire():
     for i, f in enumerate((1, 3, 6, 12)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         kick = {0: 0, 1: 9, 2: 3, 3: 0}[i]
         for side, sgn in (("L", 1), ("R", -1)):
             ua = pose.get(f"upperarm_{side}")
@@ -195,7 +207,7 @@ def clip_fire():
 def clip_reload():
     for i, f in enumerate((1, 8, 16, 24)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         drop = {0: 0, 1: 25, 2: 25, 3: 0}[i]
         for side, sgn in (("L", 1), ("R", -1)):
             ua = pose.get(f"upperarm_{side}")
@@ -212,7 +224,7 @@ def clip_reload():
 def clip_hit():
     for i, f in enumerate((1, 5, 12)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         back = {0: 0, 1: 14, 2: 4}[i]
         sp = pose.get("spine_02")
         if sp is not None:
@@ -231,7 +243,7 @@ def clip_hit():
 def clip_death():
     for i, f in enumerate((1, 10, 24)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         fall = {0: 0, 1: 40, 2: 88}[i]
         root = pose.get("root")
         if root is not None:
@@ -251,7 +263,7 @@ def clip_death():
 def clip_melee():
     for i, f in enumerate((1, 7, 12, 18)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         swing = {0: 0, 1: -60, 2: 35, 3: 0}[i]
         ua = pose.get("upperarm_R")
         la = pose.get("lowerarm_R")
@@ -302,7 +314,33 @@ def aim_bone(pb, target):
     bpy.context.view_layer.update()
 
 
-def arms_hold(offset_r, offset_l):
+def is_humanoid():
+    """Humanoid rigs carry hand/clavicle bones; creature rigs (tyranid) do not — their "arms" are
+    front legs, and aiming them at rifle grip points twists the whole body. The rifle carry is
+    only applied where there is a rifle to carry."""
+    return all(n in pose for n in ("hand_L", "hand_R", "clavicle_L"))
+
+
+# Where the hands go for a two-handed carry, relative to the CHEST, in the rig's own space.
+#
+# The sign convention is the trap: this rig faces -Y and its LEFT arm is at +X
+# (`configs/rigs/human.json` puts `upperarm_L` at +x), so +X is the character's LEFT. The
+# offsets here previously gave the right hand a POSITIVE x, which put it on the character's
+# left and folded both arms across the chest — every clip was authored with the arms crossed
+# and the rifle pointing sideways, and it read as "not holding the weapon". Measured on the
+# shipped idle: the right hand sat 0.11 m on the wrong side of the spine.
+#
+# R = right hand on the pistol grip: right of centre, in front, at chest height.
+# L = left hand on the foregrip: forward of the right hand and slightly across, because a
+#     rifle's handguard is in front of the trigger.
+HOLD_R = (-0.11, -0.18, -0.03)
+HOLD_L = (0.09, -0.60, -0.06)
+# the crouch grips sit a little lower and closer to the body
+CROUCH_R = (-0.11, -0.18, -0.10)
+CROUCH_L = (0.09, -0.58, -0.13)
+
+
+def arms_hold(offset_r, offset_l, barrel=(0.0, -1.0, 0.0)):
     """Both hands onto two grip points — a two-handed carry, stated as positions.
 
     The right hand takes the pistol grip and the left the foregrip; each arm is aimed through
@@ -310,6 +348,8 @@ def arms_hold(offset_r, offset_l):
     Offsets are relative to the CHEST, not to the world: an absolute target would be reached
     from wherever the body is, so a crouch would leave the arms stretched up to standing height.
     """
+    if not is_humanoid():
+        return
     chest = pose.get("chest")
     base = chest.matrix.translation.copy() if chest is not None else Vector((0, 0, 1.4))
     grip_r = base + Vector(offset_r)
@@ -330,7 +370,13 @@ def arms_hold(offset_r, offset_l):
         if la is not None:
             aim_bone(la, g)
         if hd is not None:
-            aim_bone(hd, g + (g - elbow).normalized() * 0.12)
+            # The hand is aimed along the BARREL, not away from the elbow. "Away from the
+            # elbow" is the forearm direction, and for a bent two-handed carry that points
+            # across the body — which is why the rifle read as pointing sideways even after
+            # the grips were put on the correct sides. The hand's orientation is what the
+            # weapon inherits, so it is stated directly, the way a rig's hand socket is
+            # authored.
+            aim_bone(hd, g + Vector(barrel).normalized() * 0.12)
 
 
 def arms_ready():
@@ -361,7 +407,7 @@ def _crouch(depth=1.0):
     (the DoW2 idle crouch) reads as hiding in the open instead of using the cover.
     """
     reset()
-    arms_hold((0.11, -0.18, -0.10), (-0.09, -0.58, -0.13))
+    arms_hold(CROUCH_R, CROUCH_L)
     for side in ("L", "R"):
         th = pose.get(f"thigh_{side}")
         sh = pose.get(f"shin_{side}")
@@ -382,7 +428,8 @@ def _crouch(depth=1.0):
     # in KNOWN-ISSUES; it is a cosmetic 3-6 cm there and a visible 46 cm here.)
     root = pose.get("root")
     if root is not None:
-        root.location = (0, -0.40 * depth, 0)
+        # a creature crouch is shallower than a human one; the human 0.40 m drop sank the body
+        root.location = (0, -0.40 * depth if is_humanoid() else -0.18 * depth, 0)
 
 
 def _lean(side, degrees):
@@ -422,7 +469,7 @@ def cover_high(side):
     """High cover: standing, leaning around the edge. No crouch — XCOM stands here."""
     for i, f in enumerate((1, 17, 33)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         _lean(side, 8 + (1 if i == 1 else 0))
         for pb in pose:
             key(pb, f)
@@ -452,7 +499,7 @@ def cover_switch(side_from, high=False):
     for i, f in enumerate((1, 7, 13)):
         if high:
             reset()
-            arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+            arms_hold(HOLD_R, HOLD_L)
         else:
             _crouch()
         if i == 0:
@@ -511,7 +558,7 @@ def cover_exit(angle, stay=False, low=True):
             _crouch(depth=depth)
         else:
             reset()
-            arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+            arms_hold(HOLD_R, HOLD_L)
         _lean("L", max(0.0, 7 - i * 3))
         twist = angle * (i / 2.0) * 0.35
         for name in ("spine_02", "chest"):
@@ -554,7 +601,7 @@ def panic_pose(phase):
     """BlendByPanic: start (break posture), loop (shaking), stop (recover)."""
     for i, f in enumerate((1, 13, 25)):
         reset()
-        arms_hold((0.11, -0.18, -0.03), (-0.09, -0.60, -0.06))
+        arms_hold(HOLD_R, HOLD_L)
         k = 1.0 if phase == "start" else (0.7 if phase == "loop" else 0.25)
         for s in ("L", "R"):
             ua = pose.get(f"upperarm_{s}")
