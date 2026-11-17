@@ -96,9 +96,10 @@ _ap.add_argument("--texture-root", action="append", default=[],
 _ap.add_argument("--no-align", action="store_true",
                 help="do not fit the skeleton onto the mesh (only for a body whose skeleton is "
                      "already in the mesh's own space)")
-_ap.add_argument("--chain-weights", dest="chain_weights", action="store_true", default=True,
-                help="(default) derive the blend from the shipped bone ASSIGNMENT plus the joint "
-                     "geometry, instead of trusting the shipped weight column")
+_ap.add_argument("--chain-weights", dest="chain_weights", action="store_true", default=False,
+                help="derive the blend from the joint geometry instead of the shipped weight "
+                     "column (legacy; the shipped weights are authoritative now that the bone "
+                     "assignment comes from the model's own FOLDSKEL table)")
 _ap.add_argument("--no-chain-weights", dest="chain_weights", action="store_false",
                 help="use the shipped weight column as authored")
 _ap.add_argument("--rigid-weights", action="store_true",
@@ -114,6 +115,26 @@ _ap.add_argument("--actions", default="",
 _ap.add_argument("--frame-stride", type=int, default=1,
                 help="key every Nth frame of a track (1 = the shipped 30 fps, unchanged)")
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+
+def canonical_ci(name):
+    """`S.canonical` with a case-insensitive fallback.
+
+    The model's bone table is lowercase (`bip01 r thigh`) while the vocabulary is not
+    (`Bip01 R Thigh` -> `thigh_R`). A miss here names an armature bone `bip01 r thigh`, which no
+    clip bone ever matches, so every pose is silently skipped and the unit renders its bind pose.
+    """
+    hit = S.canonical(name)
+    if hit:
+        return hit
+    low = name.lower()
+    for key, value in S.BONE_MAP.items():
+        if key.lower() == low:
+            return value
+    for key, value in getattr(S, "FINGER_ALIAS", {}).items():
+        if key.lower() == low:
+            return value
+    return name
+
 
 def _rigid(M):
     """A 4x4 with its 3x3 normalised to unit scale.
@@ -155,6 +176,10 @@ def decode_part(model_path):
 
     nodes = []
     walk(models[0], nodes)
+    # the model's OWN bone table: skin indices index this list, so it is the authoritative
+    # index->bone map (see docs/DOW2_ANIMATION_DECODE.md; the proximity solve disagreed with it
+    # on 29 of 35 indices)
+    p_bones = [rec["name"] for rec in CM.decode_foldskel(blob)]
     p_verts, p_faces, p_skins, p_groups, p_uvs = [], [], [], [], []
     for node in nodes:
         pay = blob[node.data_offset:node.file_offset + node.size]
@@ -182,17 +207,25 @@ def decode_part(model_path):
                 mat = f"mat{sub['material']}"
             for k in range(0, len(idx) - 2, 3):
                 p_faces.append((idx[k] + base, idx[k + 1] + base, idx[k + 2] + base))
-            p_groups.append(mat)
-    return p_verts, p_faces, p_skins, p_groups, p_uvs
+                # one material per FACE, parallel to `p_faces`: the material loop zips polygons
+                # against this list, so a per-submesh list assigned the second part's material to
+                # a single triangle and left the rest on the first slot (measured: the weapon's
+                # 218 triangles became one 3-vertex primitive on the body's material).
+                p_groups.append(mat)
+    return p_verts, p_faces, p_skins, p_groups, p_uvs, p_bones
 
 
 verts, faces, skins, groups, uvs = [], [], [], [], []
+# per-vertex bone names straight from the model's FOLDSKEL, parallel to `verts`
+skin_bones = []
 for model_path in A.model:
-    pv, pf, ps, pg, pu = decode_part(model_path)
+    pv, pf, ps, pg, pu, pb = decode_part(model_path)
     base = len(verts)
     verts.extend(pv)
     uvs.extend(pu)
     skins.extend(ps)
+    skin_bones.extend((pb[b0] if b0 < len(pb) else None,
+                       pb[b1] if b1 < len(pb) else None) for b0, b1, _w in ps)
     faces.extend((a + base, b + base, c + base) for a, b, c in pf)
     groups.extend(pg)
 print(f"GEOMETRY verts={len(verts)} tris={len(faces)} materials={len(set(groups))}")
@@ -205,7 +238,7 @@ if not verts:
 # decide is which bone it follows. That is the shipped `Bip01 R Weapon`, not an authored angle.
 weapon_range = None
 if A.weapon_model:
-    wv, wf, _ws, wg, wu = decode_part(A.weapon_model)
+    wv, wf, _ws, wg, wu, _wb = decode_part(A.weapon_model)
     weapon_range = (len(verts), len(verts) + len(wv))
     base = len(verts)
     verts.extend(wv)
@@ -397,6 +430,12 @@ if A.weapon:
 print(f"BASE source_height={height:.3f} scale={scale:.4f} bbox z={Vb[:,2].min():.3f}..{Vb[:,2].max():.3f}")
 
 # ------------------------------------------------------------------ 3. skeleton
+#
+# The rig is the CLIP's skeleton, whose reference pose is the pose the mesh sits in (measured: the
+# weapon bone is 0.14 m from the weapon's vertices in this frame, against 1.27 m in the unit's own
+# `guardsman.hkx` frame). The MODEL's FOLDSKEL is still the authority for which bone each skin index
+# belongs to — that is section 4 — but its bone *frames* are a different convention, so mixing the
+# FOLDSKEL rest with clip world matrices shears the mesh.
 def _load_skeleton(path):
     try:
         sk = Packfile.open(path).skeleton()
@@ -425,15 +464,8 @@ src_names = src["bone_names"]
 
 # ------------------------------------------------------------------ 3a. align the skeleton to the MESH
 #
-# The skeleton file and the armour model are NOT in the same space: measured on the Imperial Guard
-# body, `guardsman.hkx` has its pelvis at y 1.46 and a 2.54 total height, while `ig_armour.model`
-# spans y 0.01-2.39. Matching mesh vertices against bones in a different frame produces a garbage
-# assignment — that was the real cause of the tearing, not the weights (a 100 %-rigid bind on the
-# same assignment still tore 16 %).
-#
-# So the skeleton is fitted onto the mesh explicitly: uniform scale to the mesh's height, centred and
-# grounded like the geometry. The fit residual is printed and must be small; a large one means the
-# skeleton does not belong to this body.
+# The clip skeleton's reference pose sits on the mesh in this corpus (weapon bone 0.14 m, head
+# 0.10 m), so the fit is near identity; it is kept as a measured correction rather than assumed.
 ALIGN = np.eye(4)
 if not A.no_align:
     sk_pts = np.array([srcW[i][:3, 3] for i in range(len(src_names))])
@@ -454,14 +486,10 @@ for i, n in enumerate(src_names):
     h = srcW[i][:3, 3]
     t = srcW[kids[0]][:3, 3] if kids else h + srcW[i][:3, 2] * 0.05
     segs.append((n, np.array(h, dtype=float), np.array(t, dtype=float)))
-# how far the fitted skeleton sits from the surface it must deform: the fit's own report
 _d = [min(float(np.linalg.norm(p - (h + np.clip(((p - h) @ (t - h)) / max(1e-9, float((t - h) @ (t - h))), 0, 1)) * (t - h)))
           for p in V[::max(1, len(V) // 200)]) for _n, h, t in segs]
 print(f"SKELETON bones={len(src_names)} bone->mesh median={np.median(_d):.3f} m max={max(_d):.3f} m")
-# The rest pose MUST be looked up by bone NAME. The clip's embedded skeleton and the unit's have
-# different bone lists and orders, so `srcW[i]` with the clip's index pairs unrelated bones and the
-# delta comes out as noise — that is what shattered every posed unit while its bind pose was perfect.
-REST_BY_NAME = {n: srcW[i] for i, n in enumerate(src_names)}
+REST_BY_NAME = {n.lower(): srcW[i] for i, n in enumerate(src_names)}
 
 # ------------------------------------------------------------------ 4. resolve the skin indices
 # DoW2's indices address the model's own bone table, so each is resolved by majority vote of the
@@ -471,15 +499,53 @@ REST_BY_NAME = {n: srcW[i] for i, n in enumerate(src_names)}
 # (`Bip01 L UpperArm` -> `upperarm_L`). A vertex group whose name does not match a bone deforms
 # nothing, so the mapping has to be applied here too — measured: the body barely moved (1.7 cm)
 # while the arm bones travelled 1.2 m.
-index_to_name = {k: (S.canonical(v) or v) for k, v in
-                 CM.resolve_skin_indices(skins, verts, segs).items()}
-print(f"SKIN indices={len(index_to_name)} rigid={sum(1 for b0,b1,w in skins if w>0.99)} "
-      f"blended={sum(1 for b0,b1,w in skins if w<=0.99)}")
+# case-insensitive map from the shipped bone names to the armature's vocabulary
+NAME_BY_LOWER = {n.lower(): canonical_ci(n) for n in src_names}
+# The model's bone table carries helper bones the render skeleton does not have (`bip01 footsteps`,
+# `bip01_sp_l`). Their vertices belong to the nearest ancestor the model itself declares, so the
+# parent chain in FOLDSKEL resolves them without inventing a bone.
+FOLDSKEL_PARENT = {}
+FOLDSKEL_NAMES = {}
+for _path in A.model:
+    _blob = Path(_path).read_bytes()
+    _recs = CM.decode_foldskel(_blob)
+    for _i, _rec in enumerate(_recs):
+        FOLDSKEL_NAMES[_rec["name"].lower()] = _rec["name"]
+        FOLDSKEL_PARENT[_rec["name"].lower()] = (_recs[_rec["parent"]]["name"].lower()
+                                                if 0 <= _rec["parent"] < len(_recs) else None)
+
+
+def resolve_foldskel_name(raw):
+    """FOLDSKEL name -> armature bone, walking the model's own parent chain for helper bones."""
+    seen = 0
+    name = raw.lower()
+    while name and seen < 64:
+        hit = NAME_BY_LOWER.get(name)
+        if hit:
+            return hit
+        name = FOLDSKEL_PARENT.get(name)
+        seen += 1
+    return None
+
+# The model states its own index->bone map in FOLDSKEL. Use it. The proximity solve is kept only
+# for a model that ships no FOLDSKEL at all, because it is a guess and it guessed wrong on most
+# indices (measured: 29 of 35 disagreed with the table).
+if any(n0 is not None for n0, _n1 in skin_bones):
+    index_to_name = {}
+    for b0, _b1, _w in skins:
+        pass
+    print(f"SKIN source=model FOLDSKEL bones={len({n for pair in skin_bones for n in pair if n})} "
+          f"rigid={sum(1 for b0,b1,w in skins if w>0.99)} "
+          f"blended={sum(1 for b0,b1,w in skins if w<=0.99)}")
+else:
+    index_to_name = {k: (S.canonical(v) or v) for k, v in
+                     CM.resolve_skin_indices(skins, verts, segs).items()}
+    print(f"SKIN source=proximity solve (no FOLDSKEL) indices={len(index_to_name)}")
 
 # the weapon geometry arrives in its own space; move it into the hand's rest frame
 if A.weapon:
     hand_bone_src = next((i for i, n in enumerate(src_names)
-                          if (S.canonical(n) or n) == "hand_R"), None)
+                          if canonical_ci(n) == "hand_R"), None)
     if hand_bone_src is None:
         raise SystemExit("no hand_R in the shipped skeleton")
     hand_m = BASE @ srcW[hand_bone_src]
@@ -576,7 +642,7 @@ bpy.context.view_layer.objects.active = arm
 bpy.ops.object.mode_set(mode="EDIT")
 made = {}
 for i, n in enumerate(src_names):
-    mapped = S.canonical(n) or n
+    mapped = canonical_ci(n)
     b = arm_data.edit_bones.new(mapped)
     # The rest must equal the shipped rest INCLUDING the bone's orientation, not just head/tail.
     # A head/tail-only bone gets roll 0, so its matrix_local differs from the source by up to 1.77
@@ -615,7 +681,7 @@ bpy.ops.object.mode_set(mode="OBJECT")
 worst = 0.0
 for i, n in enumerate(src_names):
     want = _rigid(BASE @ srcW[i])
-    got = np.array(arm.data.bones[S.canonical(n) or n].matrix_local)
+    got = np.array(arm.data.bones[canonical_ci(n)].matrix_local)
     worst = max(worst, float(np.abs(got - want).max()))
 print(f"REST matches the shipped skeleton: worst |diff| = {worst:.2e}")
 if worst > 1e-3:
@@ -631,15 +697,24 @@ def group_for(name):
     return g
 
 skipped = 0
+unmatched = {}
 for (b0, b1, w0), vi in zip(skins, range(len(Vb))):
     forced = force_bone[vi]
     if forced:
         group_for(forced).add([vi], 1.0, "REPLACE")
         continue
-    n0 = index_to_name.get(b0)
-    n1 = index_to_name.get(b1) if b1 != 0 else None
+    # the model's own bone table says which bone this vertex belongs to. FOLDSKEL names are
+    # lowercase (`bip01 r thigh`) while the skeleton uses `Bip01 R Thigh`, so the lookup is
+    # case-insensitive: an unmatched name silently creates a vertex group with no bone, which is
+    # how the whole body ended up on a neutral bone.
+    raw0, raw1 = skin_bones[vi] if vi < len(skin_bones) else (None, None)
+    n0 = resolve_foldskel_name(raw0) if raw0 else index_to_name.get(b0)
+    n1 = (resolve_foldskel_name(raw1) if raw1 else None) if b1 != 0 else None
     if n0 is None:
+        # the model names a bone the render skeleton does not have: this unit's rig is the wrong
+        # one for its geometry, and the vertex stays at bind. Report it by name, do not hide it.
         skipped += 1
+        unmatched[raw0] = unmatched.get(raw0, 0) + 1
         continue
     w0 = min(1.0, max(0.0, w0))
     if A.chain_weights and not A.rigid_weights:
@@ -656,7 +731,7 @@ for (b0, b1, w0), vi in zip(skins, range(len(Vb))):
             if spec_name == bone:
                 break
         pb = arm.data.bones.get(bone)
-        parent = S.canonical(pb.parent.name) or pb.parent.name if (pb and pb.parent) else None
+        parent = canonical_ci(pb.parent.name) if (pb and pb.parent) else None
         if parent is None:
             group_for(bone).add([vi], 1.0, "REPLACE")
             continue
@@ -679,6 +754,10 @@ for (b0, b1, w0), vi in zip(skins, range(len(Vb))):
 for vi in range(len(skins), len(Vb)):
     bone = force_bone[vi] or "hand_R"
     group_for(bone).add([vi], 1.0, "REPLACE")
+if unmatched:
+    worst = sorted(unmatched.items(), key=lambda kv: -kv[1])[:5]
+    print(f"WEIGHTS UNMATCHED {sum(unmatched.values())} vertices on bones the rig lacks: "
+          f"{[(n, c) for n, c in worst]}")
 print(f"WEIGHTS groups={len(group_cache)} vertices_without_a_bone={skipped} "
       f"weapon_vertices={max(0, len(Vb) - len(skins))}")
 
@@ -725,7 +804,7 @@ def _pose_matrices(W, names, frame_fix_inv=None, W_ref=None):
     """
     pose = {}
     for i, n in enumerate(names):
-        mapped = S.canonical(n) or n
+        mapped = canonical_ci(n)
         if mapped not in arm.data.bones:
             continue
         # The bone's posed world matrix in the mesh's space. The rig's rest is BASE @ (source
@@ -742,7 +821,7 @@ def _root_frame_fix(W, names):
     root_name = names[root_i]
     unit_root = arm.data.bones.get(S.canonical(root_name) or root_name)
     fix = np.eye(4)
-    if unit_root is not None and root_name in REST_BY_NAME:
+    if unit_root is not None and root_name.lower() in REST_BY_NAME:
         r_unit = np.array(unit_root.matrix_local)[:3, :3]
         r_clip = W[root_i][:3, :3]
         try:

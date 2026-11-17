@@ -136,3 +136,19 @@ game's own timing and events.
   its texture cached, and the GLB weapon dropped when the shipped one is used (both merged two
   weapons).
 - `sources`: release `source-v3` adds `lasgun.model` and its diffuse texture (297 files).
+
+## 2026-11-17 — bind from the model's own bone table (the folding fix)
+
+- `chunky_mesh.decode_foldskel`: parse the `.model` `FOLDSKEL` table (41 named bones with parent and
+  local bind transform, orthonormal to 3.5e-07). Skin indices index this table directly.
+- `dow2_build_unit.py`: the skin index -> bone map and the shipped weight column now come from that
+  table; the proximity solve is kept only for a model that ships no FOLDSKEL. Case-insensitive bone
+  resolution (`canonical_ci`), because FOLDSKEL names are lowercase and a miss silently creates a
+  vertex group with no bone. Materials are assigned per face (a per-submesh list had put a second
+  part's material on a single triangle). Unmatched bone names are reported by name and vertex count
+  instead of being hidden.
+- `tools/render_lab.py`: renders every lab unit in the bind pose and an action frame. The numeric
+  gate measures deformation from our own bind and passed shard piles; the render is the gate that
+  catches it.
+- Measured: the solve disagreed with the model's own table on 29 of 35 indices. Guardsman, chaos
+  sorcerer and eldar farseer now render as intact DoW2 units and animate.

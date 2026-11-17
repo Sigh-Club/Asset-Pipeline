@@ -18,6 +18,7 @@ retopology bases.
 from __future__ import annotations
 
 import argparse
+import re
 import struct
 import sys
 from pathlib import Path
@@ -328,6 +329,40 @@ def _hungarian(cost):
     for j in range(1, m + 1):
         if p[j]:
             out[p[j] - 1] = j - 1
+    return out
+
+
+def decode_foldskel(blob: bytes):
+    """The model's own bone table: (name, parent, local bind matrix) in index order.
+
+    A DoW2 `.model` carries a `FOLDSKEL` section whose `DATABONE` records ARE the answer to "which
+    bone is skin index N": the records are in index order, each with the bone's name, its parent
+    index and its local bind transform. The skin stream's two indices index this table directly.
+
+    Record layout (measured, orthonormal to 3.5e-07 across all 41 records of `ig_armour.model`):
+    28-byte chunk header, NUL-terminated name, int32 parent, int32 index, then 14 floats — three
+    basis vectors (X, Y, Z) and the translation as a 3x4, then two padding floats.
+
+    This replaces guessing the index->bone map from bone proximity, which disagreed with this table
+    on 29 of 35 indices and bound limbs one bone off.
+    """
+    out = []
+    for m in re.finditer(rb"DATABONE", blob):
+        pos = m.start() + 28
+        end = blob.find(b"\x00", pos)
+        if end < 0:
+            continue
+        name = blob[pos:end].decode("ascii", "replace")
+        pos = end + 1
+        if pos + 8 + 56 > len(blob):
+            continue
+        parent, _index = struct.unpack_from("<2i", blob, pos)
+        pos += 8
+        values = struct.unpack_from("<14f", blob, pos)
+        basis = [list(values[0:3]), list(values[3:6]), list(values[6:9])]
+        translation = list(values[9:12])
+        out.append({"name": name, "parent": parent, "basis": basis,
+                    "translation": translation})
     return out
 
 

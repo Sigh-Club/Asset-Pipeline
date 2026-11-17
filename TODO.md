@@ -34,12 +34,12 @@ events, triggerable from our action system.
 | body geometry | **working** | `tools/dow2/chunky_mesh.py` decodes positions, UVs and the shipped per-vertex bone indices/weights |
 | unit assembly | **working** | `tools/dow2/parts.py` resolves `render_models` and de-duplicates quality tiers |
 | skeleton | **working** | `tools/hkx/hkxread.py` decodes `hkSkeleton`: bones, parents, reference pose |
-| rig + skinning | **working** | optimal one-to-one assignment of the shipped bone indices; the armature rest now equals the shipped rest including bone orientation (worst diff 1.2e-05 across the six units, was 1.77 with roll 0) |
+| rig + skinning | **working for 3 of 6** | the skin index -> bone map is the model's own `FOLDSKEL` table (the proximity solve disagreed on 29 of 35 indices); guardsman, chaos sorcerer and eldar farseer render intact and animate. Tyranid body intact (3,213 verts on bones the borrowed rig lacks); ork = plates only; necron static (`rig_*` bones). Every build is rendered by `tools/render_lab.py` and looked at |
 | **clip decode** | **working** | `hkDeltaCompressedSkeletalAnimation` decoded: frame 0 reproduces the file's own reference pose (max 5.5e-06 m / 3.4°); corpus 236/243 decoded, 0 structural failures |
 | **action library** | **working** | `tools/dow2/action_library.py` + `--actions` in the builder: 6 units, 5–15 named actions each, with the shipped `.motiontree` events and times (fire burst cadence, reload foley, bodyfall) |
 | materials | **diffuse only** | `_nrm`, `_spc`, `_ocl`, `_emi` and the team-colour masks are not wired |
 | weapon hold | **1:1 for the guardsman** | `--weapon-model` merges the shipped `lasgun.model` with identity transform and binds it to `Bip01 R Weapon` (confirmed by the model's own marker table: `marker_muzzle` attaches to `bip01 r weapon`). `WEAPON_HOLD` remains only for units whose weapon model is not wired yet |
-| fidelity gate | **working** | `tools/rig_fidelity.py` measures tear / inversion / interpenetration / collapse, a displacement floor, and a rigid-plate reference; `tools/lab_fidelity.py` regenerates the lab report over every action |
+| fidelity gate | **necessary, not sufficient** | `tools/rig_fidelity.py` + `tools/lab_fidelity.py` measure deformation from our own bind, so they cannot detect a wrong bind (they passed shard piles). `tools/render_lab.py` is the visual gate and is now part of the lab build |
 | source assets for users | **working** | `tools/sources/pack_sources.py` + `fetch_sources.py`; release `source-v2` (295 files, 8.5 MB, hash-pinned) now carries each unit's `.motiontree` and `.marker`, so the event tables and attachment markers travel without the game |
 | engine side (IoA repo) | **done for this work** | loadout-aware clip resolution, source-material passthrough, per-battle command log; 665 jest, Go suites green |
 
