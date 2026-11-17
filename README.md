@@ -86,6 +86,8 @@ tearing and is not a passing unit.
 
 ## Read next
 
+- [`docs/HANDOFF_TURN_BASED.md`](docs/HANDOFF_TURN_BASED.md) — the self-contained brief for whoever
+  picks this up next: goal, what is done, the decode critical path, commands, MCP policy and the rules.
 - [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md) — how DoW2 units actually stand,
   the loadout rule, the part-assembly rule, and the four import rules that work (R1–R4).
 - [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) — the clip format, the located

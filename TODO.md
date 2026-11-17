@@ -6,6 +6,7 @@ the DoW2 import.
 
 Authority and detail:
 
+- [`docs/HANDOFF_TURN_BASED.md`](docs/HANDOFF_TURN_BASED.md) — the self-contained handoff brief.
 - [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md) — how DoW2 units stand, the
   loadout rule, the part-assembly rule, and the four import rules (R1–R4) that make a build work.
 - [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) — the clip format, the located
