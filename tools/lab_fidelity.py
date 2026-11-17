@@ -83,6 +83,8 @@ def main(argv=None):
                     help="measure every Nth keyframe (default 4; the last frame is always measured)")
     ap.add_argument("--clip", default="", help="only this action (default: every action in the unit)")
     ap.add_argument("--unit", default="", help="only this unit (default: every unit in the lab)")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="report path (default: <lab>/fidelity.json, or <lab>/fidelity.<unit>.json)")
     a = ap.parse_args(argv)
 
     units = []
@@ -120,7 +122,7 @@ def main(argv=None):
                        "assignment, and a 100 % rigid bind measures the same), which is the "
                        "source's own structure and is recorded in docs/KNOWN-ISSUES.md."),
               "clips": sorted(all_clips), "units": units}
-    out = a.lab / (f"fidelity.{a.unit}.json" if a.unit else "fidelity.json")
+    out = a.out or (a.lab / (f"fidelity.{a.unit}.json" if a.unit else "fidelity.json"))
     out.write_text(json.dumps(report, indent=1))
     fails = [u["unit"] for u in units if u["verdict"] == "FAIL"]
     print(f"{out}: {len(units)} units, {len(all_clips)} actions, FAIL {fails}")
