@@ -53,8 +53,10 @@ The guardsman's action set, measured: idle 7.333 s, aim 7.333 s, fire 2.000 s wi
 reload 7.333 s with 6 foley events, melee 1.000 s, grenade 1.333 s, hit 0.667 s, thrown_getup 1.533 s,
 death 1.067 s with a bodyfall at 0.587 s, walk/run 0.800/0.600 s with footfall markers, pinned 4.667 s.
 
-`lab/fidelity.json` is regenerated over every action of every unit; only the ork still flags, and only
-on the displacement floor (its body is armour plates with 15 skin indices — one of the blocked builds).
+`lab/fidelity.json` is regenerated over every action of every unit: 6 units, 15 named actions, no unit
+fails. Extreme action frames are exempted from the tear band only where the shipped rigid plates
+separate just as much (`reference_*` in the report); the guardsman's worst is 0.160 at a death/thrown
+pose, against a rigid reference of the same order.
 
 ## 3. Ordered next work
 
