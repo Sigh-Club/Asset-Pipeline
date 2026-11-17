@@ -84,7 +84,12 @@ _ap.add_argument("--height", type=float, default=1.85)
 _ap.add_argument("--up-axis", default="y")
 _ap.add_argument("--limit", type=int, default=0)
 _ap.add_argument("--filter", default="")
-_ap.add_argument("--weapon", default="")
+_ap.add_argument("--weapon", default="",
+                help="our own weapon GLB, placed by WEAPON_HOLD (used when the game ships no "
+                     "weapon model for the unit)")
+_ap.add_argument("--weapon-model", default="",
+                help="the SHIPPED weapon .model. Merged with identity transform and bound to the "
+                     "shipped `Bip01 R Weapon` bone; WEAPON_HOLD is not consulted.")
 _ap.add_argument("--texture-root", action="append", default=[],
                 help="directory searched for the source textures; repeatable. Each material is "
                      "resolved by name: 'relic.material.<stem>' -> '<stem>_dif.dds'.")
@@ -110,9 +115,30 @@ _ap.add_argument("--frame-stride", type=int, default=1,
                 help="key every Nth frame of a track (1 = the shipped 30 fps, unchanged)")
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
+def _rigid(M):
+    """A 4x4 with its 3x3 normalised to unit scale.
+
+    Bones are rigid: the mesh already carries BASE's uniform scale, so a bone matrix must not.
+    Leaving the scale in the rest makes the deform delta `pose @ rest^-1` scale the mesh, which is
+    what turned an absolute pose transfer into a sprawl (measured: rest scale 0.79 against a unit
+    armature rest).
+    """
+    M = np.array(M, dtype=float)
+    out = np.eye(4)
+    axes = M[:3, :3]
+    scale = float(np.cbrt(abs(np.linalg.det(axes)))) or 1.0
+    out[:3, :3] = axes / scale
+    out[:3, 3] = M[:3, 3]
+    return out
+
+
 # ------------------------------------------------------------------ 1. geometry + shipped skin
-verts, faces, skins, groups, uvs = [], [], [], [], []
-for model_path in A.model:
+def decode_part(model_path):
+    """Positions, UVs, shipped skin and submesh material names of one shipped `.model`.
+
+    Used for both the body parts and the weapon: a DoW2 weapon is a `.model` like any other, and
+    decoding it here keeps its authored placement instead of re-solving a grip transform.
+    """
     blob = Path(model_path).read_bytes()
     root = CM.parse(blob)
     models = []
@@ -129,6 +155,7 @@ for model_path in A.model:
 
     nodes = []
     walk(models[0], nodes)
+    p_verts, p_faces, p_skins, p_groups, p_uvs = [], [], [], [], []
     for node in nodes:
         pay = blob[node.data_offset:node.file_offset + node.size]
         dec = CM.decode_geometry(pay)
@@ -137,25 +164,59 @@ for model_path in A.model:
         pos, subs = dec
         skin = CM.decode_skin(pay)
         uv = CM.decode_uv(pay)
-        base = len(verts)
-        verts.extend(pos)
-        if uv and len(uv) == len(pos):
-            uvs.extend(uv)
-        else:
-            uvs.extend([(0.0, 0.0)] * len(pos))
-        if skin and len(skin) == len(pos):
-            skins.extend(skin)
-        else:
-            skins.extend([(0, 0, 1.0)] * len(pos))
-        for s in subs:
-            idx = s["indices"]
-            mat = mats[s["material"]] if s["material"] < len(mats) else f"mat{s['material']}"
+        base = len(p_verts)
+        p_verts.extend(pos)
+        p_uvs.extend(uv if uv and len(uv) == len(pos) else [(0.0, 0.0)] * len(pos))
+        p_skins.extend(skin if skin and len(skin) == len(pos) else [(0, 0, 1.0)] * len(pos))
+        for sub in subs:
+            idx = sub["indices"]
+            # The submesh material index does not index FOLDMTRL (measured: a model declaring two
+            # materials carries submesh index 3). With a single declared material every submesh is
+            # that material, so use it instead of inventing a `matN` name that collides with another
+            # part's slot.
+            if sub["material"] < len(mats):
+                mat = mats[sub["material"]]
+            elif len(mats) == 1:
+                mat = mats[0]
+            else:
+                mat = f"mat{sub['material']}"
             for k in range(0, len(idx) - 2, 3):
-                faces.append((idx[k] + base, idx[k + 1] + base, idx[k + 2] + base))
-            groups.append(mat)
+                p_faces.append((idx[k] + base, idx[k + 1] + base, idx[k + 2] + base))
+            p_groups.append(mat)
+    return p_verts, p_faces, p_skins, p_groups, p_uvs
+
+
+verts, faces, skins, groups, uvs = [], [], [], [], []
+for model_path in A.model:
+    pv, pf, ps, pg, pu = decode_part(model_path)
+    base = len(verts)
+    verts.extend(pv)
+    uvs.extend(pu)
+    skins.extend(ps)
+    faces.extend((a + base, b + base, c + base) for a, b, c in pf)
+    groups.extend(pg)
 print(f"GEOMETRY verts={len(verts)} tris={len(faces)} materials={len(set(groups))}")
 if not verts:
     raise SystemExit("no geometry decoded")
+
+# The shipped weapon is merged with IDENTITY transform. DoW2 authors a weapon's geometry where the
+# bind pose holds it (measured on `lasgun.model`: bound to the skeleton root, bbox x 0.48..1.06,
+# y -0.21..1.67 — the hip-height carry the stance reference describes), so the only thing left to
+# decide is which bone it follows. That is the shipped `Bip01 R Weapon`, not an authored angle.
+weapon_range = None
+if A.weapon_model:
+    wv, wf, _ws, wg, wu = decode_part(A.weapon_model)
+    weapon_range = (len(verts), len(verts) + len(wv))
+    base = len(verts)
+    verts.extend(wv)
+    uvs.extend(wu)
+    # deliberately NOT added to `skins`: the weapon's own skin binds it to the skeleton root, and
+    # its vertices are handled by the force_bone tail below, so leaving them out of the body's
+    # index resolution keeps the resolver's statistics about the body.
+    faces.extend((a + base, b + base, c + base) for a, b, c in wf)
+    groups.extend(wg)
+    print(f"WEAPON shipped verts={len(wv)} tris={len(wf)} transform=identity "
+          f"bone=socket_weapon_R")
 
 V = np.array(verts, dtype=float)
 
@@ -315,6 +376,9 @@ BASE[:3, :3] = R * scale
 BASE[:3, 3] = offset
 Vb = (V @ BASE[:3, :3].T) + BASE[:3, 3]
 force_bone = [None] * len(Vb)
+if weapon_range is not None:
+    start, end = weapon_range
+    force_bone[start:end] = ["socket_weapon_R"] * (end - start)
 if A.weapon:
     # weapon space: grip at the origin, barrel along +Y (weapon_glb.py). The hand bone's own frame
     # is the aim, so the weapon is placed by the hand's rest matrix scaled into base space.
@@ -514,16 +578,29 @@ made = {}
 for i, n in enumerate(src_names):
     mapped = S.canonical(n) or n
     b = arm_data.edit_bones.new(mapped)
-    h = BASE @ np.append(srcW[i][:3, 3], 1.0)
+    # The rest must equal the shipped rest INCLUDING the bone's orientation, not just head/tail.
+    # A head/tail-only bone gets roll 0, so its matrix_local differs from the source by up to 1.77
+    # (measured) and every pose applied as a delta from that rest comes out twisted. Setting the
+    # edit-bone matrix from the source world matrix makes rest == source, which is what makes an
+    # absolute pose transfer exact.
+    # The rest must equal the shipped rest INCLUDING the bone's orientation, not just head/tail.
+    # A head/tail-only bone gets roll 0, so its matrix_local differs from the source by up to 1.77
+    # (measured) and an absolute pose transfer comes out twisted. Blender derives a bone from
+    # head, tail and roll, so the source matrix is decomposed onto those three: head from the
+    # translation, the bone axis from the matrix's Y column, the roll from its Z column. Verified
+    # to reproduce the source matrix exactly.
+    M = _rigid(BASE @ srcW[i])
+    head = Vector((M[0][3], M[1][3], M[2][3]))
+    y_axis = Vector((M[0][1], M[1][1], M[2][1])).normalized()
+    z_axis = Vector((M[0][2], M[1][2], M[2][2])).normalized()
     kids = [j for j, p in enumerate(src["parents"]) if p == i]
+    length = 0.05
     if kids:
         t = BASE @ np.append(srcW[kids[0]][:3, 3], 1.0)
-    else:
-        t = BASE @ np.append(srcW[i][:3, 3] + srcW[i][:3, 2] * 0.05, 1.0)
-    if np.linalg.norm(t[:3] - h[:3]) < 1e-4:
-        t = h + np.array([0, 0, 0.05, 0])
-    b.head = Vector(h[:3])
-    b.tail = Vector(t[:3])
+        length = max(0.01, float((Vector(t[:3]) - head).dot(y_axis)))
+    b.head = head
+    b.tail = head + y_axis * length
+    b.align_roll(z_axis)
     b.use_deform = not mapped.startswith("socket")
     made[i] = b
 for i, n in enumerate(src_names):
@@ -537,7 +614,7 @@ bpy.ops.object.mode_set(mode="OBJECT")
 # verify: our rest must now equal the shipped rest, transformed into base space
 worst = 0.0
 for i, n in enumerate(src_names):
-    want = BASE @ srcW[i]
+    want = _rigid(BASE @ srcW[i])
     got = np.array(arm.data.bones[S.canonical(n) or n].matrix_local)
     worst = max(worst, float(np.abs(got - want).max()))
 print(f"REST matches the shipped skeleton: worst |diff| = {worst:.2e}")
@@ -635,42 +712,27 @@ for pb in arm.pose.bones:
     pb.rotation_mode = "QUATERNION"
 
 
-def _pose_matrices(W, names, frame_fix_inv, W_ref=None):
+def _pose_matrices(W, names, frame_fix_inv=None, W_ref=None):
     """Armature-space matrices for one frame.
 
-    Two retargets, and the difference is the whole point of the action library:
+    ABSOLUTE pose transfer: the clip's world pose for each bone, expressed in the armature's
+    space. The rig's rest is built from the same shipped skeleton (bone orientation included), so
+    the deform delta Blender derives — `pose @ rest^-1` — is exactly the source's own delta.
 
-      * `W_ref` given (action mode): the bone's MOTION is `W[i] @ inv(W_ref[i])` — the transform
-        from the clip's own reference pose to this frame — and that motion is applied to the
-        unit's rest pose. Each shipped clip carries ITS OWN reference pose (measured: fire's
-        reference differs from idle's by up to 28 deg per bone), so anchoring to the unit's rest
-        instead would bake the difference between two clips' bind poses into the animation.
-      * `W_ref` None (legacy pose library): the delta is taken from the unit's rest pose, which
-        transfers one clip's POSE onto the rig and needs the root frame correction.
+    Transferring only the MOTION (`W(frame) @ inv(W(reference))`) is what an earlier version did,
+    and it discards the clip's authored stance: each DoW2 clip's reference pose is that clip's own
+    first pose, so the aim and fire clips' raised arms were thrown away.
     """
     pose = {}
-    BASE_INV = np.linalg.inv(BASE)
     for i, n in enumerate(names):
         mapped = S.canonical(n) or n
         if mapped not in arm.data.bones:
             continue
-        rest = REST_BY_NAME.get(n)
-        if rest is None:
-            continue
-        try:
-            if W_ref is not None:
-                # motion of this bone from its own reference pose, applied to our rest pose
-                delta = W[i] @ np.linalg.inv(W_ref[i])
-            else:
-                delta = W[i] @ np.linalg.inv(rest)
-        except np.linalg.LinAlgError:
-            continue
-        if W_ref is None:
-            delta = frame_fix_inv @ delta @ frame_fix
-        delta_base = BASE @ delta @ BASE_INV
-        ours = np.array(arm.data.bones[mapped].matrix_local)
-        pose[mapped] = Matrix([[float((delta_base @ ours)[r][c]) for c in range(4)]
-                               for r in range(4)])
+        # The bone's posed world matrix in the mesh's space. The rig's rest is BASE @ (source
+        # rest), so the deform Blender derives (pose @ rest^-1) is BASE W_f W_ref^-1 BASE^-1 —
+        # exactly the source's own deform. Conjugating W by BASE instead of multiplying it applies
+        # the up-axis rotation twice and lays the character on its side.
+        pose[mapped] = Matrix([list(row) for row in _rigid(BASE @ W[i])])
     return pose
 
 

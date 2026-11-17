@@ -48,6 +48,14 @@ DEFAULT_UNITS = [
 ]
 
 
+# The shipped weapon model each lab unit carries, as a path suffix under the art root. The weapon
+# is part of the shipped unit (its wargear names `render_models` for it), so a build that has the
+# body but not the weapon cannot be 1:1.
+WEAPON_MODELS = {
+    "dow_ig_guardsman": "race_ig/troops_wargear/weapons_ranged/lasgun/lasgun.model",
+}
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -93,6 +101,14 @@ def collect(retrib: Path, art: Path):
             raise SystemExit(f"loadout directory not found for {loadout_rel}")
         for clip in sorted(loadout.rglob("*.hkx")):
             add(clip)
+        weapon_rel = WEAPON_MODELS.get(_unit)
+        if weapon_rel:
+            for cand in art.rglob(Path(weapon_rel).name):
+                if cand.is_file() and str(cand).replace("\\", "/").endswith("/" + weapon_rel):
+                    add(cand)
+                    for dds in sorted(cand.parent.glob("*_dif*.dds")):
+                        add(dds)
+                    break
         # The unit's own container and marker files carry the timed event table
         # (`FOLDEVCT`/`DATAEVNT` -> `FOLDACTC`/`DATAACTN`) and the attachment markers the action
         # library and the weapon bind read. Without them a build can pose a unit but cannot say
@@ -129,7 +145,7 @@ def main(argv=None):
         entries.append({"path": rel.as_posix(), "size": dest.stat().st_size, "sha256": sha256(dest)})
     manifest = {
         "pack": "dow2-unit-sources",
-        "version": 2,
+        "version": 3,
         "generated_by": "tools/sources/pack_sources.py",
         "units": [u for u, _w, _l in DEFAULT_UNITS],
         "note": ("The exact subset of Dawn of War II's shipped data this pipeline reads: geometry, "
@@ -142,7 +158,7 @@ def main(argv=None):
     print(f"{len(entries)} files, {total/1e6:.1f} MB uncompressed")
 
     if a.format != "none":
-        archive = out / f"dow2-unit-sources-v2.{a.format.split('.')[-1]}"
+        archive = out / f"dow2-unit-sources-v3.{a.format.split('.')[-1]}"
         if a.format == "tar.zst":
             cmd = f"tar -C {tree} -cf - . | zstd -19 -T0 -q -o {archive} -f"
         else:

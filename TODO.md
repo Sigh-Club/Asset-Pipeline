@@ -34,11 +34,11 @@ events, triggerable from our action system.
 | body geometry | **working** | `tools/dow2/chunky_mesh.py` decodes positions, UVs and the shipped per-vertex bone indices/weights |
 | unit assembly | **working** | `tools/dow2/parts.py` resolves `render_models` and de-duplicates quality tiers |
 | skeleton | **working** | `tools/hkx/hkxread.py` decodes `hkSkeleton`: bones, parents, reference pose |
-| rig + skinning | **working** | optimal one-to-one assignment of the shipped bone indices, source textures applied |
+| rig + skinning | **working** | optimal one-to-one assignment of the shipped bone indices; the armature rest now equals the shipped rest including bone orientation (worst diff 1.2e-05 across the six units, was 1.77 with roll 0) |
 | **clip decode** | **working** | `hkDeltaCompressedSkeletalAnimation` decoded: frame 0 reproduces the file's own reference pose (max 5.5e-06 m / 3.4°); corpus 236/243 decoded, 0 structural failures |
 | **action library** | **working** | `tools/dow2/action_library.py` + `--actions` in the builder: 6 units, 5–15 named actions each, with the shipped `.motiontree` events and times (fire burst cadence, reload foley, bodyfall) |
 | materials | **diffuse only** | `_nrm`, `_spc`, `_ocl`, `_emi` and the team-colour masks are not wired |
-| weapon hold | **approximate** | `WEAPON_HOLD` is authored; the 1:1 method is the shipped weapon model bound identity to `Bip01 R Weapon` |
+| weapon hold | **1:1 for the guardsman** | `--weapon-model` merges the shipped `lasgun.model` with identity transform and binds it to `Bip01 R Weapon` (confirmed by the model's own marker table: `marker_muzzle` attaches to `bip01 r weapon`). `WEAPON_HOLD` remains only for units whose weapon model is not wired yet |
 | fidelity gate | **working** | `tools/rig_fidelity.py` measures tear / inversion / interpenetration / collapse, a displacement floor, and a rigid-plate reference; `tools/lab_fidelity.py` regenerates the lab report over every action |
 | source assets for users | **working** | `tools/sources/pack_sources.py` + `fetch_sources.py`; release `source-v2` (295 files, 8.5 MB, hash-pinned) now carries each unit's `.motiontree` and `.marker`, so the event tables and attachment markers travel without the game |
 | engine side (IoA repo) | **done for this work** | loadout-aware clip resolution, source-material passthrough, per-battle command log; 665 jest, Go suites green |
@@ -60,19 +60,24 @@ pose, against a rigid reference of the same order.
 
 ## 3. Ordered next work
 
-1. **Weapon 1:1** — bind the shipped weapon model identity to `Bip01 R Weapon` and delete
-   `WEAPON_HOLD`. One check first: the lasgun geometry sits at +x while the guardsman's right hand is at
-   −x, so verify the mirror once.
+1. **Weapon 1:1 for the remaining units** — the guardsman now uses the shipped lasgun; the other five
+   still carry our GLB weapon through `WEAPON_HOLD`. Resolve each unit's weapon wargear
+   `render_models` the way the armour part list is resolved, then delete `WEAPON_HOLD` entirely.
+   (The mirror check is answered: the lasgun geometry and `Bip01 R Weapon` are both at +x, and the
+   model's `marker_muzzle` names `bip01 r weapon`, so no mirror is applied.)
 2. **Materials 1:1** — wire `_nrm`, `_spc`, `_ocl`, `_emi` and the team-colour mask compositing.
-3. **Interleaved clip decode** — `hkInterleavedSkeletalAnimation` for `fb_run`, `fb_sprint`,
+3. **Layered aim/fire** — DoW2 composes aim and fire from a base clip plus upper-body layers; the
+   exported actions are the base clips, which is why the weapon is not raised in `aim`. Decode the
+   additive-layer composition next (see `docs/KNOWN-ISSUES.md` §1).
+4. **Interleaved clip decode** — `hkInterleavedSkeletalAnimation` for `fb_run`, `fb_sprint`,
    `fb_melee_attack_01..03`, `fb_reload_stand`, `ragdoll`, so the action set can use the shipped clip
    rather than an alternative.
-4. **Engine consumption of the action sidecar** — the GLB carries the actions; the timing/events travel
+5. **Engine consumption of the action sidecar** — the GLB carries the actions; the timing/events travel
    in `<unit>.actions.json`. The action system should read it to schedule effects and sounds.
-5. **The four blocked units** — `dow_ork_warboss` (wargear lists armour plates only — add the boy
+6. **The four blocked units** — `dow_ork_warboss` (wargear lists armour plates only — add the boy
    body), `dow_necron_overlord` (not Havok packfiles; borrows the guardsman rig and clips),
    `dow_eldar_farseer` (ships no skeleton), `dow_tyranid_lictor` (borrows the carnifex loadout).
-6. **Lab page check** — verify the `/units` → RIG LAB tab reads the regenerated `fidelity.json` and
+7. **Lab page check** — verify the `/units` → RIG LAB tab reads the regenerated `fidelity.json` and
    drives the named actions.
 
 ## 4. Blocked on shipped data (not code)

@@ -122,3 +122,17 @@ game's own timing and events.
   action.
 - `tools/sources/pack_sources.py` + `fetch_sources.py`: release `source-v2` adds each unit's
   `.motiontree` and `.marker` (295 files, 8.5 MB, hash-pinned).
+
+## 2026-11-17 — shipped weapon import and an exact rig rest
+
+- `dow2_build_unit.py`: `--weapon-model` merges the SHIPPED weapon `.model` with identity transform
+  and binds it to the shipped `Bip01 R Weapon` (the model's marker table attaches `marker_muzzle` to
+  `bip01 r weapon`, which is the confirmation the hand-authored hold table never had). `WEAPON_HOLD`
+  is no longer consulted when a shipped weapon is given. The armature rest is now built from the
+  shipped rest including bone orientation (head/tail plus roll from the matrix's Y/Z columns), so
+  `REST matches the shipped skeleton` measures 1.2e-05 across the six lab units instead of 1.77 with
+  a "pose transfer will twist" warning.
+- `build_source_lab.sh` / `build_source_lab_all.sh`: an optional shipped weapon model argument,
+  its texture cached, and the GLB weapon dropped when the shipped one is used (both merged two
+  weapons).
+- `sources`: release `source-v3` adds `lasgun.model` and its diffuse texture (297 files).

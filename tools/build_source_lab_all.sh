@@ -34,9 +34,14 @@ IG="$R/sga_art/000_data/DATA/art/race_ig/troops/gaurdsman"
 
 run() { tools/build_source_lab.sh "$@" 2>&1 | grep -E "parts:|textures cached|MATERIAL mat|GEOMETRY|POSES|BUILT|FAIL|MISSING|NO_PARTS" || true; }
 
+# the weapon model is the SHIPPED one: `ig_weapon_guardsmen_lasgun.txt` lists
+# render_model = art\race_ig\troops_wargear\weapons_ranged\lasgun\lasgun, and its geometry is
+# authored where the bind pose holds it, so it is merged with identity and bound to Bip01 R Weapon
+LASGUN="$R/sga_art/000_data/DATA/art/race_ig/troops_wargear/weapons_ranged/lasgun/lasgun.model"
 run dow_ig_guardsman \
   "$R/attrib-decoded/wargear/wargear/core/race_imperial_guard/armor/flak_common.txt" \
-  "$IG/animations/range_burst/fb_idle_stand_01.hkx" "$IG/animations/range_burst" "$W/lasgun.glb" 1.85
+  "$IG/animations/range_burst/fb_idle_stand_01.hkx" "$IG/animations/range_burst" "$W/lasgun.glb" 1.85 \
+  "$LASGUN"
 
 run dow_chaos_sorcerer \
   "$R/attrib-decoded/wargear/wargear/core/race_chaos/armor/survive/sorcerer_defying_death.txt" \

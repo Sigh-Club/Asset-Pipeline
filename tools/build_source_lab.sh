@@ -49,6 +49,21 @@ for p in "${PARTS[@]}"; do
 done
 echo "$unit textures cached: $(ls "$TEX" | wc -l)"
 
+# 2b. the shipped weapon model, if the caller names one (see the weapon wargear's render_models)
+WEAPON_MODEL_ARG=()
+WEAPON_MODEL="${7:-}"
+if [ -n "$WEAPON_MODEL" ]; then
+  [ -f "$WEAPON_MODEL" ] || { echo "$unit WEAPON_MODEL_MISSING $WEAPON_MODEL"; exit 1; }
+  for dds in "$(dirname "$WEAPON_MODEL")"/*_dif*.dds; do
+    [ -f "$dds" ] || continue
+    python3 tools/dow2/dds_to_png.py "$TEX" "$dds" >/dev/null 2>&1 || true
+  done
+  WEAPON_MODEL_ARG=(--weapon-model "$WEAPON_MODEL")
+  # the shipped model replaces our GLB weapon: passing both merges two weapons
+  weapon=""
+  echo "$unit weapon model: $(basename "$WEAPON_MODEL")"
+fi
+
 # 3. the unit's action library: named actions with the shipped timing and events, read from the
 #    unit's own `.motiontree` (FOLDEVCT/DATAEVNT -> FOLDACTC/DATAACTN). The clips are decoded from
 #    their delta-compressed tracks, not from their reference poses, so one rig plays all of them.
@@ -68,10 +83,10 @@ fi
 timeout 1800 blender -b -P tools/blender/dow2_build_unit.py -- \
   --model "${PARTS[@]}" --hkx "$skel" --anim-dir "$anim" --out "$TMP/$unit" --id "$unit" \
   --height "$height" --texture-root "$TEX" ${weapon:+--weapon "$weapon"} \
-  "${ACTION_ARG[@]}" \
+  "${WEAPON_MODEL_ARG[@]}" "${ACTION_ARG[@]}" \
   >"$TMP/$unit.log" 2>&1 || { echo "$unit BUILD_FAIL (see $TMP/$unit.log)"; exit 1; }
 
-grep -E "^(GEOMETRY|MATERIALS|UVS|WEIGHTS|POSES|ACTION|ACTIONS|WEAPON hold)" "$TMP/$unit.log" | sed 's/^/   /'
+grep -E "^(GEOMETRY|MATERIALS|UVS|WEIGHTS|POSES|ACTION|ACTIONS|WEAPON)" "$TMP/$unit.log" | sed 's/^/   /'
 cp "$TMP/$unit/$unit.glb" "$LAB/$unit.glb"
 [ -f "$TMP/$unit/$unit.actions.json" ] && cp "$TMP/$unit/$unit.actions.json" "$LAB/$unit.actions.json"
 echo "$unit BUILT -> lab/$unit.glb"
