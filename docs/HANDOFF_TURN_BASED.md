@@ -34,93 +34,45 @@ Environment: `blender` 5.1 on PATH, `go` at `/usr/local/go/bin`. **Never** use `
 
 ### What is already done — do not redo
 
-- **Geometry, UVs, shipped skin weights**: `tools/dow2/chunky_mesh.py` decodes positions, UVs and the
-  per-vertex bone indices/weights from `.model` files.
-- **Unit assembly**: `tools/dow2/parts.py` resolves the shipped `render_models` part list (armour + head
-  + accessories) and de-duplicates quality tiers (`ig_armour`/`ig_armour_epic` are one body;
-  `ig_armour_common_a/b/c` are distinct).
+- **Geometry, UVs, shipped skin weights**: `tools/dow2/chunky_mesh.py`.
+- **Unit assembly**: `tools/dow2/parts.py` resolves the shipped `render_models` part list and
+  de-duplicates quality tiers.
 - **Skeleton**: `tools/hkx/hkxread.py` decodes `hkSkeleton` (bones, parents, reference pose).
-- **Rig + skinning**: `tools/blender/dow2_build_unit.py` builds a unit from the shipped data. The skin
-  indices are resolved as an **optimal one-to-one assignment** (Hungarian) because the stream is a
-  bijection onto bones; the skeleton is **aligned to the mesh** before matching (they are in different
-  spaces: armour 2.39 m vs skeleton 2.54 m).
-- **Materials**: `tools/dow2/dds_to_png.py` converts the shipped `_dif.dds`; the material name resolves
-  to the shipped texture (`relic.material.<stem>` → `<stem>_dif`). Diffuse only so far.
-- **Fidelity gate**: `tools/rig_fidelity.py` measures tear / inverted triangles / real
-  triangle-triangle interpenetration / collapse **and fails a mesh that does not move**. Use it on
-  every build.
-- **Source packaging**: `tools/sources/pack_sources.py` + `fetch_sources.py`; the pipeline runs with no
-  DoW2 install.
-- **Engine side (IoA repo)**: loadout-aware clip resolution (`frontend/src/three/unitLoadouts.ts`),
-  source-material passthrough (`UnitModelEntry.sourceMaterials`), per-battle command log
-  (`GameState.CommandLog`). 665 jest tests, Go suites green.
-
-### What is working, measured
-
-`tools/build_source_lab_all.sh` builds six source units, one per faction. Two are **correct** and are
-the reference for "done": `dow_ig_guardsman` and `dow_chaos_sorcerer` — complete, textured, in a real
-DoW2 idle, `rig_fidelity.py` → PASS at 0.000 on every metric.
-
-### The critical path — decode the animation tracks
-
-**This is the whole remaining problem.** Each shipped clip file carries a skeleton whose *reference
-pose is that clip's pose*, plus delta-compressed animation tracks. We currently use the reference pose,
-so a unit is exact only for the clip it was rigged from.
-
-Measured, same body: rigging on `guardsman.hkx` and applying `fb_idle_stand_01` gives **every bone a
-~180° delta** — a frame difference, not a pose — and **23 % torn edges**; rigging on
-`fb_idle_stand_01.hkx` itself gives **0.000 torn / 0.000 inverted**.
-
-The files declare the answer themselves (`__classnames__` / `__types__` of
-`race_ig/troops/gaurdsman/animations/range_burst/fb_idle_stand_01.hkx`):
-
-```
-hkSkeletalAnimation            type, duration, numberOfTracks, extractedMotion, annotationTracks
-hkAnimationBinding             (track -> bone map; present in __classnames__)
-hkDeltaCompressedSkeletalAnimation
-                               numberOfPoses, blockSize, qFormat, quantizedDataIdx/Size,
-                               staticMaskIdx/Size, staticDOFsIdx/Size, totalBlockSize,
-                               lastBlockSize, dataBuffer
-hkDeltaCompressedSkeletalAnimationQuantizationFormat
-                               maxBitWidth, preserved, numD, offsetIdx, scaleIdx, bitWidthIdx
-```
-
-Located so far: the animation header sits at **`__data__` offset 5320** in that file — type `2`
-(`HK_DELTA_COMPRESSED_ANIMATION`), duration `7.333` s, `numberOfTracks` 46 (= the skeleton's bone
-count). The delta fields begin **24 bytes after the header** (`numberOfPoses` 221, `blockSize` 8 →
-implied 30.1 fps, self-consistent); `qFormat` reads 264, which is an **offset into the data section**,
-not an object index. The last four fields (`totalBlockSize`, `lastBlockSize`, `dataBuffer`) read
-plausibly only if the struct tail holds pointers/`hkArray`s, so the widths there still need pinning.
-
-Two known blockers:
-
-1. `hkxread.type_table()` is **misaligned by 2 bytes** — it returns names like `ationBinding` for
-   `hkAnimationBinding` and only 4 bogus types. In `__types__` the first type name `hkxEnvironment`
-   begins at payload offset **48**, so the per-type record header is 48 bytes; fix the reader and the
-   member offsets come from the file instead of from guesswork.
-2. Then decode one block and **validate frame 0 against the file's own `hkSkeleton.referencePose`** —
-   a self-checking target a wrong quantisation layout cannot fake.
+- **Rig + skinning**: `tools/blender/dow2_build_unit.py`; skin indices resolved as an optimal
+  one-to-one assignment, skeleton aligned to the mesh first.
+- **Clip decode — SOLVED**: `hkDeltaCompressedSkeletalAnimation` is decoded from the file's own type
+  table and fixups. Validation is self-checking: frame 0 reproduces that file's `referencePose`
+  (measured max 5.5e-06 m / 3.4°). Corpus: 236/243 clips decoded, 0 structural failures. See
+  `docs/DOW2_ANIMATION_DECODE.md`.
+- **Action library**: `tools/dow2/action_library.py` emits named actions with the shipped timing and
+  the shipped events from the unit's `.motiontree` (`DATAEVNT` clip→(time,event) + `DATAACTN`
+  definitions). `tools/build_source_lab.sh` feeds it to the builder, which keys the real tracks as
+  glTF actions and writes `<unit>.actions.json` beside the GLB.
+- **Retarget rule**: motion must be relative to the clip's own reference pose
+  (`W(frame) @ inv(W(reference of the same clip))`). Anchoring to the unit's rest bakes two clips' bind
+  poses together and tears the mesh (12–19 % at frame 1).
+- **Fidelity gate**: `tools/rig_fidelity.py` (tear / inversion / interpenetration / collapse /
+  displacement floor / rigid-plate reference) and `tools/lab_fidelity.py` (worst keyframe of every
+  action, regenerates `lab/fidelity.json`).
+- **Source packaging**: `tools/sources/pack_sources.py` + `fetch_sources.py`; release `source-v2`
+  (295 files, sha256 `d905e64d612f216a5c995f4f76fc42cf3a20f0cf3b8038dbb68fac017b3458aa`) carries the
+  clips, textures, wargear lists, `.motiontree` and `.marker` files.
+- **Engine side (IoA repo)**: loadout-aware clip resolution, source-material passthrough, per-battle
+  command log; 665 jest, Go suites green.
 
 ### Ordered remaining work
 
-1. **Track decoder** (`tools/hkx/hkxread.py`): fix the type table, pin the struct tail, decode a block,
-   validate frame 0 == `referencePose`, then all frames for all 46 bones. Test file:
-   `fb_idle_stand_01.hkx`; then a moving clip (`fb_run`, `fb_fire_stand`).
-2. **Action library**: for each action clip, sample the frames an action needs (the fire frame from the
-   `hkAnnotationTrack` events, reload midpoint, leap apex) and export **named actions with their events**
-   on the one canonical rig. Turn-based combat needs a pose/frames + timing + event per action, not a
-   state machine.
-3. **Weapon 1:1**: the shipped weapon geometry is authored **in character space at the hand** (lasgun
-   bbox x 0.48–1.06, y −0.21–1.67). Bind the shipped weapon model **identity** to `Bip01 R Weapon` and
-   delete the authored `WEAPON_HOLD` table. One check first: the lasgun sits at **+x** while the
-   guardsman's right hand is at **−x**, so verify the mirror once before trusting it.
-4. **Materials 1:1**: wire `_nrm`, `_spc`, `_ocl`, `_emi` and the team-colour mask compositing.
-5. **Four blocked units** (data hunts, not rig work): `dow_ork_warboss` (wargear lists armour plates
-   only — add the boy body), `dow_necron_overlord` (its clips are not Havok packfiles, `magic
-   0x0003da78`, and its `.model` has no `FOLDSKEL`; its markers name `rig_rleg_calf`-style bones),
-   `dow_eldar_farseer` (ships no skeleton), `dow_tyranid_lictor` (borrows the carnifex loadout).
-6. **Rebuild the lab** (`Imperium-of-Ash/frontend/public/assets/models/units/lab/`) through the fixed
-   chain, regenerate `lab/fidelity.json`, and verify the `/units` → RIG LAB tab.
+1. **Weapon 1:1**: bind the shipped weapon model identity to `Bip01 R Weapon` and delete
+   `WEAPON_HOLD`. Check the mirror once (lasgun at +x, the right hand at −x).
+2. **Materials 1:1**: `_nrm`, `_spc`, `_ocl`, `_emi` and team-colour mask compositing.
+3. **Interleaved clips**: `hkInterleavedSkeletalAnimation` for `fb_run`, `fb_sprint`,
+   `fb_melee_attack_01..03`, `fb_reload_stand`, `ragdoll` (varies by unit).
+4. **Engine side**: read `<unit>.actions.json` to schedule an action's effect and its events.
+5. **Four blocked units** (data hunts): ork warboss (add the boy body), necron overlord (not Havok
+   packfiles; borrows the guardsman rig), eldar farseer (no skeleton), tyranid lictor (carnifex
+   loadout).
+6. **Lab page check**: `/units` → RIG LAB reads the regenerated `fidelity.json` and drives the named
+   actions.
 
 ### Commands (all verified this session)
 
@@ -136,12 +88,18 @@ tools/build_source_lab.sh dow_ig_guardsman \
   "$IG/troops/gaurdsman/animations/range_burst" \
   ../Imperium-of-Ash/frontend/public/assets/models/weapons/lasgun.glb 1.85
 
-tools/build_source_lab_all.sh          # six units; table inside names each unit's gaps
+tools/build_source_lab_all.sh          # six units, each with its own action library
 python3 tools/rig_fidelity.py output/source_lab/work/dow_ig_guardsman/dow_ig_guardsman.glb \
-  --clip fb_idle_stand_01               # PASS at 0.000 on every metric today
+  --clip idle --frame 1                 # PASS; per-action gate, every keyframe
 
-python3 -c "import sys; sys.path.insert(0,'tools/hkx'); from hkxread import decode_report; \
-decode_report('$IG/troops/gaurdsman/animations/range_burst/fb_idle_stand_01.hkx')"
+python3 -c "import sys; sys.path.insert(0,'tools/hkx'); from hkxread import validate_animation; \
+print(validate_animation('$IG/troops/gaurdsman/animations/range_burst/fb_idle_stand_01.hkx'))"
+
+python3 tools/dow2/action_library.py --loadout "$IG/troops/gaurdsman/animations/range_burst" \
+  --motiontree "$IG/troops/gaurdsman/guardsman.motiontree" --unit dow_ig_guardsman \
+  --out output/source_lab/actions/dow_ig_guardsman.json
+
+python3 tools/lab_fidelity.py --lab ../Imperium-of-Ash/frontend/public/assets/models/units/lab
 
 # game-side gates after any engine change
 cd ../Imperium-of-Ash/backend && go build ./... && go vet ./... && go test ./...
@@ -191,6 +149,6 @@ appears in every log and is harmless. Details: `asset-pipeline/docs/BLENDER_MCP.
 
 ### The one-line summary
 
-The models were never the problem and neither was Blender: we have been reading the **reference pose**
-out of files that carry **animation tracks**, and decoding those tracks is the difference between
-"idle works" and "the full DoW2 action set, 1:1, driven by our turn-based action system".
+The tracks decode and the action library exists: the shipped clips play on one rig, with the shipped
+timings and events, which is the difference between "idle works" and "the full DoW2 action set, 1:1,
+driven by our turn-based action system".

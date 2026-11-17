@@ -98,3 +98,27 @@ All notable changes to this project are documented here.
 - Geometry Nodes rivets disabled pending Blender 5.1 API fix (`DistributePointsOnFaces` API changed).
 - E/W side-profile still thin (8.4% vs 14.7% N/S) — consider cape or over-shoulder weapon.
 - CLI timeout (120s) insufficient for full Cycles renders — use `--fast` or `queue run` directly.
+
+## 2026-11-17 — DoW2 clip decode and the action library
+
+The shipped animation tracks now decode, so one rig plays every clip from its loadout, with the
+game's own timing and events.
+
+- `tools/hkx/hkxread.py`: the packfile reader reads the class-name registry, the type table (member
+  type/subtype/offset), the local/global/virtual fixups and the object stream; decodes
+  `hkDeltaCompressedSkeletalAnimation` (static masks, static DOFs, bit-packed deltas, smallest-three
+  quaternions) and `hkAnnotationTrack`; adds `validate_animation()`, which requires frame 0 to
+  reproduce the file's own `referencePose` (measured 5.5e-06 m / 3.4°; corpus 236/243 decoded, 0
+  structural failures).
+- `tools/dow2/action_library.py` (new): named actions from the shipped loadout, with the shipped
+  timed events read from the unit's `.motiontree` (`DATAEVNT` clip→(time,event), `DATAACTN`
+  definitions) and a measured effect frame where no event ships.
+- `tools/blender/dow2_build_unit.py`: `--actions` keys the real tracks as glTF actions named by the
+  action, at the clip's own rate, and writes `<unit>.actions.json`. Motion is retargeted relative to
+  each clip's own reference pose.
+- `tools/rig_fidelity.py`: derives the clip's own key rate, measures a rigid-plate reference and
+  exempts a metric only when the build is no worse than that reference; caches the GLB parse.
+- `tools/lab_fidelity.py` (new): regenerates `lab/fidelity.json` from the worst keyframe of every
+  action.
+- `tools/sources/pack_sources.py` + `fetch_sources.py`: release `source-v2` adds each unit's
+  `.motiontree` and `.marker` (295 files, 8.5 MB, hash-pinned).

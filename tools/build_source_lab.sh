@@ -49,12 +49,29 @@ for p in "${PARTS[@]}"; do
 done
 echo "$unit textures cached: $(ls "$TEX" | wc -l)"
 
-# 3. assemble: shipped parts + shipped skeleton + shipped textures + shipped clips
-timeout 1200 blender -b -P tools/blender/dow2_build_unit.py -- \
+# 3. the unit's action library: named actions with the shipped timing and events, read from the
+#    unit's own `.motiontree` (FOLDEVCT/DATAEVNT -> FOLDACTC/DATAACTN). The clips are decoded from
+#    their delta-compressed tracks, not from their reference poses, so one rig plays all of them.
+ACTION_ARG=()
+UNIT_DIR="$(dirname "$(dirname "$anim")")"
+MOTIONTREE="$(ls "$UNIT_DIR"/*.motiontree 2>/dev/null | head -1 || true)"
+if [ -n "$MOTIONTREE" ]; then
+  mkdir -p "$ROOT/output/source_lab/actions"
+  python3 tools/dow2/action_library.py --loadout "$anim" --motiontree "$MOTIONTREE" \
+    --unit "$unit" --out "$ROOT/output/source_lab/actions/$unit.json" | sed 's/^/   /'
+  ACTION_ARG=(--actions "$ROOT/output/source_lab/actions/$unit.json")
+else
+  echo "$unit no .motiontree — falling back to the reference-pose library"
+fi
+
+# 4. assemble: shipped parts + shipped skeleton + shipped textures + shipped clips
+timeout 1800 blender -b -P tools/blender/dow2_build_unit.py -- \
   --model "${PARTS[@]}" --hkx "$skel" --anim-dir "$anim" --out "$TMP/$unit" --id "$unit" \
   --height "$height" --texture-root "$TEX" ${weapon:+--weapon "$weapon"} \
+  "${ACTION_ARG[@]}" \
   >"$TMP/$unit.log" 2>&1 || { echo "$unit BUILD_FAIL (see $TMP/$unit.log)"; exit 1; }
 
-grep -E "^(GEOMETRY|MATERIALS|UVS|WEIGHTS|POSES|WEAPON hold)" "$TMP/$unit.log" | sed 's/^/   /'
+grep -E "^(GEOMETRY|MATERIALS|UVS|WEIGHTS|POSES|ACTION|ACTIONS|WEAPON hold)" "$TMP/$unit.log" | sed 's/^/   /'
 cp "$TMP/$unit/$unit.glb" "$LAB/$unit.glb"
+[ -f "$TMP/$unit/$unit.actions.json" ] && cp "$TMP/$unit/$unit.actions.json" "$LAB/$unit.actions.json"
 echo "$unit BUILT -> lab/$unit.glb"

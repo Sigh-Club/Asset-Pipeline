@@ -22,6 +22,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
 from pathlib import Path
@@ -90,14 +91,23 @@ _ap.add_argument("--texture-root", action="append", default=[],
 _ap.add_argument("--no-align", action="store_true",
                 help="do not fit the skeleton onto the mesh (only for a body whose skeleton is "
                      "already in the mesh's own space)")
-_ap.add_argument("--chain-weights", action="store_true", default=True,
-                help="derive the blend from the shipped bone ASSIGNMENT plus the joint geometry, "
-                     "instead of trusting the shipped weight column")
+_ap.add_argument("--chain-weights", dest="chain_weights", action="store_true", default=True,
+                help="(default) derive the blend from the shipped bone ASSIGNMENT plus the joint "
+                     "geometry, instead of trusting the shipped weight column")
+_ap.add_argument("--no-chain-weights", dest="chain_weights", action="store_false",
+                help="use the shipped weight column as authored")
 _ap.add_argument("--rigid-weights", action="store_true",
                 help="bind every vertex 100%% to its index bone. Diagnostic: isolates a wrong weight "
                      "field from a wrong bone assignment.")
 _ap.add_argument("--no-poses", action="store_true",
                 help="export the rig only; another tool authors the clip set")
+_ap.add_argument("--actions", default="",
+                help="action manifest from tools/dow2/action_library.py. Each action is exported "
+                     "as a real keyed animation of the shipped tracks, named by the manifest, with "
+                     "its timing and events written beside the GLB. Without it the build exports "
+                     "the legacy reference-pose library (one static pose per clip).")
+_ap.add_argument("--frame-stride", type=int, default=1,
+                help="key every Nth frame of a track (1 = the shipped 30 fps, unchanged)")
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
 # ------------------------------------------------------------------ 1. geometry + shipped skin
@@ -600,12 +610,19 @@ mod.object = arm
 body.parent = arm
 body.matrix_parent_inverse = Matrix.Identity(4)
 
-# ------------------------------------------------------------------ 9. poses from the shipped clips
-clips = [] if A.no_poses else sorted(Path(A.anim_dir).rglob("*.hkx"))
-if A.filter:
-    clips = [c for c in clips if A.filter in c.stem]
-if A.limit:
-    clips = clips[:A.limit]
+# ------------------------------------------------------------------ 9. clips -> actions
+#
+# Two modes:
+#
+#   legacy (no --actions): export one STATIC POSE per clip, taken from that clip file's own
+#     skeleton reference pose. This is exact only for the clip the rig was built from: every other
+#     clip file carries a different reference pose, so applying it is a frame difference, not a
+#     pose (measured: ~180 deg per bone, 23 % torn edges).
+#
+#   action library (--actions <manifest>): decode the shipped delta-compressed tracks and key the
+#     real motion, named by the manifest (idle/aim/fire/reload/melee/grenade/hit/death/...). The
+#     retarget is unchanged — a delta from the unit's rest pose, with the root frame correction —
+#     but it is now evaluated per frame instead of once, so one rig plays every shipped clip.
 depth = {}
 for b in arm.data.bones:
     d, cur = 0, b
@@ -617,53 +634,20 @@ ordered = sorted(arm.pose.bones, key=lambda pb: depth.get(pb.name, 0))
 for pb in arm.pose.bones:
     pb.rotation_mode = "QUATERNION"
 
-arm.animation_data_create()
-for act in list(bpy.data.actions):
-    bpy.data.actions.remove(act)
 
-applied, skipped_clips = 0, []
-for path in clips:
-    try:
-        sk = Packfile.open(path).skeleton()
-    except Exception as exc:
-        skipped_clips.append((path.stem, f"decode {exc}"))
-        continue
-    if not sk:
-        skipped_clips.append((path.stem, "no skeleton"))
-        continue
-    W = S.compose(sk)
-    names = sk["bone_names"]
-    if len(names) != sk["bone_count"]:
-        skipped_clips.append((path.stem, "name count"))
-        continue
-    # Retargeting is a DELTA from the rest pose, not an absolute matrix copy. Copying the source's
-    # armature-space matrices bakes the source bone roll into the pose, and Blender's edit bones
-    # carry a different roll (they are built from head/tail with roll 0), so every bone picks up a
-    # spurious twist — "limbs rotating incorrectly / rest pose mismatch" is the standard retargeting
-    # failure (Unreal: "store the reference pose rotation, then get the delta between that and its
-    # current rotation"; UE5 IK Retargeter docs make the same point). The delta below is the
-    # world-space rotation the source bone underwent, applied to our own rest matrix, so the result
-    # is independent of either rig's roll convention.
-    # FRAME CORRECTION. Measured: for a standing idle every bone in `fb_idle_stand_01` showed a
-    # ~180 deg delta against the unit skeleton — a constant flip between the two skeletons' frames,
-    # not a pose. Applying it flips the body and any per-bone deviation tears the mesh. The
-    # correction is recovered from the root bones (the only bones whose frames are not inherited
-    # from a parent) and applied to every delta, which is what a retargeter's "retarget pose" step
-    # does explicitly.
-    root_i = next((i for i, n in enumerate(names) if n in ("Bip01", "skeleton_root")), 0)
-    root_name = names[root_i]
-    unit_root = arm.data.bones.get(S.canonical(root_name) or root_name)
-    frame_fix = np.eye(4)
-    if unit_root is not None and root_name in REST_BY_NAME:
-        r_unit = np.array(unit_root.matrix_local)[:3, :3]
-        r_clip = W[root_i][:3, :3]
-        try:
-            frame_fix[:3, :3] = r_unit @ np.linalg.inv(r_clip)
-        except np.linalg.LinAlgError:
-            pass
-    frame_fix_inv = np.linalg.inv(frame_fix)
-    print(f"FRAME fix from {root_name}")
+def _pose_matrices(W, names, frame_fix_inv, W_ref=None):
+    """Armature-space matrices for one frame.
 
+    Two retargets, and the difference is the whole point of the action library:
+
+      * `W_ref` given (action mode): the bone's MOTION is `W[i] @ inv(W_ref[i])` — the transform
+        from the clip's own reference pose to this frame — and that motion is applied to the
+        unit's rest pose. Each shipped clip carries ITS OWN reference pose (measured: fire's
+        reference differs from idle's by up to 28 deg per bone), so anchoring to the unit's rest
+        instead would bake the difference between two clips' bind poses into the animation.
+      * `W_ref` None (legacy pose library): the delta is taken from the unit's rest pose, which
+        transfers one clip's POSE onto the rig and needs the root frame correction.
+    """
     pose = {}
     BASE_INV = np.linalg.inv(BASE)
     for i, n in enumerate(names):
@@ -674,18 +658,41 @@ for path in clips:
         if rest is None:
             continue
         try:
-            delta = W[i] @ np.linalg.inv(rest)
+            if W_ref is not None:
+                # motion of this bone from its own reference pose, applied to our rest pose
+                delta = W[i] @ np.linalg.inv(W_ref[i])
+            else:
+                delta = W[i] @ np.linalg.inv(rest)
         except np.linalg.LinAlgError:
             continue
-        delta = frame_fix_inv @ delta @ frame_fix
+        if W_ref is None:
+            delta = frame_fix_inv @ delta @ frame_fix
         delta_base = BASE @ delta @ BASE_INV
         ours = np.array(arm.data.bones[mapped].matrix_local)
         pose[mapped] = Matrix([[float((delta_base @ ours)[r][c]) for c in range(4)]
                                for r in range(4)])
-    if len(pose) < 12:
-        skipped_clips.append((path.stem, f"{len(pose)} bones"))
-        continue
-    act = bpy.data.actions.new(path.stem)
+    return pose
+
+
+def _root_frame_fix(W, names):
+    """Recover the constant frame difference between the clip's skeleton and the unit's."""
+    root_i = next((i for i, n in enumerate(names) if n in ("Bip01", "skeleton_root")), 0)
+    root_name = names[root_i]
+    unit_root = arm.data.bones.get(S.canonical(root_name) or root_name)
+    fix = np.eye(4)
+    if unit_root is not None and root_name in REST_BY_NAME:
+        r_unit = np.array(unit_root.matrix_local)[:3, :3]
+        r_clip = W[root_i][:3, :3]
+        try:
+            fix[:3, :3] = r_unit @ np.linalg.inv(r_clip)
+        except np.linalg.LinAlgError:
+            pass
+    return fix, root_name
+
+
+def _key_action(name, frames, pose_at, metadata):
+    """Create one Blender action and key every requested frame of it."""
+    act = bpy.data.actions.new(name)
     act.use_fake_user = True
     arm.animation_data.action = act
     try:
@@ -693,8 +700,9 @@ for path in clips:
             arm.animation_data.action_slot = act.slots[0]
     except AttributeError:
         pass
-    for frame in (1, 2):
-        bpy.context.scene.frame_set(frame)
+    for frame_index in frames:
+        bpy.context.scene.frame_set(frame_index + 1)
+        pose = pose_at(frame_index)
         for pb in ordered:
             M = pose.get(pb.name)
             if M is None:
@@ -702,9 +710,115 @@ for path in clips:
             pb.matrix = M
             bpy.context.view_layer.update()
         for pb in arm.pose.bones:
-            pb.keyframe_insert("rotation_quaternion", frame=frame)
-            pb.keyframe_insert("location", frame=frame)
-    applied += 1
+            pb.keyframe_insert("rotation_quaternion", frame=frame_index + 1)
+            pb.keyframe_insert("location", frame=frame_index + 1)
+    act["dow2"] = json.dumps(metadata)
+    return act
+
+
+arm.animation_data_create()
+for act in list(bpy.data.actions):
+    bpy.data.actions.remove(act)
+
+applied, skipped_clips = 0, []
+action_meta = {}
+
+if A.actions:
+    manifest = json.loads(Path(A.actions).read_text())
+    for action_name, entry in manifest.get("actions", {}).items():
+        clip = entry.get("clip")
+        if not clip:
+            skipped_clips.append((action_name, entry.get("reason", "not shipped")))
+            continue
+        path = Path(entry["file"])
+        try:
+            pf = Packfile.open(path)
+            anim = pf.animation()
+        except Exception as exc:
+            skipped_clips.append((action_name, f"decode {exc}"))
+            continue
+        if anim is None:
+            skipped_clips.append((action_name, "not a delta-compressed clip"))
+            continue
+        sk = pf.skeleton()
+        if not sk:
+            skipped_clips.append((action_name, "no skeleton"))
+            continue
+        names = sk["bone_names"]
+        if len(names) != sk["bone_count"]:
+            skipped_clips.append((action_name, "name count"))
+            continue
+        # frame 0 of a full-body clip must be its own reference pose; that is the decoder's
+        # self-check and it is what makes the retarget below meaningful.
+        clip_ref_world = S.compose(sk)
+        frame_fix, root_name = _root_frame_fix(clip_ref_world, names)
+        frame_fix_inv = np.linalg.inv(frame_fix)
+        reference = [{"translation": p["translation"], "rotation": p["rotation"],
+                      "scale": p["scale"]} for p in sk["reference_pose"]]
+
+        def pose_at(frame_index, anim=anim, sk=sk, names=names, reference=reference,
+                    frame_fix_inv=frame_fix_inv, ref_world=clip_ref_world):
+            posed = dict(sk)
+            posed["reference_pose"] = [
+                ({"translation": anim["tracks"][i]["translation"][frame_index],
+                  "rotation": anim["tracks"][i]["rotation"][frame_index],
+                  "scale": anim["tracks"][i]["scale"][frame_index]}
+                 if i < len(anim["tracks"]) else reference[i])
+                for i in range(len(reference))]
+            return _pose_matrices(S.compose(posed), names, frame_fix_inv, W_ref=ref_world)
+
+        # Timing is part of the action. Blender converts keyframe numbers to seconds with the
+        # scene rate, so it is set to the clip's own rate; otherwise a 30 fps clip plays at 0.8x.
+        bpy.context.scene.render.fps = 30
+        bpy.context.scene.render.fps_base = 30.0 / max(1e-6, anim["frame_rate"])
+        stride = max(1, A.frame_stride)
+        frames = list(range(0, anim["numberOfPoses"], stride))
+        if frames[-1] != anim["numberOfPoses"] - 1:
+            frames.append(anim["numberOfPoses"] - 1)
+        metadata = {
+            "source_clip": clip,
+            "duration": anim["duration"],
+            "fps": anim["frame_rate"] / stride,
+            "source_fps": anim["frame_rate"],
+            "frames": anim["numberOfPoses"],
+            "frame_stride": stride,
+            "events": entry.get("events", []),
+            "acting_frame": entry.get("acting_frame", {}),
+            "full_body": entry.get("full_body", False),
+        }
+        _key_action(action_name, frames, pose_at, metadata)
+        action_meta[action_name] = metadata
+        applied += 1
+        print(f"ACTION {action_name} <- {clip} {anim['numberOfPoses']}f "
+              f"{anim['duration']:.3f}s events={len(metadata['events'])}")
+else:
+    clips = [] if A.no_poses else sorted(Path(A.anim_dir).rglob("*.hkx"))
+    if A.filter:
+        clips = [c for c in clips if A.filter in c.stem]
+    if A.limit:
+        clips = clips[:A.limit]
+    for path in clips:
+        try:
+            sk = Packfile.open(path).skeleton()
+        except Exception as exc:
+            skipped_clips.append((path.stem, f"decode {exc}"))
+            continue
+        if not sk:
+            skipped_clips.append((path.stem, "no skeleton"))
+            continue
+        names = sk["bone_names"]
+        if len(names) != sk["bone_count"]:
+            skipped_clips.append((path.stem, "name count"))
+            continue
+        W = S.compose(sk)
+        frame_fix, root_name = _root_frame_fix(W, names)
+        frame_fix_inv = np.linalg.inv(frame_fix)
+        pose = _pose_matrices(W, names, frame_fix_inv)
+        if len(pose) < 12:
+            skipped_clips.append((path.stem, f"{len(pose)} bones"))
+            continue
+        _key_action(path.stem, (0, 1), lambda _f, p=pose: p, {"source_clip": path.stem})
+        applied += 1
 
 arm.animation_data.action = None
 for pb in arm.pose.bones:
@@ -713,7 +827,7 @@ for pb in arm.pose.bones:
     pb.scale = (1, 1, 1)
 bpy.context.view_layer.update()
 print(f"POSES applied={applied} skipped={len(skipped_clips)}")
-for s in skipped_clips[:6]:
+for s in skipped_clips[:8]:
     print("   skip", s)
 
 out = Path(A.out)
@@ -723,3 +837,14 @@ bpy.ops.object.select_all(action="SELECT")
 bpy.ops.export_scene.gltf(filepath=str(dest), export_format="GLB", use_selection=True,
                           export_animations=True, export_animation_mode="ACTIONS")
 print(f"EXPORTED {dest} actions={len(bpy.data.actions)}")
+if action_meta:
+    sidecar = out / f"{A.id}.actions.json"
+    sidecar.write_text(json.dumps({
+        "unit": A.id,
+        "source": A.actions,
+        "note": ("Per-action timing and shipped events. glTF has no action-level extras, so the "
+                 "metadata travels beside the GLB; the engine reads it to schedule an action's "
+                 "effect and its sound/fx events."),
+        "actions": action_meta,
+    }, indent=1))
+    print(f"ACTIONS {sidecar}")

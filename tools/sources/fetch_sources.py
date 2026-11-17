@@ -22,8 +22,8 @@ import urllib.request
 from pathlib import Path
 
 DEFAULT_URL = ("https://github.com/Sigh-Club/Asset-Pipeline/releases/download/"
-               "source-v1/dow2-unit-sources-v1.zst")
-DEFAULT_SHA = "5a5955df60fc25effbc8db2a36255bb67e32cd18b1e27c69a1f6d6e538a3bc3c"
+               "source-v2/dow2-unit-sources-v2.zst")
+DEFAULT_SHA = "d905e64d612f216a5c995f4f76fc42cf3a20f0cf3b8038dbb68fac017b3458aa"
 
 
 def sha256(path: Path) -> str:
@@ -42,7 +42,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     out = Path(a.out).expanduser()
     out.mkdir(parents=True, exist_ok=True)
-    archive = out / "dow2-unit-sources-v1.zst"
+    archive = out / "dow2-unit-sources-v2.zst"
 
     if not archive.exists():
         print(f"downloading {a.url}")

@@ -107,6 +107,12 @@ pose identical to the clip's, and the same idle then measures **0.000 torn edges
 Do not mix a unit's `.hkx` with a loadout's clips. The `.hkx` and the clips are different skeletons
 (45 vs 46 bones on the guardsman) with different reference frames.
 
+**Superseded for animation (2026-11-17).** The clip tracks now decode, so the rig plays every clip by
+transferring each clip's *motion relative to that clip's own reference pose* (see
+`docs/DOW2_ANIMATION_DECODE.md`). The rule still stands for the rig's construction — build it from a
+clip file of the same loadout, not from a different skeleton — but a unit is no longer limited to the
+one clip its rig was built from.
+
 ## R2. The wargear part list must contain the BODY, not only armour overlays
 
 `render_models` sometimes lists only armour pieces. `war_boss_epic` resolves to a single shoulder/chest
