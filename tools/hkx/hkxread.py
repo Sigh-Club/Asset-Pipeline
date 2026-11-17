@@ -105,6 +105,18 @@ class Packfile:
     @classmethod
     def open(cls, path: str | Path) -> "Packfile":
         raw = Path(path).read_bytes()
+        # Some shipped clips are stored zlib-compressed: the necron overlord's `fb_run.hkx` begins
+        # `78 da` (zlib) rather than the packfile magic, which is why they were recorded as "not
+        # Havok packfiles". Inflate first, then read the container as usual.
+        if raw[:1] == b"\x78":
+            import zlib
+            try:
+                raw = zlib.decompress(raw)
+            except zlib.error:
+                pass
+        if len(raw) < 8:
+            # an 8-byte zlib stub inflates to nothing: an empty placeholder clip
+            raise HkxError(f"{path}: empty clip")
         magic, version = struct.unpack_from("<II", raw, 0)
         if magic != MAGIC:
             raise HkxError(f"{path}: not a Havok packfile (magic {magic:#010x})")
@@ -408,7 +420,11 @@ class Packfile:
             if found:
                 break
         if not found:
-            return None
+            # The scan relies on a printable 16-byte skeleton-name field. Some shipped skeletons
+            # (the necron overlord's clips) do not have one, so fall back to the object stream: the
+            # virtual fixups locate hkSkeleton and the type table gives its member offsets, and the
+            # bone names come from the hkBone objects it points at.
+            return self._skeleton_via_types()
         count, name, parents, parents_end = found
 
         # 2. the reference pose. Two record layouts exist in the shipped corpus and neither can
@@ -467,6 +483,49 @@ class Packfile:
             "bone_names": names[:count],
             "reference_pose_offset": pose_at,
             "reference_pose_layout": layout,
+            "reference_pose": poses,
+        }
+
+    def _skeleton_via_types(self) -> dict | None:
+        """Decode hkSkeleton through the type table (no name-scan heuristic)."""
+        found = self.objects_by_class().get("hkSkeleton")
+        if not found:
+            return None
+        skel = self.member_offsets("hkSkeleton")
+        bone = self.member_offsets("hkBone")
+        if not skel or not bone:
+            return None
+        obj = found[0]
+        data = self.data()
+
+        def u32(offset: int) -> int:
+            return struct.unpack_from("<I", data, offset)[0]
+
+        def cstr(offset: int) -> str:
+            target = self.resolve(offset)
+            end = data.find(b"\x00", target)
+            return data[target:end].decode("ascii", "replace") if end > target else ""
+
+        bones_at = self.resolve(obj + skel["bones"])
+        count = u32(obj + skel["bones"] + 4)
+        parents_at = self.resolve(obj + skel["parentIndices"])
+        pose_at = self.resolve(obj + skel["referencePose"])
+        if not (0 < count < 1024) or not bones_at or not pose_at:
+            return None
+        names = [cstr(self.resolve(bones_at + i * 4) + bone["name"]) for i in range(count)]
+        parents = list(struct.unpack_from(f"<{count}h", data, parents_at))
+        poses = []
+        for i in range(count):
+            rec = struct.unpack_from("<12f", data, pose_at + i * 48)
+            poses.append({"translation": list(rec[0:3]), "rotation": list(rec[4:8]),
+                          "scale": list(rec[8:11])})
+        return {
+            "name": cstr(obj + skel["name"]),
+            "bone_count": count,
+            "parents": parents,
+            "bone_names": names,
+            "reference_pose_offset": pose_at,
+            "reference_pose_layout": "translation,quaternion,scale",
             "reference_pose": poses,
         }
 

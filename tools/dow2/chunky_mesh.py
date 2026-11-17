@@ -65,6 +65,13 @@ def parse_chunk(blob: bytes, pos: int, region_end: int):
 
 
 def parse(blob: bytes):
+    # some shipped models are stored zlib-compressed (the necron overlord's do); inflate first
+    if blob[:1] == b"\x78":
+        import zlib
+        try:
+            blob = zlib.decompress(blob)
+        except zlib.error:
+            pass
     if blob[:16] != MAGIC:
         raise ValueError(f"not a Relic Chunky file: {blob[:16]!r}")
     root, _ = parse_chunk(blob, 36, len(blob))

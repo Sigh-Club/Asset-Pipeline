@@ -409,9 +409,29 @@ BASE[:3, :3] = R * scale
 BASE[:3, 3] = offset
 Vb = (V @ BASE[:3, :3].T) + BASE[:3, 3]
 force_bone = [None] * len(Vb)
-if weapon_range is not None:
-    start, end = weapon_range
-    force_bone[start:end] = ["socket_weapon_R"] * (end - start)
+
+
+def _weapon_bone_name(names):
+    """The bone the weapon follows, from the rig's own bone names.
+
+    Prefer a weapon bone on the right side, then any weapon bone, then the right hand, then any
+    hand. The necron's rig names its bones `RIG_*`, so a hard-coded `socket_weapon_R` found nothing
+    and the build aborted with "no hand_R in the shipped skeleton".
+    """
+
+    def pick(*tests):
+        for test in tests:
+            for name in names:
+                if test(name.lower()):
+                    return name
+        return None
+
+    return (pick(lambda n: "weapon" in n and (n.endswith("_r") or n.endswith(" r") or "_r_" in n),
+                 lambda n: "weapon" in n,
+                 lambda n: "hand" in n and (n.endswith("_r") or n.endswith(" r") or "_r_" in n),
+                 lambda n: "hand" in n) or "hand_R")
+
+
 if A.weapon:
     # weapon space: grip at the origin, barrel along +Y (weapon_glb.py). The hand bone's own frame
     # is the aim, so the weapon is placed by the hand's rest matrix scaled into base space.
@@ -431,11 +451,10 @@ print(f"BASE source_height={height:.3f} scale={scale:.4f} bbox z={Vb[:,2].min():
 
 # ------------------------------------------------------------------ 3. skeleton
 #
-# The rig is the CLIP's skeleton, whose reference pose is the pose the mesh sits in (measured: the
+# The rig is the CLIP's skeleton: its reference pose is the pose the mesh sits in (measured: the
 # weapon bone is 0.14 m from the weapon's vertices in this frame, against 1.27 m in the unit's own
-# `guardsman.hkx` frame). The MODEL's FOLDSKEL is still the authority for which bone each skin index
-# belongs to — that is section 4 — but its bone *frames* are a different convention, so mixing the
-# FOLDSKEL rest with clip world matrices shears the mesh.
+# `guardsman.hkx` frame). The MODEL's FOLDSKEL is the authority for which bone each skin index
+# belongs to (section 4); its bone frames are a different convention, so it is not the rig.
 def _load_skeleton(path):
     try:
         sk = Packfile.open(path).skeleton()
@@ -448,10 +467,6 @@ def _load_skeleton(path):
 
 src = _load_skeleton(A.hkx)
 if src is None:
-    # Some races ship clips in a container hkxread cannot open (measured: the necron overlord's
-    # `fb_stand_idle_01.hkx` reports magic 0x0003da78). Any decodable file in the unit's own
-    # animation set carries the same skeleton, so use the first one that opens rather than failing.
-    print(f"SKELETON {Path(A.hkx).name} not a packfile — searching the unit's animation set")
     for cand in sorted(Path(A.anim_dir).rglob("*.hkx")):
         src = _load_skeleton(cand)
         if src is not None:
@@ -462,10 +477,6 @@ if src is None:
 srcW = S.compose(src)
 src_names = src["bone_names"]
 
-# ------------------------------------------------------------------ 3a. align the skeleton to the MESH
-#
-# The clip skeleton's reference pose sits on the mesh in this corpus (weapon bone 0.14 m, head
-# 0.10 m), so the fit is near identity; it is kept as a measured correction rather than assumed.
 ALIGN = np.eye(4)
 if not A.no_align:
     sk_pts = np.array([srcW[i][:3, 3] for i in range(len(src_names))])
@@ -490,6 +501,13 @@ _d = [min(float(np.linalg.norm(p - (h + np.clip(((p - h) @ (t - h)) / max(1e-9, 
           for p in V[::max(1, len(V) // 200)]) for _n, h, t in segs]
 print(f"SKELETON bones={len(src_names)} bone->mesh median={np.median(_d):.3f} m max={max(_d):.3f} m")
 REST_BY_NAME = {n.lower(): srcW[i] for i, n in enumerate(src_names)}
+
+# the bone the weapon follows: a weapon bone on the right side, else any weapon bone, else a hand
+WEAPON_BONE_SRC = _weapon_bone_name(src_names)
+WEAPON_BONE = canonical_ci(WEAPON_BONE_SRC) if WEAPON_BONE_SRC else "hand_R"
+if weapon_range is not None:
+    start, end = weapon_range
+    force_bone[start:end] = [WEAPON_BONE] * (end - start)
 
 # ------------------------------------------------------------------ 4. resolve the skin indices
 # DoW2's indices address the model's own bone table, so each is resolved by majority vote of the
@@ -544,10 +562,12 @@ else:
 
 # the weapon geometry arrives in its own space; move it into the hand's rest frame
 if A.weapon:
-    hand_bone_src = next((i for i, n in enumerate(src_names)
-                          if canonical_ci(n) == "hand_R"), None)
+    hand_bone_src = next((i for i, n in enumerate(src_names) if n == WEAPON_BONE_SRC), None)
     if hand_bone_src is None:
-        raise SystemExit("no hand_R in the shipped skeleton")
+        hand_bone_src = next((i for i, n in enumerate(src_names)
+                              if canonical_ci(n) == WEAPON_BONE), None)
+    if hand_bone_src is None:
+        raise SystemExit(f"no weapon/hand bone in the shipped skeleton ({src_names[:4]}...)")
     hand_m = BASE @ srcW[hand_bone_src]
     hand_pos = hand_m[:3, 3]
     hold = hold_for(A.weapon)
@@ -711,11 +731,24 @@ for (b0, b1, w0), vi in zip(skins, range(len(Vb))):
     n0 = resolve_foldskel_name(raw0) if raw0 else index_to_name.get(b0)
     n1 = (resolve_foldskel_name(raw1) if raw1 else None) if b1 != 0 else None
     if n0 is None:
-        # the model names a bone the render skeleton does not have: this unit's rig is the wrong
-        # one for its geometry, and the vertex stays at bind. Report it by name, do not hide it.
-        skipped += 1
+        # The model names a bone the clip rig does not have (the farseer's `dressrigbone*` cloth
+        # helpers are the shipped example). Binding those vertices to the FOLDSKEL parent puts the
+        # whole robe on the root, which tears it off the body as soon as the torso twists, so they
+        # take the nearest deform bone instead. Counted and reported, not hidden.
+        nearest = None
+        best = 1e9
+        for cand, head, _tail in segs:
+            if not cand.startswith("Bip01") and not cand.startswith("bip01"):
+                continue
+            d = float(np.linalg.norm(Vb[vi] - head))
+            if d < best:
+                best, nearest = d, canonical_ci(cand)
+        if nearest is None:
+            skipped += 1
+            unmatched[raw0] = unmatched.get(raw0, 0) + 1
+            continue
+        n0 = nearest
         unmatched[raw0] = unmatched.get(raw0, 0) + 1
-        continue
     w0 = min(1.0, max(0.0, w0))
     if A.chain_weights and not A.rigid_weights:
         # The shipped assignment (which index is which bone) is authoritative and checks out
@@ -752,12 +785,12 @@ for (b0, b1, w0), vi in zip(skins, range(len(Vb))):
 # the merged weapon sits past the body's vertices; the zip above stops at the shorter list, so
 # those vertices were left unweighted and stayed at their bind position while the body moved
 for vi in range(len(skins), len(Vb)):
-    bone = force_bone[vi] or "hand_R"
+    bone = force_bone[vi] or WEAPON_BONE
     group_for(bone).add([vi], 1.0, "REPLACE")
 if unmatched:
     worst = sorted(unmatched.items(), key=lambda kv: -kv[1])[:5]
-    print(f"WEIGHTS UNMATCHED {sum(unmatched.values())} vertices on bones the rig lacks: "
-          f"{[(n, c) for n, c in worst]}")
+    print(f"WEIGHTS NEAREST-FALLBACK {sum(unmatched.values())} vertices on model bones the clip rig "
+          f"lacks (bound to the nearest body bone): {[(n, c) for n, c in worst]}")
 print(f"WEIGHTS groups={len(group_cache)} vertices_without_a_bone={skipped} "
       f"weapon_vertices={max(0, len(Vb) - len(skins))}")
 
@@ -803,15 +836,26 @@ def _pose_matrices(W, names, frame_fix_inv=None, W_ref=None):
     first pose, so the aim and fire clips' raised arms were thrown away.
     """
     pose = {}
+    # Per-bone retarget: the bone's MOTION from its own reference pose, applied to the model's bind
+    # for that bone. This is the only formulation that is exact when the model rig and the clip rig
+    # are not the same skeleton (the farseer's model table has 79 bones, its clips 72, and the extra
+    # robe bones have no clip counterpart). Where they ARE the same rig — the guardsman, the
+    # sorcerer — the clip's reference pose equals the model bind and this reduces to the absolute
+    # pose.
     for i, n in enumerate(names):
         mapped = canonical_ci(n)
         if mapped not in arm.data.bones:
             continue
-        # The bone's posed world matrix in the mesh's space. The rig's rest is BASE @ (source
-        # rest), so the deform Blender derives (pose @ rest^-1) is BASE W_f W_ref^-1 BASE^-1 —
-        # exactly the source's own deform. Conjugating W by BASE instead of multiplying it applies
-        # the up-axis rotation twice and lays the character on its side.
-        pose[mapped] = Matrix([list(row) for row in _rigid(BASE @ W[i])])
+        bind = REST_BY_NAME.get(n.lower())
+        if bind is None:
+            continue
+        ref = W_ref.get(n.lower()) if W_ref else None
+        if ref is not None:
+            motion = np.linalg.inv(_rigid(ref)) @ _rigid(W[i])
+            target = _rigid(bind) @ motion
+        else:
+            target = _rigid(W[i])
+        pose[mapped] = Matrix([list(row) for row in _rigid(BASE @ target)])
     return pose
 
 
@@ -906,7 +950,8 @@ if A.actions:
                   "scale": anim["tracks"][i]["scale"][frame_index]}
                  if i < len(anim["tracks"]) else reference[i])
                 for i in range(len(reference))]
-            return _pose_matrices(S.compose(posed), names, frame_fix_inv, W_ref=ref_world)
+            return _pose_matrices(S.compose(posed), names, frame_fix_inv,
+                                  W_ref={n.lower(): w for n, w in zip(names, ref_world)})
 
         # Timing is part of the action. Blender converts keyframe numbers to seconds with the
         # scene rate, so it is set to the clip's own rate; otherwise a 30 fps clip plays at 0.8x.
@@ -954,7 +999,8 @@ else:
         W = S.compose(sk)
         frame_fix, root_name = _root_frame_fix(W, names)
         frame_fix_inv = np.linalg.inv(frame_fix)
-        pose = _pose_matrices(W, names, frame_fix_inv)
+        pose = _pose_matrices(W, names, frame_fix_inv,
+                              W_ref={n.lower(): w for n, w in zip(names, W)})
         if len(pose) < 12:
             skipped_clips.append((path.stem, f"{len(pose)} bones"))
             continue

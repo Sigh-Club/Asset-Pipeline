@@ -49,26 +49,40 @@ run dow_chaos_sorcerer \
   "$R/sga_art/000_data/DATA/art/race_chaos/troops/chaos_lord/animations/melee_blade_range_pistol" \
   "$W/bolter.glb" 2.15
 
-# the banshee ships no `range_burst`; its ranged loadout is `melee_blade_range_pistol`
+# The farseer, lictor and necron ship their OWN animation set; the lab used to drive them from another
+# unit's rig (banshee / carnifex / Imperial Guard), which is why they came out as shards. Their
+# skeleton is read from their own first clip — none of the three ships a standalone .hkx.
+# The farseer ships no skeleton of its own, and its own clip rig is a 72-bone skeleton against a
+# 79-bone model table whose extra `dressrigbone*` cloth bones have no clip counterpart — driving the
+# mesh from its own clips throws the robe off the body. The banshee rig matches the farseer model's
+# bone names, so the farseer is driven by the banshee's clips (measured: coherent at idle and melee).
+ELDAR="$R/sga_art/000_data/DATA/art/race_eldar/troops/banshee"
 run dow_eldar_farseer \
   "$R/attrib-decoded/wargear/wargear/core/race_eldar/armor/farseer_armor_common.txt" \
-  "$R/sga_art/000_data/DATA/art/race_eldar/troops/banshee/animations/melee_blade_range_pistol/fb_idle_stand_01.hkx" \
-  "$R/sga_art/000_data/DATA/art/race_eldar/troops/banshee/animations/melee_blade_range_pistol" \
+  "$ELDAR/animations/melee_blade_range_pistol/fb_idle_stand_01.hkx" \
+  "$ELDAR/animations/melee_blade_range_pistol" \
   "$W/shuriken.glb" 1.95
 
-run dow_ork_warboss \
-  "$R/attrib-decoded/wargear/wargear/core/race_ork/armor/war_boss_epic.txt" \
-  "$R/sga_art/000_data/DATA/art/race_ork/troops/boy/animations/dakka_deff_gun/fb_idle_stand_01.hkx" \
-  "$R/sga_art/000_data/DATA/art/race_ork/troops/boy/animations/dakka_deff_gun" \
-  "$W/shoota.glb" 1.9
-
-# the carnifex ships `talons_crushing` / `talons_venomcannon`, not `range_burst`
+TYR="$R/sga_art/000_data/DATA/art/race_tyranid/troops/lictor"
 run dow_tyranid_lictor \
   "$R/attrib-decoded/wargear/wargear/core/race_tyranid/armor/lictor_common.txt" \
-  "$R/sga_art/000_data/DATA/art/race_tyranid/troops/carnifex/animations/talons_venomcannon/fb_idle_stand_01.hkx" \
-  "$R/sga_art/000_data/DATA/art/race_tyranid/troops/carnifex/animations/talons_venomcannon" \
+  "$TYR/animations/talons_claws/fb_idle_stand_01.hkx" "$TYR/animations/talons_claws" \
   "" 2.4
 
+# The warboss is the one unit whose wargear lists armour overlays only, so its BODY comes from the
+# accessories list (`troops_wargear/accessories/warboss_body/warboss.model`). Its rig and clips are
+# its own (`warboss.hkx`, `troops/warboss/animations`), not the boy's.
+ORK="$R/sga_art/000_data/DATA/art/race_ork/troops/warboss"
+run dow_ork_warboss \
+  "$R/attrib-decoded/wargear/wargear/core/race_ork/armor/war_boss_epic.txt" \
+  "$ORK/warboss.hkx" "$ORK/animations/melee_axe_range_pistol" \
+  "$W/shoota.glb" 1.9 "" \
+  "$R/sga_art/000_data/DATA/art/race_ork/troops_wargear/accessories/warboss_body/warboss.model"
+
+# The necron's data lives in `005_data`, and its clips are zlib-compressed Havok packfiles (magic
+# `78 da`), which the reader now inflates. It has its own rig and its own animation set.
+NEC="$R/sga_art/005_data/DATA/art/race_necron/troops/necron_overlord"
 run dow_necron_overlord \
   "$R/attrib-decoded/wargear/wargear/core/race_necron/armor/survive/nec_crown_tachyon.txt" \
-  "$IG/guardsman.hkx" "$IG/animations/range_burst" "$W/staff.glb" 2.2
+  "$NEC/animations/melee_staff/necron_overlord_idle.hkx" "$NEC/animations/melee_staff" \
+  "$W/staff.glb" 2.2

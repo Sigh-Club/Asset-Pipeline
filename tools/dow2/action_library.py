@@ -43,32 +43,39 @@ from hkxread import HkxError, Packfile, quat_angle  # noqa: E402
 # --------------------------------------------------------------------------------------
 ACTIONS: dict[str, list[str]] = {
     "idle": ["fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
-             "fb_idle_stand_05"],
+             "fb_idle_stand_05", "fb_idle_01", "fb_idle_02", "fb_idle_03", "necron_overlord_idle"],
     "idle_combat": ["fb_idle_combat_stand_01", "fb_idle_combat_stand_02",
-                    "fb_idle_combat_stand_03_range_energy", "fb_idle_combat_stand_04_range_energy"],
+                    "fb_idle_combat_stand_03_range_energy", "fb_idle_combat_stand_04_range_energy",
+                    "fb_combat_idle_01", "fb_combat_idle_02"],
     "idle_crouch": ["fb_idle_crouch_01", "fb_idle_crouch_02", "fb_idle_crouch_03"],
     # the shipped aim/melee/ability stems differ per faction (`fb_aiming_stand` for the Imperial
     # Guard, `fb_aim_stand` for Chaos, `fb_ability_casting01_enter` for the sorcerer), so the
     # preference lists carry every shipped spelling rather than one faction's.
     "aim": ["fb_aiming_stand", "fb_aim_stand", "fb_aiming_stand_rangeenergy",
-            "fb_aiming_stand_grenadelauncher", "fb_aiming_crouch"],
+            "fb_aiming_stand_grenadelauncher", "fb_aiming_crouch", "fb_idle_aim_01",
+            "necron_overlord_staff_fire_aimidle", "necron_overlord_arrow_aim_loop"],
     "fire": ["fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
-             "fb_fire_stand_flamer", "fb_fire_flamer_stand", "fb_fire_crouch"],
+             "fb_fire_stand_flamer", "fb_fire_flamer_stand", "fb_fire_crouch",
+             "fb_idle_fire_01", "necron_overlord_staff_fire", "necron_overlord_arrow_fire"],
     "reload": ["fb_reload_stand", "fb_reload_stand_rangeenergy", "fb_reload_crouch",
                "fb_reload_crouch_rangeenergy"],
     "melee": ["fb_melee_attack_04", "fb_melee_attack_01", "fb_melee_attack_02",
               "fb_melee_attack_03", "fb_melee_01", "fb_melee_02", "fb_melee_03",
-              "fb_special_attack_01"],
-    "grenade": ["fb_grenade", "fb_grenade_rangeenergy"],
-    "ability": ["fb_ability_flare", "fb_ability_casting01_enter", "fb_ability_drainlife_enter"],
+              "fb_special_attack_01", "necron_overlord_melee_01", "necron_overlord_melee_02"],
+    "grenade": ["fb_grenade", "fb_grenade_rangeenergy", "fb_grenade_throw",
+                "fb_grenade_throw_01"],
+    "ability": ["fb_ability_flare", "fb_ability_casting01_enter", "fb_ability_drainlife_enter",
+                "fb_forceblast", "fb_ability_flesh_hooks"],
     "hit": ["fb_thrown_fly", "fb_thrown_fly_far", "fb_thrown_slide_near", "fb_thrown_slide_far",
-            "fb_pinned_idle", "fb_knocked_out"],
-    "thrown_getup": ["fb_thrown_getup"],
+            "fb_pinned_idle", "fb_knocked_out", "fb_knocked_out_01"],
+    "thrown_getup": ["fb_thrown_getup", "fb_getup"],
+    "leap": ["fb_melee_leap_fly", "fb_melee_leap_antic", "fb_melee_leap_land", "fb_charge"],
     "death": ["fb_die_01", "fb_die_f", "fb_die_b", "fb_die_l", "fb_die_r", "fb_die_normal_b",
-              "fb_die_normal_f", "fb_die_02", "fb_die_03", "fb_die_04"],
+              "fb_die_normal_f", "fb_die_normal_01", "fb_die_02", "fb_die_03", "fb_die_04",
+              "necron_overlord_death_fromidle"],
     "death_sync": ["fb_death_sync_01", "fb_death_sync_02", "fb_death_sync_03"],
-    "walk": ["fb_run"],       # DoW2 ships no walk cycle; `fb_run` is the slowest locomotion
-    "run": ["fb_sprint", "fb_run"],
+    "walk": ["fb_run", "fb_aim_run_01", "fb_charge"],  # no walk cycle ships
+    "run": ["fb_sprint", "fb_run", "fb_aim_run_01", "fb_charge"],
     "pinned": ["fb_pinned_idle", "fb_pinned_idle_02"],
 }
 

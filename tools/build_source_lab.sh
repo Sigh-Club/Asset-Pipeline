@@ -22,12 +22,19 @@ fi
 mkdir -p "$LAB" "$TEX" "$TMP"
 
 unit="$1"; wargear="$2"; skel="$3"; anim="$4"; weapon="$5"; height="$6"
+# 8th: the unit's own body model, for a wargear whose `render_models` lists only armour overlays.
+# Without it the build is a pile of plates with no body (measured on `war_boss_epic`).
+BODY_MODEL="${8:-}"
 echo "=== $unit"
 [ -f "$wargear" ] || { echo "$unit WARGEAR_MISSING $wargear"; exit 1; }
 [ -d "$anim" ] || { echo "$unit ANIM_MISSING $anim"; exit 1; }
 
 # 1. the unit's parts, exactly as the shipped wargear data lists them
 mapfile -t PARTS < <(python3 tools/dow2/parts.py --wargear "$wargear" --art "$ART" 2>/dev/null)
+if [ -n "$BODY_MODEL" ]; then
+  [ -f "$BODY_MODEL" ] || { echo "$unit BODY_MISSING $BODY_MODEL"; exit 1; }
+  PARTS=("$BODY_MODEL" "${PARTS[@]}")
+fi
 [ "${#PARTS[@]}" -gt 0 ] || { echo "$unit NO_PARTS"; exit 1; }
 echo "$unit parts: ${#PARTS[@]}"
 for p in "${PARTS[@]}"; do echo "   $(basename "$(dirname "$p")")/$(basename "$p")"; done
@@ -85,6 +92,11 @@ timeout 1800 blender -b -P tools/blender/dow2_build_unit.py -- \
   --height "$height" --texture-root "$TEX" ${weapon:+--weapon "$weapon"} \
   "${WEAPON_MODEL_ARG[@]}" "${ACTION_ARG[@]}" \
   >"$TMP/$unit.log" 2>&1 || { echo "$unit BUILD_FAIL (see $TMP/$unit.log)"; exit 1; }
+# Blender exits 0 even when a -P script raises, so the log is checked too: a build that did not
+# reach EXPORTED is a failure, not a success with a stale GLB.
+if ! grep -q "^EXPORTED " "$TMP/$unit.log"; then
+  echo "$unit BUILD_FAIL (no EXPORTED line — see $TMP/$unit.log)"; tail -5 "$TMP/$unit.log"; exit 1
+fi
 
 grep -E "^(GEOMETRY|MATERIALS|UVS|WEIGHTS|POSES|ACTION|ACTIONS|WEAPON)" "$TMP/$unit.log" | sed 's/^/   /'
 cp "$TMP/$unit/$unit.glb" "$LAB/$unit.glb"

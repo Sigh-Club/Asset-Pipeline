@@ -152,3 +152,18 @@ game's own timing and events.
   catches it.
 - Measured: the solve disagreed with the model's own table on 29 of 35 indices. Guardsman, chaos
   sorcerer and eldar farseer now render as intact DoW2 units and animate.
+
+## 2026-11-17 — every lab unit from its own shipped data
+
+- `hkxread`: zlib-compressed clips are inflated (`78 da`), empty 8-byte stubs are rejected as empty
+  rather than crashing, and a skeleton with no printable name block is decoded through the type table
+  (the necron overlord's clips). Measured: the necron's 57-bone `RIG_*` skeleton now decodes.
+- `chunky_mesh`: zlib-compressed `.model` files are inflated.
+- `dow2_build_unit.py`: the weapon bone is resolved from the rig's own names (a weapon bone on the
+  right, else any weapon bone, else a hand) instead of the hard-coded `socket_weapon_R`, which the
+  necron's `RIG_*` rig does not have.
+- `build_source_lab.sh`: an 8th argument adds the unit's own body for a wargear that lists overlays
+  only, and a build that never reaches `EXPORTED` is a failure (Blender exits 0 on a Python
+  exception, which had been reporting stale GLBs as BUILT).
+- Lab table: warboss (own rig/clips/body), lictor and farseer (own animation sets), necron (005_data,
+  own rig and clips). All six render as bodies in `output/source_lab/renders/`.
