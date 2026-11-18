@@ -198,3 +198,18 @@ game's own timing and events.
   `fb_leap_fly`, `fb_idle_01`, `fb_melee_idle_*`).
 - Known gap: the Tau's `aim` (a 2-pose clip) and `fire` export with almost no bone motion; the other
   nine Tau actions animate.
+
+## 2026-11-18 — the community toolchain, documented
+
+The lab units are built with the DoW2 community importer (dow2-blender v0.3.3, Santos Tools 2
+lineage — the tooling behind the Elite mod), not with our own assembly. `docs/DOW2_COMMUNITY_TOOLCHAIN.md`
+records the whole recipe: the add-on's bone-axis adapter and DirectX→Blender conversion, the
+rest-delta pose sequence, the export flag that otherwise empties animations
+(`export_optimize_animation_size=False`), the case-insensitive bone matching against the armature's
+own names, the scale-track sanity rule, the ebps head attachments, the traps, and where each unit's
+data lives.
+
+`TODO.md` and `docs/HANDOFF_TURN_BASED.md` were rewritten to match: seven working units, the
+remaining ordered work (interleaved clips, two static Tau actions, the dark eldar face material, four
+missing weapons, layered animation), and a visual testing protocol — render idle/fire/walk/death plus
+head and weapon close-ups, then read the PNGs against `docs/evidence/dow2-stance/`.

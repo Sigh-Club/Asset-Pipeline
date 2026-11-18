@@ -1,159 +1,103 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-17.** This is the actionable list, and it is the honest one: it states what works,
-what is partial, and what is blocked, with the measurement that decides each. Read it before touching
+**Updated 2026-11-18.** This is the actionable list, and it is the honest one: it states what works,
+what is partial, and what is broken, with the measurement that decides each. Read it before touching
 the DoW2 import.
 
 Authority and detail:
 
-- [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) — the clip format, the decoder, the
-  validation, the action library, and the retarget rule.
-- [`docs/HANDOFF_TURN_BASED.md`](docs/HANDOFF_TURN_BASED.md) — the self-contained handoff brief.
-- [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md) — how DoW2 units stand, the
-  loadout rule, the part-assembly rule, and the four import rules (R1–R4) that make a build work.
-- [`docs/BLENDER_MCP.md`](docs/BLENDER_MCP.md) — when to drive Blender interactively through MCP, and
-  what not to use it for.
-- [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md) — the generated-art (img23d) path and the GLB contract.
-- `PLANNING.md` — the sprite-era plan; superseded for 3D.
+- [`docs/DOW2_COMMUNITY_TOOLCHAIN.md`](docs/DOW2_COMMUNITY_TOOLCHAIN.md) — **the build method**:
+  the community importer, its constants, the pose sequence, the export flags, the traps.
+- [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) — the clip format and our decoder.
+- [`docs/HANDOFF_TURN_BASED.md`](docs/HANDOFF_TURN_BASED.md) — the self-contained handoff prompt.
+- [`docs/DOW2_STANCE_REFERENCE.md`](docs/DOW2_STANCE_REFERENCE.md) — how DoW2 units stand and the
+  import rules.
+- `docs/KNOWN-ISSUES.md` — recorded defects, not masked.
 
 ---
 
 ## 1. Current programme
 
-**Copy DoW2 units 1:1 — geometry, materials, weapons, skeleton, animation — and drive them from a
-turn-based combat system.**
+Copy DoW2 units 1:1 — geometry, rig, weights, materials, weapons, clips — and drive them from a
+turn-based action system. DoW2 is an RTS, so the deliverable is its **action library**, not its
+locomotion cycles.
 
-DoW2 is an RTS; we are building a turn-based game. The deliverable is its **action library**: aim,
-fire, reload, melee, grenade, ability-cast, hit, thrown and death — each with its timing and its
-events, triggerable from our action system.
-
-## 2. State, measured
+## 2. State, measured (2026-11-18)
 
 | piece | state | evidence |
 |---|---|---|
-| body geometry | **working** | `tools/dow2/chunky_mesh.py` decodes positions, UVs and the shipped per-vertex bone indices/weights |
-| unit assembly | **working** | `tools/dow2/parts.py` resolves `render_models` and de-duplicates quality tiers |
-| skeleton | **working** | `tools/hkx/hkxread.py` decodes `hkSkeleton`: bones, parents, reference pose |
-| rig + skinning | **working for 3 of 6** | the skin index -> bone map is the model's own `FOLDSKEL` table (the proximity solve disagreed on 29 of 35 indices); guardsman, chaos sorcerer and eldar farseer render intact and animate. Tyranid body intact (3,213 verts on bones the borrowed rig lacks); ork = plates only; necron static (`rig_*` bones). Every build is rendered by `tools/render_lab.py` and looked at |
-| **clip decode** | **working** | `hkDeltaCompressedSkeletalAnimation` decoded: frame 0 reproduces the file's own reference pose (max 5.5e-06 m / 3.4°); corpus 236/243 decoded, 0 structural failures |
-| **action library** | **working** | `tools/dow2/action_library.py` + `--actions` in the builder: 6 units, 5–15 named actions each, with the shipped `.motiontree` events and times (fire burst cadence, reload foley, bodyfall) |
-| materials | **diffuse only** | `_nrm`, `_spc`, `_ocl`, `_emi` and the team-colour masks are not wired |
-| weapon hold | **1:1 for the guardsman** | `--weapon-model` merges the shipped `lasgun.model` with identity transform and binds it to `Bip01 R Weapon` (confirmed by the model's own marker table: `marker_muzzle` attaches to `bip01 r weapon`). `WEAPON_HOLD` remains only for units whose weapon model is not wired yet |
-| fidelity gate | **necessary, not sufficient** | `tools/rig_fidelity.py` + `tools/lab_fidelity.py` measure deformation from our own bind, so they cannot detect a wrong bind (they passed shard piles). `tools/render_lab.py` is the visual gate and is now part of the lab build |
-| source assets for users | **working** | `tools/sources/pack_sources.py` + `fetch_sources.py`; release `source-v2` (295 files, 8.5 MB, hash-pinned) now carries each unit's `.motiontree` and `.marker`, so the event tables and attachment markers travel without the game |
-| engine side (IoA repo) | **done for this work** | loadout-aware clip resolution, source-material passthrough, per-battle command log; 665 jest, Go suites green |
-
-### What builds today
-
-`tools/build_source_lab_all.sh` rebuilds all six lab units through the fixed chain. Each one gets its
-action library from its own loadout and `.motiontree`; the guardsman and the necron (which borrows the
-guardsman's clips) resolve 14–15 actions, the others 5–11 depending on what their loadout ships.
-
-The guardsman's action set, measured: idle 7.333 s, aim 7.333 s, fire 2.000 s with 8 shots at 0.209 s,
-reload 7.333 s with 6 foley events, melee 1.000 s, grenade 1.333 s, hit 0.667 s, thrown_getup 1.533 s,
-death 1.067 s with a bodyfall at 0.587 s, walk/run 0.800/0.600 s with footfall markers, pinned 4.667 s.
-
-`lab/fidelity.json` is regenerated over every action of every unit: 6 units, 15 named actions, no unit
-fails. Extreme action frames are exempted from the tear band only where the shipped rigid plates
-separate just as much (`reference_*` in the report); the guardsman's worst is 0.160 at a death/thrown
-pose, against a rigid reference of the same order.
+| assembly | **working, community toolchain** | `tools/blender/dow2_import_community.py` uses the DoW2 Tools add-on (dow2-blender v0.3.3) for body, head, weapon, weights and materials |
+| rig | **working** | the add-on builds the armature from the model's own `FOLDSKEL` with its bone-axis adapter |
+| clips | **working for 7 units** | the add-on's pose sequence (DirectX→Blender, rest delta, adapter) with our decoder; export with `export_optimize_animation_size=False` |
+| heads | **working** | imported from the ebps `animator_attachments` (`cadian_trooper`, `warboss_head_01`) |
+| weapons | **partial** | guardsman lasgun, necron tachyon arrow, tau burst cannon are the shipped models; chaos, eldar, warboss and lictor carry no weapon yet |
+| materials | **imported** | the add-on resolves `_dif`/`_nrm`/`_spc`/`_emi`; the farseer's face submesh uses a shared material and renders near-black (open) |
+| action coverage | **7 units, 5–14 actions each** | walk present on all seven with real leg motion (chaos 0.07 m, eldar 0.13 m, necron 1.59 m) |
+| interleaved clips | **not decoded** | `fb_run`, `fb_sprint`, `fb_melee_attack_01..03`, `fb_reload_stand`, `ragdoll` — the action library falls back to a delta clip |
+| layering | **not baked** | `.hkanim` composes base + upper-body layers at runtime; we export one clip per action |
+| lab page | **7 units live** | `fidelity.json` regenerated, `UNIT_ASSET_REV 20261143`, served bytes verified |
 
 ## 3. Ordered next work
 
-1. **Weapon 1:1 for the remaining units** — the guardsman now uses the shipped lasgun; the other five
-   still carry our GLB weapon through `WEAPON_HOLD`. Resolve each unit's weapon wargear
-   `render_models` the way the armour part list is resolved, then delete `WEAPON_HOLD` entirely.
-   (The mirror check is answered: the lasgun geometry and `Bip01 R Weapon` are both at +x, and the
-   model's `marker_muzzle` names `bip01 r weapon`, so no mirror is applied.)
-2. **Materials 1:1** — wire `_nrm`, `_spc`, `_ocl`, `_emi` and the team-colour mask compositing.
-3. **Layered aim/fire** — DoW2 composes aim and fire from a base clip plus upper-body layers; the
-   exported actions are the base clips, which is why the weapon is not raised in `aim`. Decode the
-   additive-layer composition next (see `docs/KNOWN-ISSUES.md` §1).
-4. **Interleaved clip decode** — `hkInterleavedSkeletalAnimation` for `fb_run`, `fb_sprint`,
-   `fb_melee_attack_01..03`, `fb_reload_stand`, `ragdoll`, so the action set can use the shipped clip
-   rather than an alternative.
-5. **Engine consumption of the action sidecar** — the GLB carries the actions; the timing/events travel
-   in `<unit>.actions.json`. The action system should read it to schedule effects and sounds.
-6. **The four blocked units** — `dow_ork_warboss` (wargear lists armour plates only — add the boy
-   body), `dow_necron_overlord` (not Havok packfiles; borrows the guardsman rig and clips),
-   `dow_eldar_farseer` (ships no skeleton), `dow_tyranid_lictor` (borrows the carnifex loadout).
-7. **Lab page check** — verify the `/units` → RIG LAB tab reads the regenerated `fidelity.json` and
-   drives the named actions.
+1. **Interleaved clip decoder** (`hkInterleavedSkeletalAnimation`). It costs chaos and necron their
+   true run and melee attacks 1–3, and every unit its `fb_reload_stand`. This is the last format gap.
+2. **Tau `aim` and `fire` are static** (aim is a 2-pose clip whose poses are identical; fire has 91
+   keys but 0.003 m of motion). Diagnose the pose application for those two clips.
+3. **Eldar face renders near-black.** The head is textured (`farseer_head_dif` is embedded); the face
+   submesh uses the shared material `standard_15`. Check its UVs against the atlas and its
+   metalness/base colour.
+4. **Weapons 1:1 for the remaining units**: chaos (bolt pistol / force stave), eldar (witchblade /
+   spear), warboss (big shoota / choppa), lictor (its talons are part of the armour). The shipped
+   weapon model is imported the same way as a head (`merge=True`).
+5. **Layered animation**: decode the `.hkanim` state machine and bake the composed pose (base +
+   upper-body), which is what the game actually shows.
+6. **More units**: the remaining Tau troops (drones) and the other factions' loadouts, all with the
+   same table-driven build.
 
-## 4. Blocked on shipped data (not code)
+## 4. Testing — the gate is visual
 
-| unit | blocker | fix |
-|---|---|---|
-| `dow_ork_warboss` | its wargear lists armour **plates only**; the boy body is not in the list | add the boy body part to the assembly |
-| `dow_necron_overlord` | its clips are not Havok packfiles (`magic 0x0003da78`) and its `.model` has no `FOLDSKEL` | locate its real skeleton (its markers name `rig_rleg_calf`-style bones) |
-| `dow_eldar_farseer` | the farseer ships no skeleton; the build borrows the banshee's | find the farseer rig |
-| `dow_tyranid_lictor` | built on the carnifex loadout | use the lictor's own loadout |
-
-## 5. Commands (verified 2026-11-17)
+The numeric gate measures deformation from each mesh's own bind; it passed shard piles. The gate that
+catches a wrong bind, a missing part or a broken animation is **looking at renders**.
 
 ```bash
-# source assets: no DoW2 install needed — hash-pinned release download
-python3 tools/sources/fetch_sources.py --out ~/dow2-sources
-export DOW2_RETRIB=~/dow2-sources
-IG=$DOW2_RETRIB/sga_art/000_data/DATA/art/race_ig
+# per unit: idle, fire, walk, death, and a close-up of the head and the weapon
+blender -b -P tools/render_lab.py -- <lab dir> <png dir> idle:1 fire:30 walk:10 death:30
+python3 tools/rig_fidelity.py <unit.glb> --clip <action> --frame <n>
+python3 tools/lab_fidelity.py --lab <lab dir>
+```
 
-# one unit from the shipped data (parts + skeleton + textures + action library)
-tools/build_source_lab.sh dow_ig_guardsman \
-  "$DOW2_RETRIB/attrib-decoded/wargear/wargear/core/race_imperial_guard/armor/flak_common.txt" \
-  "$IG/troops/gaurdsman/animations/range_burst/fb_idle_stand_01.hkx" \
-  "$IG/troops/gaurdsman/animations/range_burst" \
-  ../Imperium-of-Ash/frontend/public/assets/models/weapons/lasgun.glb 1.85
+Required review for every build:
+1. render each unit's idle, fire, walk and death at two frames each, plus a head close-up and a weapon
+   close-up;
+2. **read the PNGs** and compare against `docs/evidence/dow2-stance/` — a pose that disagrees with the
+   shipped game passes every numeric gate and is still wrong;
+3. flag any action whose bone motion is below 2 cm (static), and any action whose motion exceeds the
+   body height (exploded);
+4. record the verdict in this file, not just in the report.
 
-# the whole lab set
-tools/build_source_lab_all.sh
+## 5. Commands
 
-# the action library alone (named actions, timing, shipped events)
+```bash
+export DOW2_RETRIB=~/dow2-sources          # release source-v3, hash-pinned
+R=$DOW2_RETRIB/sga_art
+
+# one unit (example: guardsman, body + head + shipped weapon)
 python3 tools/dow2/action_library.py \
-  --loadout "$IG/troops/gaurdsman/animations/range_burst" \
-  --motiontree "$IG/troops/gaurdsman/guardsman.motiontree" \
+  --loadout "$R/000_data/DATA/art/race_ig/troops/gaurdsman/animations/range_burst" \
+  --motiontree "$R/000_data/DATA/art/race_ig/troops/gaurdsman/guardsman.motiontree" \
   --unit dow_ig_guardsman --out output/source_lab/actions/dow_ig_guardsman.json
-
-# the decoder's self-check: frame 0 must reproduce the file's own reference pose
-python3 -c "import sys; sys.path.insert(0,'tools/hkx'); from hkxread import validate_animation; \
-print(validate_animation('$IG/troops/gaurdsman/animations/range_burst/fb_idle_stand_01.hkx'))"
-
-# the gate, per action and over the whole lab
-python3 tools/rig_fidelity.py output/source_lab/work/dow_ig_guardsman/dow_ig_guardsman.glb \
-  --clip death --frame 33
-python3 tools/lab_fidelity.py --lab ../Imperium-of-Ash/frontend/public/assets/models/units/lab
-
-# game-side gates after any engine change
-cd ../Imperium-of-Ash/backend && go build ./... && go vet ./... && go test ./...
-cd ../frontend && npx tsc --noEmit && npm test -- --runInBand && npm run build
-cd .. && npm run guard:glb && npm run guard:assets
+blender -b -P tools/blender/dow2_import_community.py -- --id dow_ig_guardsman \
+  --out output/source_lab/community --manifest output/source_lab/actions/dow_ig_guardsman.json \
+  --part "$R/000_data/DATA/art/race_ig/troops_wargear/armour/ig_armour/ig_armour.model" \
+  --part "$R/000_data/DATA/art/race_ig/troops_wargear/heads/cadian_trooper/cadian_trooper.model" \
+  --weapon "$R/000_data/DATA/art/race_ig/troops_wargear/weapons_ranged/lasgun/lasgun.model"
 ```
 
 ## 6. Standing rules (learned, do not relearn)
 
-- **Transfer motion relative to the clip's own reference pose.** Each clip file carries its own bind
-  pose; anchoring the retarget to the unit's rest bakes two clips' bind differences into the animation
-  (measured: 12–19 % torn edges at frame 1).
-- **Never trust a numeric gate without a render.** A rigid mesh measures 0 % tearing, and a metric can
-  be tripped by its own sampling (assuming 24 fps on a 30 fps clip reported 4–9 % tears on an intact
-  mesh).
-- **Judge poses against the shipped game**, not from imagination: `docs/evidence/dow2-stance/`.
-- **Assemble from the shipped wargear part list**, de-duplicating quality tiers.
-- **MCP is for investigation only.** The pipeline and the gates are scripts.
-
----
-
-## Historical state (superseded, kept for context)
-
-### Generated-art (img23d) path — 2026-11-09
-
-| Area | State |
-|---|---|
-| 3D stage tools | working end to end: img23d → retopo → rig → bake → contract |
-| GLB contract | PASS on line-infantry (20k tris, 22 joints, UVs, 2K atlas, 4 slots, 9 clips) |
-| Material/pattern library | 79/79 built |
-| Model training | `materials_v2_800` + `materials_v3_800` adopted |
-| Clip set | 9/9 on the shipped unit; quality pass pending |
-| Pixel tiers | pixeliser/registry exist; Boltgun-grade master/masks/ramps not yet |
-
-The DoW2 source import supersedes this path for the roster: a DoW2 body is real authored geometry with
-a shipped rig, which no generated mesh can match for silhouette or deformation.
+- **Use the community importer for assembly.** Do not rebuild bone construction or pose conversion by
+  hand; the recipe is in `docs/DOW2_COMMUNITY_TOOLCHAIN.md`.
+- **Match bones by name against the armature's own names**, case-insensitively.
+- **Never trust a numeric gate without a render.** A rigid mesh measures 0 % tearing.
+- **Judge poses against the shipped game**, not from imagination.
+- **A build that does not print `EXPORTED` is a failure**, whatever Blender's exit code says.
