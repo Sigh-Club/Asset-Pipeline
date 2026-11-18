@@ -81,8 +81,8 @@ ACTIONS: dict[str, list[str]] = {
               "fb_die_normal_f", "fb_die_normal_01", "fb_die_02", "fb_die_03", "fb_die_04",
               "necron_overlord_death_fromidle"],
     "death_sync": ["fb_death_sync_01", "fb_death_sync_02", "fb_death_sync_03"],
-    "walk": ["fb_run", "fb_aim_run_01", "fb_charge"],  # no walk cycle ships
-    "run": ["fb_sprint", "fb_run", "fb_aim_run_01", "fb_charge"],
+    "walk": ["fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
+    "run": ["fb_sprint", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
     "pinned": ["fb_pinned_idle", "fb_pinned_idle_02"],
 }
 
