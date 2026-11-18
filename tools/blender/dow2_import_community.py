@@ -121,6 +121,9 @@ def apply_clip(clip_path, action_name, fps, frames):
         return None
     names = sk["bone_names"]
     parents = sk["parents"]
+    import numpy as _np
+    _sc = _np.array([t["scale"] for t in anim["tracks"]])
+    clip_scale_ok = bool(_sc.size == 0 or ((_sc > 0.5) & (_sc < 2.0)).all())
     # the add-on keeps the model's own bone names (`bip01 r thigh`), so the clip's bones are
     # matched against the armature's names case-insensitively -- NOT through our canonical
     # vocabulary, which would find nothing and leave every bone unkeyed.
@@ -163,11 +166,11 @@ def apply_clip(clip_path, action_name, fps, frames):
         for i in range(len(names)):
             t = anim["tracks"][i]
             q = t["rotation"][f]
-            # Shipped clips animate scale only within ~+/-25% (measured across the corpus). A
-            # component far outside that is a decode artefact -- the necron overlord's clips carry
-            # scale values from -4951 to 699 while their translations are correct -- so it is
-            # treated as 1 rather than exploding the whole chain.
-            scale = [v if 0.25 <= v <= 4.0 else 1.0 for v in t["scale"][f]]
+            # A clip's scale track is either sane (all components within ~+/-25% of 1, measured
+            # across the corpus) or it is a decode artefact (the necron's run from -4951 to 699
+            # while their translations are correct). Per-component clamping left the necron with
+            # plausible-looking 0.38-3.13 values that pulsed the model; a clip is judged as a whole.
+            scale = [1.0, 1.0, 1.0] if not clip_scale_ok else list(t["scale"][f])
             M = Matrix.LocRotScale(Vector(t["translation"][f]),
                                    Quaternion((q[3], q[0], q[1], q[2])),
                                    Vector(scale))
