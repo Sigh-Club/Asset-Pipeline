@@ -183,3 +183,18 @@ game's own timing and events.
   the fidelity gate reports worst tear 0.007–0.073 against 0.16–0.32 before.
 - The necron overlord is still built by the clip-rig path: its model rig (54 bones) and clip rig
   (57) have different hierarchies, so the add-on's single-rig recipe does not apply to it.
+
+## 2026-11-18 — Tau added; necron fixed; scale sanity clamp
+
+- `dow2_import_community.py`: the necron overlord now builds through the same path as the other
+  units. Its clips decode translations correctly but carry scale values from -4951 to 699, which
+  compounded down the chain (idle 255 m, melee 32,754 m). Shipped clips animate scale only within
+  +/-25% (measured across the corpus), so an implausible component is treated as 1. After the clamp
+  the necron's idle/aim/fire/melee/death all move in the 0.3-5.8 m range.
+- Tau battlesuit commander added (`dow_tau_battlesuit`): XV8 crisis suit + burst cannon, its own 32-bone
+  rig and `range_burst` clips, 11 actions resolved (fire carries 48 events). Data lives in `003_data`.
+- `action_library`: added the Tau/farseer/banshee clip stems (`fb_aim_stand_1h/2h`,
+  `fb_fire_stand_2cannon/1cannon/1plasma/1flamer/1meltagun/1glauncher`, `fb_melee_parry_01..03`,
+  `fb_leap_fly`, `fb_idle_01`, `fb_melee_idle_*`).
+- Known gap: the Tau's `aim` (a 2-pose clip) and `fire` export with almost no bone motion; the other
+  nine Tau actions animate.

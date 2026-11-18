@@ -83,7 +83,8 @@ if arm is None:
     raise SystemExit("the add-on produced no armature")
 meshes = [o for o in bpy.data.objects if o.type == "MESH"]
 print(f"ASSEMBLED armature={arm.name} bones={len(arm.data.bones)} meshes={len(meshes)} "
-      f"verts={sum(len(m.data.vertices) for m in meshes)}")
+      f"verts={sum(len(m.data.vertices) for m in meshes)} "
+      f"arm_scale={tuple(round(v, 4) for v in arm.matrix_world.to_scale())}")
 
 # ------------------------------------------------------------------ clips, by the add-on's maths
 rest_world = {b.name.lower(): b.matrix_local @ BONE_AXIS_ADAPTER_INV for b in arm.data.bones}
@@ -129,11 +130,18 @@ def apply_clip(clip_path, action_name, fps, frames):
         pb = arm_bones.get(n.lower())
         if pb is not None:
             pb_by_index[i] = pb
+    # Nearest MAPPED ancestor in the clip's hierarchy. A clip may carry bones the model does not
+    # (the necron's cape chain, its arrow bone); a child of such a bone must be posed against the
+    # nearest ancestor the model actually has, or its rest is the wrong bone and it flies away.
     parent_pb = {}
+    parent_idx = {}
     for i in pb_by_index:
         p = parents[i]
-        if p >= 0 and p in pb_by_index:
+        while p >= 0 and p not in pb_by_index:
+            p = parents[p]
+        if p >= 0:
             parent_pb[i] = pb_by_index[p]
+            parent_idx[i] = p
     print(f"  mapped {len(pb_by_index)}/{len(names)} clip bones onto {arm.name}")
 
     act = bpy.data.actions.new(action_name)
@@ -155,9 +163,14 @@ def apply_clip(clip_path, action_name, fps, frames):
         for i in range(len(names)):
             t = anim["tracks"][i]
             q = t["rotation"][f]
+            # Shipped clips animate scale only within ~+/-25% (measured across the corpus). A
+            # component far outside that is a decode artefact -- the necron overlord's clips carry
+            # scale values from -4951 to 699 while their translations are correct -- so it is
+            # treated as 1 rather than exploding the whole chain.
+            scale = [v if 0.25 <= v <= 4.0 else 1.0 for v in t["scale"][f]]
             M = Matrix.LocRotScale(Vector(t["translation"][f]),
                                    Quaternion((q[3], q[0], q[1], q[2])),
-                                   Vector(t["scale"][f]))
+                                   Vector(scale))
             local.append(dx_to_blender(M))
         world = [None] * len(local)
 
@@ -179,7 +192,7 @@ def apply_clip(clip_path, action_name, fps, frames):
             rl = rest_local_for(pb, parent_pb.get(i))
             if rl is None:
                 continue
-            pidx = parents[i]
+            pidx = parent_idx.get(i, -1)
             pw = world[pidx] if pidx >= 0 else Matrix.Identity(4)
             delta = rl.inverted() @ (pw.inverted() @ world[i])
             delta = BONE_AXIS_ADAPTER_INV @ delta @ BONE_AXIS_ADAPTER
