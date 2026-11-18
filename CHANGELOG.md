@@ -167,3 +167,19 @@ game's own timing and events.
   exception, which had been reporting stale GLBs as BUILT).
 - Lab table: warboss (own rig/clips/body), lictor and farseer (own animation sets), necron (005_data,
   own rig and clips). All six render as bodies in `output/source_lab/renders/`.
+
+## 2026-11-18 — units assembled by the community toolchain
+
+- `tools/blender/dow2_import_community.py` (new): imports a unit with the DoW2 Tools add-on
+  (`dow2-blender`, Santos Tools 2 lineage) — the model's own bone table, its bone-axis adapter, its
+  weights and materials — and merges the body, head and weapon onto one armature. Clips are applied
+  with the add-on's own sequence (DirectX→Blender conversion, rest delta, adapter conjugation) and
+  exported with `export_optimize_animation_size=False` (the exporter's default collapsed every
+  action to two constant keys).
+- The head is an ebps `animator_attachments` entry, not a wargear `render_models` entry; the tool
+  takes it as an extra part (guardsman `cadian_trooper`, warboss `warboss_head_01`).
+- Measured after the switch: every lab unit has a full-length idle with real motion (guardsman 221
+  keys / 0.085 m, chaos 121 / 0.182, eldar 91 / 0.044, warboss 91 / 0.209, lictor 101 / 0.893), and
+  the fidelity gate reports worst tear 0.007–0.073 against 0.16–0.32 before.
+- The necron overlord is still built by the clip-rig path: its model rig (54 bones) and clip rig
+  (57) have different hierarchies, so the add-on's single-rig recipe does not apply to it.

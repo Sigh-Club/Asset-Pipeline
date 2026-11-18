@@ -43,7 +43,8 @@ from hkxread import HkxError, Packfile, quat_angle  # noqa: E402
 # --------------------------------------------------------------------------------------
 ACTIONS: dict[str, list[str]] = {
     "idle": ["fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
-             "fb_idle_stand_05", "fb_idle_01", "fb_idle_02", "fb_idle_03", "necron_overlord_idle"],
+             "fb_idle_stand_05", "fb_idle_01", "fb_idle_02", "fb_idle_03", "necron_overlord_idle",
+             "fb_melee_idle_01", "fb_melee_idle_02", "fb_melee_idle_03", "fb_crouch_idle01"],
     "idle_combat": ["fb_idle_combat_stand_01", "fb_idle_combat_stand_02",
                     "fb_idle_combat_stand_03_range_energy", "fb_idle_combat_stand_04_range_energy",
                     "fb_combat_idle_01", "fb_combat_idle_02"],
