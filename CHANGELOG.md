@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 3)
+
+### Added
+
+- **Layered aim, composed from the shipped upper-body layers.** `hkAnimationBinding` is decoded
+  (`Packfile.animation_bindings()`: track -> bone, blend hint) — a layer's track index is not a bone
+  index (`aim_stand_horiz` track 0 drives `Bip01 Spine1`), and reading it without the binding rotates
+  the root. `tools/dow2/action_library.py` now bakes `aim_left`, `aim_right`, `aim_up`, `aim_down`
+  per ranged unit: the unit's own stance with one layer held at a measured 45 degree offset, with the
+  measured bearing/elevation recorded in the sidecar. The axis each family carries is measured, not
+  assumed (`aim_stand_horiz` is the bearing sweep, `aim_stand_virt` the elevation sweep), and the
+  direction names are assigned from that measurement. The necron's layers are empty stubs, so its
+  shipped `staff_fire_aim_pivotl/pivotr` clips serve left/right directly.
+- `tools/blender/dow2_import_community.py`: applies layers through their binding (replaces the driven
+  bone's local transform; the layer's translation and scale equal the base's).
+
+### Changed
+
+- Lab action count 91 -> 113 (the aim directions). `fidelity.json` regenerated: 7 units, 0 FAIL.
+  `UNIT_ASSET_REV` 20261147.
+- `TODO.md` scorecard updated: layering scored at 5/10 where the aim layers compose (3/10 for the
+  necron's shipped pivots), totals 85-95 %.
+
 ## [Unreleased] — 2026-11-18 (session 2)
 
 ### Added

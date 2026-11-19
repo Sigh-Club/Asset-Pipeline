@@ -185,7 +185,44 @@ for act in list(bpy.data.actions):
     bpy.data.actions.remove(act)
 
 
-def apply_clip(clip_path, action_name, fps, frames):
+def layer_overrides(layers):
+    """Track overrides from upper-body layer clips, keyed by the armature bone they drive.
+
+    DoW2's layers are single-track clips and their track index is NOT a bone index: the file's own
+    `hkAnimationBinding` says which bone each track drives (measured: `aim_stand_horiz` track 0 ->
+    `Bip01 Spine1`, `aim_stand_virt` track 0 -> `Bip01 Spine2`). Reading a layer without its binding
+    rotates the root bone instead of the spine. `blendHint` is 0 (Havok NORMAL, i.e. the track drives
+    that bone), so the layer's local transform replaces the base clip's for that bone — the layer
+    carries the same translation and unit scale as the base, so only the rotation changes.
+    """
+    out = {}
+    for layer in layers or []:
+        pf = Packfile.open(layer["file"])
+        anim = pf.animation()
+        sk = pf.skeleton()
+        bindings = pf.animation_bindings()
+        if anim is None or sk is None or not bindings:
+            print(f"  LAYER {layer['clip']}: no animation or binding, skipped")
+            continue
+        frame = int(layer.get("frame", 0))
+        frame = max(0, min(frame, anim["numberOfPoses"] - 1))
+        mapping = bindings[0]["track_to_bone"]
+        for track, bone_index in enumerate(mapping):
+            if track >= len(anim["tracks"]) or not (0 <= bone_index < len(sk["bone_names"])):
+                continue
+            name = sk["bone_names"][bone_index]
+            t = anim["tracks"][track]
+            q = t["rotation"][frame]
+            scale = [1.0, 1.0, 1.0] if not all(0.5 < v < 2.0 for v in t["scale"][frame]) \
+                else list(t["scale"][frame])
+            out[name.lower()] = dx_to_blender(Matrix.LocRotScale(
+                Vector(t["translation"][frame]), Quaternion((q[3], q[0], q[1], q[2])),
+                Vector(scale)))
+            print(f"  LAYER {layer['clip']} frame {frame}: drives {name}")
+    return out
+
+
+def apply_clip(clip_path, action_name, fps, frames, layers=None):
     pf = Packfile.open(clip_path)
     sk = pf.skeleton()
     anim = pf.animation()
@@ -218,6 +255,7 @@ def apply_clip(clip_path, action_name, fps, frames):
             parent_pb[i] = pb_by_index[p]
             parent_idx[i] = p
     print(f"  mapped {len(pb_by_index)}/{len(names)} clip bones onto {arm.name}")
+    overrides = layer_overrides(layers)
 
     act = bpy.data.actions.new(action_name)
     act.use_fake_user = True
@@ -247,6 +285,11 @@ def apply_clip(clip_path, action_name, fps, frames):
                                    Quaternion((q[3], q[0], q[1], q[2])),
                                    Vector(scale))
             local.append(dx_to_blender(M))
+        # an upper-body layer replaces the local transform of the bone its binding names
+        for i, n in enumerate(names):
+            hit = overrides.get(n.lower())
+            if hit is not None:
+                local[i] = hit
         world = [None] * len(local)
 
         def resolve(i):
@@ -324,12 +367,14 @@ if A.manifest:
         frames = list(range(0, anim["numberOfPoses"], stride))
         if frames[-1] != anim["numberOfPoses"] - 1:
             frames.append(anim["numberOfPoses"] - 1)
-        info = apply_clip(path, name, anim["frame_rate"], frames)
+        info = apply_clip(path, name, anim["frame_rate"], frames, entry.get("layers"))
         if info is None:
             continue
         info.update({"source_clip": clip, "duration": anim["duration"],
                      "events": entry.get("events", []),
                      "acting_frame": entry.get("acting_frame", {})})
+        if entry.get("layers"):
+            info["layers"] = entry["layers"]
         meta[name] = info
         print(f"ACTION {name} <- {clip} {len(frames)}f")
 

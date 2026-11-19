@@ -115,6 +115,45 @@ wrong: no necron loadout ships an interleaved clip (checked across all 37 of its
 `ragdoll.hkx` is not interleaved and not delta-compressed: two shipped files carry no animation object
 at all (`000_data/.../ragdoll.hkx` on the eldar and the ork). They are placeholders, not a format gap.
 
+## Layered animation: the upper-body layers, decoded and composed (2026-11-18, session 3)
+
+The `.hkanim` is a **clip container**, not a state machine: a Relic Chunky file whose `HAWS` chunks
+each hold a name table plus a run of embedded Havok packfiles (measured: 227 packfile magics in
+`guardsman.hkanim`, one per clip). Nothing in it says how clips compose; that lives in the
+`.motiontree`. What the clips do carry is the composition *primitive*: `hkAnimationBinding`, whose
+`animationTrackToBoneIndices` says which bone each track drives and whose `blendHint` is Havok's
+(NORMAL = the track drives that bone; ADDITIVE = delta from the reference pose).
+
+The aim layers are single-track clips that use that primitive, and their track index is **not** a bone
+index: `aim_stand_horiz` track 0 -> `Bip01 Spine1`, `aim_stand_virt` track 0 -> `Bip01 Spine2` on the
+Imperial Guard rig; the Chaos/Eldar/Ork/Tau equivalents drive their own spine bones. Reading such a
+clip without its binding rotates the root bone instead of the spine.
+
+Measured properties of the shipped layers:
+
+* 37 frames, identity at the midpoint, ~180 deg at both ends — a **continuous aim parameter**, not a
+  fixed pose. Which family carries which axis is not what the names suggest: `aim_stand_horiz` is the
+  bearing sweep (composing it at its quarter turn moves the pelvis->weapon bearing by +-90 deg with no
+  change in weapon height) and `aim_stand_virt` is the elevation sweep (it moves the weapon 0.15-1.7 m
+  vertically depending on the unit).
+* The layer's translation and scale equal the base's for the bone it drives, so composing is a
+  rotation replacement, not a blend.
+
+`tools/dow2/action_library.py` bakes four cardinal directions per ranged unit from these layers —
+`aim_left`, `aim_right`, `aim_up`, `aim_down` — each the unit's own stance clip with one layer held at
+the frame for a 45 degree offset, and records the measured effect in the sidecar (`bearing_deg`,
+`elevation_m`). 45 degrees, not the layer's 90, because a turn-based unit faces its target and the
+layer supplies the residual; at 90 the torso visibly contorts on top of a forward stance. The
+direction names are assigned from the measurement, not from the clip name (a positive rotation about
+the up axis turns the aim toward the unit's right — checked against the render).
+
+The necron's `ub_aim_*` layers are empty 8-byte zlib stubs, but it ships explicit aim poses
+(`necron_overlord_staff_fire_aim_pivotl/pivotr`), so those serve `aim_left`/`aim_right` directly, with
+the game's own naming. The lictor ships no ranged clips at all and therefore no aim layers.
+
+Not composed yet: the game also layers fire over locomotion (`ub_fire_run*` over `fb_run`) and adds
+idle sway; those are still exported as base clips.
+
 ## The action library
 
 `tools/dow2/action_library.py` turns the clips into named actions with their shipped timing and events:

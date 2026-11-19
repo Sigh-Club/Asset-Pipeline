@@ -1,6 +1,6 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-18 (session 2).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-18 (session 3).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
 
@@ -34,37 +34,38 @@ locomotion cycles.
 | heads | **working** | from the ebps `animator_attachments`, chapter variants skipped |
 | weapons | **working for all seven** | each unit's `default_wargear` resolved to shipped models: guardsman lasgun, necron tachyon arrow, tau plasma rifle, chaos power sword + bolt pistol, eldar witchblade + shuriken pistol, warboss kustom shoota + huge choppa, lictor talons (part of its armour) |
 | materials | **working, opaque** | every unit material exports `OPAQUE` + single-sided (the add-on's alpha wiring made every material `BLEND`, which is why units were see-through and lost parts at an angle); `dow2_alphaTest` honoured as MASK where a source declares a cutout |
-| action coverage | **9–17 of 20 actions per unit** | see the scorecard below; only the Tau `aim` is static, and its source clip is two identical frames |
-| layering | **not baked** | `.hkanim` composes base + upper-body layers at runtime; we export one clip per action |
+| action coverage | **11–21 actions per unit** | see the scorecard below; the four aim directions are new, and the Tau's aim set is static by design (its stance clip is two identical frames) |
+| layering | **aim directions baked, fire/idle layers not** | the shipped single-track upper-body layers are composed onto the stance for `aim_left`/`aim_right`/`aim_up`/`aim_down` (5 units; the necron uses its shipped aim-pivot clips). The `.hkanim` is a clip container (227 embedded packfiles), so the state machine's *other* layer uses (fire over run, idle additive) are still exported as base clips |
 | lab page | **7 units live** | `fidelity.json` regenerated (7 units, 91 actions, 0 FAIL), `UNIT_ASSET_REV 20261146`, dist rebuilt byte-identical to `public/` |
 
 ### Per-unit scorecard
 
 Rubric (110 points): assembly 20 · rig/weights 20 · materials 15 · weapons 15 · action coverage 20
-(scaled by resolved/20) · visual gate 10 · layered animation 10. A component is only scored when it is
-measured — the visual gate means the renders were read against `docs/evidence/dow2-stance/`.
+(resolved/20, capped) · visual gate 10 · layered animation 10 (5 = aim directions composed from the
+shipped layers, 3 = shipped aim-pivot clips only, 0 = no composition). A component is only scored when
+it is measured — the visual gate means the renders were read against `docs/evidence/dow2-stance/`.
 
 | unit | assembly | rig | materials | weapons | actions | visual | layering | total |
 |---|---|---|---|---|---|---|---|---|
-| dow_ig_guardsman | 20 | 20 | 15 | 15 | 17 | 10 | 0 | **88 %** |
-| dow_chaos_sorcerer | 20 | 20 | 15 | 15 | 13 | 10 | 0 | **85 %** |
-| dow_eldar_farseer | 20 | 20 | 15 | 15 | 14 | 10 | 0 | **85 %** |
-| dow_ork_warboss | 20 | 20 | 15 | 15 | 14 | 10 | 0 | **85 %** |
-| dow_tyranid_lictor | 20 | 20 | 15 | 15 | 13 | 10 | 0 | **85 %** |
-| dow_tau_battlesuit | 20 | 20 | 15 | 15 | 11 | 10 | 0 | **83 %** |
-| dow_necron_overlord | 20 | 20 | 15 | 15 | 9 | 10 | 0 | **81 %** |
+| dow_ig_guardsman | 20 | 20 | 15 | 15 | 20 | 10 | 5 | **95 %** |
+| dow_eldar_farseer | 20 | 20 | 15 | 15 | 18 | 10 | 5 | **94 %** |
+| dow_ork_warboss | 20 | 20 | 15 | 15 | 18 | 10 | 5 | **94 %** |
+| dow_chaos_sorcerer | 20 | 20 | 15 | 15 | 17 | 10 | 5 | **93 %** |
+| dow_tau_battlesuit | 20 | 20 | 15 | 15 | 15 | 10 | 5 | **91 %** |
+| dow_tyranid_lictor | 20 | 20 | 15 | 15 | 13 | 10 | 5 | **89 %** |
+| dow_necron_overlord | 20 | 20 | 15 | 15 | 11 | 10 | 3 | **85 %** |
 
-Action coverage per unit (of the 20-name action set; missing names are loadouts that ship no clip for
-them, which the manifest records as `not shipped`):
+Action coverage per unit (of the 20-name action set plus the four aim directions; missing names are
+loadouts that ship no clip for them, which the manifest records as `not shipped`):
 
-- guardsman 17 — missing ability, leap, death_sync
-- chaos 13 — missing idle_combat, idle_crouch, reload, grenade, leap, death_sync, pinned
-- eldar 14 — missing idle_crouch, reload, ability, thrown_getup, death_sync, pinned
-- warboss 14 — missing idle_crouch, reload, ability, leap, death_sync, pinned
+- guardsman 21 — 17 named actions + 4 aim directions; missing ability, leap, death_sync
+- eldar 18 — missing idle_crouch, reload, ability, thrown_getup, death_sync, pinned
+- warboss 18 — missing idle_crouch, reload, ability, leap, death_sync, pinned
+- chaos 17 — missing idle_combat, idle_crouch, reload, grenade, leap, death_sync, pinned
+- tau 15 — missing idle_combat, idle_crouch, reload, melee_01..03, ability, death_sync, pinned
 - lictor 13 — missing idle_combat, aim, fire, reload, grenade, death_sync, pinned (a melee creature:
-  its loadout ships no ranged clips at all)
-- tau 11 — missing idle_combat, idle_crouch, reload, melee_01..03, ability, death_sync, pinned
-- necron 9 — missing idle_combat, idle_crouch, reload, melee_03, grenade, ability, hit, thrown_getup,
+  its loadout ships no ranged clips, so it has no aim layers either)
+- necron 11 — missing idle_combat, idle_crouch, reload, melee_03, grenade, ability, hit, thrown_getup,
   leap, death_sync, pinned
 
 The gap to 100 % is the same two things for every unit: the game's layered animation (10 points) and
@@ -72,10 +73,11 @@ the actions their loadout genuinely does not ship.
 
 ## 3. Ordered next work
 
-1. **Layered animation** (`.hkanim`): decode the state machine and bake the composed pose (base +
-   upper-body). This is what the game actually shows, and it is the only remaining fidelity gap that
-   affects every unit — the exported `aim`/`fire` are base clips, so the weapon is carried but not
-   raised by the layer.
+1. **The rest of the layering**: the aim directions are composed from the shipped layers now, but the
+   game also layers fire over locomotion (`ub_fire_run*` over `fb_run`) and adds idle sway. Those are
+   still exported as base clips. The layers and their bindings are decoded; what is missing is the
+   *rule* that says which layer applies in which state, which lives in the `.motiontree` state
+   machine (we read it only for event timing today).
 2. **More units**: the remaining Tau troops (drones), and other factions' loadouts, all through the
    same table (`tools/dow2/build_community_units.py`).
 3. **More actions per loadout where the game ships them**: the necron (9) and tau (11) are the thin

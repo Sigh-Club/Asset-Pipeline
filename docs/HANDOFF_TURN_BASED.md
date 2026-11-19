@@ -49,18 +49,22 @@ curl the primary source.
 - **Action library** (`tools/dow2/action_library.py`): named actions with the shipped timed events
   from the unit's `.motiontree`.
 - **Seven lab units build and animate, table-driven** (`tools/dow2/build_community_units.py`):
-  guardsman 17 actions, chaos 13, eldar 14, warboss 14, lictor 13, tau 11, necron 9, each carrying its
+  guardsman 21 actions, chaos 17, eldar 18, warboss 18, lictor 13, tau 15, necron 11, each carrying its
   shipped weapon (or integral talons). Damage states and extra LoDs are pruned per part, materials
-  export opaque, and `fidelity.json` reports 7 units / 91 actions / 0 FAIL.
+  export opaque, and `fidelity.json` reports 7 units / 113 actions / 0 FAIL.
+- **Layered aim directions**: `aim_left/right/up/down` are composed from the shipped single-track
+  upper-body layers through their own `hkAnimationBinding` (measured 45 degree offset; the necron uses
+  its shipped aim-pivot clips).
 - **Gates**: `tools/rig_fidelity.py`, `tools/lab_fidelity.py` (regenerates `lab/fidelity.json`),
   `tools/render_lab.py` (renders every unit).
 - **Source packaging**: `tools/sources/pack_sources.py` + `fetch_sources.py`, release `source-v3`.
 
 ### Ordered remaining work
 
-1. **Layered animation** (`.hkanim`): decode the state machine and bake the composed pose (base +
-   upper-body). This is the only remaining fidelity gap that affects every unit — the exported
-   `aim`/`fire` are base clips, so the weapon is carried but not raised by the layer that raises it.
+1. **The rest of the layering**: the aim directions compose now, but the game also layers fire over
+   locomotion (`ub_fire_run*` over `fb_run`) and adds idle sway, and those are still base clips. The
+   layer primitive and its bindings are decoded; what is missing is the rule for which layer applies
+   in which state, which lives in the `.motiontree` state machine (read today only for event timing).
 2. **More units**: the remaining Tau troops (drones) and other factions' loadouts, same table-driven
    build (`tools/dow2/build_community_units.py` — add a row).
 3. **Ground contact per action**: deaths, getups and leaps legitimately go below the origin because

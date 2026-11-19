@@ -80,7 +80,13 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
    `Math: ROUND` node is inserted, which is the graph Blender's exporter maps to MASK/cutoff 0.5.
    Backface culling is switched on to match the game.
 
-4. **Pose with the add-on's own maths** (`animation/import_core.py`): for each tracked bone,
+4. **Layers compose through their own binding, never by track index.** A layer clip drives one bone
+   (`aim_stand_horiz` -> `Bip01 Spine1`), and the file's `hkAnimationBinding` is what says which. The
+   composed action replaces that bone's local transform with the layer's at the chosen frame; the
+   layer's translation and scale equal the base's, so nothing else moves. `action_library.py` bakes
+   the four cardinal aim directions this way and records the measured bearing/elevation per action.
+
+5. **Pose with the add-on's own maths** (`animation/import_core.py`): for each tracked bone,
 
    ```
    L  = dx_to_blender(track local)
@@ -94,15 +100,15 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
    clip's hierarchy* (the add-on's `parent_anim_idx`). Bones the model lacks (the necron's cape
    chain) are skipped and their children hang off the nearest ancestor the model has.
 
-3. **Match bones case-insensitively against the armature's own names.** The add-on keeps the model's
+6. **Match bones case-insensitively against the armature's own names.** The add-on keeps the model's
    `FOLDSKEL` names (`bip01 r thigh`), not our canonical vocabulary. Mapping through
    `skeleton.canonical()` finds nothing, leaves every bone unkeyed, and exports a constant pose —
    this is what made the lictor's idle silent and the eldar have no idle.
 
-4. **Export with `export_optimize_animation_size=False`.** Blender's glTF exporter otherwise
+7. **Export with `export_optimize_animation_size=False`.** Blender's glTF exporter otherwise
    collapses each action to two constant keys.
 
-5. **Scale sanity.** A clip's scale track is either sane (every component within ±25% of 1, measured
+8. **Scale sanity.** A clip's scale track is either sane (every component within ±25% of 1, measured
    across the corpus) or a decode artefact — the necron overlord's run from −4951 to 699 while its
    translations are correct. Judge the track as a whole: if any component is outside [0.5, 2.0], use
    1 for the whole clip. Per-component clamping left plausible-looking 0.38–3.13 values that made
@@ -162,7 +168,8 @@ python3 tools/lab_fidelity.py --lab <lab dir>
 `render_lab.py` takes `--unit=<id>` and a third shot field (`idle:1:head`, `idle:1:weapon`,
 `idle:1:upper`) for the close-ups the gate requires.
 
-Measured on the current build (2026-11-18): seven units, every one carrying its shipped weapon or
-integral talons, 91 actions, motion peak 0.049-5.94 m per action, one action static by design (the Tau
-`aim`, whose source clip has two identical frames), `lab_fidelity` 7 units / 0 FAIL, worst tear 0.0852
-on the farseer's cloth (its shipped rigid reference is 0.0855 on the same clip).
+Measured on the current build (2026-11-18, session 3): seven units, every one carrying its shipped
+weapon or integral talons, 113 actions including the four composed aim directions per ranged unit,
+motion peak 0.049-5.94 m per action, the Tau aim set static by design (its stance clip has two
+identical frames), `lab_fidelity` 7 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
+shipped rigid reference is 0.0855 on the same clip).

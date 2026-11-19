@@ -858,6 +858,37 @@ class Packfile:
             tracks.append(frame)
         return tracks, state["used"]
 
+    def animation_bindings(self) -> list[dict]:
+        """The file's `hkAnimationBinding` records: track -> bone, and the blend hint.
+
+        A clip's tracks are NOT automatically bone-indexed. Full-body clips ship an identity map
+        (track i -> bone i), but DoW2's **layers** do not: `aim_stand_horiz` is a one-track clip
+        whose single track drives `Bip01 Spine1` and `aim_stand_virt` drives `Bip01 Spine2`. Reading
+        such a clip without its binding rotates the root bone instead of the spine — the trap that
+        makes a layered aim look like a whole-body spin.
+
+        `blendHint` is Havok's `hkaAnimationBinding::BlendHint` (0 = NORMAL, i.e. the track drives
+        that bone; 1 = ADDITIVE). It is reported, not interpreted here.
+        """
+        found = self.objects_by_class()
+        offsets = self.member_offsets("hkAnimationBinding")
+        if not offsets or not found.get("hkAnimationBinding"):
+            return []
+        data = self.data()
+        out: list[dict] = []
+        for obj in found["hkAnimationBinding"]:
+            array_at = self.resolve(obj + offsets["animationTrackToBoneIndices"])
+            count = struct.unpack_from("<I", data, obj + offsets["animationTrackToBoneIndices"] + 4)[0]
+            if not (0 < count < 4096) or not array_at:
+                continue
+            bones = [struct.unpack_from("<h", data, array_at + i * 2)[0] for i in range(count)]
+            out.append({
+                "track_to_bone": bones,
+                "blend_hint": data[obj + offsets["blendHint"]]
+                if offsets.get("blendHint") is not None else 0,
+            })
+        return out
+
     def animation_events(self) -> list[dict]:
         """The clip's `hkAnnotationTrack` events, in track (bone) order.
 

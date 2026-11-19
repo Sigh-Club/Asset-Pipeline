@@ -94,6 +94,24 @@ ACTIONS: dict[str, list[str]] = {
     "pinned": ["fb_pinned_idle", "fb_pinned_idle_02"],
 }
 
+# The aim-direction layers. DoW2 composes aiming from a full-body stance plus single-track
+# upper-body layers that twist the spine: `aim_stand_horiz` drives `Bip01 Spine1` and
+# `aim_stand_virt` drives `Bip01 Spine2` (read from each clip's own `hkAnimationBinding`), sweeping a
+# full turn over 37 frames with the identity at frame 18. The game samples a frame by target
+# direction. A turn-based unit aims at a chosen bearing, so the useful bakes are the four cardinal
+# offsets: each is the stance with one layer held at its quarter-turn frame. Names are assigned by
+# measurement (the render decides which way each frame twists), not by guesswork.
+# Which layer family carries which axis is measured, not assumed: `aim_stand_horiz` turns out to be
+# the BEARING sweep and `aim_stand_virt` the ELEVATION sweep (composed and measured in the built GLB:
+# horiz frame 9 moves the pelvis->weapon bearing +89 deg with the head still up, virt frame 9 drops the
+# head to 0.18 m, virt frame 27 raises the weapon). The four cardinal bakes are the stance plus one
+# layer held at its quarter turn.
+AIM_AXES = {
+    "bearing": ("horiz", "vert", "virt"),
+    "elevation": ("vert", "virt"),
+}
+
+
 # The bones whose motion marks the action's effect when the clip ships no event for it.
 ACTING_BONES = ("Bip01 R Hand", "Bip01 R Weapon", "Bip01 L Hand")
 
@@ -274,6 +292,156 @@ def clip_facts(path: Path, events: dict) -> dict | None:
     }
 
 
+def _norm_bone(name: str) -> str:
+    """Bone names are compared with spaces and underscores removed (`bip01_r_weapon` exists on the
+    Tau rig where the Imperial Guard ships `Bip01 R Weapon`)."""
+    return name.lower().replace(" ", "").replace("_", "")
+
+
+def _find_bone(names: list[str], wanted: str) -> int | None:
+    target = _norm_bone(wanted)
+    for i, n in enumerate(names):
+        if _norm_bone(n) == target:
+            return i
+    return None
+
+
+def quarter_frames(clip_file: str, degrees: float = 45.0) -> tuple[int, int] | None:
+    """The two frames of a single-track layer that hold a +d and a -d degree twist.
+
+    The offset is a sampling choice, not an invention: the shipped layer is a continuous parameter
+    (a full turn over 37 frames, identity in the middle), so any direction can be baked. A
+    turn-based unit faces its target and needs only the residual offset, so the cardinals are baked
+    at 45 degrees; the layer's own extreme (90) is what the game uses for a target straight to the
+    side, and it contorts the torso visibly when applied on top of a forward stance.
+
+    The layers sweep a full turn: identity at the midpoint and ~180 deg at both ends (measured on
+    every shipped aim layer: 37 frames, 0..179 deg, identity at frame 18). The quarter turns are
+    therefore the midpoints between the identity frame and each end — structural, so it holds for a
+    layer whose sweep axis is not the one another unit uses (a sign test on the quaternion's dominant
+    component found only one quarter on the chaos and warboss layers).
+    """
+    try:
+        pf = Packfile.open(clip_file)
+        anim = pf.animation()
+    except HkxError:
+        return None
+    if anim is None or anim["numTracks"] != 1:
+        return None
+    angles = [quat_angle(q, [0.0, 0.0, 0.0, 1.0]) for q in anim["tracks"][0]["rotation"]]
+    if not angles:
+        return None
+    identity = min(range(len(angles)), key=lambda f: angles[f])
+    last = len(angles) - 1
+    if angles[identity] > 30.0 or max(angles) < 120.0:
+        return None
+    # the sweep is 180 deg from the identity frame to either end (18 frames in the shipped 37-frame
+    # layers), so the frame for an angle is identity +/- (frames per 180 deg) * degrees/180
+    span = (max(identity, last - identity)) * (degrees / 180.0)
+    low = max(0, int(round(identity - span)))
+    high = min(last, int(round(identity + span)))
+    if low == identity or high == identity:
+        return None
+    return low, high
+
+
+def _bone_world(anim, skeleton, frame: int, index: int):
+    """World transform of a bone at a frame, composed down the clip's own hierarchy (DX space)."""
+    local = []
+    for i in range(skeleton["bone_count"]):
+        t = anim["tracks"][i]
+        local.append((t["translation"][frame], t["rotation"][frame]))
+    world = [None] * len(local)
+
+    def resolve(i):
+        if world[i] is not None:
+            return world[i]
+        p = skeleton["parents"][i]
+        if p < 0:
+            world[i] = _compose(([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+                                 [0.0, 0.0, 0.0]), local[i][0], local[i][1])
+        else:
+            world[i] = _compose(resolve(p), local[i][0], local[i][1])
+        return world[i]
+
+    for i in range(len(local)):
+        resolve(i)
+    return world[index]
+
+
+def layer_axis_effect(base_file: str, layer_file: str, frame: int) -> dict | None:
+    """Measure which way a layer frame moves the unit's weapon: bearing and elevation.
+
+    The names must mean what the unit does, and the shipped layer families are not named by axis
+    (`aim_stand_horiz` is the bearing sweep, `aim_stand_virt` the elevation sweep — measured by
+    composing them and reading the weapon's movement). Bearing is the yaw change of the
+    pelvis->weapon vector in the clip's own space (X/Z is horizontal there); elevation is its
+    vertical change.
+    """
+    base = Packfile.open(base_file)
+    banim = base.animation()
+    bsk = base.skeleton()
+    layer = Packfile.open(layer_file)
+    lanim = layer.animation()
+    lsk = layer.skeleton()
+    bindings = layer.animation_bindings()
+    if banim is None or bsk is None or lanim is None or lsk is None or not bindings:
+        return None
+    names = bsk["bone_names"]
+    pelvis = _find_bone(names, "bip01 pelvis")
+    weapon = _find_bone(names, "bip01 r weapon") or _find_bone(names, "bip01 l weapon")
+    if pelvis is None or weapon is None:
+        return None
+    target = lsk["bone_names"][bindings[0]["track_to_bone"][0]]
+    slot = _find_bone(names, target)
+    if slot is None:
+        return None
+
+    def weapon_vector():
+        w = [_bone_world(banim, bsk, 0, i) for i in (pelvis, weapon)]
+        return [w[1][1][0] - w[0][1][0], w[1][1][1] - w[0][1][1], w[1][1][2] - w[0][1][2]]
+
+    neutral = weapon_vector()
+    track = lanim["tracks"][0]
+    saved = banim["tracks"][slot]
+    banim["tracks"][slot] = {
+        "translation": [track["translation"][frame]] * banim["numberOfPoses"],
+        "rotation": [track["rotation"][frame]] * banim["numberOfPoses"],
+        "scale": [[1.0, 1.0, 1.0]] * banim["numberOfPoses"],
+    }
+    try:
+        moved = weapon_vector()
+    finally:
+        banim["tracks"][slot] = saved
+    yaw0 = math.degrees(math.atan2(neutral[0], neutral[2]))
+    yaw1 = math.degrees(math.atan2(moved[0], moved[2]))
+    delta = (yaw1 - yaw0 + 540.0) % 360.0 - 180.0
+    return {
+        "bearing_deg": round(delta, 1),
+        "elevation_m": round(moved[1] - neutral[1], 4),
+    }
+
+
+def layer_clip_for(clips: dict, axis: str) -> dict | None:
+    """The loadout's aim layer clip for an axis, by the names the shipped loadouts use.
+
+    Standing layers are preferred over the run/crouch variants: the aim action they compose with is
+    the standing stance, and mixing a crouch layer into a standing base tilts the body for no reason.
+    """
+    needles = AIM_AXES[axis]
+    candidates = []
+    for stem, facts in sorted(clips.items()):
+        low = stem.lower()
+        if "aim" not in low or not any(n in low for n in needles):
+            continue
+        if facts.get("tracks") != 1:
+            continue
+        candidates.append((0 if "stand" in low else 1, stem, facts))
+    if not candidates:
+        return None
+    return sorted(candidates)[0][2]
+
+
 def build_manifest(loadout: Path, motiontree: Path | None, unit: str) -> dict:
     events = decode_events(motiontree) if motiontree and motiontree.exists() else {}
     clips = {}
@@ -289,6 +457,47 @@ def build_manifest(loadout: Path, motiontree: Path | None, unit: str) -> dict:
             continue
         actions[action] = dict(chosen)
         actions[action]["preference_rank"] = preference.index(chosen["clip"].split("/")[-1])
+
+    # aim directions: the stance clip plus one upper-body layer held at its quarter turn. The axis
+    # each layer carries is measured from the built pose (see AIM_AXES), so the names mean what the
+    # unit does.
+    base = actions.get("aim") or {}
+    if base.get("clip"):
+        for axis in ("bearing", "elevation"):
+            layer = layer_clip_for(clips, axis)
+            if layer is None:
+                continue
+            quarters = quarter_frames(layer["file"])
+            if quarters is None:
+                continue
+            for frame in quarters:
+                effect = layer_axis_effect(base["file"], layer["file"], frame)
+                if effect is None:
+                    continue
+                if axis == "bearing":
+                    # a positive rotation about the up axis turns the aim toward +X, which is the
+                    # unit's right in the clip's space (checked against the render: the +90 bake
+                    # shows the unit's back to a front-right camera)
+                    name = "aim_right" if effect["bearing_deg"] > 0 else "aim_left"
+                else:
+                    name = "aim_up" if effect["elevation_m"] > 0 else "aim_down"
+                entry = dict(base)
+                entry["layers"] = [{"clip": layer["clip"], "file": layer["file"],
+                                    "frame": frame, "layer_of": base["clip"], "axis": axis}]
+                entry["layer_effect"] = effect
+                actions[name] = entry
+        # Loadouts whose aim layers are empty placeholders ship explicit aim-pivot clips instead
+        # (measured: every necron `ub_aim_*` is an 8-byte zlib stub, while
+        # `necron_overlord_staff_fire_aim_pivotl/pivotr` are full-body). Those are the game's own
+        # left/right aim poses, so they are used directly, with the game's own naming.
+        if not any(actions.get(n, {}).get("layers") for n in ("aim_left", "aim_right")):
+            for suffix, name in (("pivotl", "aim_left"), ("pivotr", "aim_right")):
+                hit = next((v for k, v in sorted(clips.items())
+                            if "aim" in k.lower() and k.lower().endswith(suffix)), None)
+                if hit:
+                    actions[name] = dict(hit)
+                    actions[name]["aim_source"] = "shipped aim pivot clip"
+
     return {
         "unit": unit,
         "loadout": str(loadout),
