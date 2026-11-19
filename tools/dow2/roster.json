@@ -1,0 +1,283 @@
+{
+  "dow_ig_officer": {
+    "ebps": "ig_commander",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "command_officer",
+      "officer"
+    ]
+  },
+  "dow_ig_heavy_weapons": {
+    "ebps": "ig_heavy_weapon_squad",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "suppression_team",
+      "suppression"
+    ]
+  },
+  "dow_ig_inquisitor": {
+    "ebps": "ig_inquisitor",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "ironclad_warden",
+      "bulwark_sentinels",
+      "warden",
+      "bulwark"
+    ]
+  },
+  "dow_chaos_heretic": {
+    "ebps": "cultist",
+    "faction": "cinderborn",
+    "archetypes": [
+      "cinder_cultist",
+      "cultist"
+    ],
+    "body": "race_chaos/troops_wargear/armour/heretic_common/heretic.model"
+  },
+  "dow_chaos_marine": {
+    "ebps": "csm_tactical_marine",
+    "faction": "cinderborn",
+    "archetypes": [
+      "voidtouched_legionnaire",
+      "legionnaire"
+    ]
+  },
+  "dow_chaos_lord": {
+    "ebps": "csm_chaos_lord",
+    "faction": "cinderborn",
+    "archetypes": [
+      "warlord"
+    ]
+  },
+  "dow_chaos_bloodletter": {
+    "ebps": "csm_bloodletter_champion",
+    "faction": "cinderborn",
+    "archetypes": [
+      "zealot_line",
+      "zealot",
+      "warp_berserkers"
+    ],
+    "body": "race_chaos/troops_wargear/armour/bloodletter/bloodletter_body.model",
+    "head": "race_chaos/troops_wargear/heads/bloodletter_head01/bloodletter_head01.model"
+  },
+  "dow_eldar_guardian": {
+    "ebps": "eld_guardian",
+    "faction": "void_corsairs",
+    "archetypes": [
+      "void_corsair_raider",
+      "trooper",
+      "light_infantry"
+    ]
+  },
+  "dow_eldar_ranger": {
+    "ebps": "eld_ranger",
+    "faction": "void_corsairs",
+    "archetypes": [
+      "neon_runner",
+      "scout"
+    ]
+  },
+  "dow_eldar_banshee": {
+    "ebps": "eld_banshee",
+    "faction": "void_corsairs",
+    "archetypes": [
+      "voidblade_assassin",
+      "assault",
+      "stealth"
+    ],
+    "body": "race_eldar/troops_wargear/armour/banshee_armour_common/banshee_armour_common.model"
+  },
+  "dow_eldar_warlock": {
+    "ebps": "eld_warlock",
+    "faction": "void_corsairs",
+    "archetypes": [
+      "tech_priest",
+      "support"
+    ],
+    "body": "race_eldar/troops_wargear/armour/warlock_epic/warlock_epic.model"
+  },
+  "dow_eldar_wraithguard": {
+    "ebps": "eld_wraithguard",
+    "faction": "void_corsairs",
+    "archetypes": [
+      "hulk_frigate",
+      "vehicle",
+      "heavy"
+    ]
+  },
+  "dow_ork_boy": {
+    "ebps": "ork_slugga_boy",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "scrap_boy"
+    ]
+  },
+  "dow_ork_nob": {
+    "ebps": "ork_nob_leader_nobz",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "scrapwalker_brute",
+      "assault"
+    ],
+    "body": "race_ork/troops_wargear/accessories/nob_body/nob_body.model",
+    "extra": [
+      "race_ork/troops_wargear/weapons_melee/huge_choppa_common/huge_choppa_common.model"
+    ]
+  },
+  "dow_ork_weirdboy": {
+    "ebps": "ork_weirdboy",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "detonation_crew",
+      "light_infantry",
+      "trooper"
+    ]
+  },
+  "dow_tyr_hormagaunt": {
+    "ebps": "tyr_hormagaunt",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "hunger_crawlers",
+      "flanker",
+      "swarm"
+    ]
+  },
+  "dow_tyr_termagaunt": {
+    "ebps": "tyr_termagaunt",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "psi_lynx",
+      "commander"
+    ]
+  },
+  "dow_tyr_warrior": {
+    "ebps": "tyr_warrior",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "carapace_warden",
+      "suppressor",
+      "heavy_infantry"
+    ]
+  },
+  "dow_tyr_carnifex": {
+    "ebps": "tyr_carnifex",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "voidmaw_monstrosity",
+      "assault",
+      "boss"
+    ]
+  },
+  "dow_tyr_hive_tyrant": {
+    "ebps": "tyr_hive_tyrant",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "void_swarm_titan",
+      "monstrous"
+    ],
+    "body": "race_tyranid/troops_wargear/armour/hive_tyrant_armour_epic/hive_tyrant_armour_epic.model",
+    "extra": [
+      "race_tyranid/troops_wargear/weapons_melee/hivetyrant_lower_talons_rare/hivetyrant_lower_talons_rare.model"
+    ]
+  },
+  "dow_tyr_zoanthrope": {
+    "ebps": "tyr_zoanthrope",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "soul_weaver",
+      "ritualist",
+      "support"
+    ],
+    "body": "race_tyranid/troops_wargear/armour/zoanthrope_armour_common/zoanthrope_armour_common.model"
+  },
+  "dow_necron_night_bringer": {
+    "ebps": "nec_nightbringer_form",
+    "faction": "chrono_revenants",
+    "archetypes": [
+      "void_reaper",
+      "assault"
+    ]
+  },
+  "dow_ig_guardsman": {
+    "ebps": "",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "line_infantry",
+      "soldier"
+    ]
+  },
+  "dow_chaos_sorcerer": {
+    "ebps": "",
+    "faction": "cinderborn",
+    "archetypes": [
+      "ashbound_artificer",
+      "artificer"
+    ]
+  },
+  "dow_eldar_farseer": {
+    "ebps": "",
+    "faction": "void_corsairs",
+    "archetypes": [
+      "farseer",
+      "psyker"
+    ]
+  },
+  "dow_ork_warboss": {
+    "ebps": "",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "warboss",
+      "boss"
+    ]
+  },
+  "dow_tyranid_lictor": {
+    "ebps": "",
+    "faction": "parasitic_bloom",
+    "archetypes": [
+      "ash_stalker",
+      "stalker"
+    ]
+  },
+  "dow_necron_overlord": {
+    "ebps": "",
+    "faction": "chrono_revenants",
+    "archetypes": [
+      "sepulchre_warden",
+      "heavy_infantry",
+      "commander",
+      "support"
+    ]
+  },
+  "dow_tau_battlesuit": {
+    "ebps": "",
+    "faction": "radiant_concord",
+    "archetypes": [
+      "atmos_battlesuit",
+      "assault",
+      "jump"
+    ]
+  },
+  "dow_tau_gun_drone": {
+    "ebps": "",
+    "faction": "radiant_concord",
+    "archetypes": [
+      "targeter_flock",
+      "support",
+      "scout"
+    ]
+  },
+  "dow_tau_marker_drone": {
+    "ebps": "",
+    "faction": "radiant_concord",
+    "archetypes": [
+      "marker_drone"
+    ]
+  },
+  "dow_tau_shield_drone": {
+    "ebps": "",
+    "faction": "radiant_concord",
+    "archetypes": [
+      "shield_drone"
+    ]
+  }
+}

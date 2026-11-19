@@ -2,6 +2,35 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 5)
+
+### Added
+
+- **A data-driven unit roster.** `tools/dow2/discover_units.py` reads the link the game uses (a
+  blueprint's `animator` field names the animation set; `default_wargear` names the parts; each part's
+  own file carries the `render_models`) and emits both the build specs and the game's roster catalogue.
+  `tools/dow2/roster.json` is the curated selection (32 units across all seven factions).
+- **21 more DoW2 units built and certified**: chaos bloodletter / heretic / lord / marine, eldar
+  banshee / guardian / ranger / warlock / wraithguard, ig heavy weapons / inquisitor / officer, necron
+  night bringer, ork boy / nob / weirdboy, tyranid carnifex / hive tyrant / hormagaunt / termagaunt /
+  warrior. Lab: 31 units, 407 actions, `fidelity.json` 0 FAIL.
+- **The masters tab now empties itself.** `dow2Roster.ts` is generated from the roster and prepended to
+  `UNIT_MODELS`; a master is dropped as soon as every archetype it serves is covered. Measured: 28 of
+  52 master entries dropped, 21 real roles remain (all of void_corsairs and parasitic_bloom are
+  converted).
+
+### Fixed
+
+- The action library now carries the unprefixed clip names some loadouts use (`aim_stand`,
+  `fire_stand`, `idle_01`, `idle_crouch_01`, `die_normal_b`, `die_sync_01`, `fb_reload`, `fb_death`,
+  `fb_idle`, `fb_die`, `fb_fire_autocannon` …): the officer, hormagaunt and termagaunt previously
+  resolved zero actions and shipped without an action sidecar.
+- A partial clip animates fewer tracks than its skeleton has bones; the importer treated the missing
+  track as an error (the inquisitor's loadout crashed the build) and now treats it as that bone at
+  rest. The same guard is in the layer/effect measurement.
+- A part whose only LoD is not 0 no longer gets deleted, and a unit whose own model is a skeleton stub
+  no longer imports as a floating weapon.
+
 ## [Unreleased] — 2026-11-18 (session 4)
 
 ### Fixed

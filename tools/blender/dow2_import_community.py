@@ -284,6 +284,11 @@ def apply_clip(clip_path, action_name, fps, frames, layers=None):
         # clip locals in Blender space, composed to world
         local = []
         for i in range(len(names)):
+            # a partial clip animates fewer tracks than the clip skeleton has bones (the inquisitor's
+            # loadout ships some): the missing track is that bone at rest, not an error
+            if i >= len(anim["tracks"]):
+                local.append(Matrix.Identity(4))
+                continue
             t = anim["tracks"][i]
             q = t["rotation"][f]
             # A clip's scale track is either sane (all components within ~+/-25% of 1, measured

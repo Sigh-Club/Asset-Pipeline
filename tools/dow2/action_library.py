@@ -44,29 +44,29 @@ from hkxread import HkxError, Packfile, quat_angle  # noqa: E402
 ACTIONS: dict[str, list[str]] = {
     # The Tau drones are turret-like rigs with their own clip names (`dhg_*`), so their stems are
     # listed alongside the humanoid ones rather than renamed.
-    "idle": ["fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
+    "idle": ["fb_idle", "idle_01", "idle_stand_01", "fb_idle_stand_06", "idle_02", "fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
              "fb_idle_stand_05", "fb_idle_01", "fb_idle_02", "fb_idle_03", "necron_overlord_idle",
              "fb_melee_idle_01", "fb_melee_idle_02", "fb_melee_idle_03", "fb_crouch_idle01",
              "dhg_idle_01", "dm_idle_01", "sd_idle_01", "fb_idle_01"],
     "idle_combat": ["fb_idle_combat_stand_01", "fb_idle_combat_stand_02",
                     "fb_idle_combat_stand_03_range_energy", "fb_idle_combat_stand_04_range_energy",
                     "fb_combat_idle_01", "fb_combat_idle_02"],
-    "idle_crouch": ["fb_idle_crouch_01", "fb_idle_crouch_02", "fb_idle_crouch_03"],
+    "idle_crouch": ["idle_crouch_01", "idle_crouch_02", "fb_idle_crouch_01", "fb_idle_crouch_02", "fb_idle_crouch_03"],
     # the shipped aim/melee/ability stems differ per faction (`fb_aiming_stand` for the Imperial
     # Guard, `fb_aim_stand` for Chaos, `fb_ability_casting01_enter` for the sorcerer), so the
     # preference lists carry every shipped spelling rather than one faction's.
-    "aim": ["fb_aiming_stand", "fb_aim_stand", "fb_aiming_stand_rangeenergy",
+    "aim": ["aim_stand", "fb_aim_horiz", "aim_crouch", "fb_aim_crouch", "fb_aiming_stand", "fb_aim_stand", "fb_aiming_stand_rangeenergy",
             "fb_aiming_stand_grenadelauncher", "fb_aiming_crouch", "fb_idle_aim_01",
             "necron_overlord_staff_fire_aimidle", "necron_overlord_arrow_aim_loop",
             "fb_aim_stand_1h", "fb_aim_stand_2h"],
-    "fire": ["dhg_fire_w_idle", "dhg_fire", "dm_fire_w_idle", "dm_fire", "fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
+    "fire": ["fire_stand", "fb_fire_autocannon", "fb_fire_heavybolter", "fb_fire_lascannon", "dhg_fire_w_idle", "dhg_fire", "dm_fire_w_idle", "dm_fire", "fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
              "fb_fire_stand_flamer", "fb_fire_flamer_stand", "fb_fire_crouch",
              "fb_idle_fire_01", "necron_overlord_staff_fire", "necron_overlord_arrow_fire",
              "fb_fire_stand_2cannon", "fb_fire_stand_1cannon", "fb_fire_stand_1plasma",
              "fb_fire_stand_1flamer", "fb_fire_stand_1meltagun", "fb_fire_stand_1glauncher"],
-    "reload": ["fb_reload_stand", "fb_reload_stand_rangeenergy", "fb_reload_crouch",
+    "reload": ["fb_reload", "fb_reload_stand", "fb_reload_stand_rangeenergy", "fb_reload_crouch",
                "fb_reload_crouch_rangeenergy"],
-    "melee": ["fb_melee_attack_04", "fb_melee_attack_01", "fb_melee_attack_02",
+    "melee": ["fb_melee_attack_large_01", "fb_melee_attack01", "fb_special_attack", "execution", "fb_melee_attack_04", "fb_melee_attack_01", "fb_melee_attack_02",
               "fb_melee_attack_03", "fb_melee_01", "fb_melee_02", "fb_melee_03",
               "fb_special_attack_01", "necron_overlord_melee_01", "necron_overlord_melee_02",
               "fb_melee_parry_01", "fb_melee_parry_02", "fb_melee_parry_03"],
@@ -78,23 +78,23 @@ ACTIONS: dict[str, list[str]] = {
     "melee_01": ["fb_melee_attack_01", "necron_overlord_melee_01", "fb_melee_01"],
     "melee_02": ["fb_melee_attack_02", "necron_overlord_melee_02", "fb_melee_02"],
     "melee_03": ["fb_melee_attack_03", "fb_melee_03"],
-    "grenade": ["fb_grenade", "fb_grenade_rangeenergy", "fb_grenade_throw",
+    "grenade": ["grenade", "fb_grenade_stand", "fb_grenade", "fb_grenade_rangeenergy", "fb_grenade_throw",
                 "fb_grenade_throw_01"],
-    "ability": ["sd_ability_field", "fb_ability_flare", "fb_ability_casting01_enter", "fb_ability_drainlife_enter",
+    "ability": ["ability_rainbow", "fb_ability", "fb_ability_01", "sd_ability_field", "fb_ability_flare", "fb_ability_casting01_enter", "fb_ability_drainlife_enter",
                 "fb_forceblast", "fb_ability_flesh_hooks"],
-    "hit": ["fb_thrown_fly", "fb_thrown_fly_far", "fb_thrown_slide_near", "fb_thrown_slide_far",
+    "hit": ["fb_pinned_idle_01", "fb_pinned_run", "fb_thrown_fly", "fb_thrown_fly_far", "fb_thrown_slide_near", "fb_thrown_slide_far",
             "fb_pinned_idle", "fb_knocked_out", "fb_knocked_out_01"],
     "thrown_getup": ["fb_thrown_getup", "fb_getup"],
     "leap": ["fb_melee_leap_fly", "fb_melee_leap_antic", "fb_melee_leap_land", "fb_charge",
              "fb_leap_fly"],
-    "death": ["dhg_death_01", "dhg_death_02", "dm_death_01", "dm_death_02", "sd_death_01",
+    "death": ["fb_death", "fb_die", "die_normal_b", "fb_death_01_enter", "fb_death_die", "dhg_death_01", "dhg_death_02", "dm_death_01", "dm_death_02", "sd_death_01",
               "sd_death_02", "fb_die_01", "fb_die_f", "fb_die_b", "fb_die_l", "fb_die_r", "fb_die_normal_b",
               "fb_die_normal_f", "fb_die_normal_01", "fb_die_02", "fb_die_03", "fb_die_04",
               "necron_overlord_death_fromidle"],
-    "death_sync": ["fb_death_sync_01", "fb_death_sync_02", "fb_death_sync_03"],
-    "walk": ["dhg_move", "dm_move", "sd_move", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
+    "death_sync": ["die_sync_01", "death_sync_01", "fb_die_sync_01", "fb_death_sync_01", "fb_death_sync_02", "fb_death_sync_03"],
+    "walk": ["aim_run", "fb_aim_run_fast", "dhg_move", "dm_move", "sd_move", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
     "run": ["dhg_move", "dm_move", "sd_move", "fb_sprint", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
-    "pinned": ["fb_pinned_idle", "fb_pinned_idle_02"],
+    "pinned": ["fb_pinned_idle_01", "fb_pinned_run", "fb_idle_pinned_01", "fb_pinned_idle", "fb_pinned_idle_02"],
 }
 
 # The aim-direction layers. DoW2 composes aiming from a full-body stance plus single-track
@@ -351,9 +351,15 @@ def quarter_frames(clip_file: str, degrees: float = 45.0) -> tuple[int, int] | N
 def _bone_world(anim, skeleton, frame: int, index: int):
     """World transform of a bone at a frame, composed down the clip's own hierarchy (DX space)."""
     local = []
+    identity = ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
     for i in range(skeleton["bone_count"]):
-        t = anim["tracks"][i]
-        local.append((t["translation"][frame], t["rotation"][frame]))
+        # a partial clip animates fewer tracks than the skeleton has bones (the inquisitor's loadout
+        # ships some), so a missing track is the bone's rest, not an error
+        if i < len(anim["tracks"]):
+            t = anim["tracks"][i]
+            local.append((t["translation"][frame], t["rotation"][frame]))
+        else:
+            local.append(identity)
     world = [None] * len(local)
 
     def resolve(i):

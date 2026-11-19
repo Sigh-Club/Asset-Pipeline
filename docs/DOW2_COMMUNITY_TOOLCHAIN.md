@@ -179,8 +179,29 @@ python3 tools/lab_fidelity.py --lab <lab dir>
 `render_lab.py` takes `--unit=<id>` and a third shot field (`idle:1:head`, `idle:1:weapon`,
 `idle:1:upper`) for the close-ups the gate requires.
 
-Measured on the current build (2026-11-18, session 3): ten units, every one carrying its shipped
-weapon or integral talons, 132 actions including the four composed aim directions per ranged unit,
+### Building a roster, not one unit
+
+`tools/dow2/discover_units.py` finds every unit the shipped data can build and writes both the build
+specs and the game's roster:
+
+```bash
+python3 tools/dow2/discover_units.py --race ig                 # what the data offers
+python3 tools/dow2/discover_units.py --emit-build-specs output/source_lab/roster_specs.json \
+    --select tools/dow2/roster.json
+python3 tools/dow2/discover_units.py --emit-catalogue ../Imperium-of-Ash/frontend/src/three/dow2Roster.ts \
+    --select tools/dow2/roster.json
+python3 tools/dow2/build_community_units.py --specs output/source_lab/roster_specs.json
+```
+
+The link is the game's own: a blueprint's `animator` field names the animation set (the art folder with
+the clips and `.motiontree`), `default_wargear` names the parts, and each part's file carries the
+shipped `render_models`. Two traps: several units' own `.model` is a 5-7 KB skeleton stub with no
+geometry (the body is the wargear armour, and for the ogryn and the Great Unclean One it is missing
+entirely — those are skipped), and some loadouts name clips without the `fb_` prefix, which the action
+library carries as alternative candidates.
+
+Measured on the current build (2026-11-18, session 5): 31 units, every one carrying its shipped
+weapon or integral talons, 407 actions including the four composed aim directions per ranged unit,
 motion peak 0.049-5.94 m per action, the Tau aim set static by design (its stance clip has two
-identical frames), `lab_fidelity` 10 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
+identical frames), `lab_fidelity` 31 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
 shipped rigid reference is 0.0855 on the same clip).

@@ -264,7 +264,14 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, default=ROOT / "output/source_lab/community")
     ap.add_argument("--manifest-dir", type=Path, default=ROOT / "output/source_lab/actions")
     ap.add_argument("--lab", type=Path, default=LAB)
+    ap.add_argument("--specs", type=Path, default=None,
+                    help="extra build specs (JSON, as emitted by discover_units --emit-build-specs)")
     a = ap.parse_args(argv)
+    if a.specs:
+        extra = json.loads(a.specs.read_text())
+        for unit, spec in extra.items():
+            UNITS.setdefault(unit, spec)
+        print(f"specs: {len(extra)} unit(s) from {a.specs}")
     if a.list:
         for unit, spec in sorted(UNITS.items()):
             print(f"{unit:24s} body={spec['body']} head={spec.get('head') or '-'} "
@@ -276,10 +283,23 @@ def main(argv=None) -> int:
     chosen = a.only or sorted(UNITS)
     unknown = [u for u in chosen if u not in UNITS]
     if unknown:
-        raise SystemExit(f"unknown unit(s): {', '.join(unknown)}")
+        # a scripted build passes a list that can outlive a roster edit; report and carry on
+        print(f"skipping unknown unit(s): {', '.join(unknown)}")
+        chosen = [u for u in chosen if u in UNITS]
+        if not chosen:
+            raise SystemExit("no known units to build")
+    failed = []
     for unit in chosen:
-        build(unit, UNITS[unit], root, a.out, a.manifest_dir)
-    print(f"built {len(chosen)} unit(s)")
+        try:
+            build(unit, UNITS[unit], root, a.out, a.manifest_dir)
+        except SystemExit as exc:
+            # one bad unit must not stop a roster build; it is reported at the end
+            print(f"FAILED {unit}: {exc}")
+            failed.append(unit)
+    print(f"built {len(chosen) - len(failed)} of {len(chosen)} unit(s)")
+    if failed:
+        print(f"failed: {', '.join(failed)}")
+        return 1
     return 0
 
 

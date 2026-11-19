@@ -1,6 +1,6 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-18 (session 3).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-18 (session 5).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
 
@@ -36,7 +36,8 @@ locomotion cycles.
 | materials | **working, opaque** | every unit material exports `OPAQUE` + single-sided (the add-on's alpha wiring made every material `BLEND`, which is why units were see-through and lost parts at an angle); `dow2_alphaTest` honoured as MASK where a source declares a cutout |
 | action coverage | **7–21 actions per unit** | see the scorecard below; the four aim directions are new, and the Tau's aim set is static by design (its stance clip is two identical frames) |
 | layering | **aim directions baked, fire/idle layers not** | the shipped single-track upper-body layers are composed onto the stance for `aim_left`/`aim_right`/`aim_up`/`aim_down` (5 units; the necron uses its shipped aim-pivot clips). The `.hkanim` is a clip container (227 embedded packfiles), so the state machine's *other* layer uses (fire over run, idle additive) are still exported as base clips |
-| lab page | **10 units live** | `fidelity.json` regenerated (10 units, 132 actions, 0 FAIL), `UNIT_ASSET_REV 20261150`, dist rebuilt byte-identical to `public/` |
+| lab page | **31 units live** | `fidelity.json` regenerated (31 units, 407 actions, 0 FAIL), `UNIT_ASSET_REV 20261151`, dist rebuilt byte-identical to `public/` |
+| masters conversion | **28 of 52 master entries dropped, 21 roles to go** | `tools/dow2/roster.json` (32 units) → `dow2Roster.ts` → `UNIT_MODELS` prefers the converted unit and drops a master whose archetypes are all covered; the masters tab shrinks on its own as coverage grows |
 | playback speed | **1:1 with the shipped clip** | every action baked at its own duration on one 30 fps timeline; measured 0.000x deviation across 132 actions (`action_motion --timing-only`) |
 
 ### Per-unit scorecard
@@ -79,6 +80,31 @@ loadouts that ship no clip for them, which the manifest records as `not shipped`
 
 The gap to 100 % is the same two things for every unit: the game's layered animation (10 points) and
 the actions their loadout genuinely does not ship.
+
+## 2b. Roster conversion (the masters tab)
+
+The masters tab lists `UNIT_MODELS`; the DoW2 roster is prepended to it and a master is dropped
+automatically once every archetype it serves is covered (`stillNeeded` in `unitModels.ts`). Measured
+now: **52 master entries in the file, 28 dropped by conversion, 24 still rostered** — 7 of those are
+faction `fallback` entries (no archetype), so 21 real roles remain:
+
+| faction | remaining roles |
+|---|---|
+| iron_directorate | pathfinder scout, assault breacher, storm talon, ashrim raider, aegis artillery, logistics engineer |
+| cinderborn | ash stalker, pyre immolator, zealot captain, cinder wraith, son of cinder |
+| chrono_revenants | undying cohort, tomb obelisk |
+| radiant_concord | android, spear strike |
+| wreckstorm_clans | biker, junk goliath, titan fist |
+| void_corsairs | none — converted |
+| parasitic_bloom | none — converted |
+
+Converting one is: add a row to `tools/dow2/roster.json` (ebps stem, faction, archetypes, optional
+body/head overrides), run `discover_units.py --emit-build-specs` + `--emit-catalogue`, build with
+`build_community_units.py --specs`, then the render gate. Two data traps already paid for: several
+units' own `.model` is a skeleton stub with no geometry (the body is the wargear armour — the ogryn and
+the Great Unclean One have *neither*, so they are skipped), and some loadouts name their clips without
+the `fb_` prefix (`aim_stand`, `fire_stand`, `idle_01`, `die_normal_b`), which the action library now
+carries as candidates.
 
 ## 3. Ordered next work
 
