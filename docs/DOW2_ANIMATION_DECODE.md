@@ -86,6 +86,35 @@ Not decoded: 5 clips are `hkInterleavedSkeletalAnimation` instead of delta-compr
 unit). `Packfile.animation()` returns None for those; the action library then picks a delta-compressed
 alternative where one exists.
 
+## The interleaved class (solved 2026-11-18)
+
+`hkInterleavedSkeletalAnimation` is the corpus's other animation class: uncompressed, frame-major
+poses. Its only own member is `transforms` (type-table offset 32), an `hkArray<hkQsTransform>` of
+48-byte records — translation vec4, rotation vec4, scale vec4 — indexed
+`transforms[frame * numberOfTracks + track]`. `Packfile._interleaved_animation()` decodes it into the
+same track shape the delta decoder returns, and `validate_animation()` checks it against the file's own
+`hkSkeleton.referencePose`.
+
+The order is proven, not assumed: read frame-major, frame 0 reproduces the reference pose's rotations
+exactly (0.000 deg on the chaos lord's `fb_run`); read track-major the same file's bones are 177 deg
+out. There is no reference-pose anchoring in this class, so frame-0 *translations* are the clip's own
+pose and are reported, not asserted (the chaos run starts 0.442 m below its bind height). Scale is
+reported too: some shipped clips legitimately scale (the wraithlord's sync kills run a uniform 3.254).
+
+Measured over the full extracted tree (7,814 `.hkx`): 182 files carry this class, **151 validate**
+against their own reference pose. The 31 that do not are partial-track clips (fewer tracks than bones —
+structures, upper-body overlays) or carry no skeleton; one (`tyrant_guard/fb_charge`) sits at a
+consistent ~90 deg body yaw across the whole clip, i.e. an authored pose, not a decode error.
+
+The packaged source subset ships 5 of them, all in the chaos lord loadout. Decoding them gives the
+chaos sorcerer its true `run` (`fb_sprint`), its `walk` (`fb_run`) and its attacks 1-3, and adds
+`melee_01..03` to every loadout that ships them. The claim that this also cost the *necron* its run was
+wrong: no necron loadout ships an interleaved clip (checked across all 37 of its clips), so its
+`walk`/`run` are the shipped `necron_overlord_wlk_f`.
+
+`ragdoll.hkx` is not interleaved and not delta-compressed: two shipped files carry no animation object
+at all (`000_data/.../ragdoll.hkx` on the eldar and the ork). They are placeholders, not a format gap.
+
 ## The action library
 
 `tools/dow2/action_library.py` turns the clips into named actions with their shipped timing and events:
@@ -131,3 +160,8 @@ relative form, frame 1 of every action measures 0.0–0.02 torn edges.
   The gate exempts a metric only when the build is no worse than that reference.
 * `python3 tools/lab_fidelity.py --lab <lab>` — regenerates `fidelity.json` from every unit's action
   set, measuring the worst keyframe of every action.
+* `python3 tools/dow2/action_motion.py --lab <lab> [--static-only]` — what each action actually does:
+  peak bone travel over *every* frame (not frame 0 against 75 %, which reported the Tau fire recoil as
+  0.001 m when the clip moves 0.282 m inside its first 20 frames), the acting hand's peak speed and
+  effect time, and the lowest mesh point per action. It decides static vs moving; the render decides
+  correct.

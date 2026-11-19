@@ -71,20 +71,92 @@ for ob in list(bpy.data.objects):
     bpy.data.objects.remove(ob, do_unlink=True)
 
 # ------------------------------------------------------------------ assembly, by the add-on
+#
+# The add-on imports EVERY damage state and EVERY LoD of every mesh group (measured: the farseer's
+# model carries a `healthy` and a `wreck` group, and its head arrives as two coincident 865-vertex
+# copies — one per state — plus a third at LoD2). The game draws one state at one LoD, so exporting
+# all of them stacks coincident copies on the mesh. Each part is therefore pruned as it arrives to
+# its `healthy` group and to the LOWEST LoD that part ships — not to a global `lod0`: the LoD
+# numbering is per model and some parts (the chaos sorcerer's head and backpack) are authored only
+# at LoD2, so a global lod0 rule deletes them.
+KEEP_GROUP = "healthy"
+
+
+def prune_part(label, before):
+    new = [o for o in bpy.data.objects if o.type == "MESH" and o not in before]
+    if not new:
+        print(f"PRUNE {label}: no new mesh objects")
+        return
+    keepable = [o for o in new if str(o.get("dow2_group", KEEP_GROUP)) == KEEP_GROUP]
+    lowest = min((int(o.get("dow2_lod", 0)) for o in keepable), default=0)
+    drop = [o for o in new
+            if str(o.get("dow2_group", KEEP_GROUP)) != KEEP_GROUP
+            or int(o.get("dow2_lod", 0)) != lowest]
+    kept = len(new) - len(drop)
+    for ob in drop:
+        bpy.data.objects.remove(ob, do_unlink=True)
+    print(f"PRUNE {label}: {len(new)} meshes -> {kept} (group {KEEP_GROUP}, lod {lowest}), "
+          f"dropped {len(drop)}")
+
+
 for i, part in enumerate(A.part):
+    before = [o for o in bpy.data.objects]
     bpy.ops.import_scene.dow2_model(filepath=str(part), merge=(i > 0), reset_scene=False)
     print(f"IMPORTED part {Path(part).name} merge={i > 0}")
+    prune_part(Path(part).name, before)
 if A.weapon:
+    before = [o for o in bpy.data.objects]
     bpy.ops.import_scene.dow2_model(filepath=str(A.weapon), merge=True, reset_scene=False)
     print(f"IMPORTED weapon {Path(A.weapon).name}")
+    prune_part(Path(A.weapon).name, before)
 
 arm = next((o for o in bpy.data.objects if o.type == "ARMATURE"), None)
 if arm is None:
     raise SystemExit("the add-on produced no armature")
+
 meshes = [o for o in bpy.data.objects if o.type == "MESH"]
 print(f"ASSEMBLED armature={arm.name} bones={len(arm.data.bones)} meshes={len(meshes)} "
       f"verts={sum(len(m.data.vertices) for m in meshes)} "
       f"arm_scale={tuple(round(v, 4) for v in arm.matrix_world.to_scale())}")
+
+# ---------------------------------------------------------------- materials, opaque by default
+# The add-on wires every material's diffuse alpha into the Principled Alpha and sets the blend
+# mode to HASHED. glTF has no hashed mode, so Blender's exporter writes `alphaMode: BLEND` for all
+# of them — and a BLEND material in three.js is drawn without depth writes and sorted per object,
+# which is why the lab units could be seen through and why parts vanished at an angle (the necron
+# overlord's face among them). DoW2's own materials say what they are: `dow2_alphaTest` is the
+# shipped cutout flag, and it is false on every unit material here (measured: necron body, cape,
+# headdress, cadian head, ig armour, ig kit — their diffuse alpha is opaque apart from 0-3 % of
+# unused atlas pixels). So the alpha is removed (OPAQUE) unless the source declares a cutout, in
+# which case a ROUND node is inserted, which is the graph the exporter maps to MASK/cutoff 0.5.
+# Backface culling is switched on to match the game: it draws these shells single-sided, and
+# double-sided drawing is what lets interior faces show through a hole.
+alpha_report = {"opaque": 0, "cutout": 0}
+for mat in bpy.data.materials:
+    if not mat.use_nodes or not mat.name.startswith("relic."):
+        continue
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    bsdf = next((n for n in nodes if n.type == "BSDF_PRINCIPLED"), None)
+    if bsdf is None:
+        continue
+    alpha = bsdf.inputs["Alpha"]
+    cutout = bool(mat.get("dow2_alphaTest", False))
+    if cutout and alpha.is_linked:
+        src = alpha.links[0].from_socket
+        clip = nodes.new("ShaderNodeMath")
+        clip.operation = "ROUND"
+        clip.location = (bsdf.location.x - 320, bsdf.location.y - 620)
+        links.new(src, clip.inputs[0])
+        links.new(clip.outputs[0], alpha)
+        alpha_report["cutout"] += 1
+    else:
+        for link in list(alpha.links):
+            links.remove(link)
+        alpha.default_value = 1.0
+        alpha_report["opaque"] += 1
+    mat.use_backface_culling = True
+print(f"MATERIALS alpha: {alpha_report['opaque']} opaque, {alpha_report['cutout']} cutout "
+      f"(dow2_alphaTest), backface culling on")
 
 # ------------------------------------------------------------------ clips, by the add-on's maths
 rest_world = {b.name.lower(): b.matrix_local @ BONE_AXIS_ADAPTER_INV for b in arm.data.bones}

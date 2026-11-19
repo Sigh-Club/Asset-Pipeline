@@ -241,8 +241,6 @@ class Packfile:
     def census(self) -> dict[str, int]:
         """Class name -> object count in the data section."""
         counts: dict[str, int] = {}
-        for _offset, _section, classname in self.objects_by_class().items():
-            pass
         for name, offsets in self.objects_by_class().items():
             counts[name] = len(offsets)
         return dict(sorted(counts.items(), key=lambda kv: -kv[1]))
@@ -594,12 +592,14 @@ class Packfile:
         Rotations with a W component of +/-2 are the "smallest three" encoding: W is dropped and
         reconstructed from the remaining three components.
 
-        Returns None when the file carries no delta-compressed animation (five clips in the
-        shipped corpus are interleaved; those are not decoded here).
+        Returns None when the file carries no animation at all. Five clips in the shipped
+        corpus (all in the chaos lord loadout: `fb_run`, `fb_sprint`, `fb_melee_attack_01..03`)
+        are `hkInterleavedSkeletalAnimation` instead of delta-compressed; those are decoded by
+        `_interleaved_animation()` and returned in the same shape.
         """
         found = self.objects_by_class().get("hkDeltaCompressedSkeletalAnimation")
         if not found:
-            return None
+            return self._interleaved_animation()
         obj = found[0]
         delta = self.member_offsets("hkDeltaCompressedSkeletalAnimation")
         qfields = self.member_offsets("hkDeltaCompressedSkeletalAnimationQuantizationFormat")
@@ -655,6 +655,70 @@ class Packfile:
             "quantizedDataSize": quantizedDataSize,
             "dynamic_dofs_used": sum(len(d) for d in dynamic),
             "static_dofs_used": static_used,
+            "tracks": tracks,
+        }
+
+    def _interleaved_animation(self) -> dict | None:
+        """Decode an `hkInterleavedSkeletalAnimation` (uncompressed, frame-interleaved poses).
+
+        This is the other animation class the shipped corpus carries. Its only own member is
+        `transforms` (type table offset 32): an `hkArray<hkQsTransform>` of 48-byte records,
+        frame-major — `transforms[frame * numberOfTracks + track]`, which is the layout Havok's
+        own `hkInterleavedSkeletalAnimation::m_transforms` documents and what the file's own
+        dimensions confirm (array length / track count = the clip's frame count, integral for
+        every shipped file). Each record is translation vec4, rotation vec4, scale vec4.
+
+        Unlike the delta-compressed class there is no reference-pose anchoring: frame 0 is the
+        clip's first animated frame, so its rotations still equal the file's `hkSkeleton`
+        reference pose (measured 0.00 deg on the chaos lord run) while its translations carry
+        the pose's own hip height (1.458 m against the bind pose's 1.901 m). Reading the array
+        track-major instead puts the bones 177 deg out — the check that settles the order.
+        """
+        found = self.objects_by_class().get("hkInterleavedSkeletalAnimation")
+        if not found:
+            return None
+        obj = found[0]
+        inter = self.member_offsets("hkInterleavedSkeletalAnimation")
+        base = self.member_offsets("hkSkeletalAnimation")
+        if not inter or not base:
+            raise HkxError("type table is missing the animation classes")
+        data = self.data()
+
+        def u32(offset: int) -> int:
+            return struct.unpack_from("<I", data, offset)[0]
+
+        def f32(offset: int) -> float:
+            return struct.unpack_from("<f", data, offset)[0]
+
+        numTracks = u32(obj + base["numberOfTracks"])
+        duration = f32(obj + base["duration"])
+        array_at = self.resolve(obj + inter["transforms"])
+        count = u32(obj + inter["transforms"] + 4)
+        if not numTracks or not array_at or count % numTracks:
+            raise HkxError(f"interleaved animation: {count} transforms for {numTracks} tracks")
+        frames = count // numTracks
+        tracks = []
+        for track in range(numTracks):
+            frame = {"translation": [], "rotation": [], "scale": []}
+            for f in range(frames):
+                rec = struct.unpack_from("<12f", data, array_at + (f * numTracks + track) * 48)
+                frame["translation"].append(list(rec[0:3]))
+                frame["rotation"].append(list(rec[4:8]))
+                frame["scale"].append(list(rec[8:11]))
+            tracks.append(frame)
+        return {
+            "object": obj,
+            "format": "interleaved",
+            "duration": duration,
+            "numberOfPoses": frames,
+            "blockSize": frames,
+            "numTracks": numTracks,
+            "numDynamicDOFs": numTracks * 10,
+            "preserved": frames,
+            "frame_rate": frames / duration if duration else 0.0,
+            "quantizedDataSize": count * 48,
+            "dynamic_dofs_used": count * 10,
+            "static_dofs_used": 0,
             "tracks": tracks,
         }
 
@@ -800,10 +864,13 @@ class Packfile:
         Each track carries a name (the bone it belongs to) and a list of `(time, text)`
         annotations — the shipped action events (`sfx_*`, `marker`, ...).
         """
-        found = self.objects_by_class().get("hkDeltaCompressedSkeletalAnimation")
-        if not found:
+        found = self.objects_by_class()
+        for name in ("hkDeltaCompressedSkeletalAnimation", "hkInterleavedSkeletalAnimation"):
+            if found.get(name):
+                obj = found[name][0]
+                break
+        else:
             return []
-        obj = found[0]
         base = self.member_offsets("hkSkeletalAnimation")
         ann = self.member_offsets("hkAnnotationTrack")
         note = self.member_offsets("hkAnnotationTrackAnnotation")
@@ -879,13 +946,21 @@ def validate_animation(path, tolerance_translation=1e-3, tolerance_rotation=8.0)
     pass this: it compares against data the decoder does not produce. The block decoder's byte
     accounting is checked too (it must consume exactly the declared ranges).
 
+    An interleaved clip is validated on the same reference pose's *rotations* (they must match
+    exactly: the format is uncompressed) plus unit quaternions on every record. Its frame-0
+    translations are the clip's own first pose, not the bind pose — the chaos lord's run starts
+    0.442 m below its bind height — so they are reported, not asserted; the rotation match is what
+    proves the array's frame-major order (read track-major, the bones are 177 deg out). Scale is
+    reported too but not asserted: some shipped clips legitimately scale (the wraithlord's sync
+    kills run a uniform 3.254).
+
     Returns a report with the measured maxima; raises HkxError when the check fails.
     """
     pf = Packfile.open(path)
     anim = pf.animation()
     sk = pf.skeleton()
     if anim is None:
-        raise HkxError(f"{path}: no delta-compressed animation")
+        raise HkxError(f"{path}: no animation object")
     if sk is None:
         raise HkxError(f"{path}: no skeleton")
     if anim["numTracks"] != sk["bone_count"]:
@@ -897,8 +972,17 @@ def validate_animation(path, tolerance_translation=1e-3, tolerance_rotation=8.0)
         dr = quat_angle(frame["rotation"][0], pose["rotation"])
         max_t = max(max_t, dt)
         max_r = max(max_r, dr)
+    interleaved = anim.get("format") == "interleaved"
+    worst_q = worst_s = 0.0
+    if interleaved:
+        for track in anim["tracks"]:
+            for quat in track["rotation"]:
+                worst_q = max(worst_q, abs(math.sqrt(sum(v * v for v in quat)) - 1.0))
+            for scale in track["scale"]:
+                worst_s = max(worst_s, max(abs(v - 1.0) for v in scale))
     report = {
         "file": str(path),
+        "format": anim.get("format", "delta"),
         "bones": sk["bone_count"],
         "frames": anim["numberOfPoses"],
         "duration": anim["duration"],
@@ -906,8 +990,16 @@ def validate_animation(path, tolerance_translation=1e-3, tolerance_rotation=8.0)
         "dynamic_dofs": anim["numDynamicDOFs"],
         "max_translation_error": max_t,
         "max_rotation_error_deg": max_r,
-        "pass": max_t <= tolerance_translation and max_r <= tolerance_rotation,
+        "max_quaternion_norm_error": worst_q,
+        "max_scale_error": worst_s,
     }
+    if interleaved:
+        report["pass"] = max_r <= tolerance_rotation and worst_q <= 1e-3
+        if not report["pass"]:
+            raise HkxError(f"{path}: interleaved frame 0 rotations do not reproduce the reference "
+                           f"pose (dR {max_r:.3f} deg, quat norm {worst_q:.2g})")
+        return report
+    report["pass"] = max_t <= tolerance_translation and max_r <= tolerance_rotation
     if not report["pass"]:
         raise HkxError(f"{path}: frame 0 does not reproduce the reference pose "
                        f"(dT {max_t:.6g} m, dR {max_r:.3f} deg)")
@@ -928,6 +1020,7 @@ def decode_report(path, verbose=True):
             "duration", "numberOfPoses", "blockSize", "numTracks", "numDynamicDOFs",
             "preserved", "frame_rate", "quantizedDataSize", "dynamic_dofs_used",
             "static_dofs_used")}
+        rep["animation"]["format"] = anim.get("format", "delta")
         events = [e for e in p.animation_events() if e["events"]]
         rep["events"] = events
     if verbose:
@@ -935,15 +1028,16 @@ def decode_report(path, verbose=True):
         for h in hits:
             print(f"  header at data offset {h[0]}: type={h[1]} duration={h[2]}s tracks={h[3]}")
         if anim:
-            print(f"  decoded: {anim['numberOfPoses']} frames, {anim['duration']:.3f} s "
-                  f"({anim['frame_rate']:.2f} fps), {anim['numTracks']} tracks, "
-                  f"{anim['numDynamicDOFs']} dynamic DOFs, {anim['quantizedDataSize']} bytes")
+            print(f"  decoded ({anim.get('format', 'delta')}): {anim['numberOfPoses']} frames, "
+                  f"{anim['duration']:.3f} s ({anim['frame_rate']:.2f} fps), "
+                  f"{anim['numTracks']} tracks, {anim['numDynamicDOFs']} dynamic DOFs, "
+                  f"{anim['quantizedDataSize']} bytes")
             print(f"  consumed: {anim['dynamic_dofs_used']} dynamic samples, "
                   f"{anim['static_dofs_used']} static DOFs")
             for e in rep.get("events", [])[:12]:
                 print(f"    {e['bone']}: {[(round(x['time'], 3), x['text']) for x in e['events']]}")
         else:
-            print("  no delta-compressed animation in this file")
+            print("  no animation in this file")
     return rep
 
 

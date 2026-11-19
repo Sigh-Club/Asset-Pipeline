@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 ENTRY = re.compile(r'render_model\s*=\s*"art[\\/]([^"]+)"', re.IGNORECASE)
+ATTACH = re.compile(r'attachment\s*=\s*"art[\\/]([^"]+)"', re.IGNORECASE)
 
 # DoW2 lists the SAME logical part at several quality tiers in one `render_models` block — e.g.
 # `ig_armour_epic` and `ig_armour` are one body at epic and common quality, not two parts to weld
@@ -59,13 +60,54 @@ def preferred_tier(paths: list[str]) -> list[str]:
     return out
 
 
-def resolve(wargear: Path, roots: list[Path]):
-    text = wargear.read_text(errors="replace")
-    raw = [m.group(1).replace("\\", "/") for m in ENTRY.finditer(text)]
-    wanted = preferred_tier(raw)
-    if len(raw) != len(wanted):
-        print(f"# de-duplicated {len(raw)} render_models to {len(wanted)} logical part(s)",
-              file=sys.stderr)
+def entries_outside_chapters(text: str, pattern: re.Pattern) -> list[str]:
+    """The `pattern` matches in `text` that are not inside a `chapter_*` block.
+
+    DoW2 duplicates a slot for DLC army-painter variants under `chapter_render_models`,
+    `chapter_animator_attachment` and friends — the Ork Freebooterz DLC swaps the warboss's choppa
+    for a cutlass, the Imperial Guard Death Korps swaps the head. They are alternatives for the
+    SAME slot, so importing them welds two weapons into one hand (measured: the warboss arrived with
+    a cutlass it does not carry) or two heads onto one neck. A chapter block opens on a bare
+    `chapter_*` line and closes at its matching brace; `chapter_key_name = "..."` is a field, not a
+    block, and is ignored as an opener.
+    """
+    out: list[str] = []
+    chapter_depth = None
+    depth = 0
+    for line in text.splitlines():
+        stripped = line.strip()
+        if chapter_depth is None and stripped.startswith("chapter_") and "=" not in stripped:
+            chapter_depth = depth
+        for ch in stripped:
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if chapter_depth is not None and depth <= chapter_depth:
+                    chapter_depth = None
+        if chapter_depth is not None:
+            continue
+        m = pattern.search(stripped)
+        if m:
+            out.append(m.group(1).replace("\\", "/"))
+    return out
+
+
+def resolve_attachments(ebps: Path, roots: list[Path]):
+    """The unit's `animator_attachments` parts (the head, and any attached kit), resolved.
+
+    A unit's head is not in its wargear: the game attaches it from the unit blueprint's
+    `animator_attachments` block (measured: `cadian_trooper` for the guardsmen squad,
+    `warboss_01` for the warboss). The chapter variants under `chapter_animator_attachment`
+    are cosmetic DLC swaps for the same slot, so they are skipped — including them would weld
+    two heads onto one neck.
+    """
+    text = ebps.read_text(errors="replace")
+    raw = entries_outside_chapters(text, ATTACH)
+    return _locate(preferred_tier(raw), roots)
+
+
+def _locate(wanted: list[str], roots: list[Path]):
     found, missing = [], []
     for rel in wanted:
         rel = re.sub(r"\.model$", "", rel, flags=re.IGNORECASE)
@@ -85,14 +127,30 @@ def resolve(wargear: Path, roots: list[Path]):
     return found, missing
 
 
+def resolve(wargear: Path, roots: list[Path]):
+    text = wargear.read_text(errors="replace")
+    raw = entries_outside_chapters(text, ENTRY)
+    wanted = preferred_tier(raw)
+    if len(raw) != len(wanted):
+        print(f"# de-duplicated {len(raw)} render_models to {len(wanted)} logical part(s)",
+              file=sys.stderr)
+    return _locate(wanted, roots)
+
+
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--wargear", required=True)
+    ap.add_argument("--ebps", action="append", default=[],
+                    help="a unit blueprint whose animator_attachments carry the head")
     ap.add_argument("--art", action="append", required=True)
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     roots = [Path(r) for r in a.art]
     found, missing = resolve(Path(a.wargear), roots)
+    for ebps in a.ebps:
+        more, lost = resolve_attachments(Path(ebps), roots)
+        found.extend(more)
+        missing.extend(lost)
     if a.json:
         import json
         print(json.dumps({"parts": [str(p) for p in found], "missing": missing}))

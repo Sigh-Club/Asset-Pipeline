@@ -43,33 +43,31 @@ curl the primary source.
 - **Pose application** is the add-on's own sequence: `dx_to_blender(track local)` → world → `rest^-1 @
   (parent^-1 @ world)` → adapter conjugation → keyframe. Export uses
   `export_optimize_animation_size=False`.
-- **Clip decode** (`tools/hkx/hkxread.py`): packfile, type table, fixups, delta-compressed tracks,
-  annotation events; frame 0 reproduces each file's own reference pose to 1e-5 m.
+- **Clip decode** (`tools/hkx/hkxread.py`): packfile, type table, fixups, delta-compressed **and**
+  interleaved tracks, annotation events; frame 0 reproduces each file's own reference pose (delta:
+  1e-5 m; interleaved: rotations exact, 151 of 182 corpus clips validate, the rest are partial-track).
 - **Action library** (`tools/dow2/action_library.py`): named actions with the shipped timed events
   from the unit's `.motiontree`.
-- **Seven lab units build and animate**: guardsman (14 actions), chaos sorcerer (10), eldar farseer
-  (11), ork warboss (11), tyranid lictor (10), necron overlord (7), tau battlesuit (11). All have a
-  walk with real leg motion.
+- **Seven lab units build and animate, table-driven** (`tools/dow2/build_community_units.py`):
+  guardsman 17 actions, chaos 13, eldar 14, warboss 14, lictor 13, tau 11, necron 9, each carrying its
+  shipped weapon (or integral talons). Damage states and extra LoDs are pruned per part, materials
+  export opaque, and `fidelity.json` reports 7 units / 91 actions / 0 FAIL.
 - **Gates**: `tools/rig_fidelity.py`, `tools/lab_fidelity.py` (regenerates `lab/fidelity.json`),
   `tools/render_lab.py` (renders every unit).
 - **Source packaging**: `tools/sources/pack_sources.py` + `fetch_sources.py`, release `source-v3`.
 
 ### Ordered remaining work
 
-1. **Interleaved clip decoder** (`hkInterleavedSkeletalAnimation`): `fb_run`, `fb_sprint`,
-   `fb_melee_attack_01..03`, `fb_reload_stand`, `ragdoll` are not decoded, which costs chaos and
-   necron their true run and melee attacks 1–3. The last format gap.
-2. **Tau `aim` and `fire` are static**: aim is a 2-pose clip whose poses are identical; fire has 91
-   keys but 0.003 m of motion. Diagnose the pose application for those clips.
-3. **Eldar face renders near-black**: the head is textured (`farseer_head_dif` is embedded) and the
-   face submesh uses the shared material `standard_15`. Check its UVs against the atlas and its
-   metalness/base colour.
-4. **Weapons 1:1 for chaos, eldar, warboss** (bolt pistol/stave, witchblade/spear, big shoota/choppa).
-   Import the shipped weapon model as an extra `--part`, exactly like a head.
-5. **Layered animation**: decode the `.hkanim` state machine and bake the composed pose (base +
-   upper-body layers), which is what the game actually shows.
-6. **More units**: the remaining Tau troops (drones) and other factions' loadouts, same table-driven
-   build.
+1. **Layered animation** (`.hkanim`): decode the state machine and bake the composed pose (base +
+   upper-body). This is the only remaining fidelity gap that affects every unit — the exported
+   `aim`/`fire` are base clips, so the weapon is carried but not raised by the layer that raises it.
+2. **More units**: the remaining Tau troops (drones) and other factions' loadouts, same table-driven
+   build (`tools/dow2/build_community_units.py` — add a row).
+3. **Ground contact per action**: deaths, getups and leaps legitimately go below the origin because
+   the shipped clip carries the fall (measured: lictor leap 1.34 m, guardsman getup 1.42 m). A
+   turn-based consumer that pins units to the floor needs a per-action root offset.
+4. **Action coverage where the loadout allows**: the necron (9 actions) and tau (11) are the thin ones;
+   their loadouts ship fewer clips, so this is a unit-choice question, not a decoder gap.
 
 ### Testing — visual first, numeric second
 
@@ -112,17 +110,14 @@ cd /run/media/talzanar/games/Projects/IoA/asset-pipeline
 export DOW2_RETRIB=~/dow2-sources
 R=$DOW2_RETRIB/sga_art
 
-# action manifest for a unit
-python3 tools/dow2/action_library.py --loadout "<loadout dir>" \
-  --motiontree "<unit>.motiontree" --unit <unit> --out output/source_lab/actions/<unit>.json
+# the table-driven build (writes the manifest, assembles, prunes, exports, copies to the lab)
+python3 tools/dow2/build_community_units.py --list
+python3 tools/dow2/build_community_units.py --only <unit>        # or no --only for all seven
 
-# build it (body, head, weapon)
-blender -b -P tools/blender/dow2_import_community.py -- --id <unit> \
-  --out output/source_lab/community --manifest output/source_lab/actions/<unit>.json \
-  --part <body.model> [--part <head.model>] [--weapon <weapon.model>]
-
-# visual gate
-blender -b -P tools/render_lab.py -- output/source_lab/community /tmp/renders idle:1 fire:30 walk:10 death:30
+# visual gate, with the required close-ups
+blender -b -P tools/render_lab.py -- output/source_lab/community /tmp/renders --unit=<unit> \
+  idle:1 idle:60 fire:30 fire:45 walk:10 walk:20 death:30 death:60 idle:1:head idle:1:weapon
+python3 tools/dow2/action_motion.py --lab output/source_lab/community --static-only
 
 # deformation gate + lab report
 python3 tools/rig_fidelity.py <unit.glb> --clip <action> --frame <n>
@@ -150,6 +145,7 @@ cd .. && npm run guard:glb && npm run guard:assets
 
 ### The one-line summary
 
-The models, rigs, weights, materials, heads, weapons and clips are imported 1:1 with the community
-toolchain and verified by rendering; what remains is the interleaved clip format, two broken Tau
-actions, one dark eldar material, four missing weapons, and the game's layered animation.
+The models, rigs, weights, materials, heads, weapons and clips (both clip formats) are imported 1:1
+with the community toolchain, pruned to the shipped healthy/LoD0 set, exported opaque and verified by
+rendering; what remains is the game's layered `.hkanim` animation, more units, and per-action ground
+contact.

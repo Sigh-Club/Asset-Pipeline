@@ -68,6 +68,14 @@ ACTIONS: dict[str, list[str]] = {
               "fb_melee_attack_03", "fb_melee_01", "fb_melee_02", "fb_melee_03",
               "fb_special_attack_01", "necron_overlord_melee_01", "necron_overlord_melee_02",
               "fb_melee_parry_01", "fb_melee_parry_02", "fb_melee_parry_03"],
+    # The attack chain as the game ships it: three separate swings, each with its own timing and
+    # events. `melee` above stays the single default an action system can trigger without knowing
+    # the chain; these expose the individual attacks so a turn-based system can pick one per turn
+    # instead of replaying the same swing. Measured: the three are distinct clips (chaos 46 frames
+    # each, different hand travel), not duplicates of one motion.
+    "melee_01": ["fb_melee_attack_01", "necron_overlord_melee_01", "fb_melee_01"],
+    "melee_02": ["fb_melee_attack_02", "necron_overlord_melee_02", "fb_melee_02"],
+    "melee_03": ["fb_melee_attack_03", "fb_melee_03"],
     "grenade": ["fb_grenade", "fb_grenade_rangeenergy", "fb_grenade_throw",
                 "fb_grenade_throw_01"],
     "ability": ["fb_ability_flare", "fb_ability_casting01_enter", "fb_ability_drainlife_enter",

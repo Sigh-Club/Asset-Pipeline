@@ -54,7 +54,33 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
    The add-on builds the armature from the model's own `FOLDSKEL`, applies the bone-axis adapter,
    binds the shipped weights and resolves the materials (it imports `_dif`, `_nrm`, `_spc`, `_emi`).
 
-2. **Pose with the add-on's own maths** (`animation/import_core.py`): for each tracked bone,
+   **Prune what the add-on imports, per part.** It imports every damage state (`healthy`, `wreck`)
+   and every LoD of every mesh group, and the game draws one of each. Exporting them all stacks
+   coincident copies: the farseer's head arrived as two 865-vertex copies (one per state) plus a
+   third at LoD2, and the eldar face rendered as a grey plate with a hole because the wreck head was
+   drawn over the healthy one. Keep `dow2_group == "healthy"` and the **lowest LoD that part
+   actually ships** — not a global `lod0`: the chaos sorcerer's head and backpack are authored only
+   at LoD2, and a global rule deletes them (measured: 4 meshes -> 1).
+
+2. **Weapons come from the unit blueprint's `default_wargear`, through the weapon's own wargear
+   file.** `default_wargear` names the items (`chaos_sorcerer_hero.txt` -> sorcerer_default_sword +
+   bolt_pistol_sorcerer; `eld_farseer.txt` -> witchblade + shuriken pistol; `ork_warboss.txt` ->
+   twin-linked shoota + huge choppa; the Tau commander -> plasma rifle + shield) and each item's
+   `render_models` names the shipped model. Two traps here: a `chapter_render_models` block is a DLC
+   swap for the same slot (the Ork Freebooterz cutlass beside the choppa), and some wargear is an
+   attachment with no model at all (the Tau `shield_default`). Both are skipped by
+   `tools/dow2/parts.py:entries_outside_chapters`.
+
+3. **Materials must export opaque unless the source declares a cutout.** The add-on wires every
+   material's diffuse alpha into the Principled Alpha and sets the blend mode to HASHED; glTF has no
+   hashed mode, so the exporter writes `alphaMode: BLEND` for all of them, and a BLEND material is
+   drawn without depth writes and sorted per object — which is why the lab units could be seen
+   through and parts vanished at an angle. `dow2_alphaTest` is the shipped cutout flag and it is
+   false on every unit material measured here, so the alpha is removed (OPAQUE); where it is true, a
+   `Math: ROUND` node is inserted, which is the graph Blender's exporter maps to MASK/cutoff 0.5.
+   Backface culling is switched on to match the game.
+
+4. **Pose with the add-on's own maths** (`animation/import_core.py`): for each tracked bone,
 
    ```
    L  = dx_to_blender(track local)
@@ -91,9 +117,9 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
 - `export_optimize_animation_size` (default on) silently empties animations.
 - A clip whose hierarchy differs from the model's (necron 57 vs 54 bones) must not be placed by world
   matrix; use the rest-delta form against the nearest mapped ancestor.
-- Five clip families are `hkInterleavedSkeletalAnimation`, which `hkxread` does not decode:
-  `fb_run`, `fb_sprint`, `fb_melee_attack_01..03`, `fb_reload_stand`, `ragdoll` (which ones varies by
-  unit). The action library falls back to a delta-compressed alternative.
+- Five clip families are `hkInterleavedSkeletalAnimation`. They are decoded now (see
+  `docs/DOW2_ANIMATION_DECODE.md`); a build that still shows a fallback clip is reading a stale
+  manifest.
 
 ## Where each unit's data lives
 
@@ -109,19 +135,34 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
 
 ## The build and the gates
 
+The table-driven build is `tools/dow2/build_community_units.py` — one row per unit naming the
+blueprint, the wargear, the head attachment, the weapons and the loadout, all shipped files:
+
 ```bash
-# one unit
-blender -b -P tools/blender/dow2_import_community.py -- --id <unit> --out <dir> \
-  --manifest output/source_lab/actions/<unit>.json \
-  --part <body.model> [--part <head.model>] [--weapon <weapon.model>]
+export DOW2_RETRIB=<unpacked DoW2 data>          # needs sga_art/ and attrib-decoded/
+python3 tools/dow2/build_community_units.py --list
+python3 tools/dow2/build_community_units.py --only dow_chaos_sorcerer   # one unit
+python3 tools/dow2/build_community_units.py                            # all seven
+```
 
+It writes the action manifest, assembles through the add-on, prunes states/LoDs, fixes the materials,
+exports, and copies the GLB plus `.actions.json` into the game's lab. A build that does not print
+`EXPORTED` is a failure.
+
+```bash
 # renders (the visual gate; a numeric gate cannot see a wrong bind)
-blender -b -P tools/render_lab.py -- <glb dir> <png dir> idle:1 fire:30
+blender -b -P tools/render_lab.py -- <glb dir> <png dir> idle:1 fire:30 idle:1:head idle:1:weapon
 
-# deformation gate, and the per-action report the lab page reads
+# deformation gate, motion screen, and the per-action report the lab page reads
 python3 tools/rig_fidelity.py <unit.glb> --clip <action> --frame <n>
+python3 tools/dow2/action_motion.py --lab <glb dir> --static-only
 python3 tools/lab_fidelity.py --lab <lab dir>
 ```
 
-Measured on the current build: seven units, all with a walk action and real leg motion (chaos 0.07 m,
-eldar 0.13 m, necron 1.59 m), worst tear 0.0016–0.116 against the shipped rigid assignment.
+`render_lab.py` takes `--unit=<id>` and a third shot field (`idle:1:head`, `idle:1:weapon`,
+`idle:1:upper`) for the close-ups the gate requires.
+
+Measured on the current build (2026-11-18): seven units, every one carrying its shipped weapon or
+integral talons, 91 actions, motion peak 0.049-5.94 m per action, one action static by design (the Tau
+`aim`, whose source clip has two identical frames), `lab_fidelity` 7 units / 0 FAIL, worst tear 0.0852
+on the farseer's cloth (its shipped rigid reference is 0.0855 on the same clip).

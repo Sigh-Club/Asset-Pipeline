@@ -2,6 +2,55 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 2)
+
+### Added
+
+- `tools/hkx/hkxread.py`: `hkInterleavedSkeletalAnimation` decoder (frame-major `hkQsTransform`
+  array, no reference-pose anchoring) and interleaved-aware validation. Measured: frame-0 rotations
+  reproduce each file's own `hkSkeleton` reference pose exactly (0.000 deg); read track-major the same
+  file is 177 deg out. Corpus sweep: 151 of 182 interleaved clips validate, the rest are partial-track
+  or skeleton-less. Gives the chaos sorcerer its true `run`/`walk`/`melee` and adds `melee_01..03` to
+  every loadout that ships them.
+- `tools/dow2/build_community_units.py`: table-driven build for all seven lab units — blueprint,
+  wargear, head attachment, `default_wargear` weapons and loadout per row, resolved to shipped files,
+  assembled through the community add-on, pruned, exported and copied into the game's lab.
+- `tools/dow2/action_motion.py`: per-action peak bone travel over every frame, acting-hand peak speed
+  and effect time, and lowest mesh point. Replaces the frame-0-vs-75 % screen that reported the Tau
+  fire recoil as 0.001 m.
+- `tools/render_lab.py`: `--unit=<id>` filter and close-up views (`:head`, `:weapon`, `:upper`), robust
+  percentile framing, and weapon framing on the weapon mesh rather than its bone.
+- `tools/dow2/parts.py`: `--ebps` (resolves a unit's `animator_attachments` head) and
+  `entries_outside_chapters()` — `chapter_*` blocks are DLC swaps for the same slot (the Ork
+  Freebooterz cutlass beside the warboss's choppa) and must not be imported as extra parts.
+- Shipped weapons for every unit, from each blueprint's `default_wargear`: chaos power sword + bolt
+  pistol, eldar witchblade + shuriken pistol, warboss kustom shoota + huge choppa, Tau plasma rifle,
+  plus the existing guardsman lasgun and necron tachyon arrow.
+
+### Fixed
+
+- Units could be seen through and lost parts at an angle (the necron overlord's face was the clearest
+  case): every material exported as `alphaMode: BLEND` because the add-on wires diffuse alpha into the
+  Principled Alpha with a HASHED blend mode glTF cannot express. Materials now export `OPAQUE` unless
+  the source's `dow2_alphaTest` declares a cutout (MASK via a ROUND node), with backface culling on.
+- Duplicated geometry: the add-on imports every damage state and every LoD, so the farseer's head
+  arrived as two coincident copies plus one at LoD2 (the wreck head over the healthy one is what made
+  the eldar face read as a grey plate). Each part is now pruned to `healthy` + the lowest LoD it
+  ships.
+- The eldar face is textured, not near-black: `relic.material.standard_15` carries `farseer_head_dif`;
+  the grey over the lower face is the shipped jaw guard (checked against the game's own portrait,
+  added to `docs/evidence/dow2-stance/`).
+- The Tau `aim`/`fire` "static" diagnosis was a measurement artefact: the source aim clip is two
+  identical frames (0 of 32 tracks move, a held pose), and the fire clip moves 21.5 deg at the
+  shoulder and 0.282 m of bone travel inside its first 20 frames.
+
+### Changed
+
+- `fidelity.json` regenerated (7 units, 91 actions, 0 FAIL); `UNIT_ASSET_REV` bumped to `20261146`;
+  frontend dist rebuilt byte-identical to `public/`.
+- `TODO.md` rewritten with the per-unit scorecard (rubric: assembly, rig, materials, weapons, action
+  coverage, visual gate, layered animation).
+
 ## [Unreleased] — 2026-10-08
 
 ### Added — DoW decompile: animation / skeleton / team-colour pipeline
