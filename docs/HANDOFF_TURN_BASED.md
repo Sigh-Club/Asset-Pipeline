@@ -48,10 +48,10 @@ curl the primary source.
   1e-5 m; interleaved: rotations exact, 151 of 182 corpus clips validate, the rest are partial-track).
 - **Action library** (`tools/dow2/action_library.py`): named actions with the shipped timed events
   from the unit's `.motiontree`.
-- **Thirty-one lab units build and animate, from a data-driven roster** (`tools/dow2/roster.json` →
+- **Forty-five lab units build and animate, from a data-driven roster** (`tools/dow2/roster.json` →
   `discover_units.py` → `build_community_units.py --specs`), across all seven factions; 28 of the 52
-  authored master entries have been replaced by converted units and the masters tab drops them
-  automatically as coverage grows.
+  authored master entries have been replaced: the tab is now `ROSTER · converted`, and every
+  archetype resolves to a converted unit.
 - **Ten original lab units build and animate, table-driven** (`tools/dow2/build_community_units.py`):
   guardsman 21 actions, chaos 17, eldar 18, warboss 18, lictor 13, tau 15, necron 11, tau_gun_drone 7,
   tau_marker_drone 7, tau_shield_drone 5, each carrying its

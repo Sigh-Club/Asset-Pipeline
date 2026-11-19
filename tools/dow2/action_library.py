@@ -44,7 +44,7 @@ from hkxread import HkxError, Packfile, quat_angle  # noqa: E402
 ACTIONS: dict[str, list[str]] = {
     # The Tau drones are turret-like rigs with their own clip names (`dhg_*`), so their stems are
     # listed alongside the humanoid ones rather than renamed.
-    "idle": ["fb_idle", "idle_01", "idle_stand_01", "fb_idle_stand_06", "idle_02", "fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
+    "idle": ["idle", "chassis_idle_01", "bw_idle", "driver_idle_01", "idle_fire_01", "fb_idle", "idle_01", "idle_stand_01", "fb_idle_stand_06", "idle_02", "fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
              "fb_idle_stand_05", "fb_idle_01", "fb_idle_02", "fb_idle_03", "necron_overlord_idle",
              "fb_melee_idle_01", "fb_melee_idle_02", "fb_melee_idle_03", "fb_crouch_idle01",
              "dhg_idle_01", "dm_idle_01", "sd_idle_01", "fb_idle_01"],
@@ -55,11 +55,11 @@ ACTIONS: dict[str, list[str]] = {
     # the shipped aim/melee/ability stems differ per faction (`fb_aiming_stand` for the Imperial
     # Guard, `fb_aim_stand` for Chaos, `fb_ability_casting01_enter` for the sorcerer), so the
     # preference lists carry every shipped spelling rather than one faction's.
-    "aim": ["aim_stand", "fb_aim_horiz", "aim_crouch", "fb_aim_crouch", "fb_aiming_stand", "fb_aim_stand", "fb_aiming_stand_rangeenergy",
+    "aim": ["aim_mainturret", "aim_middlecannon", "aim_horiz_mainturret", "aim_stand", "fb_aim_horiz", "aim_crouch", "fb_aim_crouch", "fb_aiming_stand", "fb_aim_stand", "fb_aiming_stand_rangeenergy",
             "fb_aiming_stand_grenadelauncher", "fb_aiming_crouch", "fb_idle_aim_01",
             "necron_overlord_staff_fire_aimidle", "necron_overlord_arrow_aim_loop",
             "fb_aim_stand_1h", "fb_aim_stand_2h"],
-    "fire": ["fire_stand", "fb_fire_autocannon", "fb_fire_heavybolter", "fb_fire_lascannon", "dhg_fire_w_idle", "dhg_fire", "dm_fire_w_idle", "dm_fire", "fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
+    "fire": ["fire_mainturret", "fire_fturret", "fire_middlecannon", "fire_banewolf", "fire_all_missiles", "fire_missile_01", "fire_stand", "fb_fire_autocannon", "fb_fire_heavybolter", "fb_fire_lascannon", "dhg_fire_w_idle", "dhg_fire", "dm_fire_w_idle", "dm_fire", "fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
              "fb_fire_stand_flamer", "fb_fire_flamer_stand", "fb_fire_crouch",
              "fb_idle_fire_01", "necron_overlord_staff_fire", "necron_overlord_arrow_fire",
              "fb_fire_stand_2cannon", "fb_fire_stand_1cannon", "fb_fire_stand_1plasma",
@@ -87,13 +87,13 @@ ACTIONS: dict[str, list[str]] = {
     "thrown_getup": ["fb_thrown_getup", "fb_getup"],
     "leap": ["fb_melee_leap_fly", "fb_melee_leap_antic", "fb_melee_leap_land", "fb_charge",
              "fb_leap_fly"],
-    "death": ["fb_death", "fb_die", "die_normal_b", "fb_death_01_enter", "fb_death_die", "dhg_death_01", "dhg_death_02", "dm_death_01", "dm_death_02", "sd_death_01",
+    "death": ["death_die", "bw_death", "fb_death", "fb_die", "die_normal_b", "fb_death_01_enter", "fb_death_die", "dhg_death_01", "dhg_death_02", "dm_death_01", "dm_death_02", "sd_death_01",
               "sd_death_02", "fb_die_01", "fb_die_f", "fb_die_b", "fb_die_l", "fb_die_r", "fb_die_normal_b",
               "fb_die_normal_f", "fb_die_normal_01", "fb_die_02", "fb_die_03", "fb_die_04",
               "necron_overlord_death_fromidle"],
     "death_sync": ["die_sync_01", "death_sync_01", "fb_die_sync_01", "fb_death_sync_01", "fb_death_sync_02", "fb_death_sync_03"],
-    "walk": ["aim_run", "fb_aim_run_fast", "dhg_move", "dm_move", "sd_move", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
-    "run": ["dhg_move", "dm_move", "sd_move", "fb_sprint", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
+    "walk": ["drive", "bw_drive", "aim_run", "fb_aim_run_fast", "dhg_move", "dm_move", "sd_move", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
+    "run": ["drive", "bw_drive", "dhg_move", "dm_move", "sd_move", "fb_sprint", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
     "pinned": ["fb_pinned_idle_01", "fb_pinned_run", "fb_idle_pinned_01", "fb_pinned_idle", "fb_pinned_idle_02"],
 }
 
@@ -232,9 +232,14 @@ def acting_frame(anim: dict, skeleton: dict | None) -> tuple[int, str, float]:
         return 0, "", 0.0
     names = skeleton["bone_names"]
     parents = skeleton["parents"]
+    # a vehicle rig has no hand or weapon bones (the Chimera's turret bones are `turret_*`), so the
+    # effect frame is measured on the whole rig rather than on an empty set
+    tracked = {b for b, n in enumerate(names) if n in ACTING_BONES}
+    if not tracked:
+        tracked = set(range(len(names)))
     best = (0, "", 0.0)
     for bone, name in enumerate(names):
-        if name not in ACTING_BONES or bone >= len(anim["tracks"]):
+        if bone not in tracked or bone >= len(anim["tracks"]):
             continue
         chain = []
         cur = bone
@@ -439,6 +444,10 @@ def layer_axis_effect(base_file: str, layer_file: str, frame: int) -> dict | Non
 
     neutral = weapon_vector()
     track = lanim["tracks"][0]
+    if slot >= len(banim["tracks"]):
+        # the base clip animates fewer tracks than the skeleton has bones (vehicle turret clips), so
+        # there is no track to override on that bone
+        return None
     saved = banim["tracks"][slot]
     banim["tracks"][slot] = {
         "translation": [track["translation"][frame]] * banim["numberOfPoses"],
@@ -485,14 +494,28 @@ def build_manifest(loadout: Path, motiontree: Path | None, unit: str) -> dict:
         facts = clip_facts(path, events)
         if facts:
             clips[path.stem] = facts
+    # A candidate clip can ship for a unit without animating it: the Chimera's loadout carries
+    # `fire_banewolf`, whose tracks drive the Banewolf's turret bones, so the mesh moves 0.1 mm. Where
+    # a loadout offers a moving alternative for the same action, that one is chosen; a static clip is
+    # only used when nothing else ships (the Tau's held aim pose).
+    STATIC_SPEED = 0.0005  # m per frame
+
+    def motion(facts):
+        return (facts.get("acting_frame") or {}).get("speed_m_per_frame") or 0.0
+
     actions = {}
     for action, preference in ACTIONS.items():
-        chosen = next((clips[s] for s in preference if s in clips), None)
-        if chosen is None:
+        candidates = [clips[s] for s in preference if s in clips]
+        if not candidates:
             actions[action] = {"clip": None, "reason": "no shipped clip for this action in the loadout"}
             continue
+        moving = [c for c in candidates if motion(c) > STATIC_SPEED]
+        chosen = (moving or candidates)[0]
         actions[action] = dict(chosen)
         actions[action]["preference_rank"] = preference.index(chosen["clip"].split("/")[-1])
+        if candidates and chosen is not candidates[0]:
+            actions[action]["skipped_static"] = [c["clip"] for c in candidates
+                                                 if motion(c) <= STATIC_SPEED]
 
     # aim directions: the stance clip plus one upper-body layer held at its quarter turn. The axis
     # each layer carries is measured from the built pose (see AIM_AXES), so the names mean what the

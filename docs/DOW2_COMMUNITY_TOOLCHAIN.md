@@ -200,8 +200,8 @@ geometry (the body is the wargear armour, and for the ogryn and the Great Unclea
 entirely — those are skipped), and some loadouts name clips without the `fb_` prefix, which the action
 library carries as alternative candidates.
 
-Measured on the current build (2026-11-18, session 5): 31 units, every one carrying its shipped
-weapon or integral talons, 407 actions including the four composed aim directions per ranged unit,
+Measured on the current build (2026-11-18, session 6): 45 units, every one carrying its shipped
+weapon or integral talons, 542 actions including the four composed aim directions per ranged unit,
 motion peak 0.049-5.94 m per action, the Tau aim set static by design (its stance clip has two
-identical frames), `lab_fidelity` 31 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
+identical frames), `lab_fidelity` 45 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
 shipped rigid reference is 0.0855 on the same clip).

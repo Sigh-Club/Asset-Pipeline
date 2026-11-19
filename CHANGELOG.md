@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 6)
+
+### Added
+
+- **14 more units, including the vehicles**: ig sentinel / commissar / banewolf / chimera / manticore /
+  baneblade, chaos havoc / plague champion / champion / juggernaut / dreadnought, ork wartrukk /
+  deff dread / battlewagon. Lab: 45 units, 542 actions, `fidelity.json` 0 FAIL.
+- **The masters tab is now the converted roster.** Every one of the 52 authored master entries is
+  dropped: `unitModels.ts` serves each archetype from a converted unit and falls back to the faction's
+  primary converted unit for unknown archetypes (the roster marks one per faction). The tab is
+  relabelled `ROSTER · converted`; the authored masters remain on disk and in the body-class table.
+
+### Fixed
+
+- Vehicle loadouts: their clips are named `idle`/`drive`/`death_die`/`fire_mainturret` and their rigs
+  have no hand bones, so the action library and the motion screen measured nothing; both now fall back
+  to the whole rig.
+- A clip can ship for a unit without animating it (the Chimera's `fire_banewolf` drives the Banewolf's
+  turret bones and moved the Chimera's mesh 0.1 mm, failing the deformation gate). The action library
+  now rejects a static candidate when a moving alternative ships for the same action.
+- A layer whose driven bone has no track in the base clip is skipped instead of raising.
+
 ## [Unreleased] — 2026-11-18 (session 5)
 
 ### Added

@@ -355,6 +355,8 @@ def main(argv=None) -> int:
         return 0
     if a.emit_catalogue:
         selection = json.loads(a.select.read_text())
+        # a selection entry with no `ebps` is a lab unit built before the roster existed (the Tau
+        # drones); it is still part of the roster as long as its GLB is there
         built = {p.stem for p in (ROOT / "output/source_lab/community").glob("*.glb")}
         rows = []
         for unit_id, want in sorted(selection.items()):
@@ -377,14 +379,17 @@ def main(argv=None) -> int:
             "  label: string;",
             "  faction: string;",
             "  archetypes: string[];",
+            "  /** the faction's line unit, used when an archetype has no dedicated model */",
+            "  primary?: boolean;",
             "}",
             "",
             "export const DOW2_ROSTER: Dow2RosterEntry[] = [",
         ]
         for unit_id, want in rows:
             label = unit_id.replace("dow_", "").replace("_", " ")
+            primary = ", primary: true" if want.get("primary") else ""
             lines.append(f"  {{ unit: '{unit_id}', label: '{label}', faction: '{want['faction']}', "
-                         f"archetypes: {json.dumps(want.get('archetypes', []))} }},")
+                         f"archetypes: {json.dumps(want.get('archetypes', []))}{primary} }},")
         lines.append("];")
         lines.append("")
         lines.append("/** Every archetype the DoW2 roster now serves, per faction. */")

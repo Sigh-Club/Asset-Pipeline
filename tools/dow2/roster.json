@@ -32,7 +32,8 @@
       "cinder_cultist",
       "cultist"
     ],
-    "body": "race_chaos/troops_wargear/armour/heretic_common/heretic.model"
+    "body": "race_chaos/troops_wargear/armour/heretic_common/heretic.model",
+    "primary": true
   },
   "dow_chaos_marine": {
     "ebps": "csm_tactical_marine",
@@ -67,7 +68,8 @@
       "void_corsair_raider",
       "trooper",
       "light_infantry"
-    ]
+    ],
+    "primary": true
   },
   "dow_eldar_ranger": {
     "ebps": "eld_ranger",
@@ -110,7 +112,8 @@
     "faction": "wreckstorm_clans",
     "archetypes": [
       "scrap_boy"
-    ]
+    ],
+    "primary": true
   },
   "dow_ork_nob": {
     "ebps": "ork_nob_leader_nobz",
@@ -140,7 +143,8 @@
       "hunger_crawlers",
       "flanker",
       "swarm"
-    ]
+    ],
+    "primary": true
   },
   "dow_tyr_termagaunt": {
     "ebps": "tyr_termagaunt",
@@ -173,29 +177,25 @@
     "faction": "parasitic_bloom",
     "archetypes": [
       "void_swarm_titan",
-      "monstrous"
+      "monstrous",
+      "soul_weaver",
+      "ritualist",
+      "support"
     ],
     "body": "race_tyranid/troops_wargear/armour/hive_tyrant_armour_epic/hive_tyrant_armour_epic.model",
     "extra": [
       "race_tyranid/troops_wargear/weapons_melee/hivetyrant_lower_talons_rare/hivetyrant_lower_talons_rare.model"
     ]
   },
-  "dow_tyr_zoanthrope": {
-    "ebps": "tyr_zoanthrope",
-    "faction": "parasitic_bloom",
-    "archetypes": [
-      "soul_weaver",
-      "ritualist",
-      "support"
-    ],
-    "body": "race_tyranid/troops_wargear/armour/zoanthrope_armour_common/zoanthrope_armour_common.model"
-  },
   "dow_necron_night_bringer": {
     "ebps": "nec_nightbringer_form",
     "faction": "chrono_revenants",
     "archetypes": [
       "void_reaper",
-      "assault"
+      "assault",
+      "tomb_obelisk",
+      "vehicle",
+      "heavy"
     ]
   },
   "dow_ig_guardsman": {
@@ -204,7 +204,8 @@
     "archetypes": [
       "line_infantry",
       "soldier"
-    ]
+    ],
+    "primary": true
   },
   "dow_chaos_sorcerer": {
     "ebps": "",
@@ -245,8 +246,13 @@
       "sepulchre_warden",
       "heavy_infantry",
       "commander",
-      "support"
-    ]
+      "support",
+      "undying_cohort",
+      "light_infantry",
+      "trooper",
+      "scout"
+    ],
+    "primary": true
   },
   "dow_tau_battlesuit": {
     "ebps": "",
@@ -254,8 +260,12 @@
     "archetypes": [
       "atmos_battlesuit",
       "assault",
-      "jump"
-    ]
+      "jump",
+      "radiant_android",
+      "light_infantry",
+      "trooper"
+    ],
+    "primary": true
   },
   "dow_tau_gun_drone": {
     "ebps": "",
@@ -263,7 +273,10 @@
     "archetypes": [
       "targeter_flock",
       "support",
-      "scout"
+      "scout",
+      "spear_strike",
+      "vehicle",
+      "heavy"
     ]
   },
   "dow_tau_marker_drone": {
@@ -279,5 +292,130 @@
     "archetypes": [
       "shield_drone"
     ]
+  },
+  "dow_ig_sentinel": {
+    "ebps": "ig_sentinel",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "pathfinder_scouts",
+      "pathfinder_scout",
+      "scout"
+    ],
+    "loadout": "base"
+  },
+  "dow_ig_commissar": {
+    "ebps": "ig_commissar",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "assault_breachers",
+      "breach_assault"
+    ]
+  },
+  "dow_ig_banewolf": {
+    "ebps": "ig_banewolf",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "storm_talons",
+      "storm_talon"
+    ],
+    "loadout": "base"
+  },
+  "dow_ig_chimera": {
+    "ebps": "ig_chimera",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "ashrim_raiders",
+      "ashrim_raider"
+    ],
+    "loadout": "chimera"
+  },
+  "dow_ig_manticore": {
+    "ebps": "ig_manticore",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "aegis_artillery",
+      "artillery"
+    ],
+    "loadout": "manticore"
+  },
+  "dow_ig_baneblade": {
+    "ebps": "ig_baneblade",
+    "faction": "iron_directorate",
+    "archetypes": [
+      "logistics_engineer",
+      "engineer"
+    ],
+    "loadout": "baneblade"
+  },
+  "dow_chaos_havoc": {
+    "ebps": "csm_havoc",
+    "faction": "cinderborn",
+    "archetypes": [
+      "ash_stalker",
+      "stalker"
+    ]
+  },
+  "dow_chaos_plague_champion": {
+    "ebps": "csm_plague_marine_champion",
+    "faction": "cinderborn",
+    "archetypes": [
+      "pyre_immolator",
+      "immolator"
+    ]
+  },
+  "dow_chaos_champion": {
+    "ebps": "csm_aspiring_champion",
+    "faction": "cinderborn",
+    "archetypes": [
+      "zealot_captain",
+      "captain"
+    ]
+  },
+  "dow_chaos_juggernaut": {
+    "ebps": "juggernaut",
+    "faction": "cinderborn",
+    "archetypes": [
+      "cinder_wraith",
+      "wraith"
+    ],
+    "loadout": "melee_blade"
+  },
+  "dow_chaos_dreadnought": {
+    "ebps": "csm_dreadnought",
+    "faction": "cinderborn",
+    "archetypes": [
+      "son_of_cinder",
+      "son_of_ciner",
+      "ashen_reavers"
+    ],
+    "loadout": "melee"
+  },
+  "dow_ork_wartrukk": {
+    "ebps": "wartrukk",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "wreckstorm_biker",
+      "flanker",
+      "scout"
+    ],
+    "loadout": "base"
+  },
+  "dow_ork_deff_dread": {
+    "ebps": "deff_dread",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "junk_goliath",
+      "heavy"
+    ],
+    "loadout": "base"
+  },
+  "dow_ork_battlewagon": {
+    "ebps": "ork_battlewagon",
+    "faction": "wreckstorm_clans",
+    "archetypes": [
+      "titan_fist",
+      "commander"
+    ],
+    "loadout": "base"
   }
 }
