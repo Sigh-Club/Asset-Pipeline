@@ -138,6 +138,7 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
 | dow_tyranid_lictor | `000_data` | `armour/lictor_armour_common` | — | `lictor/animations/talons_claws` |
 | dow_necron_overlord | `005_data` | `armour/necron_overlord_common` | `accessories/necron_overlord_headdress_02` | `necron_overlord/animations/melee_staff` |
 | dow_tau_battlesuit | `003_data` | `armor/xv8_default_crisis_suit` | — | `battlesuit_commander/animations/range_burst` |
+| dow_tau_gun_drone | `003_data` | `troops/drone_heavy_gun` (gun is part of the model) | — | `drone_heavy_gun/animations/base` (`dhg_*`) |
 
 ## The build and the gates
 
@@ -168,8 +169,8 @@ python3 tools/lab_fidelity.py --lab <lab dir>
 `render_lab.py` takes `--unit=<id>` and a third shot field (`idle:1:head`, `idle:1:weapon`,
 `idle:1:upper`) for the close-ups the gate requires.
 
-Measured on the current build (2026-11-18, session 3): seven units, every one carrying its shipped
-weapon or integral talons, 113 actions including the four composed aim directions per ranged unit,
+Measured on the current build (2026-11-18, session 3): eight units, every one carrying its shipped
+weapon or integral talons, 120 actions including the four composed aim directions per ranged unit,
 motion peak 0.049-5.94 m per action, the Tau aim set static by design (its stance clip has two
-identical frames), `lab_fidelity` 7 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
+identical frames), `lab_fidelity` 8 units / 0 FAIL, worst tear 0.0852 on the farseer's cloth (its
 shipped rigid reference is 0.0855 on the same clip).

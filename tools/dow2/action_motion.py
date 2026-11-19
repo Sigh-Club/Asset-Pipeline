@@ -37,6 +37,10 @@ def measure_action(js, binc, action, joints, names) -> dict:
     times = R.accessor(js, binc, action["samplers"][0]["input"]).ravel()
     hand_joints = [i for i in joints
                    if any(k in names[i].lower() for k in ("r hand", "l hand", "weapon"))]
+    # a turret rig has no hand bones (the Tau drone's are bone_aim_horiz/bone_axis/turret_*), so the
+    # effect time is measured on the whole rig instead of an empty set
+    if not hand_joints:
+        hand_joints = list(joints)
     peak = 0.0
     peak_joint = ""
     hand_peak = 0.0

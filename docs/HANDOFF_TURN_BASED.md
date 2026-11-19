@@ -48,10 +48,11 @@ curl the primary source.
   1e-5 m; interleaved: rotations exact, 151 of 182 corpus clips validate, the rest are partial-track).
 - **Action library** (`tools/dow2/action_library.py`): named actions with the shipped timed events
   from the unit's `.motiontree`.
-- **Seven lab units build and animate, table-driven** (`tools/dow2/build_community_units.py`):
-  guardsman 21 actions, chaos 17, eldar 18, warboss 18, lictor 13, tau 15, necron 11, each carrying its
+- **Eight lab units build and animate, table-driven** (`tools/dow2/build_community_units.py`):
+  guardsman 21 actions, chaos 17, eldar 18, warboss 18, lictor 13, tau 15, necron 11, tau_gun_drone 7,
+  each carrying its
   shipped weapon (or integral talons). Damage states and extra LoDs are pruned per part, materials
-  export opaque, and `fidelity.json` reports 7 units / 113 actions / 0 FAIL.
+  export opaque, and `fidelity.json` reports 8 units / 120 actions / 0 FAIL.
 - **Layered aim directions**: `aim_left/right/up/down` are composed from the shipped single-track
   upper-body layers through their own `hkAnimationBinding` (measured 45 degree offset; the necron uses
   its shipped aim-pivot clips).

@@ -18,10 +18,18 @@ All notable changes to this project are documented here.
 - `tools/blender/dow2_import_community.py`: applies layers through their binding (replaces the driven
   bone's local transform; the layer's translation and scale equal the base's).
 
+### Added
+
+- **`dow_tau_gun_drone`** — the first non-humanoid unit: a 6-bone turret rig with its own `dhg_*`
+  clips (idle, fire, move, two deaths) and two aim layers that rotate the gun mount. Its wargear's
+  `render_model` is an empty string (the gun is part of the drone model), which the part resolver now
+  skips. The action library carries its clip stems; `action_motion` measures the effect time on the
+  whole rig when a unit has no hand bones.
+
 ### Changed
 
-- Lab action count 91 -> 113 (the aim directions). `fidelity.json` regenerated: 7 units, 0 FAIL.
-  `UNIT_ASSET_REV` 20261147.
+- Lab action count 91 -> 120 (the aim directions and the drone). `fidelity.json` regenerated:
+  8 units, 0 FAIL. `UNIT_ASSET_REV` 20261148.
 - `TODO.md` scorecard updated: layering scored at 5/10 where the aim layers compose (3/10 for the
   necron's shipped pivots), totals 85-95 %.
 

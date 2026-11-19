@@ -42,10 +42,12 @@ from hkxread import HkxError, Packfile, quat_angle  # noqa: E402
 # motion, different weapon VFX).
 # --------------------------------------------------------------------------------------
 ACTIONS: dict[str, list[str]] = {
+    # The Tau drones are turret-like rigs with their own clip names (`dhg_*`), so their stems are
+    # listed alongside the humanoid ones rather than renamed.
     "idle": ["fb_idle_stand_01", "fb_idle_stand_02", "fb_idle_stand_03", "fb_idle_stand_04",
              "fb_idle_stand_05", "fb_idle_01", "fb_idle_02", "fb_idle_03", "necron_overlord_idle",
              "fb_melee_idle_01", "fb_melee_idle_02", "fb_melee_idle_03", "fb_crouch_idle01",
-             "fb_idle_01"],
+             "dhg_idle_01", "fb_idle_01"],
     "idle_combat": ["fb_idle_combat_stand_01", "fb_idle_combat_stand_02",
                     "fb_idle_combat_stand_03_range_energy", "fb_idle_combat_stand_04_range_energy",
                     "fb_combat_idle_01", "fb_combat_idle_02"],
@@ -57,7 +59,7 @@ ACTIONS: dict[str, list[str]] = {
             "fb_aiming_stand_grenadelauncher", "fb_aiming_crouch", "fb_idle_aim_01",
             "necron_overlord_staff_fire_aimidle", "necron_overlord_arrow_aim_loop",
             "fb_aim_stand_1h", "fb_aim_stand_2h"],
-    "fire": ["fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
+    "fire": ["dhg_fire_w_idle", "dhg_fire", "fb_fire_stand", "fb_fire_stand_rangeenergy", "fb_fire_stand_grenadelauncher",
              "fb_fire_stand_flamer", "fb_fire_flamer_stand", "fb_fire_crouch",
              "fb_idle_fire_01", "necron_overlord_staff_fire", "necron_overlord_arrow_fire",
              "fb_fire_stand_2cannon", "fb_fire_stand_1cannon", "fb_fire_stand_1plasma",
@@ -85,12 +87,12 @@ ACTIONS: dict[str, list[str]] = {
     "thrown_getup": ["fb_thrown_getup", "fb_getup"],
     "leap": ["fb_melee_leap_fly", "fb_melee_leap_antic", "fb_melee_leap_land", "fb_charge",
              "fb_leap_fly"],
-    "death": ["fb_die_01", "fb_die_f", "fb_die_b", "fb_die_l", "fb_die_r", "fb_die_normal_b",
+    "death": ["dhg_death_01", "dhg_death_02", "fb_die_01", "fb_die_f", "fb_die_b", "fb_die_l", "fb_die_r", "fb_die_normal_b",
               "fb_die_normal_f", "fb_die_normal_01", "fb_die_02", "fb_die_03", "fb_die_04",
               "necron_overlord_death_fromidle"],
     "death_sync": ["fb_death_sync_01", "fb_death_sync_02", "fb_death_sync_03"],
-    "walk": ["fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
-    "run": ["fb_sprint", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
+    "walk": ["dhg_move", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
+    "run": ["dhg_move", "fb_sprint", "fb_run", "fb_run01", "necron_overlord_wlk_f", "fb_aim_run", "fb_aim_run_01", "fb_charge"],
     "pinned": ["fb_pinned_idle", "fb_pinned_idle_02"],
 }
 
@@ -388,14 +390,41 @@ def layer_axis_effect(base_file: str, layer_file: str, frame: int) -> dict | Non
     if banim is None or bsk is None or lanim is None or lsk is None or not bindings:
         return None
     names = bsk["bone_names"]
-    pelvis = _find_bone(names, "bip01 pelvis")
-    weapon = _find_bone(names, "bip01 r weapon") or _find_bone(names, "bip01 l weapon")
-    if pelvis is None or weapon is None:
-        return None
     target = lsk["bone_names"][bindings[0]["track_to_bone"][0]]
     slot = _find_bone(names, target)
     if slot is None:
         return None
+    # the pointer is the weapon bone on a humanoid rig; a turret rig has no such bone (the Tau drone's
+    # layers drive `bone_aim_horiz` and `bone_axis`), so the deepest bone under the driven one is the
+    # gun it carries, and the driven bone's parent is the origin.
+    pelvis = _find_bone(names, "bip01 pelvis")
+    weapon = _find_bone(names, "bip01 r weapon") or _find_bone(names, "bip01 l weapon")
+    if pelvis is None or weapon is None:
+        parents = bsk["parents"]
+        deepest = slot
+        for i, p in enumerate(parents):
+            chain, cur = [], i
+            while cur >= 0:
+                chain.append(cur)
+                cur = parents[cur]
+            if slot in chain and len(chain) > len([1 for _ in ()]) and i != slot:
+                if i == slot or slot in chain:
+                    pass
+            if slot in chain and len(chain) >= 1:
+                deepest = i if (slot in chain and len(chain) > 0 and i != slot) else deepest
+        # choose the bone with the longest chain that descends from the driven bone
+        best, best_len = slot, 0
+        for i in range(len(names)):
+            chain, cur = [], i
+            while cur >= 0:
+                chain.append(cur)
+                cur = parents[cur]
+            if slot in chain and i != slot and len(chain) > best_len:
+                best, best_len = i, len(chain)
+        weapon = best
+        pelvis = parents[slot] if parents[slot] >= 0 else slot
+        if weapon == pelvis:
+            return None
 
     def weapon_vector():
         w = [_bone_world(banim, bsk, 0, i) for i in (pelvis, weapon)]
@@ -461,7 +490,11 @@ def build_manifest(loadout: Path, motiontree: Path | None, unit: str) -> dict:
     # aim directions: the stance clip plus one upper-body layer held at its quarter turn. The axis
     # each layer carries is measured from the built pose (see AIM_AXES), so the names mean what the
     # unit does.
-    base = actions.get("aim") or {}
+    # a loadout whose aim is only a layer pair (the Tau drones rotate a gun mount) has no full-body
+    # aim clip, so the idle stance is the base the layers compose onto
+    # (a missing action is recorded as {"clip": None}, which is truthy, so the selection must test
+    # the clip, not the entry)
+    base = next((actions[n] for n in ("aim", "idle") if (actions.get(n) or {}).get("clip")), {})
     if base.get("clip"):
         for axis in ("bearing", "elevation"):
             layer = layer_clip_for(clips, axis)

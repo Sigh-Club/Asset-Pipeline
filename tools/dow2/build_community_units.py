@@ -110,6 +110,16 @@ UNITS: dict[str, dict] = {
         "loadout": "race_tau/troops/battlesuit_commander/animations/range_burst",
         "motiontree": "race_tau/troops/battlesuit_commander/battlesuit_commander.motiontree",
     },
+    "dow_tau_gun_drone": {
+        # a turret-like 6-bone rig with its own clip names (dhg_*): the gun is part of the model, and
+        # its wargear's render_model is an empty string (nothing to attach)
+        "body": "race_tau/troops/drone_heavy_gun/drone_heavy_gun.model",
+        "head": "",
+        "extra": [],
+        "weapon": "",
+        "loadout": "race_tau/troops/drone_heavy_gun/animations/base",
+        "motiontree": "race_tau/troops/drone_heavy_gun/drone_heavy_gun.motiontree",
+    },
     "dow_tyranid_lictor": {
         "body": "race_tyranid/troops_wargear/armour/lictor_armour_common/"
                 "lictor_armour_common.model",

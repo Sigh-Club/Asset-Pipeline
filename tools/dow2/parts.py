@@ -88,7 +88,7 @@ def entries_outside_chapters(text: str, pattern: re.Pattern) -> list[str]:
         if chapter_depth is not None:
             continue
         m = pattern.search(stripped)
-        if m:
+        if m and m.group(1).strip():
             out.append(m.group(1).replace("\\", "/"))
     return out
 
