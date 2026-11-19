@@ -36,7 +36,7 @@ locomotion cycles.
 | materials | **working, opaque** | every unit material exports `OPAQUE` + single-sided (the add-on's alpha wiring made every material `BLEND`, which is why units were see-through and lost parts at an angle); `dow2_alphaTest` honoured as MASK where a source declares a cutout |
 | action coverage | **7–21 actions per unit** | see the scorecard below; the four aim directions are new, and the Tau's aim set is static by design (its stance clip is two identical frames) |
 | layering | **aim directions baked, fire/idle layers not** | the shipped single-track upper-body layers are composed onto the stance for `aim_left`/`aim_right`/`aim_up`/`aim_down` (5 units; the necron uses its shipped aim-pivot clips). The `.hkanim` is a clip container (227 embedded packfiles), so the state machine's *other* layer uses (fire over run, idle additive) are still exported as base clips |
-| lab page | **8 units live** | `fidelity.json` regenerated (8 units, 120 actions, 0 FAIL), `UNIT_ASSET_REV 20261148`, dist rebuilt byte-identical to `public/` |
+| lab page | **10 units live** | `fidelity.json` regenerated (10 units, 132 actions, 0 FAIL), `UNIT_ASSET_REV 20261149`, dist rebuilt byte-identical to `public/` |
 
 ### Per-unit scorecard
 
@@ -55,6 +55,8 @@ it is measured — the visual gate means the renders were read against `docs/evi
 | dow_tyranid_lictor | 20 | 20 | 15 | 15 | 13 | 10 | 5 | **89 %** |
 | dow_necron_overlord | 20 | 20 | 15 | 15 | 11 | 10 | 3 | **85 %** |
 | dow_tau_gun_drone | 20 | 20 | 15 | 15 | 7 | 10 | 5 | **84 %** |
+| dow_tau_marker_drone | 20 | 20 | 15 | 15 | 7 | 10 | 5 | **84 %** |
+| dow_tau_shield_drone | 20 | 20 | 15 | 15 | 5 | 10 | 5 | **82 %** |
 
 Action coverage per unit (of the 20-name action set plus the four aim directions; missing names are
 loadouts that ship no clip for them, which the manifest records as `not shipped`):
@@ -68,9 +70,11 @@ loadouts that ship no clip for them, which the manifest records as `not shipped`
   its loadout ships no ranged clips, so it has no aim layers either)
 - necron 11 — missing idle_combat, idle_crouch, reload, melee_03, grenade, ability, hit, thrown_getup,
   leap, death_sync, pinned
-- tau_gun_drone 7 — a turret rig whose loadout ships 12 clips (`dhg_*`): idle, fire, move, two deaths and
-  two aim layers. It has no aim stance clip (the layers rotate the gun mount onto the idle), no melee,
-  no reload, no crouch
+- tau_gun_drone 7 / tau_marker_drone 7 — turret rigs whose loadouts ship 12 clips each (`dhg_*`/`dm_*`):
+  idle, fire, move, two deaths and two aim layers. No aim stance clip (the layers rotate the gun mount
+  onto the idle), no melee, no reload, no crouch
+- tau_shield_drone 5 — idle, ability (`sd_ability_field`), death, move. It ships no fire clip: its
+  loadout is a support field
 
 The gap to 100 % is the same two things for every unit: the game's layered animation (10 points) and
 the actions their loadout genuinely does not ship.
@@ -82,9 +86,9 @@ the actions their loadout genuinely does not ship.
    still exported as base clips. The layers and their bindings are decoded; what is missing is the
    *rule* that says which layer applies in which state, which lives in the `.motiontree` state
    machine (we read it only for event timing today).
-2. **More units**: the two remaining Tau drones (`drone_marker`, `shield_drone`) and other factions'
-   loadouts, all through the same table (`tools/dow2/build_community_units.py`). The gun drone is in:
-   it needed only a table row plus its `dhg_*` clip names in the action library.
+2. **More units**: the whole Tau drone family is in (gun, marker, shield); next are other factions'
+   loadouts, all through the same table (`tools/dow2/build_community_units.py`) — a drone needed only
+   a table row plus its clip stems in the action library.
 3. **More actions per loadout where the game ships them**: the necron (9) and tau (11) are the thin
    ones; their loadouts ship fewer clips, so this is a unit-choice question rather than a decoder gap.
 4. **Ground contact per action**: measure and, where a turn-based consumer needs it, normalise the

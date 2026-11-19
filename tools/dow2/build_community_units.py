@@ -120,6 +120,25 @@ UNITS: dict[str, dict] = {
         "loadout": "race_tau/troops/drone_heavy_gun/animations/base",
         "motiontree": "race_tau/troops/drone_heavy_gun/drone_heavy_gun.motiontree",
     },
+    "dow_tau_marker_drone": {
+        # same turret family as the gun drone, its own clip set (`dm_*`); the markerlight accessory
+        # has no model of its own
+        "body": "race_tau/troops/drone_marker/drone_marker.model",
+        "head": "",
+        "extra": [],
+        "weapon": "",
+        "loadout": "race_tau/troops/drone_marker/animations/base",
+        "motiontree": "race_tau/troops/drone_marker/drone_marker.motiontree",
+    },
+    "dow_tau_shield_drone": {
+        # no fire: its loadout ships an ability (`sd_ability_field`) instead
+        "body": "race_tau/troops/shield_drone/shield_drone.model",
+        "head": "",
+        "extra": [],
+        "weapon": "",
+        "loadout": "race_tau/troops/shield_drone/animations/base",
+        "motiontree": "race_tau/troops/shield_drone/shield_drone.motiontree",
+    },
     "dow_tyranid_lictor": {
         "body": "race_tyranid/troops_wargear/armour/lictor_armour_common/"
                 "lictor_armour_common.model",

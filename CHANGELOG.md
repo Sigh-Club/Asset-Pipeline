@@ -26,10 +26,14 @@ All notable changes to this project are documented here.
   skips. The action library carries its clip stems; `action_motion` measures the effect time on the
   whole rig when a unit has no hand bones.
 
+- **`dow_tau_marker_drone` and `dow_tau_shield_drone`** — the rest of the Tau drone family, from their
+  own rigs and clip sets (`dm_*`, `sd_*`). The shield drone ships an ability instead of a fire clip
+  (`sd_ability_field`), which is the first unit to resolve `ability` from its own loadout.
+
 ### Changed
 
-- Lab action count 91 -> 120 (the aim directions and the drone). `fidelity.json` regenerated:
-  8 units, 0 FAIL. `UNIT_ASSET_REV` 20261148.
+- Lab action count 91 -> 132 (the aim directions and the three drones). `fidelity.json` regenerated:
+  10 units, 0 FAIL. `UNIT_ASSET_REV` 20261149.
 - `TODO.md` scorecard updated: layering scored at 5/10 where the aim layers compose (3/10 for the
   necron's shipped pivots), totals 85-95 %.
 
