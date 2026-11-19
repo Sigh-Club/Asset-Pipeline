@@ -108,6 +108,14 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
 7. **Export with `export_optimize_animation_size=False`.** Blender's glTF exporter otherwise
    collapses each action to two constant keys.
 
+7b. **Bake every action onto ONE timeline at its own true duration.** The exporter converts keyframe
+   numbers to seconds with a single scene rate, so a per-action `fps_base` is silently lost: whichever
+   clip was keyed last set the rate for the whole file, and units whose last clip was slow exported
+   fast (measured: eldar and lictor 3.7-3.9x, Tau battlesuit 7.5x, its 2-frame aim clip 0.00 s). Set
+   `fps` once, and for each output frame derive the source frame from its time
+   (`src = round(k * src_fps / BAKED_FPS)`), never from a re-quantised source index.
+   `tools/dow2/action_motion.py --timing-only` fails a build that drifts more than 2 %.
+
 8. **Scale sanity.** A clip's scale track is either sane (every component within ±25% of 1, measured
    across the corpus) or a decode artefact — the necron overlord's run from −4951 to 699 while its
    translations are correct. Judge the track as a whole: if any component is outside [0.5, 2.0], use

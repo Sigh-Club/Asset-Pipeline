@@ -123,6 +123,7 @@ python3 tools/dow2/build_community_units.py --only <unit>        # or no --only 
 blender -b -P tools/render_lab.py -- output/source_lab/community /tmp/renders --unit=<unit> \
   idle:1 idle:60 fire:30 fire:45 walk:10 walk:20 death:30 death:60 idle:1:head idle:1:weapon
 python3 tools/dow2/action_motion.py --lab output/source_lab/community --static-only
+python3 tools/dow2/action_motion.py --lab output/source_lab/community --timing-only
 
 # deformation gate + lab report
 python3 tools/rig_fidelity.py <unit.glb> --clip <action> --frame <n>

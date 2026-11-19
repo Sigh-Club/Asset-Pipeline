@@ -78,6 +78,34 @@ def measure_action(js, binc, action, joints, names) -> dict:
     }
 
 
+def timing_check(glb: Path, js, binc) -> list[dict]:
+    """Compare every action's exported duration with the shipped clip's own duration.
+
+    The glTF exporter converts keyframes to seconds with a single scene rate, so a per-action rate
+    cannot be expressed: a build that sets one per action silently exports the whole unit at the rate
+    of whichever clip was keyed last (measured before the fix: the eldar and lictor played 3.7-3.9x
+    too fast, the Tau battlesuit 7.5x, and its 2-frame aim clip collapsed to 0.00 s). This check is
+    what makes a regression visible: it reports any action whose playback speed differs from the
+    shipped clip by more than 2 %.
+    """
+    sidecar = glb.with_suffix(".actions.json")
+    if not sidecar.exists():
+        return []
+    meta = json.loads(sidecar.read_text()).get("actions", {})
+    out = []
+    for action in js.get("animations", []):
+        source = meta.get(action["name"], {}).get("duration")
+        if not source:
+            continue
+        times = R.accessor(js, binc, action["samplers"][0]["input"]).ravel()
+        exported = float(times[-1] - times[0]) if len(times) > 1 else 0.0
+        speed = (source / exported) if exported else 0.0
+        if abs(speed - 1.0) > 0.02:
+            out.append({"action": action["name"], "source_s": round(float(source), 3),
+                        "exported_s": round(exported, 3), "speed": round(speed, 2)})
+    return out
+
+
 def measure_unit(glb: Path) -> dict:
     js, binc = R.load_glb(glb)
     joints = js["skins"][0]["joints"]
@@ -88,11 +116,15 @@ def measure_unit(glb: Path) -> dict:
     ys = np.concatenate([p["rest"][:, 1] for p in parts]) if parts else np.array([0.0, 1.0])
     height = float(ys.max() - ys.min())
     actions = [measure_action(js, binc, a, joints, names) for a in js["animations"]]
-    return {"unit": glb.stem, "height_m": round(height, 2), "actions": actions}
+    return {"unit": glb.stem, "height_m": round(height, 2), "actions": actions,
+            "off_speed": timing_check(glb, js, binc)}
 
 
 def report(unit: dict) -> None:
     print(f"{unit['unit']}  height {unit['height_m']} m")
+    for a in unit.get("off_speed", []):
+        print(f"  OFF-SPEED {a['action']}: exported {a['exported_s']}s of a {a['source_s']}s clip "
+              f"({a['speed']}x)")
     for a in unit["actions"]:
         flag = "  STATIC" if a["static"] else ""
         ground = ""
@@ -111,11 +143,22 @@ def main(argv=None) -> int:
     ap.add_argument("--lab", type=Path)
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--static-only", action="store_true")
+    ap.add_argument("--timing-only", action="store_true",
+                    help="report only actions whose playback speed differs from the shipped clip")
     a = ap.parse_args(argv)
     targets = sorted(a.lab.glob("*.glb")) if a.lab else ([a.glb] if a.glb else [])
     if not targets:
         ap.error("give a GLB or --lab <dir>")
     units = [measure_unit(p) for p in targets]
+    if a.timing_only:
+        bad = 0
+        for u in units:
+            off = u.get("off_speed", [])
+            bad += len(off)
+            detail = ", ".join("{} {}x".format(x["action"], x["speed"]) for x in off)
+            print(f"{u['unit']}: {len(off)} off-speed of {len(u['actions'])}"
+                  + (" — " + detail if detail else ""))
+        return 1 if bad else 0
     if a.static_only:
         for u in units:
             bad = [x for x in u["actions"] if x["static"]]

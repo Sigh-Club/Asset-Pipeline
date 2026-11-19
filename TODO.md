@@ -36,7 +36,8 @@ locomotion cycles.
 | materials | **working, opaque** | every unit material exports `OPAQUE` + single-sided (the add-on's alpha wiring made every material `BLEND`, which is why units were see-through and lost parts at an angle); `dow2_alphaTest` honoured as MASK where a source declares a cutout |
 | action coverage | **7–21 actions per unit** | see the scorecard below; the four aim directions are new, and the Tau's aim set is static by design (its stance clip is two identical frames) |
 | layering | **aim directions baked, fire/idle layers not** | the shipped single-track upper-body layers are composed onto the stance for `aim_left`/`aim_right`/`aim_up`/`aim_down` (5 units; the necron uses its shipped aim-pivot clips). The `.hkanim` is a clip container (227 embedded packfiles), so the state machine's *other* layer uses (fire over run, idle additive) are still exported as base clips |
-| lab page | **10 units live** | `fidelity.json` regenerated (10 units, 132 actions, 0 FAIL), `UNIT_ASSET_REV 20261149`, dist rebuilt byte-identical to `public/` |
+| lab page | **10 units live** | `fidelity.json` regenerated (10 units, 132 actions, 0 FAIL), `UNIT_ASSET_REV 20261150`, dist rebuilt byte-identical to `public/` |
+| playback speed | **1:1 with the shipped clip** | every action baked at its own duration on one 30 fps timeline; measured 0.000x deviation across 132 actions (`action_motion --timing-only`) |
 
 ### Per-unit scorecard
 
@@ -106,6 +107,7 @@ blender -b -P tools/render_lab.py -- <lab dir> <png dir> --unit=<id> \
   idle:1 idle:60 fire:30 fire:45 walk:10 walk:20 run:10 run:20 melee:10 melee:30 death:30 death:60 \
   idle:1:head idle:1:weapon
 python3 tools/dow2/action_motion.py --lab <lab dir> --static-only
+python3 tools/dow2/action_motion.py --lab <lab dir> --timing-only   # playback speed vs the shipped clip
 python3 tools/rig_fidelity.py <unit.glb> --clip <action> --frame <n>
 python3 tools/lab_fidelity.py --lab <lab dir>
 ```

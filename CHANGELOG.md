@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 4)
+
+### Fixed
+
+- **Every action played at the wrong speed on most units.** The builder set a per-action
+  `scene.render.fps_base`, but the glTF exporter converts keyframes to seconds with a single scene
+  rate at export time, so each unit inherited the rate of whichever clip was keyed last. Measured:
+  eldar and lictor 3.7-3.9x too fast, the Tau battlesuit 7.5x (and its 2-frame aim clip collapsed to
+  0.00 s), while the guardsman, warboss and drones were already 1.0x. All actions are now baked onto
+  one 30 fps timeline at their own true duration — measured 0.000x deviation across all 132 actions —
+  and `tools/dow2/action_motion.py --timing-only` gates it (a >2 % speed difference fails).
+
 ## [Unreleased] — 2026-11-18 (session 3)
 
 ### Added

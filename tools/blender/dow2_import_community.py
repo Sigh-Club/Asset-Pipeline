@@ -64,6 +64,9 @@ _ap.add_argument("--weapon", default="")
 _ap.add_argument("--stride", type=int, default=1)
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
+# the timeline every action is baked onto (see apply_clip)
+BAKED_FPS = 30
+
 if "dow2_tools" not in bpy.context.preferences.addons:
     bpy.ops.preferences.addon_enable(module="dow2_tools")
 
@@ -266,11 +269,18 @@ def apply_clip(clip_path, action_name, fps, frames, layers=None):
     except AttributeError:
         pass
 
-    bpy.context.scene.render.fps = 30
-    bpy.context.scene.render.fps_base = 30.0 / max(1e-6, fps)
+    # One timeline for every action. The glTF exporter converts keyframe numbers to seconds with a
+    # SINGLE scene rate at export time, so a per-action `fps_base` is silently lost: whichever action
+    # was keyed last set the rate for the whole file, and units whose last clip was slow exported
+    # fast (measured: the eldar and lictor played 3.7-3.9x too fast, the Tau battlesuit 7.5x, and its
+    # two-frame aim clip collapsed to 0.00 s). The bake is therefore at a fixed BAKED_FPS and each
+    # clip's keys are placed at their true time on that timeline, so every action plays at the speed
+    # the shipped clip was authored at.
+    bpy.context.scene.render.fps = BAKED_FPS
+    bpy.context.scene.render.fps_base = 1.0
     stride = max(1, A.stride)
-    for f in frames:
-        bpy.context.scene.frame_set(f + 1)
+    for f, key_frame in frames:
+        bpy.context.scene.frame_set(key_frame)
         # clip locals in Blender space, composed to world
         local = []
         for i in range(len(names)):
@@ -318,9 +328,9 @@ def apply_clip(clip_path, action_name, fps, frames, layers=None):
         bpy.context.view_layer.update()
         bpy.context.view_layer.update()
         for pb in arm.pose.bones:
-            pb.keyframe_insert("location", frame=f + 1)
-            pb.keyframe_insert("rotation_quaternion", frame=f + 1)
-            pb.keyframe_insert("scale", frame=f + 1)
+            pb.keyframe_insert("location", frame=key_frame)
+            pb.keyframe_insert("rotation_quaternion", frame=key_frame)
+            pb.keyframe_insert("scale", frame=key_frame)
     _fc = []
     try:
         _fc = list(act.fcurves)
@@ -363,20 +373,29 @@ if A.manifest:
         if anim is None:
             print(f"SKIP {name}: not a delta-compressed clip")
             continue
+        # sample the clip at the baked rate over its own duration: a 15 fps clip gets every other
+        # frame of a 30 fps timeline, a 32 fps clip is resampled to 30, and the duration is unchanged.
+        # The key frame is the OUTPUT frame and the source frame is derived from its time, so no key
+        # is ever re-derived from a quantised source frame (which collapsed repeated frames and made
+        # a held 2-frame clip export as 0.27 s of a 0.5 s clip).
         stride = max(1, A.stride)
-        frames = list(range(0, anim["numberOfPoses"], stride))
-        if frames[-1] != anim["numberOfPoses"] - 1:
-            frames.append(anim["numberOfPoses"] - 1)
-        info = apply_clip(path, name, anim["frame_rate"], frames, entry.get("layers"))
+        src_fps = anim["frame_rate"]
+        out_count = max(2, int(round(anim["duration"] * BAKED_FPS)) + 1)
+        frames = []
+        for k in range(0, out_count, stride):
+            src = min(anim["numberOfPoses"] - 1, int(round(k * src_fps / BAKED_FPS)))
+            frames.append((src, k + 1))
+        info = apply_clip(path, name, src_fps, frames, entry.get("layers"))
         if info is None:
             continue
         info.update({"source_clip": clip, "duration": anim["duration"],
+                     "baked_fps": BAKED_FPS, "baked_keys": len(frames),
                      "events": entry.get("events", []),
                      "acting_frame": entry.get("acting_frame", {})})
         if entry.get("layers"):
             info["layers"] = entry["layers"]
         meta[name] = info
-        print(f"ACTION {name} <- {clip} {len(frames)}f")
+        print(f"ACTION {name} <- {clip} {len(frames)} keys at {BAKED_FPS} fps")
 
 arm.animation_data.action = None
 for pb in arm.pose.bones:
