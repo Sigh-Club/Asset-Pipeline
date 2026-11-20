@@ -1,6 +1,6 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-18 (session 6).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-18 (session 7).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
 
@@ -36,7 +36,7 @@ locomotion cycles.
 | materials | **working, opaque** | every unit material exports `OPAQUE` + single-sided (the add-on's alpha wiring made every material `BLEND`, which is why units were see-through and lost parts at an angle); `dow2_alphaTest` honoured as MASK where a source declares a cutout |
 | action coverage | **7–21 actions per unit** | see the scorecard below; the four aim directions are new, and the Tau's aim set is static by design (its stance clip is two identical frames) |
 | layering | **aim directions baked, fire/idle layers not** | the shipped single-track upper-body layers are composed onto the stance for `aim_left`/`aim_right`/`aim_up`/`aim_down` (5 units; the necron uses its shipped aim-pivot clips). The `.hkanim` is a clip container (227 embedded packfiles), so the state machine's *other* layer uses (fire over run, idle additive) are still exported as base clips |
-| lab page | **45 units live** | `fidelity.json` regenerated (45 units, 542 actions, 0 FAIL), `UNIT_ASSET_REV 20261152`, dist rebuilt byte-identical to `public/` |
+| lab page | **45 units live** | `fidelity.json` regenerated (45 units, 542 actions, 0 FAIL), `UNIT_ASSET_REV 20261153`, dist rebuilt byte-identical to `public/` |
 | masters conversion | **complete — 52 of 52 master entries dropped** | `tools/dow2/roster.json` (45 units) → `dow2Roster.ts` → `UNIT_MODELS` serves every archetype from a converted unit and drops the authored masters; the tab is now `ROSTER · converted` |
 | playback speed | **1:1 with the shipped clip** | every action baked at its own duration on one 30 fps timeline; measured 0.000x deviation across 132 actions (`action_motion --timing-only`) |
 

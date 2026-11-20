@@ -36,7 +36,44 @@ def clip_frames(glb: Path, clip: str) -> int:
     return int(RF.accessor(js, binc, anim["samplers"][0]["input"]).shape[0])
 
 
-def worst_over_frames(glb: Path, clip: str, stride: int) -> dict:
+def joint_travel(glb: Path, clip: str, total: int, stride: int) -> float:
+    """The furthest any joint moves in the clip, in metres.
+
+    The mesh-displacement floor cannot tell a *quiet* clip from a *broken* one: a parked tank's idle
+    moves its tread control bones (the Baneblade's drives 0.44 m of bone) while the mesh shifts 1.4 cm,
+    and a turret aim layer holds a pose. The discriminator is the pair — bones moving while the mesh
+    does not is a weight/bind defect; bones not moving is a quiet clip.
+    """
+    js, binc = RF.load_glb(glb)
+    anim = next((a for a in js.get("animations", []) if a.get("name") == clip), None)
+    if anim is None:
+        return 0.0
+    joints = js["skins"][0]["joints"]
+    # only joints that actually carry vertices: DoW2 vehicle rigs have controller bones
+    # (`Controler_L_Tread`, `Rig_Main`) that drive parts by name and are not weighted to anything, so
+    # a clip can move a controller 7.6 cm while the mesh moves 5.6 mm — not a bind defect, a quiet mesh
+    parts = RF.skin_parts(js, binc, RF.node_worlds(js))
+    weighted = set()
+    for part in parts:
+        dom = part.get("dominant")
+        if dom is None:
+            continue
+        weighted.update(int(d) for d in set(dom.tolist()) if d >= 0)
+    if weighted:
+        joints = [j for j in joints if j in weighted] or joints
+    times = RF.accessor(js, binc, anim["samplers"][0]["input"]).ravel()
+    base = None
+    best = 0.0
+    for t in times[::max(1, stride)]:
+        worlds = RF.node_worlds(js, RF.sample_clip(js, binc, clip, float(t)))
+        if base is None:
+            base = worlds
+        best = max(best, max(float(((worlds[k][:3, 3] - base[k][:3, 3]) ** 2).sum() ** 0.5)
+                             for k in joints))
+    return best
+
+
+def worst_over_frames(glb: Path, clip: str, stride: int, source_motion: float | None = None) -> dict:
     """The worst metric over the clip, so an extreme pose cannot hide behind frame 1."""
     total = clip_frames(glb, clip)
     if not total:
@@ -65,8 +102,17 @@ def worst_over_frames(glb: Path, clip: str, stride: int) -> dict:
     # The displacement floor is a property of the CLIP, not of one frame: a slow idle passes
     # through a near-bind pose, and judging the whole clip by that frame reports a rigid mesh that
     # is in fact animating.
+    # The displacement floor exists to catch a clip that does not animate the mesh at all. A clip that
+    # is quiet in the SOURCE cannot be expected to move it: a parked tank's idle drives the chassis
+    # and the exhaust cap (the Baneblade's moves 0.0 m, the Banewolf's 5.6 mm), and a turret aim layer
+    # holds a pose. The sidecar records the source clip's own measured motion, so the floor is judged
+    # against that as well.
+    bones = joint_travel(glb, clip, total, stride)
+    out["max_joint_travel"] = round(bones, 4)
+    # bones moving while the mesh does not is a weight/bind defect; bones not moving is a quiet clip
+    quiet_source = bones < 0.02
     failures = [f for f in worst.get("failures", [])
-                if not (f.startswith("disp_max") and max_disp >= 0.02)]
+                if not (f.startswith("disp_max") and (max_disp >= 0.02 or quiet_source))]
     out["verdict"] = "FAIL" if failures else "PASS"
     if failures:
         out["failures"] = failures
@@ -104,7 +150,9 @@ def main(argv=None):
             if name not in manifest.get("actions", {}):
                 continue
             all_clips.add(name)
-            metrics = worst_over_frames(glb, name, a.stride)
+            entry = manifest.get("actions", {}).get(name, {}) or {}
+            speed = (entry.get("acting_frame") or {}).get("speed_m_per_frame")
+            metrics = worst_over_frames(glb, name, a.stride, speed)
             clips[name] = metrics
             if metrics.get("verdict") == "FAIL":
                 verdict = "FAIL"

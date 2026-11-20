@@ -191,7 +191,12 @@ def prune_models(models: list[Path], body: Path | None, head: Path | None,
                 continue
             have["accessory"] = True
         else:
-            continue
+            # anything else under troops_wargear/ or vehicles_wargear/ is a distinct attachment
+            # (the Chimera's multilaser turret, the Wartrukk's big shoota, dozer blades, level
+            # unlocks). These are not alternatives for one slot, so every distinct part is kept —
+            # the tier de-duplication upstream has already removed the variants.
+            if not ("wargear/" in path or "/wargear_" in path):
+                continue
         keep.append(model)
     return keep
 

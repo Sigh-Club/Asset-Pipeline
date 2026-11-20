@@ -86,6 +86,13 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
    layer's translation and scale equal the base's, so nothing else moves. `action_library.py` bakes
    the four cardinal aim directions this way and records the measured bearing/elevation per action.
 
+4b. **Map a clip's tracks through its `hkAnimationBinding`, never by index.** A full-body clip ships an
+   identity map, but a partial clip binds its tracks to specific bones — the Wartrukk's
+   `chassis_idle_01` binds 3 tracks to bones 1, 41 and 42 (chassis, exhaust, exhaust cap). Applying
+   track *i* to bone *i* put the chassis rotation on the root and played the truck tipped onto its side
+   (111 deg off bind); 33 clips across 8 units were affected. Bones the clip does not track stay at the
+   clip's own reference pose, which is what a partial clip means.
+
 5. **Pose with the add-on's own maths** (`animation/import_core.py`): for each tracked bone,
 
    ```

@@ -233,8 +233,23 @@ def apply_clip(clip_path, action_name, fps, frames, layers=None):
         return None
     names = sk["bone_names"]
     parents = sk["parents"]
+    # A clip's tracks are NOT automatically bone-indexed. Full-body clips ship an identity map, but a
+    # PARTIAL clip maps its few tracks onto specific bones (measured: the Wartrukk's `chassis_idle_01`
+    # has 3 tracks bound to bones 1, 41 and 42 — the chassis and two suspension bones). Applying track
+    # i to bone i posed the vehicle onto the wrong bones and tipped it onto its side; 33 clips across
+    # 8 units use a non-identity binding. Bones the clip does not track stay at the clip's own
+    # reference pose, which is what a partial clip means.
+    bindings = pf.animation_bindings()
+    track_of_bone = {}
+    if bindings:
+        for track, bone_index in enumerate(bindings[0]["track_to_bone"]):
+            if 0 <= bone_index < len(names):
+                track_of_bone[bone_index] = track
+    if not track_of_bone:
+        track_of_bone = {i: i for i in range(len(names))}
     import numpy as _np
-    _sc = _np.array([t["scale"] for t in anim["tracks"]])
+    _sc = _np.array([anim["tracks"][t]["scale"] for t in track_of_bone.values()
+                     if t < len(anim["tracks"])])
     clip_scale_ok = bool(_sc.size == 0 or ((_sc > 0.5) & (_sc < 2.0)).all())
     # the add-on keeps the model's own bone names (`bip01 r thigh`), so the clip's bones are
     # matched against the armature's names case-insensitively -- NOT through our canonical
@@ -284,12 +299,19 @@ def apply_clip(clip_path, action_name, fps, frames, layers=None):
         # clip locals in Blender space, composed to world
         local = []
         for i in range(len(names)):
-            # a partial clip animates fewer tracks than the clip skeleton has bones (the inquisitor's
-            # loadout ships some): the missing track is that bone at rest, not an error
-            if i >= len(anim["tracks"]):
-                local.append(Matrix.Identity(4))
+            track = track_of_bone.get(i)
+            if track is None or track >= len(anim["tracks"]):
+                # untracked bone: the clip's own reference pose (its bind), not identity
+                ref = sk["reference_pose"][i] if i < len(sk["reference_pose"]) else None
+                if ref is None:
+                    local.append(Matrix.Identity(4))
+                    continue
+                local.append(dx_to_blender(Matrix.LocRotScale(
+                    Vector(ref["translation"]), Quaternion((ref["rotation"][3], ref["rotation"][0],
+                                                           ref["rotation"][1], ref["rotation"][2])),
+                    Vector([1.0, 1.0, 1.0]))))
                 continue
-            t = anim["tracks"][i]
+            t = anim["tracks"][track]
             q = t["rotation"][f]
             # A clip's scale track is either sane (all components within ~+/-25% of 1, measured
             # across the corpus) or it is a decode artefact (the necron's run from -4951 to 699

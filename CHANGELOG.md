@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 7)
+
+### Fixed
+
+- **A clip's tracks are not bone-indexed.** The importer applied track *i* to bone *i*, but a partial
+  clip binds its tracks to specific bones (the Wartrukk's `chassis_idle_01` binds 3 tracks to bones 1,
+  41 and 42), so the vehicle's chassis rotation landed on the root and the truck played tipped onto its
+  side (measured: 111 deg off bind). 33 clips across 8 units were affected. Tracks are now mapped
+  through the clip's own `hkAnimationBinding`, and bones the clip does not track stay at its reference
+  pose.
+- **The Chimera's multilaser turret was missing.** The turret is a shipped part named by the weapon
+  wargear (`vehicles_wargear/...`), which the part resolver dropped because it was not under
+  `armour/`, `weapons_*/`, `heads/` or `accessories/`. Vehicle wargear is now kept as distinct
+  attachment parts (the Wartrukk's big shoota was missing for the same reason).
+- The deformation gate could not distinguish a quiet clip from a broken one: it now measures joint
+  travel over weighted joints only, so a parked tank's idle is not a failure and a clip that moves
+  bones the mesh does not follow still is.
+
 ## [Unreleased] — 2026-11-18 (session 6)
 
 ### Added
