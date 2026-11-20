@@ -39,6 +39,23 @@ TILE_SIZE = 2.0
 MAX_RELIEF_STEPS = 6
 
 
+# Gameplay blueprints are named by their *function*, not by the model that draws them: a
+# `victory_point_pvp` is drawn with the `victory_point_02` mesh and a `strategic_point_pvp` with the
+# `capture_point` beacon. Measured across the corpus (36 distinct gameplay blueprints), this is the
+# whole mapping that matters; anything else gameplay-shaped is an invisible helper and is skipped.
+GAMEPLAY_ALIASES = (
+    ("victory_point", "victory_point_02"),
+    ("strategic_point", "capture_point"),
+    ("relic_point", "capture_point_ffa"),
+    ("resource_power_drop", "resource_power_drop"),
+    ("resource_requisition_drop", "resource_requisition_drop"),
+    ("container_power", "container"),
+    ("container_requisition", "container"),
+)
+# these are shape or bookkeeping, not landmarks: blockers are the paint layer, spawns are invisible
+GAMEPLAY_SKIP = ("blocker", "spawn", "position", "camo", "marker", "start")
+
+
 # Tokens that carry no identity: size words, ordinals and stock suffixes.
 _STOP_TOKENS = {
     "sb", "a", "b", "c", "the", "and", "long", "short", "small", "large", "lrg", "sml", "med", "mid",
@@ -49,6 +66,17 @@ _STOP_TOKENS = {
 def _tokens(name: str) -> list[str]:
     parts = [t for t in re.split(r"[_\-\s]+", name.lower()) if t]
     return [t for t in parts if t not in _STOP_TOKENS and not t.isdigit()]
+
+
+def gameplay_prop(blueprint: str, kit_names: list[str]) -> tuple[str | None, str]:
+    """A gameplay blueprint to the mesh that draws it, or (None, "skip") for an invisible helper."""
+    name = blueprint.rsplit("/", 1)[-1].lower()
+    if any(skip in name for skip in GAMEPLAY_SKIP):
+        return None, "skip"
+    for prefix, prop in GAMEPLAY_ALIASES:
+        if name.startswith(prefix) and prop in kit_names:
+            return prop, "gameplay"
+    return nearest_prop(name, kit_names)
 
 
 def nearest_prop(name: str, kit_names: list[str]) -> tuple[str | None, str]:
@@ -231,19 +259,25 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int,
         layout["paint"][f"{bx},{by}"] = "impassable"
 
     # placements: blueprint -> kit prop, snapped to the board
-    stats = {"exact": 0, "token": 0, "none": 0}
+    stats: dict[str, int] = {"exact": 0, "token": 0, "gameplay": 0, "skipped": 0, "none": 0}
     unresolved: dict[str, int] = {}
     for entity in data.get("entities") or []:
         blueprint = (entity.get("blueprint") or "").replace("\\", "/")
         if "world_objects" not in blueprint and "structures" not in blueprint:
             continue
         stem = blueprint.rstrip("/").split("/")[-1].lower()
-        prop, how = nearest_prop(stem, kit_names)
+        if "world_objects/gameplay" in blueprint:
+            prop, how = gameplay_prop(blueprint, kit_names)
+            if how == "skip":
+                stats["skipped"] = stats.get("skipped", 0) + 1
+                continue
+        else:
+            prop, how = nearest_prop(stem, kit_names)
         if prop is None:
             stats["none"] += 1
             unresolved[stem] = unresolved.get(stem, 0) + 1
             continue
-        stats[how] += 1
+        stats[how] = stats.get(how, 0) + 1
         pos = entity.get("pos") or [0, 0, 0]
         # 1:1 windowing: a board cell is a real 2 m square of the map, so the board carries the
         # density the map has (~26 props on a 24x20 board, measured) instead of squeezing a 256 m
@@ -338,9 +372,10 @@ def main(argv=None) -> int:
         index.append({"file": dest.name, "map": layout["name"], "biome": layout["biome"],
                       "props": len(layout["props"]), "source": layout["source"]})
         res = layout["source"]["placement_resolution"]
-        total = res["exact"] + res["token"] + res["none"]
+        total = res["exact"] + res["token"] + res.get("gameplay", 0) + res["none"]
         print(f"{layout['name']:40s} {layout['biome']:9s} props {len(layout['props']):4d} "
-              f"resolved {res['exact']} exact + {res['token']} token / {total} "
+              f"resolved {res['exact']} exact + {res['token']} token + "
+              f"{res.get('gameplay', 0)} gameplay / {total} "
               f"({100 * (res['exact'] + res['token']) // max(1, total)}%)")
     (a.out / "shipped_index.json").write_text(json.dumps({"maps": index}, indent=1))
     print(f"{len(index)} layouts -> {a.out}")

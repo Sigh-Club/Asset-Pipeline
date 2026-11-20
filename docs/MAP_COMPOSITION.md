@@ -112,10 +112,22 @@ each name to its shipped texture (`nm_snow/snow_slab_01` →
 usage count; `forge_import.py` carries the decals inside a board window into the layout, and the
 forge renders them at their authored position, size and rotation.
 
-## 8. What is still missing from the picture
+## 8. The landmark layer (gameplay structures)
 
-- **vista** (469 per map) — the horizon layer; 65 shipped models, 13 in the kit;
-- **structures and gameplay entities** — 36 types, the landmarks the rules in §4 refer to;
+The maps' functional identity: capture points, requisition points, resource drops, generators. 36
+distinct gameplay blueprints across the corpus, and they are named by function rather than by the
+mesh that draws them — a `victory_point_pvp` is drawn with `victory_point_02`, a `strategic_point_pvp`
+with the `capture_point` beacon. `forge_import.py` carries that mapping explicitly (`GAMEPLAY_ALIASES`)
+and skips the invisible helpers (`move_blockers`, `starting_position`, the `*_proxy` meshes), because
+rendering a proxy puts a box on the board where nothing should be.
+
+16 visible gameplay markers are in the kit (`capture_point`, `victory_point_02`, `requisition_point`,
+`generator_ffa`, the resource drops, the stratagem drops, containers). Import resolution is now 74-90%
+of placements per map, up from 47-74%, with the gameplay markers included.
+
+## 9. What is still missing from the picture
+
+- **vista** (469 per map) — the horizon layer; 65 shipped models, 12 in the kit;
 - **ground layers** — 8 per map with 2 masks; decoded, not blended.
 
 Until those are rendered, a board can be *correct* by these numbers and still look emptier than the

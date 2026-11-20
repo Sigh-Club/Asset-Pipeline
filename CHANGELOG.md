@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P6 step 2: landmarks)
+
+### Added
+
+- `build_env_kit.py --include-gameplay` builds the visible gameplay markers (capture points,
+  requisition points, resource drops, generators, stratagem drops, containers): 16 props in a
+  `gameplay` group.
+- `forge_import.py` maps gameplay blueprints to the mesh that draws them (`victory_point_pvp` ->
+  `victory_point_02`, `strategic_point_pvp` -> `capture_point`) and skips invisible helpers
+  (blockers, spawns, `*_proxy` meshes), which otherwise render as boxes where nothing should be.
+
+### Changed
+
+- The kit now carries every board-scale prop the corpus uses: **417 props** (84% of placements)
+  against 172 before. `guard:glb` checks 544 files at 0 failing.
+- Import resolution rose to **74-90% of placements per map**, from 47-74%.
+
 ## [Unreleased] — 2026-11-18 (session 9, P6: decal layer)
 
 ### Added

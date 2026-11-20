@@ -171,6 +171,35 @@ def board_scale(size: list[float], max_size: float) -> bool:
     return max(width, depth) <= max_size * 2.5
 
 
+# The gameplay art is the map's functional identity: capture points, resource drops, generators. They
+# are placed by the game's own rules rather than as scenery, which is why they are not in the biome
+# palettes — but they are the landmarks a board is built around (16 per map, measured).
+# Proxies and spawn markers are invisible helper meshes in the engine, not landmarks: rendering them
+# puts little boxes on the board where nothing should be.
+GAMEPLAY_SKIP = ("invisible_", "move_blocker", "proxy", "starting_point")
+
+
+def gameplay_entries(root: Path) -> list[dict]:
+    """The shipped gameplay markers that are visible: capture points, drops, generators."""
+    # the art root is a tree of archive extracts (`000_data/DATA/art/...`), not a single DATA folder
+    # only `art/world_objects/gameplay` — the biome folders have their own `gameplay` subfolders full
+    # of that biome's props, and taking those would pull in 1,500 entries instead of 20
+    bases = sorted({p for p in root.rglob("gameplay")
+                    if p.is_dir() and p.parent.name == "world_objects"})
+    if not bases:
+        return []
+    entries = []
+    seen: set[str] = set()
+    models = sorted({m for base in bases for m in base.rglob("*.model")})
+    for model in models:
+        name = model.stem
+        if name in seen or any(skip in name for skip in GAMEPLAY_SKIP):
+            continue
+        seen.add(name)
+        entries.append({"name": name, "biome": "gameplay", "placements": 0})
+    return entries
+
+
 def structure_entries(root: Path) -> list[dict]:
     """The shipped structures, resolved to their models."""
     out = []
@@ -199,6 +228,8 @@ def vista_entries(root: Path) -> list[dict]:
 
 def select(palette: dict, per_biome: int, root: Path | None = None,
            max_size: float = 0.0, min_placements: int = 0) -> list[dict]:
+    """Biome props for the kit. `per_biome` of 0 selects none, so the extra groups can be built
+    alone (`--per-biome 0 --include-gameplay`)."""
     """The kit's prop list: the most-placed props per biome that fit a combat board.
 
     The scan walks the biome's frequency-ordered list rather than its head, because the top of a DoW2
@@ -206,6 +237,8 @@ def select(palette: dict, per_biome: int, root: Path | None = None,
     vista pieces, not cover. A prop is taken when its own bounding box fits `max_size`.
     """
     chosen = []
+    if per_biome <= 0 and min_placements <= 0:
+        return chosen
     if min_placements > 0:
         # Frequency-driven rather than rank-driven: a wall placed 27 times matters more than the
         # 9th most common bush, and a per-biome cap cannot express that.
@@ -341,6 +374,8 @@ def main(argv=None) -> int:
                     help="skip props whose largest dimension exceeds this (metres; default 8)")
     ap.add_argument("--include-structures", action="store_true",
                     help="also build the shipped structures (bunkers, turrets, generators)")
+    ap.add_argument("--include-gameplay", action="store_true",
+                    help="also build the visible gameplay markers (capture points, drops, generators)")
     ap.add_argument("--include-vista", action="store_true",
                     help="also build the horizon-scale props (big trees, cliffs) as their own layer")
     a = ap.parse_args(argv)
@@ -367,6 +402,8 @@ def main(argv=None) -> int:
         entries.extend(structure_entries(root))
     if a.include_vista:
         entries.extend(vista_entries(root))
+    if a.include_gameplay:
+        entries.extend(gameplay_entries(root))
     if not a.only:
         print(f"{len(entries)} props within {a.max_size} m")
     if a.only:

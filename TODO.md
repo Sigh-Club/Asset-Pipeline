@@ -222,9 +222,23 @@ as **420 distinct decals over 19,930 placements** (349 per map, sizes 1.3-70 m).
   the layout format round-trips them (18 mapLayout tests, including footprint-based removal and
   crop-on-resize).
 
+## 2c4. Landmark layer (session 9, P6 step 2) — DONE
+
+The maps' functional identity is imported: capture points, requisition points, resource drops,
+generators, stratagem drops. 36 distinct gameplay blueprints exist across the corpus and they are
+named by function, not by mesh — `victory_point_pvp` is drawn with `victory_point_02`,
+`strategic_point_pvp` with the `capture_point` beacon. `forge_import.py` carries that mapping
+explicitly and skips invisible helpers (blockers, spawns, `*_proxy` meshes), because rendering a proxy
+puts a box where nothing should be.
+
+- 16 visible gameplay markers built into the kit (gameplay group).
+- Import resolution rose to **74-90% of placements per map** (from 47-74%).
+- The kit is now 417 props (every board-scale prop the corpus uses, 84% placement coverage) at
+  363 MB, and `guard:glb` checks 544 files at 0 failing.
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
-engine's eight blended layers; vista and gameplay structures are measured but not rendered.
+engine's eight blended layers; vista is measured but not rendered.
 
 ## 2c. Environment kit and the map forge (session 8)
 
