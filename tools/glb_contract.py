@@ -44,6 +44,10 @@ LIMITS = {
     # map forge renders every prop, so a wrong one is visible rather than silently accepted.
     "env":  {"max_tris": 60000, "min_tris": 8, "max_mb": 20.0, "skinned": False,
              "need_uv": True, "need_texture": False, "need_clips": []},
+    # A standalone weapon is a small textured mesh with no armature of its own: it is parented to the
+    # unit's hand bone at runtime, so `skinned` is false here. The shipped set is 157-1576 tris.
+    "weapon": {"max_tris": 8000, "min_tris": 8, "max_mb": 4.0, "skinned": False,
+               "need_uv": True, "need_texture": True, "need_clips": []},
 }
 
 

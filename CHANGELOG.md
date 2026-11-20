@@ -2,6 +2,36 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P0: method capture)
+
+### Added
+
+- `docs/ASSET_SPEC.md` — the source-agnostic asset contract (space/scale, mesh, rig, animation,
+  material, collision/physics/cover, terrain, map format), every item labelled measured / engine /
+  choice with the file and line that settles it. This is the document that makes the method portable
+  and the DoW2 source replaceable.
+- `docs/asset_spec.json` + `tools/spec/validate_assets.py` (`npm run guard:spec`) — the machine-
+  readable contract and its enforcement, including a drift check against `tools/glb_contract.py` so
+  the prose, the spec and the gate cannot diverge.
+- `docs/METHOD_PORTABILITY.md` — the IP boundary with a primary source (US Copyright Office Circular
+  31 / 17 U.S.C. §102(b)), the inherit-versus-replace lists, and the adapter interface a non-DoW2
+  source must satisfy (DoW2 = adapter #1, our own art = adapter #2).
+- Spec §9 records whose limit is whose: 4 influences/vertex is the vertex format (enforced), DoW2's
+  54 bones/mesh and 28 terrain samplers are D3D9 budgets (recorded, not enforced; our WebGL2 limit is
+  256 bones, per three.js issue 34196).
+
+### Changed
+
+- `tools/glb_contract.py` and `scripts/guard_glb.py` (game repo) gain a `weapon` class: a standalone
+  weapon carries no armature of its own and parents to a hand bone. `guard:glb` stays 246/0.
+- `docs/DOW2_COMMUNITY_TOOLCHAIN.md` is now explicitly *one implementation* of the contract, with a
+  table mapping each contract section to the exporter module that settles it.
+
+### Verified
+
+- `npm run guard:spec`: PASS over `env=151, prop=38, tile=1, unit=200, weapon=8`; 28 flat-colour
+  imports recorded (no texture, so no UV set exists), 19 units over the source engine's 54-bone limit.
+
 ## [Unreleased] — 2026-11-18 (session 9)
 
 ### Changed

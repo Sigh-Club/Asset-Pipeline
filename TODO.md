@@ -6,9 +6,14 @@ before touching the DoW2 import.
 
 Authority and detail:
 
-- [`docs/DOW2_COMMUNITY_TOOLCHAIN.md`](docs/DOW2_COMMUNITY_TOOLCHAIN.md) — **the build method**:
-  the community importer, its constants, the pose sequence, the pruning rules, the export flags, the
-  traps.
+- [`docs/ASSET_SPEC.md`](docs/ASSET_SPEC.md) — **the contract**, source-agnostic: what any asset
+  must satisfy to work here, every item labelled measured / engine / choice. Read this first.
+- [`docs/METHOD_PORTABILITY.md`](docs/METHOD_PORTABILITY.md) — the IP boundary (what we inherit, what
+  we replace) and the adapter interface that lets a non-DoW2 source feed the pipeline.
+- [`docs/ASSET_SPEC.md`](docs/ASSET_SPEC.md) §11 + `npm run guard:spec` — the enforcement.
+- [`docs/DOW2_COMMUNITY_TOOLCHAIN.md`](docs/DOW2_COMMUNITY_TOOLCHAIN.md) — **one implementation of
+  that contract**: the community importer, its constants, the pose sequence, the pruning rules, the
+  export flags, the traps.
 - [`docs/DOW2_ANIMATION_DECODE.md`](docs/DOW2_ANIMATION_DECODE.md) — the clip formats (delta-compressed
   **and** interleaved) and our decoder.
 - [`docs/HANDOFF_TURN_BASED.md`](docs/HANDOFF_TURN_BASED.md) — the self-contained handoff prompt.
@@ -101,6 +106,37 @@ Zoanthropes and the Great Unclean One have *neither*, so they are skipped); some
 without the `fb_` prefix; vehicle rigs have no hand bones and name their clips `idle`/`drive`/
 `death_die`; and a clip can ship for a unit without animating it (the Chimera's `fire_banewolf` drives
 the Banewolf's turret — the action library now rejects a static candidate when a moving one exists).
+
+## 2b2. Method capture and the portable spec (session 9, P0) — DONE
+
+The pipeline was bootstrapped by reverse engineering DoW2, and the docs recorded *what we did with
+DoW2* rather than *the method itself*. That is now fixed, because the art must eventually be ours.
+
+- **`docs/ASSET_SPEC.md`** — the source-agnostic contract: space/scale, mesh (attribute set, 4
+  influences/vertex, LODs, bounding volumes), rig, animation (per-frame local transforms, quaternion
+  continuity, duration formula), material (the 28-slot interface and the specular-RGB/gloss-A
+  convention with its exact metalness/roughness arithmetic), collision/physics/cover, terrain (8
+  layers, 2 RGBA weight masks, activity grid, normalised blend), map format. Every item is labelled
+  **measured** / **engine** / **choice**, with the file and line that settles it.
+- **`docs/asset_spec.json`** — the machine-readable form, and **`tools/spec/validate_assets.py`**
+  (exposed as `npm run guard:spec`) which checks our assets against it and cross-checks the spec
+  against `tools/glb_contract.py`'s limits so prose, spec and gate cannot drift.
+- **`docs/METHOD_PORTABILITY.md`** — the IP boundary with a primary source (US Copyright Office
+  Circular 31, 17 U.S.C. §102(b): methods and systems are not protected; expression is), the
+  inherit/replace lists, and the adapter interface a non-DoW2 source must satisfy.
+- **Spec §9, "whose limit is it"** — 4 influences/vertex is a vertex-format fact (enforced); DoW2's
+  54 bones per mesh is a D3D9 constant budget (recorded, **not** enforced: 19 converted units exceed
+  it, up to 110 joints, and render correctly under our 256-bone WebGL2 limit).
+- Measured state: `guard:spec` PASS over `env=151, prop=38, tile=1, unit=200, weapon=8`, with 28
+  flat-colour imports recorded (shipped weapon shells and two necron units ship no texture, so no UV
+  set exists to carry) and 19 units over the source engine's bone limit.
+- Gate change: a `weapon` class was added to `tools/glb_contract.py` and to `scripts/guard_glb.py`'s
+  path mapping (a standalone weapon has no armature of its own — it parents to a hand bone), keeping
+  `guard:glb` at 246 checked / 0 failing.
+
+Still to adopt from the community package (recorded, not started): the `.simbox` physics hulls, the
+`.collision` simple/complex generators, `.markers`, `.hkanim` additive layering and `.motiontree`
+state machines, and terrain layer *blending* in the forge (it renders one ground texture today).
 
 ## 2c. Environment kit and the map forge (session 8)
 

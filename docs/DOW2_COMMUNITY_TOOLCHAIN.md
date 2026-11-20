@@ -1,9 +1,14 @@
-# DoW2 community toolchain — the recipe that actually builds the units
+# DoW2 community toolchain — one implementation of the asset contract
 
-> Audience: the next agent. This is the method the lab units are built with. It is not our own
-> assembly: it is the community importer used by the DoW2 modding scene (Santos Tools 2 lineage, the
-> tooling behind the Elite mod), plus our own clip reader in place of its Windows binary. Everything
-> below was verified on the shipped files and by rendering the result.
+> Audience: the next agent. **Read `docs/ASSET_SPEC.md` first**: that is the contract (what any asset
+> must satisfy), and this file is one way to satisfy it. DoW2 is *reference implementation #1*; our
+> own art is adapter #2 and needs no knowledge of anything below. The boundary and the legal
+> reasoning are in `docs/METHOD_PORTABILITY.md`.
+>
+> This is the method the lab units are built with. It is not our own assembly: it is the community
+> importer used by the DoW2 modding scene (Santos Tools 2 lineage, the tooling behind the Elite mod),
+> plus our own clip reader in place of its Windows binary. Everything below was verified on the
+> shipped files and by rendering the result.
 
 ## Why a "simple import" is not simple
 
@@ -156,6 +161,20 @@ def dx_to_blender(M): return DX_TO_BLENDER @ M @ BLENDER_TO_DX
 | dow_tau_gun_drone | `003_data` | `troops/drone_heavy_gun` (gun is part of the model) | — | `drone_heavy_gun/animations/base` (`dhg_*`) |
 | dow_tau_marker_drone | `003_data` | `troops/drone_marker` | — | `drone_marker/animations/base` (`dm_*`) |
 | dow_tau_shield_drone | `003_data` | `troops/shield_drone` | — | `shield_drone/animations/base` (`sd_*`, ability instead of fire) |
+
+## What this implementation contributes to the contract
+
+The exporter modules are the engine's requirements written as code, so they are the primary evidence
+behind `docs/ASSET_SPEC.md`. The parts that matter, and where they came from:
+
+| contract section | module | what it settles |
+|---|---|---|
+| mesh, §2 | `model/exporter_meshes.py`, `model/exporter_mesh_plan.py` | vertex attribute set, 4 influences/vertex, 54-bone mesh limit (a D3D9 budget — see spec §9) |
+| material, §5 | `material/definitions.py`, `material/shaders/node_passes.py` | the 28-slot material interface and the specular-RGB/gloss-A convention |
+| animation, §4 | `animation/export_core.py` | per-frame local transforms, quaternion continuity, duration from frame count |
+| collision, §6 | `collision/utils.py` | per-damage-state collision, simple = walkable faces only |
+| physics, §6 | `physics/hull_properties.py` | the Havok body property set and the corpus-measured values |
+| terrain, §7 | `map_io/terrain_material_nodes.py`, `map_io/terrain_material_images.py` | 8 layers, 2 RGBA weight masks, activity grid, normalised blend, 28 samplers |
 
 ## The build and the gates
 

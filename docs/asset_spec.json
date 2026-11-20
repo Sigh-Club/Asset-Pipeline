@@ -1,0 +1,361 @@
+{
+ "_comment": [
+  "Machine-readable form of docs/ASSET_SPEC.md. The contract is source-agnostic: it describes what",
+  "an asset must satisfy to work in this engine, not where the asset came from. Dawn of War II is",
+  "reference implementation #1 (see docs/METHOD_PORTABILITY.md); our own art is adapter #2.",
+  "Labels used throughout: measured = read from shipped data, engine = required by the shipped",
+  "engine as encoded in the community exporter's validation, choice = a decision of this project.",
+  "`budgets` is cross-checked against tools/glb_contract.py LIMITS by tools/spec/validate_assets.py",
+  "so the prose, this file and the gate cannot drift apart."
+ ],
+ "version": 1,
+ "space": {
+  "tile_size_m": 2.0,
+  "elevation_step_m": 0.35,
+  "up_axis": "Y",
+  "forward_axis": "-Z",
+  "handedness": "right",
+  "label": "measured",
+  "source": "Imperium-of-Ash/frontend/src/three/gridMath.ts"
+ },
+ "mesh": {
+  "vertex_attributes": [
+   "POSITION",
+   "JOINTS_0",
+   "WEIGHTS_0",
+   "NORMAL",
+   "TANGENT",
+   "TEXCOORD_0",
+   "TEXCOORD_1"
+  ],
+  "engine_vertex_attributes": [
+   "position",
+   "bone_indices",
+   "weights",
+   "normal",
+   "binormal",
+   "tangent",
+   "uv0",
+   "uv1"
+  ],
+  "max_influences_per_vertex": 4,
+  "max_influencing_bones_per_mesh": 54,
+  "submesh_per_material": true,
+  "lod_chain_required": true,
+  "bounding_volumes": [
+   "per_submesh",
+   "per_bone_if_skinned"
+  ],
+  "tangent_sign_carries_binormal": true,
+  "label": "engine",
+  "source": "dow2_tools/model/exporter_meshes.py, dow2_tools/model/exporter_mesh_plan.py"
+ },
+ "rig": {
+  "bone_name_is_join_key": true,
+  "damage_states": [
+   "healthy",
+   "light_damage",
+   "heavy_damage",
+   "wreck"
+  ],
+  "collision_per_damage_state": true,
+  "label": "engine",
+  "source": "dow2_tools/collision/utils.py COLLISION_STATE_DEFINITIONS"
+ },
+ "animation": {
+  "data_form": "per_frame_absolute_local_bone_transforms",
+  "all_bones_every_frame": true,
+  "space": "engine_dx",
+  "quaternion_continuity": "flip_sign_when_dot_lt_zero",
+  "duration_formula": "(frames - 1) / fps",
+  "required_clips": [
+   "idle",
+   "walk",
+   "run",
+   "aim",
+   "fire",
+   "reload",
+   "hit",
+   "death",
+   "melee"
+  ],
+  "aim_directions": [
+   "left",
+   "right",
+   "up",
+   "down"
+  ],
+  "layering": {
+   "hkanim_additive_upper_body": true,
+   "implemented": false
+  },
+  "motiontrees": {
+   "supported": true,
+   "implemented": false
+  },
+  "label": "engine",
+  "source": "dow2_tools/animation/export_core.py"
+ },
+ "material": {
+  "texture_slots": [
+   "badge1Tex",
+   "badge2Tex",
+   "cliffNormalTex1",
+   "cliffTex1",
+   "damageDiffuseTex",
+   "damageNormalTex",
+   "damageSpecTex",
+   "diffuseTex",
+   "dirtTex",
+   "dualScarDiffuseTex",
+   "dualScarNormalTex",
+   "dualScarSpecTex",
+   "emissiveTex",
+   "glossTex",
+   "grassNormalTex1",
+   "grassTex1",
+   "normalMap",
+   "normalMapCoarseTex",
+   "normalMapFineTex",
+   "normalMapFoamTex",
+   "occlusionTex",
+   "overlayTex",
+   "scarTexture",
+   "specularTex",
+   "teamTex",
+   "waterColourTex",
+   "waterTurbulenceTex",
+   "waterTurbulenceMaskTex"
+  ],
+  "required_for_our_art": [
+   "diffuseTex",
+   "normalMap",
+   "specularTex"
+  ],
+  "specular_convention": "RGB = specular colour, A = gloss",
+  "metalness_formula": "clamp((max(r,g,b) - 0.04) / 0.96, 0, 1)",
+  "roughness_formula_legacy": "clamp(1 - a, 0, 1)",
+  "roughness_formula_reflective": "clamp(0.65 - a, 0, 1)",
+  "team_palette_count": 4,
+  "bool_params": [
+   "alphaTest",
+   "bHighlight",
+   "enableScarring",
+   "useDepthTest",
+   "useLighting"
+  ],
+  "int_params": [
+   "unitOcclusionFlag"
+  ],
+  "float_params": [
+   "brightness",
+   "damageTexTilingFactor",
+   "dirtVisibility",
+   "emissiveMultiplier",
+   "glossValue",
+   "uOffset",
+   "vOffset"
+  ],
+  "label": "engine",
+  "source": "dow2_tools/material/definitions.py, dow2_tools/material/shaders/node_passes.py"
+ },
+ "collision": {
+  "simple": "walkable faces only, world normal within N degrees of up",
+  "complex": "projectile and unit nav, garrisonable structures",
+  "physics_body": {
+   "fields": [
+    "mass",
+    "allowed_penetration_depth",
+    "friction",
+    "restitution",
+    "quality_type",
+    "process_contact_callback_delay",
+    "deactivation_class",
+    "deactivation_integrate_counter",
+    "linear_damping",
+    "angular_damping",
+    "max_linear_velocity",
+    "max_angular_velocity",
+    "collision_filter_info",
+    "center_of_mass_mode"
+   ],
+   "static_building": {
+    "mass": 0,
+    "penetration": "HK_REAL_MAX",
+    "friction": 0.5,
+    "restitution": 0.4,
+    "quality_type": 1,
+    "deactivation_class": 1
+   },
+   "dynamic_rubble": {
+    "mass_range": [
+     2,
+     20
+    ],
+    "penetration": 0.1,
+    "friction": 0.5,
+    "restitution": 0.4,
+    "quality_type": 4,
+    "deactivation_class": 2
+   },
+   "label": "measured",
+   "source": "dow2_tools/physics/hull_properties.py"
+  },
+  "cover": {
+   "volume_required": true,
+   "footprint_required": true,
+   "label": "choice"
+  }
+ },
+ "terrain": {
+  "layers": 8,
+  "layer_texture_set": [
+   "surface_diffuse",
+   "surface_normal",
+   "surface_spec",
+   "cliff_diffuse",
+   "cliff_normal",
+   "cliff_spec"
+  ],
+  "weight_masks": 2,
+  "weight_packing": "layer i weight = mask[i // 4] channel i % 4 (RGBA)",
+  "activity_grid": "layer i active = usage[i // 4] channel i % 4 (RGBA)",
+  "blend": "weighted accumulation normalised by total weight, epsilon 1e-5",
+  "mask_sampling": {
+   "interpolation": "Closest",
+   "extension": "EXTEND"
+  },
+  "max_image_samplers": 28,
+  "heightmap": {
+   "format": "u32 width, u32 height, zlib float grid",
+   "chunk": "SCEN/GEWD/TERR/HMAN/HITE/HVAL/HEAD + VALS"
+  },
+  "nav_grid": {
+   "chunk": "SCEN/WRLD/WLDI/PFDR/PRMP",
+   "bytes_decoded": false
+  },
+  "label": "engine",
+  "source": "dow2_tools/map_io/terrain_material_nodes.py, map_io/terrain_material_images.py"
+ },
+ "map": {
+  "container": "chunk tree, 4-byte tags with sizes and offsets",
+  "placement": "blueprint index into a path table + 4x3 transform",
+  "blockers_are_paint": true,
+  "blocker_models": [
+   "move_blockers",
+   "move_shot_blockers"
+  ],
+  "label": "measured",
+  "source": "tools/dow2/scenario_decode.py"
+ },
+ "budgets": {
+  "unit": {
+   "max_tris": 25000,
+   "min_tris": 700,
+   "soft_tris": 4000,
+   "max_mb": 10.0,
+   "skinned": true,
+   "need_uv": true,
+   "need_texture": true,
+   "need_clips": [
+    "idle",
+    "walk",
+    "run",
+    "aim",
+    "fire",
+    "reload",
+    "hit",
+    "death",
+    "melee"
+   ]
+  },
+  "prop": {
+   "max_tris": 12000,
+   "min_tris": 100,
+   "max_mb": 4.0,
+   "skinned": false,
+   "need_uv": true,
+   "need_texture": true,
+   "need_clips": []
+  },
+  "tile": {
+   "max_tris": 3000,
+   "min_tris": 4,
+   "max_mb": 1.0,
+   "skinned": false,
+   "need_uv": true,
+   "need_texture": true,
+   "need_clips": []
+  },
+  "env": {
+   "max_tris": 60000,
+   "min_tris": 8,
+   "max_mb": 20.0,
+   "skinned": false,
+   "need_uv": true,
+   "need_texture": false,
+   "need_clips": []
+  },
+  "weapon": {
+   "max_tris": 8000,
+   "min_tris": 8,
+   "max_mb": 4.0,
+   "skinned": false,
+   "need_uv": true,
+   "need_texture": true,
+   "need_clips": []
+  }
+ },
+ "gaps": [
+  "hkanim additive layering and motiontree state machines",
+  "collision simple/complex meshes (cover volumes only today)",
+  "simbox physics hulls (static props ship with no body)",
+  "markers attachment points",
+  "terrain layer blending in the forge (single texture today)",
+  "PRMP nav grid bytes (dimensions only)",
+  "RSH atlas composition (reads _dif.dds directly, ignores channel packing)",
+  "specular/gloss maps not yet authored for our own art"
+ ],
+ "limits": {
+  "_comment": [
+   "A limit is only a requirement for us if it is a limit of OUR target engine or of the vertex",
+   "format. A limit of the source engine (DoW2, D3D9) must be recorded, not imposed: building our",
+   "own art to it would discard headroom for no reason, and failing imported art against it would",
+   "report a defect that is not one."
+  ],
+  "universal": {
+   "max_influences_per_vertex": 4,
+   "because": "vertex attribute format (4 indices + 4 weights) and the target engine's own hard limit",
+   "sources": [
+    "three.js: max 4 bones influencing a vertex (mrdoob/three.js issue 26137, discourse 47457)",
+    "DoW2 exporter truncates to the strongest 4 (dow2_tools/model/exporter_meshes.py:325)"
+   ]
+  },
+  "target_engine": {
+   "name": "WebGL2 / three.js",
+   "max_bones_per_skinned_mesh": 256,
+   "because": "WebGL2 guarantees GL_MAX_UNIFORM_BLOCK_SIZE of 16 KB; the bone matrix block is 64 bytes per bone, so 256 is the guaranteed minimum (mrdoob/three.js issue 34196)",
+   "max_texture_units_practical": 16
+  },
+  "source_engine_only": {
+   "name": "DoW2 / D3D9",
+   "max_influencing_bones_per_mesh": 54,
+   "max_terrain_image_samplers": 28,
+   "because": "D3D9 shader constant and sampler budgets; recorded, not imposed on our art",
+   "measured_breaches_in_shipped_content": "17 converted units exceed 54 joints (55-110); they render correctly in our engine, which allows 256"
+  }
+ },
+ "provenance": {
+  "_comment": "UVs are required exactly when there is a texture to sample. An imported asset that ships no texture at all is a flat-colour asset: its lack of UVs is a measured property of the source, reported and counted, not a failure.",
+  "rules": [
+   {
+    "when": "textures == 0 and TEXCOORD_0 absent",
+    "verdict": "recorded_flat_colour_import"
+   },
+   {
+    "when": "textures > 0 and TEXCOORD_0 absent",
+    "verdict": "failure"
+   }
+  ]
+ }
+}
