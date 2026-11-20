@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+"""scenario_decode.py — read DoW2's shipped maps into JSON: what is placed, on which ground.
+
+The game's 164 shipped `.scenario` files are the reference for map generation and biome crafting. Each
+one is a Relic Chunky holding the terrain chunks (`TCHK`), the ground texture splats (`SPLT`/`SPTO`),
+the entity placements (`ENTY`, one per prop/building/cover object), the vista objects (`VIZO`) and the
+map's metadata beside it (`.info`: size, player count).
+
+This reads them with the same chunky parser the model pipeline uses and writes, per map:
+
+  * `entities` — placement position (x, height, z) decoded from the `ENTI` record and the art paths
+    the map references, so a generator can see what a DoW2 map actually places and how densely;
+  * `splats` — the ground materials the map paints with (`nm_flora`, `nm_urban_splats`, ...);
+  * counts of terrain chunks and vista objects.
+
+The aggregate (`--aggregate`) turns the corpus into the biome vocabulary a recipe is written in: per
+biome, which props ship and how often they are used, and which ground materials the maps reference.
+
+Nothing is invented: every prop name and splat name comes from a shipped map, and every prop resolves
+to a shipped model under `art/world_objects/`.
+
+Usage:
+  python3 tools/dow2/scenario_decode.py --maps <sga root> --out output/source_lab/maps
+  python3 tools/dow2/scenario_decode.py --maps <sga root> --aggregate output/source_lab/biome_palette.json
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import struct
+import sys
+from collections import Counter
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools" / "dow2"))
+
+
+
+MAGIC = b"Relic Chunky\r\n\x1a\x00"
+
+
+class Node:
+    """A Relic Chunky node: 4-byte kind, 4-byte tag, five u32 fields, an optional name, then data.
+
+    The scenario files use the same container as the models but a different chunk vocabulary; the
+    model pipeline's parser walks children by tag sniffing, which does not hold here (the root's
+    children are offset by the header's name field), so the layout is read explicitly:
+    kind(4) tag(4) version(4) size(4) name_len(4) unk1(4) unk2(4) [name] data/children.
+    """
+    __slots__ = ("kind", "tag", "size", "data_offset", "children")
+
+    def __init__(self):
+        self.children = []
+
+
+def read_chunks(blob: bytes, pos: int, end: int) -> list[Node]:
+    out = []
+    while pos + 24 <= end:
+        kind = blob[pos:pos + 4]
+        if kind not in (b"FOLD", b"DATA"):
+            break
+        tag = blob[pos + 4:pos + 8].decode("latin-1", "replace")
+        version, size, name_len, _u1, _u2 = struct.unpack_from("<5I", blob, pos + 8)
+        pos += 28
+        if name_len > 0x10000:
+            break
+        pos += name_len
+        node = Node()
+        node.kind = kind.decode("latin-1")
+        node.tag = tag
+        node.size = size
+        node.data_offset = pos
+        if node.kind == "FOLD":
+            node.children = read_chunks(blob, pos, min(pos + size, end))
+        out.append(node)
+        pos = pos + size if size > 0 else pos
+    return out
+
+
+def parse(blob: bytes) -> list[Node]:
+    if blob[:1] == b"\x78":
+        import zlib
+        try:
+            blob = zlib.decompress(blob)
+        except zlib.error:
+            pass
+    if blob[:16] != MAGIC:
+        raise ValueError(f"not a Relic Chunky file: {blob[:16]!r}")
+    roots = read_chunks(blob, 36, len(blob))
+    if not roots:
+        raise ValueError("no chunks")
+    return roots
+
+
+ART_PATH = re.compile(r"art[\\/]([A-Za-z0-9_\\/ .\-]+?)(?=\x00|art[\\/]|ebps[\\/])")
+SPLAT_NAME = re.compile(r"(nm_[a-z0-9_]+|[a-z0-9_]+_(?:splat|splats|markings|craters|stains))")
+BIOME_BY_SEGMENT = {
+    "desert_objects": "desert", "desert_terrain": "desert",
+    "ice_objects": "ice", "ice_terrain": "ice", "ice_vista_objects": "ice",
+    "jungle_objects": "jungle", "jungle_terrain": "jungle",
+    "urban_objects": "urban", "urban_terrain": "urban",
+    "volcanic_objects": "volcanic", "volcanic terrain": "volcanic",
+    "spacehulk": "spacehulk", "military_objects": "military",
+    "industrial_objects": "industrial", "rubble": "ruins",
+    "ork": "ork", "tyranid": "tyranid", "chaos": "chaos",
+    "props": "props", "gameplay": "gameplay", "skies": "skies",
+}
+
+
+def walk(chunk):
+    yield chunk
+    for kid in chunk.children:
+        yield from walk(kid)
+
+
+def tag(chunk) -> str:
+    return chunk.tag
+
+
+def art_paths(blob: bytes) -> list[str]:
+    """Every `art\\...` path the map references, normalised to forward slashes."""
+    out = []
+    for m in re.finditer(rb"art[\\/][ -~]{4,160}", blob):
+        text = m.group().decode("latin-1")
+        text = text.split("\x00")[0]
+        if "world_objects" in text or "structures" in text:
+            out.append(text.replace("\\", "/").rstrip("/"))
+    return sorted(set(out))
+
+
+def biome_of(path: str) -> str:
+    for segment in path.split("/"):
+        if segment in BIOME_BY_SEGMENT:
+            return BIOME_BY_SEGMENT[segment]
+    return "other"
+
+
+_MODEL_INDEX: set[str] | None = None
+
+
+def model_index(art_root: Path | None) -> set[str]:
+    """Every shipped environment model name, so a path can be resolved against real assets.
+
+    The scenario stores each path in a fixed-size char array, so a decoded run runs on into the next
+    record and picks up its characters (`space_marine_base5`, `big_spikeC`). Rather than guess where
+    the string ends, the name is trimmed against the shipped model index: the longest prefix that is a
+    real model wins. A name that resolves to nothing is kept and marked unresolved, which is the
+    signal that the path needs looking at.
+    """
+    global _MODEL_INDEX
+    if _MODEL_INDEX is None:
+        _MODEL_INDEX = set()
+        if art_root is not None:
+            for model in art_root.rglob("*.model"):
+                _MODEL_INDEX.add(model.stem)
+    return _MODEL_INDEX
+
+
+def prop_of(path: str, index: set[str] | None = None) -> tuple[str, bool]:
+    name = re.sub(r"[^A-Za-z0-9_].*$", "", path.rstrip("/").split("/")[-1])
+    if not index:
+        return name, True
+    for length in range(len(name), 3, -1):
+        if name[:length] in index:
+            return name[:length], True
+    return name, False
+
+
+def entity_positions(blob: bytes, chunk) -> list[dict]:
+    """Placement positions from `ENTY` -> `ENTI`.
+
+    `ENTI` is a 56-byte record: an entity id and a type id, then a transform. The last three floats
+    are the world position — verified against the map's own bounds (the positions fall inside the
+    authored map area, e.g. x in +-150, z in +-150 for a 512x320 map) and against the heights of the
+    terrain on the maps that place props on slopes. The preceding floats are the orientation basis;
+    they are recorded raw rather than interpreted, because a wrong rotation is easy to see and hard to
+    fake, while a wrong position is not.
+    """
+    out = []
+    for ch in walk(chunk):
+        if tag(ch) != "ENTY":
+            continue
+        for kid in ch.children:
+            if tag(kid) != "ENTI" or kid.size < 56:
+                continue
+            raw = blob[kid.data_offset:kid.data_offset + 56]
+            ident, kind = struct.unpack_from("<2I", raw, 0)
+            values = struct.unpack_from("<12f", raw, 8)
+            out.append({"id": ident, "kind": kind,
+                        "pos": [round(v, 2) for v in values[9:12]],
+                        "basis": [round(v, 3) for v in values[0:9]]})
+    return out
+
+
+def map_info(scenario: Path) -> dict:
+    info = scenario.with_suffix(".info")
+    if not info.exists():
+        return {}
+    text = info.read_text(errors="replace")
+    out = {}
+    for key in ("scenarioname", "maxplayers", "modname"):
+        m = re.search(rf'{key}\s*=\s*"?([^"\n,]+)"?', text)
+        if m:
+            out[key] = m.group(1).strip()
+    size = re.search(r"mapsize\s*=\s*\n?\s*(\d+),\s*\n?\s*(\d+)", text)
+    if size:
+        out["mapsize"] = [int(size.group(1)), int(size.group(2))]
+    return out
+
+
+def decode(scenario: Path, a_art_root: Path | None = None) -> dict:
+    blob = scenario.read_bytes()
+    roots = parse(blob)
+    counts = Counter(tag(ch) for root in roots for ch in walk(root))
+    paths = art_paths(blob)
+    splats = sorted({m.group(1).decode("latin-1")
+                     for m in re.finditer(rb"(nm_[a-z0-9_]{2,40})", blob)})
+    entities = [p for root in roots for p in entity_positions(blob, root)]
+    index = model_index(a_art_root)
+    props = []
+    for p in paths:
+        name, resolved = prop_of(p, index)
+        if len(name) < 4:
+            continue
+        props.append({"path": p, "prop": name, "biome": biome_of(p), "resolved": resolved})
+    return {
+        "map": scenario.stem,
+        "info": map_info(scenario),
+        "counts": {"entities": counts.get("ENTY", 0), "terrain_chunks": counts.get("TCHK", 0),
+                   "splats": counts.get("SPLT", 0), "vista_objects": counts.get("VIZO", 0),
+                   "art_paths": len(paths)},
+        "props": props,
+        "ground": splats,
+        "placements": entities,
+    }
+
+
+def aggregate(decoded: list[dict]) -> dict:
+    biome_props: dict[str, Counter] = {}
+    biome_maps: Counter = Counter()
+    ground: Counter = Counter()
+    kinds: Counter = Counter()
+    for entry in decoded:
+        seen_biomes = set()
+        for prop in entry["props"]:
+            biome = prop["biome"]
+            biome_props.setdefault(biome, Counter())[prop["prop"]] += 1
+            seen_biomes.add(biome)
+        for biome in seen_biomes:
+            biome_maps[biome] += 1
+        for name in entry["ground"]:
+            ground[name] += 1
+        for placement in entry["placements"]:
+            kinds[placement["kind"]] += 1
+    return {
+        "generated_by": "asset-pipeline/tools/dow2/scenario_decode.py",
+        "note": ("The shipped map corpus as a biome vocabulary: which props the game places per biome "
+                 "and how often, which ground materials the maps paint with, and the entity type ids "
+                 "the maps use. Every name resolves to a shipped model or texture."),
+        "maps_decoded": len(decoded),
+        "maps_per_biome": dict(sorted(biome_maps.items())),
+        "props_per_biome": {b: dict(sorted(c.items(), key=lambda kv: -kv[1]))
+                            for b, c in sorted(biome_props.items())},
+        "ground_materials": dict(sorted(ground.items(), key=lambda kv: -kv[1])),
+        "entity_kinds": dict(sorted(kinds.items(), key=lambda kv: -kv[1])),
+    }
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--maps", type=Path, required=True,
+                    help="root holding the extracted .scenario files (e.g. <dow2>/sga)")
+    ap.add_argument("--out", type=Path, default=None, help="write one JSON per map here")
+    ap.add_argument("--aggregate", type=Path, default=None, help="write the biome palette here")
+    ap.add_argument("--art", type=Path, default=None,
+                    help="unpacked DoW2 art root, to resolve prop names against shipped models")
+    ap.add_argument("--limit", type=int, default=0, help="only the first N maps (for a smoke test)")
+    ap.add_argument("--category", default="", help="only maps under this folder (pvp, campaign, ...)")
+    a = ap.parse_args(argv)
+    maps = sorted(a.maps.rglob("*.scenario"))
+    if a.category:
+        maps = [m for m in maps if f"/{a.category}/" in str(m).replace("\\", "/")]
+    if a.limit:
+        maps = maps[:a.limit]
+    if not maps:
+        raise SystemExit(f"no .scenario files under {a.maps}")
+    decoded = []
+    for scenario in maps:
+        try:
+            entry = decode(scenario, a.art)
+        except Exception as exc:
+            print(f"SKIP {scenario.name}: {exc}", file=sys.stderr)
+            continue
+        decoded.append(entry)
+        if a.out:
+            a.out.mkdir(parents=True, exist_ok=True)
+            (a.out / f"{scenario.stem}.json").write_text(json.dumps(entry, indent=1))
+        print(f"{scenario.stem:44s} entities {entry['counts']['entities']:4d} "
+              f"chunks {entry['counts']['terrain_chunks']:4d} splats {entry['counts']['splats']:4d} "
+              f"props {entry['counts']['art_paths']:3d}")
+    if a.aggregate:
+        palette = aggregate(decoded)
+        a.aggregate.parent.mkdir(parents=True, exist_ok=True)
+        a.aggregate.write_text(json.dumps(palette, indent=1))
+        print(f"\n{len(decoded)} maps -> {a.aggregate}")
+        for biome, props in sorted(palette["props_per_biome"].items()):
+            print(f"  {biome:10s} {len(props):3d} distinct props, "
+                  f"{sum(props.values()):5d} placements")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,6 +1,6 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-18 (session 7).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-18 (session 8).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
 
@@ -101,6 +101,28 @@ Zoanthropes and the Great Unclean One have *neither*, so they are skipped); some
 without the `fb_` prefix; vehicle rigs have no hand bones and name their clips `idle`/`drive`/
 `death_die`; and a clip can ship for a unit without animating it (the Chimera's `fire_banewolf` drives
 the Banewolf's turret — the action library now rejects a static candidate when a moving one exists).
+
+## 2c. Environment kit and the map forge (session 8)
+
+The map-making half of the programme. Measured inventory of what the extraction offers, and what was
+built from it:
+
+| piece | state | numbers |
+|---|---|---|
+| ground materials | **indexed** | `tools/dow2/ground_library.py` → `output/source_lab/ground_library.json`: 1,324 shipped terrain materials (3,519 splats, 1,041 tiles, 537 reflection cubemaps, 23 grass sets) indexed by biome with measured mean colours; 1,216 diffuse maps converted to PNG |
+| map corpus | **decoded** | `tools/dow2/scenario_decode.py`: 156 of 164 shipped `.scenario` maps → per-map JSON (entity placements with position, terrain chunks, splats, vista objects) and `output/source_lab/biome_palette.json` (per-biome prop frequency) |
+| environment kit | **78 props built** | `tools/dow2/build_env_kit.py` + `tools/blender/dow2_env_import.py`: the props the shipped maps place most per biome, filtered to combat-board scale (≤8 m, ≥8 tris), each with its shipped `.coverbox` volume and measured footprint; GLBs under `Imperium-of-Ash/frontend/public/assets/models/env/` |
+| map forge page | **live at `/maps`** | `pages/MapForgePage.tsx` + `three/mapLayout.ts`: the engine grid (2 m tiles, 0.35 m elevation steps), prop palette by biome, cover brush, rotate/raise/remove, save/load JSON, two hand-authored example layouts |
+
+Why the page exists: IoA's battlefield generation scatters cover with `Math.random()`
+(`data/scenarios/defaultScenario.ts`), so a layout cannot be judged as a place. The forge places every
+prop by hand on the same grid the combat engine uses, shows the shipped cover volume for each prop, and
+serialises to a layout a mission can load.
+
+Still open on this front: structures are not in the kit yet (they are models with motiontrees —
+destructible), the big vista props (cliffs, 29 m trees) are excluded by the size filter and want a
+separate vista layer, and the ground library's PNGs are indexed but not yet wired into a terrain
+material.
 
 ## 3. Ordered next work
 

@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 8)
+
+### Added
+
+- **Ground library**: `tools/dow2/ground_library.py` indexes DoW2's 1,324 terrain materials (splats,
+  tiles, reflection cubemaps, grass sets) by biome with measured mean colours, and converts the 1,216
+  diffuse maps to PNG. The terrain textures had to be extracted first
+  (`extract_sga.py --all --match 'art/terrain_textures/'`, 5,219 files).
+- **Map corpus decoder**: `tools/dow2/scenario_decode.py` reads the shipped `.scenario` files (Relic
+  Chunky: terrain chunks, splats, entity placements, vista objects) into per-map JSON and aggregates
+  the corpus into a biome palette — which props each biome places and how often. 156 maps decoded.
+- **Environment kit**: `tools/dow2/build_env_kit.py` + `tools/blender/dow2_env_import.py` build 78
+  shipped props as static GLBs (the most-placed props per biome, filtered to combat-board scale) with
+  their shipped `.coverbox` volumes and measured footprints.
+- **`/maps` — the map forge**: the engine grid (2 m tiles, 0.35 m elevation steps) with the environment
+  palette by biome, a cover brush, rotate/raise/remove, the shipped cover volume drawn per prop,
+  save/load JSON, and two hand-authored example layouts. This is the alternative to the random cover
+  scatter in `data/scenarios/defaultScenario.ts`.
+- `three/mapLayout.ts` + 8 tests: the layout model (paint, place, rotate, raise, remove, stats,
+  round-trip) and a check that the shipped example layouts only reference kit props and sit on painted
+  cover.
+
+### Changed
+
+- `tools/glb_contract.py`: the `env` class describes shipped map dressing (min 8 tris, texture not
+  required) — a DoW2 low wall is a 10-triangle plate and several props carry flat-colour materials.
+- `scripts/guard_glb.py` classifies `models/env/` as `env` rather than `prop`.
+
 ## [Unreleased] — 2026-11-18 (session 7)
 
 ### Fixed

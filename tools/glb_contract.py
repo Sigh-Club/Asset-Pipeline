@@ -37,8 +37,13 @@ LIMITS = {
              "need_uv": True, "need_texture": True, "need_clips": []},
     "tile": {"max_tris": 3000, "min_tris": 4, "max_mb": 1.0, "skinned": False,
              "need_uv": True, "need_texture": True, "need_clips": []},
-    "env":  {"max_tris": 60000, "min_tris": 100, "max_mb": 20.0, "skinned": False,
-             "need_uv": True, "need_texture": True, "need_clips": []},
+    # The environment kit is the shipped DoW2 map dressing (`build_env_kit.py`): walls, barricades,
+    # barrels, rubble. Two properties of the source mean the unit/prop floors do not describe it:
+    # a shipped low wall is 10-90 triangles (it is a plate, not a placeholder), and several props
+    # carry a flat-colour material with no diffuse map at all. Both are the game's own look, and the
+    # map forge renders every prop, so a wrong one is visible rather than silently accepted.
+    "env":  {"max_tris": 60000, "min_tris": 8, "max_mb": 20.0, "skinned": False,
+             "need_uv": True, "need_texture": False, "need_clips": []},
 }
 
 
