@@ -80,31 +80,52 @@ def nearest_prop(name: str, kit_names: list[str]) -> tuple[str | None, str]:
     return (best, "token") if best and best_score >= 2 else (None, "none")
 
 
-def resample_heights(terrain: dict, width: int, height: int,
-                     max_steps: int = MAX_RELIEF_STEPS) -> list[list[int]]:
-    """The map's heightmap resampled onto the layout's cells, in elevation steps.
+def height_at_world(terrain: dict, nav: dict | None, wx: float, wz: float) -> float:
+    """Terrain height at a world position, from the map's own heightmap.
 
-    The source range is normalised into `max_steps` rather than carried at 0.35 m per metre: the
-    board is a combat board, not the map's full extent, so its relief budget is the board's. The
-    original metric range is kept in the layout's `source` block, so nothing is lost — the shape is
-    preserved, the scale is the board's.
+    The heightmap is indexed against the **playable extent** (the nav grid's dimensions, 1 m cells,
+    centred on the origin) rather than the heightmap's own sample count. Measured caveat: some maps
+    carry a heightmap wider than the playable area (a 385-sample heightmap on a 256 m map), so the
+    relief is slightly compressed. That is immaterial here because the board normalises relief to a
+    6-step budget anyway, and it is recorded rather than hidden.
     """
     grid = terrain.get("heights") or []
     if not grid:
-        return [[0] * width for _ in range(height)]
+        return 0.0
     rows, cols = len(grid), len(grid[0])
-    lo = float(terrain.get("min_height") or 0.0)
-    samples = []
+    nw = float((nav or {}).get("width") or 0)
+    nh = float((nav or {}).get("height") or 0)
+    if not nw or not nh:
+        nw = nh = float(max(rows, cols))
+    u = (wx + nw / 2.0) / nw
+    v = (wz + nh / 2.0) / nh
+    sx = min(cols - 1, max(0, int(u * cols)))
+    sy = min(rows - 1, max(0, int(v * rows)))
+    return float(grid[sy][sx])
+
+
+def board_heights(terrain: dict, nav: dict | None, width: int, height: int,
+                  centre: tuple[float, float],
+                  max_steps: int = MAX_RELIEF_STEPS) -> list[list[int]]:
+    """The board's relief, sampled from the map over the board's own 1:1 window.
+
+    A board is a window into the map at 1:1 scale: cell (x, y) covers a real 2 m x 2 m square of the
+    map centred at `centre`. The relief is normalised into `max_steps` (the board's budget) with the
+    source range kept in `source.relief`.
+    """
+    cx, cz = centre
+    raw = []
     for y in range(height):
         row = []
         for x in range(width):
-            sy = min(rows - 1, int(y * rows / height))
-            sx = min(cols - 1, int(x * cols / width))
-            row.append(float(grid[sy][sx]) - lo)
-        samples.append(row)
-    peak = max((max(r) for r in samples), default=0.0)
+            wx = cx + (x + 0.5 - width / 2.0) * TILE_SIZE
+            wz = cz + (y + 0.5 - height / 2.0) * TILE_SIZE
+            row.append(height_at_world(terrain, nav, wx, wz))
+        raw.append(row)
+    lo = min(min(r) for r in raw)
+    peak = max(max(r) for r in raw) - lo
     scale = (max_steps / peak) if peak > 0 else 0.0
-    return [[int(round(v * scale)) for v in row] for row in samples]
+    return [[int(round((v - lo) * scale)) for v in row] for row in raw]
 
 
 def nav_blocked(nav: dict | None, width: int, height: int) -> set[tuple[int, int]]:
@@ -140,9 +161,24 @@ def nav_blocked(nav: dict | None, width: int, height: int) -> set[tuple[int, int
     return blocked
 
 
+def board_centre(entities: list[dict], nav: dict | None) -> tuple[float, float]:
+    """Where a board should look: the centroid of the props the map actually placed.
+
+    A board is a window, and the window has to be over the authored action. The prop centroid is
+    measured, not chosen: it is where the map's cover is.
+    """
+    pts = [(e["pos"][0], e["pos"][2]) for e in entities
+           if "blockers" not in (e.get("blueprint") or "")]
+    if not pts:
+        return 0.0, 0.0
+    return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
+
+
 def convert(map_json: Path, kit_names: list[str], width: int, height: int, name: str | None = None) -> dict:
     data = json.loads(map_json.read_text())
     terrain = data.get("terrain") or {}
+    nav = data.get("nav") or {}
+    centre = board_centre(data.get("entities") or [], nav)
     layout = {
         "name": name or data.get("map", map_json.stem),
         "biome": "",
@@ -150,7 +186,7 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
         "size": {"width": width, "height": height},
         "paint": {},
         "props": [],
-        "heights": resample_heights(terrain, width, height),
+        "heights": board_heights(terrain, nav, width, height, centre),
         "source": {
             "map": data.get("map"),
             "terrain": {"width": terrain.get("width"), "height": terrain.get("height"),
@@ -164,6 +200,9 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
                                          - float(terrain.get("min_height") or 0.0), 2),
                        "board_steps": MAX_RELIEF_STEPS,
                        "board_m": round(MAX_RELIEF_STEPS * ELEVATION_STEP, 2)},
+            "window": {"centre_m": [round(centre[0], 1), round(centre[1], 1)],
+                       "size_m": [width * TILE_SIZE, height * TILE_SIZE],
+                       "scale": "1:1 (a board is a window into the map, not the map squashed)"},
         },
     }
     # biome from the props the map places most
@@ -189,8 +228,6 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
         layout["paint"][f"{bx},{by}"] = "impassable"
 
     # placements: blueprint -> kit prop, snapped to the board
-    span_x = terrain.get("width") or 1
-    span_z = terrain.get("height") or 1
     stats = {"exact": 0, "token": 0, "none": 0}
     unresolved: dict[str, int] = {}
     for entity in data.get("entities") or []:
@@ -205,10 +242,11 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
             continue
         stats[how] += 1
         pos = entity.get("pos") or [0, 0, 0]
-        # the map is centred on the origin in world units of one sample per metre-ish; the board is
-        # normalised to the map's own extent, which is what makes the reproduction readable
-        x = int(round((pos[0] / max(1, span_x)) * width + width / 2))
-        y = int(round((pos[2] / max(1, span_z)) * height + height / 2))
+        # 1:1 windowing: a board cell is a real 2 m square of the map, so the board carries the
+        # density the map has (~26 props on a 24x20 board, measured) instead of squeezing a 256 m
+        # map into it, which produced 172 props and a 6.6x overdensity.
+        x = int(round((pos[0] - centre[0]) / TILE_SIZE + (width - 1) / 2))
+        y = int(round((pos[2] - centre[1]) / TILE_SIZE + (height - 1) / 2))
         if not (0 <= x < width and 0 <= y < height):
             continue
         layout["props"].append({

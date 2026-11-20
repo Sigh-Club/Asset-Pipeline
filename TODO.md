@@ -182,9 +182,34 @@ non-vista, with relief within budget.
   shapes its board from an unseeded `Math.random`. `setDemoRandom` now lets a test fix the board;
   682 tests pass, repeatedly.
 
+## 2c2. Composition model (session 9, P5) — DONE
+
+The board is now authorable against a measurement instead of a taste. `tools/dow2/composition_model.py`
+measures the corpus (57 maps, 2,861 placements, 225 board windows) and `docs/MAP_COMPOSITION.md`
+records the grammar. The parameters an author builds to:
+
+- a board is a **1:1 window** (48x40 m for 24x20 cells), never a squashed map;
+- **~26 props** on a 24x20 board (1.13 per 100 m2), **~74** on 40x40;
+- prop spacing **~3.94 m** in runs, clumping index **1.30** (a uniform scatter measures 0.94);
+- **35% of props embedded in blocked geometry**; lanes **18 m** wide; landmarks every **~37 m** and
+  cover deliberately *not* heaped around them (87% of props are >20 m from the nearest objective);
+- decals at **0.21 per 100 m2** (~13 per board) — the layer we do not render yet.
+
+Two findings were falsified and recorded: props are *not* gathered into pockets (single-linkage at
+3-20 m gives singleton clusters; the clumping is 1.30 on a dispersion index), and **density does not
+separate an authored board from a random scatter** — arrangement does (clumping 1.31 vs 0.94, spacing
+3.86 vs 4.42 m). A rule that only fixes prop *count* still looks random.
+
+`tools/dow2/test_composition_model.py` is the acceptance test and passes: it fails if shipped windows
+stop being more clumped and more tightly spaced than a uniform scatter, or if a parameter vanishes.
+
+Consequence fixed in the import: `forge_import.py` now windows at 1:1 instead of squashing the map
+onto the board. Imported boards went from 172 props to 7-22, which is the corpus band — the old
+figure was a 6.6x overdensity.
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
-engine's eight blended layers.
+engine's eight blended layers; decals, vista and gameplay structures are measured but not rendered.
 
 ## 2c. Environment kit and the map forge (session 8)
 

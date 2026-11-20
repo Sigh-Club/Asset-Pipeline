@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P5: composition model)
+
+### Added
+
+- `tools/dow2/composition_model.py` — the corpus's composition measured: board-window prop density
+  (1.13 per 100 m2, 26 props on a 24x20 board), prop spacing (3.94 m), clumping index (1.30), corridor
+  widths (18 m), landmark spacing, decal density (0.21 per 100 m2), and the structural facts (65% of
+  props on walkable ground, 13% within 20 m of a landmark). `score_board` measures a layout against
+  it and says which parameter is wrong.
+- `tools/dow2/test_composition_model.py` — acceptance test: shipped windows must be measurably more
+  clumped (1.31 vs 0.94) and more tightly spaced (3.86 vs 4.42 m) than uniform random scatters.
+- `docs/MAP_COMPOSITION.md` — the authoring grammar, with the two findings the measurement falsified.
+
+### Changed
+
+- `forge_import.py` now takes a **1:1 window** of the map centred on its prop centroid instead of
+  squashing the whole map onto the board. Imported boards went from 172 props to 7-22, the corpus
+  band; the old figure was a 6.6x overdensity and is why imported boards looked like prop soup.
+- The dispersion metric counts empty cells. Counting occupied cells only biased it downward and made
+  a Poisson scatter look evenly spaced (random 0.40 against shipped 0.55 before the fix).
+
 ## [Unreleased] — 2026-11-18 (session 9, P2: import quality and passability)
 
 ### Added
