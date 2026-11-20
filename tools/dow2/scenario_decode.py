@@ -238,6 +238,45 @@ def decode_entities(smeg: Node, blob: bytes) -> list[dict]:
     return out
 
 
+def decode_decals(terr: Node | None, blob: bytes) -> list[dict]:
+    """The map's ground decals: the painted patches over the terrain.
+
+    `SCEN/GEWD/TERR/TTEX/COMP/RCSP/SPLT` holds one record per decal (389 on a hive-city map):
+
+        u32 id, u32 name_len, name[name_len], f32 x, f32 z, f32 size_x, f32 size_z, f32 rotation
+
+    with the position in the same world metres as the entity placements. The name is a terrain
+    material path (`metal/u_metal_floor_trim_03`), which resolves to a shipped ground texture the
+    same way a layer does. These are what make a map read as worn and paved rather than as a plane
+    with props on it, so they are decoded rather than counted.
+    """
+    if terr is None:
+        return []
+    comp = find(find(find(terr, "TTEX"), "COMP"), "RCSP")
+    if comp is None:
+        return []
+    out = []
+    for chunk in comp.children:
+        if tag(chunk) != "SPLT":
+            continue
+        data = payload(blob, chunk)
+        if len(data) < 12:
+            continue
+        name_len = struct.unpack_from("<I", data, 4)[0]
+        if not (0 < name_len < 200) or len(data) < 8 + name_len + 20:
+            continue
+        name = data[8:8 + name_len].decode("latin-1").replace("\\", "/")
+        x, z, sx, sz, rot = struct.unpack_from("<5f", data, 8 + name_len)
+        out.append({
+            "name": name,
+            "x": round(x, 2),
+            "z": round(z, 2),
+            "size": [round(abs(sx), 2), round(abs(sz), 2)],
+            "rot": round(rot, 4),
+        })
+    return out
+
+
 def decode_nav(scen: Node, blob: bytes) -> dict | None:
     wrld = find(scen, "WRLD")
     wldi = find(wrld, "WLDI") if wrld is not None else None
@@ -388,6 +427,7 @@ def decode(scenario: Path, a_art_root: Path | None = None) -> dict:
     terrain = decode_terrain(terr, blob) if terr is not None else None
     structured = decode_entities(smeg, blob) if smeg is not None else []
     nav = decode_nav(scen, blob) if scen is not None else None
+    decals = decode_decals(terr, blob)
     counts = Counter(tag(ch) for root in roots for ch in walk(root))
     paths = art_paths(blob)
     splats = sorted({m.group(1).decode("latin-1")
@@ -425,6 +465,7 @@ def decode(scenario: Path, a_art_root: Path | None = None) -> dict:
                    "splats": counts.get("SPLT", 0), "vista_objects": counts.get("VIZO", 0),
                    "art_paths": len(paths)},
         "props": props,
+        "decals": decals,
         "ground": splats,
         "placements": entities,
     }

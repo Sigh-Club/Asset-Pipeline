@@ -174,7 +174,9 @@ def board_centre(entities: list[dict], nav: dict | None) -> tuple[float, float]:
     return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
 
 
-def convert(map_json: Path, kit_names: list[str], width: int, height: int, name: str | None = None) -> dict:
+def convert(map_json: Path, kit_names: list[str], width: int, height: int,
+            name: str | None = None, decal_names: set[str] | None = None) -> dict:
+    decal_names = decal_names or set()
     data = json.loads(map_json.read_text())
     terrain = data.get("terrain") or {}
     nav = data.get("nav") or {}
@@ -186,6 +188,7 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
         "size": {"width": width, "height": height},
         "paint": {},
         "props": [],
+        "decals": [],
         "heights": board_heights(terrain, nav, width, height, centre),
         "source": {
             "map": data.get("map"),
@@ -261,6 +264,34 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
         **stats,
         "unresolved_top": sorted(unresolved.items(), key=lambda kv: -kv[1])[:12],
     }
+    # decals inside the window: the painted ground layer (craters, stains, road markings, snow
+    # patches). Positions are continuous, so they are stored in cell units as floats rather than
+    # snapped to the grid.
+    decal_stats = {"total": 0, "kept": 0, "unresolved": 0}
+    for decal in data.get("decals") or []:
+        decal_stats["total"] += 1
+        cx = (decal.get("x") or 0.0) - centre[0]
+        cz = (decal.get("z") or 0.0) - centre[1]
+        bx = cx / TILE_SIZE + (width - 1) / 2
+        by = cz / TILE_SIZE + (height - 1) / 2
+        span = max(decal.get("size") or [1.0, 1.0])
+        # a decal is kept when its own footprint reaches into the board
+        margin = span / (2 * TILE_SIZE)
+        if not (-margin <= bx <= width - 1 + margin and -margin <= by <= height - 1 + margin):
+            continue
+        if decal.get("name") not in decal_names:
+            decal_stats["unresolved"] += 1
+            continue
+        decal_stats["kept"] += 1
+        layout["decals"].append({
+            "name": decal["name"],
+            "x": round(bx, 3),
+            "y": round(by, 3),
+            "size": [round(float(decal["size"][0]), 2), round(float(decal["size"][1]), 2)],
+            "rot": round(float(decal.get("rot") or 0.0), 3),
+        })
+    layout["source"]["decals"] = decal_stats
+
     # one prop per cell, as the forge's model requires
     seen = {}
     for prop in layout["props"]:
@@ -286,6 +317,11 @@ def main(argv=None) -> int:
     # 40 m board.
     kit_names = sorted({p["name"].lower() for p in kit["props"]
                         if not str(p.get("biome", "")).startswith("vista")})
+    # the decal palette lives beside the kit, in the game's public assets
+    decal_names: set[str] = set()
+    decal_manifest = Path(a.kit).parents[2] / "decals" / "decal_kit.json"
+    if decal_manifest.is_file():
+        decal_names = {d["name"] for d in json.loads(decal_manifest.read_text()).get("decals", [])}
     maps = sorted(a.maps.glob("*.json"))
     if a.only:
         maps = [m for m in maps if m.stem in a.only]
@@ -296,7 +332,7 @@ def main(argv=None) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     index = []
     for map_json in maps:
-        layout = convert(map_json, kit_names, a.width, a.height)
+        layout = convert(map_json, kit_names, a.width, a.height, decal_names=decal_names)
         dest = a.out / f"shipped_{map_json.stem}.json"
         dest.write_text(json.dumps(layout, indent=1))
         index.append({"file": dest.name, "map": layout["name"], "biome": layout["biome"],

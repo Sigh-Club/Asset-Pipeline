@@ -207,9 +207,24 @@ Consequence fixed in the import: `forge_import.py` now windows at 1:1 instead of
 onto the board. Imported boards went from 172 props to 7-22, which is the corpus band — the old
 figure was a 6.6x overdensity.
 
+## 2c3. Decal layer (session 9, P6 step 1) — DONE
+
+The painted ground is decoded and rendered. `SCEN/GEWD/TERR/TTEX/COMP/RCSP/SPLT` holds one record per
+decal: `u32 id, u32 name_len, name, f32 x, z, size_x, size_z, rotation` — measured across the corpus
+as **420 distinct decals over 19,930 placements** (349 per map, sizes 1.3-70 m).
+
+- `tools/dow2/decal_kit.py` resolves each decal name to its shipped texture
+  (`nm_snow/snow_slab_01` -> `terrain_textures/splats/nm_snow/snow_slab_01_dif.dds`) and exports 420
+  textures with the corpus usage count to `frontend/public/assets/decals/` (74 MB).
+- `forge_import.py` carries the decals inside a board window into the layout (`decals` array, float
+  cell coordinates, metres, radians).
+- The forge renders them at their authored position, size and rotation, with a `decals` toggle, and
+  the layout format round-trips them (18 mapLayout tests, including footprint-based removal and
+  crop-on-resize).
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
-engine's eight blended layers; decals, vista and gameplay structures are measured but not rendered.
+engine's eight blended layers; vista and gameplay structures are measured but not rendered.
 
 ## 2c. Environment kit and the map forge (session 8)
 

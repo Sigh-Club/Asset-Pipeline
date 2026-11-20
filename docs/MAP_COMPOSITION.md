@@ -96,14 +96,27 @@ python3 tools/dow2/composition_model.py --report          # measure the corpus
 python3 tools/dow2/test_composition_model.py             # acceptance test
 ```
 
-## 7. What is still missing from the picture
+## 7. The decal layer (decoded and rendered)
 
-The model describes props and passability. It does not yet describe, because we do not render them:
+Decals are the painted ground: craters, stains, road markings, snow slabs, rubble. They live at
+`SCEN/GEWD/TERR/TTEX/COMP/RCSP/SPLT`, one record each:
 
-- **decals** (349 per map) — position, rotation and scale of each splat are in the decoded data;
-- **vista** (469 per map) — the horizon layer;
+```
+u32 id, u32 name_len, name[name_len], f32 x, f32 z, f32 size_x, f32 size_z, f32 rotation
+```
+
+with the position in the same world metres as entity placements. Measured over the corpus: **420
+distinct decals, 19,930 placements**, sizes from 1.3 m to 70 m. `tools/dow2/decal_kit.py` resolves
+each name to its shipped texture (`nm_snow/snow_slab_01` →
+`terrain_textures/splats/nm_snow/snow_slab_01_dif.dds`) and exports the palette with the corpus's
+usage count; `forge_import.py` carries the decals inside a board window into the layout, and the
+forge renders them at their authored position, size and rotation.
+
+## 8. What is still missing from the picture
+
+- **vista** (469 per map) — the horizon layer; 65 shipped models, 13 in the kit;
 - **structures and gameplay entities** — 36 types, the landmarks the rules in §4 refer to;
-- **ground layers** — 8 per map with 2 masks; the blend is decoded, not rendered.
+- **ground layers** — 8 per map with 2 masks; decoded, not blended.
 
 Until those are rendered, a board can be *correct* by these numbers and still look emptier than the
 map it came from. That is the next programme, not a defect in the rules.

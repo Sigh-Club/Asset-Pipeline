@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P6: decal layer)
+
+### Added
+
+- `scenario_decode.py` decodes the map's ground decals (`RCSP/SPLT`: id, name, position, size,
+  rotation). Measured: 420 distinct decals over 19,930 placements, 349 per map, sizes 1.3-70 m.
+- `tools/dow2/decal_kit.py` — resolves each decal to its shipped texture and exports the palette with
+  corpus usage counts (420 textures).
+- The forge renders decals at their authored position, size and rotation, with a toggle; the layout
+  format carries them (float cell coordinates) and round-trips them.
+- `forge_import.py` carries the decals inside a board window into the imported layout.
+
+### Fixed
+
+- `resizeLayout` kept or dropped decals by their centre; it now uses their footprint, matching how a
+  click hit-tests them.
+
 ## [Unreleased] — 2026-11-18 (session 9, P5: composition model)
 
 ### Added
