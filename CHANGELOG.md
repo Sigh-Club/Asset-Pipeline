@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9)
+
+### Changed
+
+- **The scenario decoder now reads the map's real structure**, taken from the community add-on's
+  `map_io/bundle_reader.py` (atmalto/dow2-blender v0.3.3) and verified against the shipped files:
+  `SCEN/GEWD/TERR` heightmap (`HVAL/HEAD` + zlib `VALS`), tile world scale, the 8 ground layer pairs
+  (`RCTI/LAYR`, surface + cliff), the 2 blend masks (`RCTI/MASK`), the per-chunk active-layer grid
+  (`RCTI/USAG`), placements with their blueprint paths and 4x3 transforms (`SMEG/EBPT` +
+  `ENTL/ENTY/ENTI`) and the game's nav grid (`WRLD/WLDI/PFDR/PRMP`). The old string scan is gone.
+  Measured: 156 maps with heightmaps (0-165.86 m), 8 layer pairs each, nav grids (512x320x5 on a 1v1
+  map) and blueprint-accurate placements.
+- `ground_kit.py --from-maps` builds the map forge's ground palette from those layer records,
+  resolving each to the shipped tile texture — the biome ground vocabulary is now the maps' own.
+- `docs/DOW2_COMMUNITY_TOOLCHAIN.md`: what the community package knows about maps, and what is still
+  to adopt (the terrain material node graph and the collision-mesh generator).
+
 ## [Unreleased] — 2026-11-18 (session 8)
 
 ### Added

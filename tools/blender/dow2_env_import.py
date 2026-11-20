@@ -77,6 +77,42 @@ for mat in bpy.data.materials:
     mat.use_backface_culling = True
 print(f"MATERIALS alpha: {alpha['opaque']} opaque, {alpha['cutout']} cutout")
 
+# ---------------------------------------------------------------- albedo and PBR
+# The add-on's node graph for the *building/prop* shaders does not survive the glTF mapping: measured
+# on `metal_wall_low_01`, the exported base colour pointed at a combined image with mean rgb (0,0,0) —
+# every prop rendered black — and the metallic-roughness slot pointed at DoW2's `_spc` specular colour
+# map, giving `metallicFactor` 1.04 with no environment to reflect. DoW2's `_spc` is a specular colour,
+# not glTF's metal/rough pair, so it is not a faithful input. The albedo is wired from the shipped
+# diffuse (`_dif`) and the surface is given a neutral dielectric response, which is what the shipped
+# material's diffuse reads as.
+fixed = {"albedo": 0, "flat": 0}
+for mat in bpy.data.materials:
+    if not mat.use_nodes or not mat.name.startswith("relic."):
+        continue
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    bsdf = next((n for n in nodes if n.type == "BSDF_PRINCIPLED"), None)
+    if bsdf is None:
+        continue
+    dif = next((n for n in nodes
+                if n.type == "TEX_IMAGE" and n.image and n.image.name.lower().endswith("_dif")), None)
+    if dif is None:
+        dif = next((n for n in nodes
+                    if n.type == "TEX_IMAGE" and n.image and "_dif" in n.image.name.lower()), None)
+    for link in list(bsdf.inputs["Base Color"].links):
+        links.remove(link)
+    if dif is not None:
+        links.new(dif.outputs["Color"], bsdf.inputs["Base Color"])
+        fixed["albedo"] += 1
+    else:
+        fixed["flat"] += 1
+    for socket in ("Metallic", "Roughness"):
+        for link in list(bsdf.inputs[socket].links):
+            links.remove(link)
+    bsdf.inputs["Metallic"].default_value = 0.0
+    bsdf.inputs["Roughness"].default_value = 0.8
+    # the normal map is a faithful input and is kept
+print(f"PBR albedo from _dif: {fixed['albedo']}, flat colour: {fixed['flat']}")
+
 meshes = [o for o in bpy.data.objects if o.type == "MESH"]
 if not meshes:
     raise SystemExit(f"{A.name}: the model imported no geometry")

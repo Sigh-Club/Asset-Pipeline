@@ -1,6 +1,6 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-18 (session 8).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-18 (session 9).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
 
@@ -118,6 +118,10 @@ Why the page exists: IoA's battlefield generation scatters cover with `Math.rand
 (`data/scenarios/defaultScenario.ts`), so a layout cannot be judged as a place. The forge places every
 prop by hand on the same grid the combat engine uses, shows the shipped cover volume for each prop, and
 serialises to a layout a mission can load.
+
+The scenario decoder now follows the community add-on's own map structure (heightmaps, 8 ground layer
+pairs, 2 blend masks, per-chunk layer usage, the nav grid, blueprint-accurate placements — see
+`docs/DOW2_COMMUNITY_TOOLCHAIN.md`), and the ground palette is built from the maps' layer records.
 
 Still open on this front: structures are not in the kit yet (they are models with motiontrees —
 destructible), the big vista props (cliffs, 29 m trees) are excluded by the size filter and want a

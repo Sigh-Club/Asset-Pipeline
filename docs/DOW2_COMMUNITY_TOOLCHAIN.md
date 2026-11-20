@@ -186,6 +186,42 @@ python3 tools/lab_fidelity.py --lab <lab dir>
 `render_lab.py` takes `--unit=<id>` and a third shot field (`idle:1:head`, `idle:1:weapon`,
 `idle:1:upper`) for the close-ups the gate requires.
 
+## What the community tool knows about maps (reviewed 2026-11-18)
+
+The add-on ships a `map_io/` package. Its own importer cannot run in this release — it imports a
+`working/maps/chunky` module that is not in the shipped zip — but the *structure* it documents is
+verified against the shipped files and is what this pipeline now reads:
+
+| chunk path | content |
+|---|---|
+| `SCEN/GEWD/TERR/HMAN/HITE/HVAL/HEAD` + `VALS` | terrain grid: u32 width/height, then a zlib float heightmap |
+| `TERR/TTEX/DATA` | tile world scale (f32 at offset 20; 8-32 m per tile across the corpus) |
+| `TERR/TTEX/COMP/RCTI/LAYR` | the map's **8 ground layers**, each a `surface` path and a `cliff` path |
+| `TERR/TTEX/COMP/RCTI/MASK` | the **2 blend masks** (ATTR = pixel dims, DATA = pixels) |
+| `TERR/TTEX/COMP/RCTI/USAG` | per-chunk active-layer bits (one byte per chunk, bits 0..7) |
+| `GEWD/SMEG/EBPT` | the blueprint path table for the map's placements |
+| `GEWD/SMEG/ENTL/ENTY/ENTI` | placement: u32 id, i32 blueprint index, 4x3 transform rows |
+| `SCEN/WRLD/WLDI/PFDR/PRMP` | the game's **nav grid** (width, height, layers, bytes) |
+
+Its `map_io/terrain_shader_gap.md` records the runtime path from the executable
+(`TerrainTextureLoad::Load` -> `RenderCompositeTiles::Load` -> `RenderTiles` ->
+`ShaderParams`): the ground is eight layer textures blended by two masks, with a per-chunk active-layer
+byte selecting which layers a chunk uses. That is the real ground model — a layer *pair* per index
+(surface and cliff), not one texture per tile.
+
+`tools/dow2/scenario_decode.py` was rewritten to this structure. Measured on the corpus: 156 maps, each
+with its heightmap (e.g. 769x577 samples, 0-165.86 m), 8 layer pairs (e.g. `snow/snow_smooth_01` +
+`stone/selenon_upheaval_01`), two masks at map resolution, a per-chunk layer-usage grid, a nav grid
+(512x320x5 on a 1v1 map) and its placements with blueprint paths and transforms. `ground_kit.py
+--from-maps` then builds the map forge's ground palette from those layer records rather than from
+file-name guesses, resolving `stone/jungle_rocky_moss_02` to `terrain_textures/tiles/stone/
+jungle_rocky_moss_02_dif.dds`.
+
+Still to adopt from that package: the terrain material node graph (`terrain_material_nodes.py`, 438
+lines: eight layers, two masks, mask-UV transform from the terrain bounds) and the collision-mesh
+generator (`collision/`, walkable vs nav meshes), which is how the community authors the surfaces a
+map needs for pathing.
+
 ### Building a roster, not one unit
 
 `tools/dow2/discover_units.py` finds every unit the shipped data can build and writes both the build

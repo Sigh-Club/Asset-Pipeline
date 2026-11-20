@@ -32,6 +32,29 @@ ART_ENV = "DOW2_RETRIB"
 BUILD_BIOMES = ("desert", "ice", "jungle", "urban", "volcanic", "spacehulk", "military",
                 "industrial", "ork", "tyranid", "chaos", "ruins")
 
+# Structures are not in the biome palette (they are placed by the game's build rules, not as scenery),
+# but a map needs them: bunkers, turrets, generators, bases. These are the shipped ones, by faction.
+STRUCTURES = {
+    "ig": ["ig_bunker", "ig_multilaser_turret", "ig_heavy_bolter_turret", "ig_plasma_generator",
+           "ig_turret_emplacement", "ig_deployable_cover", "ig_heavy_missile_turret_emp"],
+    "chaos": ["chaos_heavy_bolter_turret", "chaos_las_cannon_turret", "chaos_generator",
+              "chaos_missile_launcher_turret", "chaos_shrine_khorne"],
+    "ork": ["orky_turret", "orky_turret_base", "ork_generator", "waggh_banner"],
+    "eldar": ["warp_generator", "webway_portal_beacon"],
+    "tyranid": ["brood_nest_01", "hive_node", "cap_point_generators_tyranid", "mycetic_spore_land"],
+    "marine": ["tarantula_heavy_bolter", "tarantula_missile_launcher", "sm_beacon"],
+}
+# Vista pieces: the horizon-scale props a combat board cannot hold (a 29 m tree, a cliff face). They
+# are a separate layer so a map can be dressed at both scales.
+VISTA = {
+    "jungle": ["hedges", "tree_sb_huge_vines_01", "rock_pile_long_01", "plant_fern_01"],
+    "desert": ["high_wall_03", "cliff_edge_01"],
+    "volcanic": ["uplifted_rock_wall_01", "volcanic_edge_basaltcolumns_02"],
+    "ice": ["rock_cover_03", "urban_supportwall_5m_01"],
+    "spacehulk": ["viz_floor_panel_02"],
+    "ruins": ["u_twisted_metal_01", "u_concrete_rubble_large_02"],
+}
+
 
 def art_root() -> Path:
     base = os.environ.get(ART_ENV)
@@ -96,6 +119,32 @@ def model_size(model: Path) -> list[float] | None:
     lo = [min(p[i] for p in points) for i in range(3)]
     hi = [max(p[i] for p in points) for i in range(3)]
     return [round(hi[i] - lo[i], 2) for i in range(3)]
+
+
+def structure_entries(root: Path) -> list[dict]:
+    """The shipped structures, resolved to their models."""
+    out = []
+    for faction, names in STRUCTURES.items():
+        for name in names:
+            model = model_for(root, name)
+            if model is None:
+                print(f"  MISSING structure {faction}/{name}")
+                continue
+            out.append({"name": name, "biome": f"structure_{faction}", "placements": 0})
+    return out
+
+
+def vista_entries(root: Path) -> list[dict]:
+    """The horizon-scale props, resolved to their models (their own layer, no size limit)."""
+    out = []
+    for biome, names in VISTA.items():
+        for name in names:
+            model = model_for(root, name)
+            if model is None:
+                print(f"  MISSING vista {biome}/{name}")
+                continue
+            out.append({"name": name, "biome": f"vista_{biome}", "placements": 0})
+    return out
 
 
 def select(palette: dict, per_biome: int, root: Path | None = None,
@@ -169,10 +218,18 @@ def main(argv=None) -> int:
     ap.add_argument("--only", action="append", default=[], help="one prop name (repeatable)")
     ap.add_argument("--max-size", type=float, default=8.0,
                     help="skip props whose largest dimension exceeds this (metres; default 8)")
+    ap.add_argument("--include-structures", action="store_true",
+                    help="also build the shipped structures (bunkers, turrets, generators)")
+    ap.add_argument("--include-vista", action="store_true",
+                    help="also build the horizon-scale props (big trees, cliffs) as their own layer")
     a = ap.parse_args(argv)
     root = a.art or art_root()
     palette = json.loads(a.palette.read_text())
     entries = select(palette, a.per_biome, None if a.only else root, a.max_size)
+    if a.include_structures:
+        entries.extend(structure_entries(root))
+    if a.include_vista:
+        entries.extend(vista_entries(root))
     if not a.only:
         print(f"{len(entries)} props within {a.max_size} m")
     if a.only:
@@ -193,12 +250,24 @@ def main(argv=None) -> int:
     if a.max_size > 0:
         before = len(built)
         # a vista backdrop is a 4-triangle plate, not map dressing (`viz_black_wall_bg`)
-        built = [b for b in built if (not b.get("size") or max(b["size"]) <= a.max_size)
+        built = [b for b in built
+                 if (b["biome"].startswith(("structure_", "vista_"))
+                     or (not b.get("size") or max(b["size"]) <= a.max_size))
                  and (b.get("tris") or 0) >= 8]
         if len(built) != before:
             print(f"dropped {before - len(built)} prop(s) larger than {a.max_size} m after build")
     manifest = a.manifest or (a.out / "env_kit.json")
     manifest.parent.mkdir(parents=True, exist_ok=True)
+    existing = []
+    if manifest.exists():
+        try:
+            existing = json.loads(manifest.read_text()).get("props", [])
+        except json.JSONDecodeError:
+            existing = []
+    merged = {(p["biome"], p["name"]): p for p in existing}
+    for prop in built:
+        merged[(prop["biome"], prop["name"])] = prop
+    built = sorted(merged.values(), key=lambda p: (p["biome"], p["name"]))
     manifest.write_text(json.dumps({
         "generated_by": "asset-pipeline/tools/dow2/build_env_kit.py",
         "note": ("Shipped DoW2 environment props built as static GLBs. The selection is the props the "
