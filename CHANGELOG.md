@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P6 step 3: ground blending)
+
+### Added
+
+- The blend masks are decoded (`RCTI/MASK`: raw RGBA at map resolution, 512x512 to 800x800).
+- `tools/dow2/terrain_bundle.py` writes per map the eight layer textures, the two masks and a
+  manifest (16 MB for six maps).
+- `frontend/src/three/terrainBlend.ts` renders the engine's own ground blend: layer `i` weight =
+  `mask[i // 4]` channel `i % 4`, accumulated and normalised. The forge uses it whenever a layout
+  carries a terrain bundle, so an imported board shows the ground it stands on.
+
+### Notes
+
+- GLSL ES 1.0 cannot index a sampler array with a loop variable, so the eight samples are unrolled.
+- The terrain shader's lighting is matched to the forge's rig; unmatched it renders as a dark slab.
+
 ## [Unreleased] — 2026-11-18 (session 9, P6 step 2: landmarks)
 
 ### Added

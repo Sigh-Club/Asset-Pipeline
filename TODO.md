@@ -236,9 +236,24 @@ puts a box where nothing should be.
 - The kit is now 417 props (every board-scale prop the corpus uses, 84% placement coverage) at
   363 MB, and `guard:glb` checks 544 files at 0 failing.
 
+## 2c5. Ground blending (session 9, P6 step 3) — DONE
+
+The terrain now renders as the shipped maps build it: **eight layers blended by two RGBA masks**
+(layer `i` weight = `mask[i // 4]` channel `i % 4`, `sum(w_i * layer_i) / sum(w_i)`). The masks are raw
+RGBA at map resolution, decoded from `RCTI/MASK` (512x512 on a 1v1 map, 800x800 on a large one).
+
+- `tools/dow2/terrain_bundle.py` writes per map: 8 layer textures, 2 masks, and a manifest.
+- `forge_import.py` attaches the bundle to the layout; the forge renders it with
+  `frontend/src/three/terrainBlend.ts`.
+- Measured on the six shipped layouts: 7-8 layers and both masks each; 16 MB of textures.
+
+Two traps paid for: GLSL ES 1.0 cannot index a sampler array with a loop variable (the eight samples
+are unrolled), and the shader's lighting had to be matched to the forge's rig or the terrain renders
+as a dark slab with lit props on it.
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
-engine's eight blended layers; vista is measured but not rendered.
+vista is measured but not rendered.
 
 ## 2c. Environment kit and the map forge (session 8)
 

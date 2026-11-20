@@ -125,10 +125,29 @@ rendering a proxy puts a box on the board where nothing should be.
 `generator_ffa`, the resource drops, the stratagem drops, containers). Import resolution is now 74-90%
 of placements per map, up from 47-74%, with the gameplay markers included.
 
-## 9. What is still missing from the picture
+## 9. The ground layer (decoded and blended)
 
-- **vista** (469 per map) — the horizon layer; 65 shipped models, 12 in the kit;
-- **ground layers** — 8 per map with 2 masks; decoded, not blended.
+The terrain is eight layers blended by two RGBA masks — layer `i`'s weight is `mask[i // 4]` channel
+`i % 4`, accumulated as `sum(w_i * layer_i) / sum(w_i)`. The masks are raw RGBA at map resolution
+(512×512 on a 1v1 map, 800×800 on a large one) and are decoded from `RCTI/MASK`; the layer textures
+resolve from the map's own `RCTI/LAYR` records the same way a biome tile does.
+
+`tools/dow2/terrain_bundle.py` writes, per map, the eight layer textures, the two masks and a
+manifest; `forge_import.py` attaches that bundle to the layout, and the forge renders it with the
+engine's own blend (`frontend/src/three/terrainBlend.ts`). Measured on the six shipped layouts: 7-8
+layers and both masks each.
+
+Two implementation notes worth keeping:
+
+- **GLSL ES 1.0 cannot index a sampler array with a loop variable** ("array index for samplers must be
+  constant integral expressions"), so the eight samples are unrolled. It is the same arithmetic the
+  engine's loop performs, in the form the compiler accepts.
+- The shader's lighting is matched to the forge's rig rather than to the engine's. Without that the
+  terrain renders as a dark slab with correctly lit props standing on it.
+
+## 10. What is still missing from the picture
+
+- **vista** (469 per map) — the horizon layer; 65 shipped models, 12 in the kit.
 
 Until those are rendered, a board can be *correct* by these numbers and still look emptier than the
 map it came from. That is the next programme, not a defect in the rules.

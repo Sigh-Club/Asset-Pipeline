@@ -203,7 +203,8 @@ def board_centre(entities: list[dict], nav: dict | None) -> tuple[float, float]:
 
 
 def convert(map_json: Path, kit_names: list[str], width: int, height: int,
-            name: str | None = None, decal_names: set[str] | None = None) -> dict:
+            name: str | None = None, decal_names: set[str] | None = None,
+            a_terrain_dir: Path | None = None) -> dict:
     decal_names = decal_names or set()
     data = json.loads(map_json.read_text())
     terrain = data.get("terrain") or {}
@@ -326,6 +327,15 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int,
         })
     layout["source"]["decals"] = decal_stats
 
+    # the map's own ground: eight layers and two masks, so the board renders the ground it stands on
+    # rather than one tiled texture per biome
+    terrain_manifest = Path(a_terrain_dir) / map_json.stem / "terrain.json" if a_terrain_dir else None
+    if terrain_manifest and terrain_manifest.is_file():
+        try:
+            layout["terrain"] = json.loads(terrain_manifest.read_text())
+        except json.JSONDecodeError:
+            pass
+
     # one prop per cell, as the forge's model requires
     seen = {}
     for prop in layout["props"]:
@@ -342,6 +352,8 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--only", action="append", default=[])
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--terrain", type=Path, default=None,
+                    help="terrain bundle directory (default: beside the kit, ../maps/terrain)")
     ap.add_argument("--width", type=int, default=24)
     ap.add_argument("--height", type=int, default=20)
     a = ap.parse_args(argv)
@@ -352,6 +364,8 @@ def main(argv=None) -> int:
     kit_names = sorted({p["name"].lower() for p in kit["props"]
                         if not str(p.get("biome", "")).startswith("vista")})
     # the decal palette lives beside the kit, in the game's public assets
+    # the kit is at <assets>/models/env/env_kit.json, so the terrain bundles are two levels up
+    terrain_dir = a.terrain or (Path(a.kit).parents[2] / "maps" / "terrain")
     decal_names: set[str] = set()
     decal_manifest = Path(a.kit).parents[2] / "decals" / "decal_kit.json"
     if decal_manifest.is_file():
@@ -366,7 +380,8 @@ def main(argv=None) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     index = []
     for map_json in maps:
-        layout = convert(map_json, kit_names, a.width, a.height, decal_names=decal_names)
+        layout = convert(map_json, kit_names, a.width, a.height, decal_names=decal_names,
+                         a_terrain_dir=terrain_dir)
         dest = a.out / f"shipped_{map_json.stem}.json"
         dest.write_text(json.dumps(layout, indent=1))
         index.append({"file": dest.name, "map": layout["name"], "biome": layout["biome"],

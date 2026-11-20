@@ -185,8 +185,18 @@ def decode_terrain(terr: Node, blob: bytes) -> dict | None:
                 if attr is None:
                     continue
                 words = struct.unpack_from(f"<{attr.size // 4}I", payload(blob, attr), 0)
-                if len(words) >= 3:
-                    masks.append({"width": words[1], "height": words[2]})
+                if len(words) < 3:
+                    continue
+                width, height = words[1], words[2]
+                entry = {"width": width, "height": height}
+                # The mask payload is raw RGBA, width * height * 4 bytes: layer i's weight is mask
+                # [i // 4] channel i % 4. Keeping the bytes is what makes the ground blendable.
+                data_chunk = find(child, "DATA")
+                if data_chunk is not None:
+                    pixels = payload(blob, data_chunk)
+                    if len(pixels) >= width * height * 4:
+                        entry["data_b64"] = base64.b64encode(pixels[: width * height * 4]).decode("ascii")
+                masks.append(entry)
         usag = find(rcti, "USAG")
         if usag is not None:
             data = payload(blob, usag)
