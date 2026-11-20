@@ -159,9 +159,32 @@ Tests: `mapLayout.test.ts` 14 passing, including relief round-trip, resize/crop 
 has a 4x4 floor), malformed height rows, and every shipped import inside the board, inside the kit,
 non-vista, with relief within budget.
 
-Open from this step: the blueprint→kit mapping is still a name heuristic (see P2), so a desert map
-places `rock_cover_03` 35 times and `desert_mussel` 38 times; paint is empty because the nav byte grid
-is not decoded yet.
+## 2c1. Map import quality and passability (session 9, P2) — DONE
+
+- **The nav grid is decoded**: `WRLD/WLDI/PFDR/PRMP` layer 0 is width x height passability bytes
+  (measured on `xp2_a_chapterkeepselenon`: 93,168 of 163,840 cells are zero, i.e. blocked). Imports
+  now paint `impassable` where the majority of the nav cells under a board cell are zero, so an
+  imported map carries its real walkable shape (61-174 painted cells per board).
+- **The prop mapping is exact-then-head-noun, not prefix.** The old longest-shared-prefix rule is why
+  a desert map placed `desert_mussel` 38 times. Resolution is now printed per map and recorded in
+  `source.placement_resolution` with the top unresolved names: 47-74% of placements resolve.
+- **The kit was rebuilt to 185 props (172 board, 13 vista)** from the corpus by frequency and scale
+  (`--min-placements 25 --max-size 10`), up from 109. Exact coverage of corpus placements rose from
+  30% to 51%. Two selection bugs were fixed: a blueprint's name is not its model's file name
+  (`lab_wall_02a` ships as `sh_labwall_02a.model`, the most-placed wall in the corpus), and a flat
+  `max(dimension)` test rejected a 12 m wall for being long while accepting a 7 m boulder.
+- **Props with no diffuse map** in the source carry a `tint` measured from their biome's ground
+  colour, and the forge applies it; the forge's lighting was also re-balanced (exposure 1.5 -> 1.0,
+  total illumination ~6x -> daylight) because pale albedo clipped to white.
+- **The forge paints relief**: `raise`/`lower` brushes at `ELEVATION_STEP`, clamped to
+  `MAX_RELIEF_STEPS` (6), and `layoutToHeightGrid` exports it. Paint overlays follow the terrain.
+- **A flaky test was fixed at the source**: `demoBackend.test.ts` failed 1 run in 3 because the demo
+  shapes its board from an unseeded `Math.random`. `setDemoRandom` now lets a test fix the board;
+  682 tests pass, repeatedly.
+
+Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
+`layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
+engine's eight blended layers.
 
 ## 2c. Environment kit and the map forge (session 8)
 

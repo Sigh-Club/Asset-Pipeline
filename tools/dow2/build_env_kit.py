@@ -64,10 +64,36 @@ def art_root() -> Path:
     return root / "sga_art" if (root / "sga_art").is_dir() else root
 
 
+_MODEL_INDEX: dict[str, list[Path]] = {}
+
+
+def _model_index(root: Path) -> dict[str, list[Path]]:
+    """Every shipped model keyed by a normalised stem, built once.
+
+    A blueprint's name is not its model's file name: `lab_wall_02a` ships as
+    `sh_labwall_02a.model` (measured, 1520 placements — the most-placed wall in the corpus), so an
+    exact filename lookup silently drops the most useful props. Normalising to alphanumerics and
+    matching by containment finds them.
+    """
+    key = str(root)
+    if key not in _MODEL_INDEX:
+        index: dict[str, list[Path]] = {}
+        for model in root.rglob("*.model"):
+            norm = "".join(ch for ch in model.stem.lower() if ch.isalnum())
+            index.setdefault(norm, []).append(model)
+        _MODEL_INDEX[key] = index
+    return _MODEL_INDEX[key]
+
+
 def model_for(root: Path, name: str) -> Path | None:
     hits = sorted(root.rglob(f"{name}.model"))
     if not hits:
-        return None
+        norm = "".join(ch for ch in name.lower() if ch.isalnum())
+        index = _model_index(root)
+        candidates = [m for stem, paths in index.items() if norm in stem for m in paths]
+        if not candidates:
+            return None
+        hits = sorted(candidates, key=lambda p: (len(p.stem), len(str(p))))
     # prefer the model that is not a wreck/submit variant
     hits.sort(key=lambda p: ("wreck" in p.stem, "_submit" in p.stem, len(str(p))))
     return hits[0]
@@ -121,6 +147,30 @@ def model_size(model: Path) -> list[float] | None:
     return [round(hi[i] - lo[i], 2) for i in range(3)]
 
 
+def board_scale(size: list[float], max_size: float) -> bool:
+    """Is this model a board prop, or is it scenery?
+
+    `size` is the model's own bounding box in its authored space, where the **third component is
+    height** (measured: `roadside_marker_sb_healthy_02` is [1.34, 1.3, 6.24] and imports as a 6.24 m
+    post). A flat `max(dimension)` test is wrong in both directions: it rejects a 10 m wall segment
+    that is 0.5 m thick and would accept a 7 m boulder. The rule that matches a 48x40 m board:
+
+      * height at most `max_size` — a board prop is not a tower;
+      * a thin axis at most 3 m — walls, plates, barriers and fences belong on a board however long
+        they are, and their length is capped at 2x the height;
+      * otherwise every dimension at most `max_size`.
+    """
+    width, depth, height = (float(v) for v in size[:3])
+    if min(width, depth, height) < 0.2:
+        return False
+    if height > max_size:
+        return False
+    # a wall is long by nature: `stone_support_wall_10m` measures 6.0 x 12.2 m on the ground and is
+    # 3.6 m tall, and it is the wall a map is built from. Footprint is capped at 2.5x the height
+    # budget, which keeps a 12 m wall and rejects a 27 m rock ridge.
+    return max(width, depth) <= max_size * 2.5
+
+
 def structure_entries(root: Path) -> list[dict]:
     """The shipped structures, resolved to their models."""
     out = []
@@ -148,7 +198,7 @@ def vista_entries(root: Path) -> list[dict]:
 
 
 def select(palette: dict, per_biome: int, root: Path | None = None,
-           max_size: float = 0.0) -> list[dict]:
+           max_size: float = 0.0, min_placements: int = 0) -> list[dict]:
     """The kit's prop list: the most-placed props per biome that fit a combat board.
 
     The scan walks the biome's frequency-ordered list rather than its head, because the top of a DoW2
@@ -156,6 +206,23 @@ def select(palette: dict, per_biome: int, root: Path | None = None,
     vista pieces, not cover. A prop is taken when its own bounding box fits `max_size`.
     """
     chosen = []
+    if min_placements > 0:
+        # Frequency-driven rather than rank-driven: a wall placed 27 times matters more than the
+        # 9th most common bush, and a per-biome cap cannot express that.
+        for biome in BUILD_BIOMES:
+            props = palette.get("props_per_biome", {}).get(biome, {})
+            for name, count in props.items():
+                if count < min_placements:
+                    continue
+                if root is not None and max_size > 0:
+                    model = model_for(root, name)
+                    if model is None:
+                        continue
+                    size = model_size(model)
+                    if size and not board_scale(size, max_size):
+                        continue
+                chosen.append({"name": name, "biome": biome, "placements": count})
+        return chosen
     for biome in BUILD_BIOMES:
         props = palette.get("props_per_biome", {}).get(biome, {})
         taken = 0
@@ -167,7 +234,7 @@ def select(palette: dict, per_biome: int, root: Path | None = None,
                 if model is None:
                     continue
                 size = model_size(model)
-                if size and (max(size) > max_size or max(size) < 0.3):
+                if size and not board_scale(size, max_size):
                     continue
             chosen.append({"name": name, "biome": biome, "placements": count})
             taken += 1
@@ -201,7 +268,55 @@ def build_one(root: Path, entry: dict, out_dir: Path, log_dir: Path) -> dict | N
         out["size"] = [round(float(v), 2) for v in size.group(1).split(",")]
     if tris:
         out["tris"] = int(tris.group(1))
+    # record whether the shipped material actually carries a diffuse map: a prop without one needs a
+    # fallback tint, and the manifest is where that fact belongs
+    out["textured"] = glb_has_texture(dest)
     return out
+
+
+def ground_tints(out_dir: Path) -> dict[str, list[float]]:
+    """Per-biome ground colour, measured from the ground kit's own tiles.
+
+    A shipped prop with no diffuse map has no colour of its own to recover. The measured colour of the
+    ground it stands on is the honest fallback — and it is a measurement, not an invention.
+    """
+    manifest = Path(out_dir).parents[1] / "terrain" / "ground_kit.json"
+    if not manifest.is_file():
+        return {}
+    try:
+        data = json.loads(manifest.read_text())
+    except json.JSONDecodeError:
+        return {}
+    tints: dict[str, list[float]] = {}
+    for biome, entry in data.get("biomes", {}).items():
+        tiles = entry.get("tiles") or []
+        if not tiles:
+            continue
+        rgb = [sum(t["rgb"][i] for t in tiles) / len(tiles) for i in range(3)]
+        tints[biome] = [round(min(1.0, c / 255.0 * 1.35), 3) for c in rgb]
+    return tints
+
+
+def glb_has_texture(path: Path) -> bool:
+    """Does this GLB carry an image? Read from the container, not from the importer's log."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return False
+    if data[:4] != b"glTF":
+        return False
+    offset = 12
+    while offset + 8 <= len(data):
+        length, ctype = struct.unpack_from("<II", data, offset)
+        offset += 8
+        if ctype == 0x4E4F534A:  # JSON chunk
+            try:
+                gltf = json.loads(data[offset:offset + length])
+            except json.JSONDecodeError:
+                return False
+            return bool(gltf.get("images"))
+        offset += length
+    return False
 
 
 def main(argv=None) -> int:
@@ -211,6 +326,12 @@ def main(argv=None) -> int:
     ap.add_argument("--palette", type=Path,
                     default=ROOT / "output/source_lab/biome_palette.json")
     ap.add_argument("--per-biome", type=int, default=8)
+    ap.add_argument("--refresh-tints", action="store_true",
+                    help="re-read the existing kit's GLBs to record which props carry a diffuse map, "
+                         "and give the rest the measured ground colour of their biome (no rebuild)")
+    ap.add_argument("--min-placements", type=int, default=0,
+                    help="select by frequency instead of rank: take every board-scale prop placed at "
+                         "least this many times in the corpus")
     ap.add_argument("--out", type=Path,
                     default=ROOT.parent / "Imperium-of-Ash/frontend/public/assets/models/env")
     ap.add_argument("--manifest", type=Path, default=None,
@@ -223,9 +344,25 @@ def main(argv=None) -> int:
     ap.add_argument("--include-vista", action="store_true",
                     help="also build the horizon-scale props (big trees, cliffs) as their own layer")
     a = ap.parse_args(argv)
+    if a.refresh_tints:
+        manifest = a.manifest or (a.out / "env_kit.json")
+        data = json.loads(manifest.read_text())
+        ground = ground_tints(Path(a.out))
+        updated = 0
+        for prop in data.get("props", []):
+            path = Path(a.out) / prop["url"].replace("/assets/models/env/", "")
+            prop["textured"] = glb_has_texture(path)
+            if prop["textured"]:
+                prop.pop("tint", None)
+            elif prop.get("biome") in ground:
+                prop["tint"] = ground[prop["biome"]]
+                updated += 1
+        manifest.write_text(json.dumps(data, indent=1))
+        print(f"{updated} untextured props tinted from their biome's measured ground colour")
+        return 0
     root = a.art or art_root()
     palette = json.loads(a.palette.read_text())
-    entries = select(palette, a.per_biome, None if a.only else root, a.max_size)
+    entries = select(palette, a.per_biome, None if a.only else root, a.max_size, a.min_placements)
     if a.include_structures:
         entries.extend(structure_entries(root))
     if a.include_vista:
@@ -249,10 +386,19 @@ def main(argv=None) -> int:
     # tyranid `capillary_tower_epic` reads 336 m because its own model is the horizon-scale variant)
     if a.max_size > 0:
         before = len(built)
-        # a vista backdrop is a 4-triangle plate, not map dressing (`viz_black_wall_bg`)
+        # a vista backdrop is a 4-triangle plate, not map dressing (`viz_black_wall_bg`).
+        # The built size is Y-up, so the board test is applied to (width, depth, height) in that order
+        # — the same rule the selection uses on the authored model, not a flat max() that would drop
+        # a 12 m wall for being long.
+        def built_board_scale(size):
+            width, height, depth = (float(v) for v in size[:3])
+            if min(width, height, depth) < 0.2 or height > a.max_size:
+                return False
+            return max(width, depth) <= a.max_size * 2.5
+
         built = [b for b in built
                  if (b["biome"].startswith(("structure_", "vista_"))
-                     or (not b.get("size") or max(b["size"]) <= a.max_size))
+                     or (not b.get("size") or built_board_scale(b["size"])))
                  and (b.get("tris") or 0) >= 8]
         if len(built) != before:
             print(f"dropped {before - len(built)} prop(s) larger than {a.max_size} m after build")
@@ -264,6 +410,14 @@ def main(argv=None) -> int:
             existing = json.loads(manifest.read_text()).get("props", [])
         except json.JSONDecodeError:
             existing = []
+    # A prop whose shipped material carries no diffuse map renders as bare grey in our viewer. Its own
+    # source has no colour to recover, so the honest fallback is the *measured* colour of the ground it
+    # stands on: a desert rock is the colour of the desert. `ground_kit.json` holds those means.
+    ground = ground_tints(Path(a.out))
+    for prop in built:
+        if not prop.get("textured", True) and prop.get("biome") in ground:
+            prop["tint"] = ground[prop["biome"]]
+
     merged = {(p["biome"], p["name"]): p for p in existing}
     for prop in built:
         merged[(prop["biome"], prop["name"])] = prop

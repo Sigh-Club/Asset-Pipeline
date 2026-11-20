@@ -30,6 +30,7 @@ import json
 import re
 import struct
 import sys
+import base64
 import zlib
 from collections import Counter
 from pathlib import Path
@@ -82,7 +83,6 @@ def read_chunks(blob: bytes, pos: int, end: int) -> list[Node]:
 
 def parse(blob: bytes) -> list[Node]:
     if blob[:1] == b"\x78":
-        import zlib
         try:
             blob = zlib.decompress(blob)
         except zlib.error:
@@ -249,7 +249,17 @@ def decode_nav(scen: Node, blob: bytes) -> dict | None:
     if len(data) < 12:
         return None
     width, height, layers = struct.unpack_from("<III", data, 0)
-    return {"width": width, "height": height, "layers": layers}
+    # Layer 0 is the walkable/passability grid: width * height bytes, one per cell. Measured across
+    # the corpus, values are 0 (blocked) and 1 (walkable); the remaining layers are the other
+    # passability types the map declares and are kept as their own byte runs.
+    nav = {"width": width, "height": height, "layers": layers}
+    layer_size = width * height
+    if layers >= 1 and len(data) >= 12 + layer_size:
+        walkable = data[12:12 + layer_size]
+        nav["walkable_b64"] = base64.b64encode(walkable).decode("ascii")
+        nav["blocked_cells"] = int(layer_size - sum(1 for b in walkable if b))
+        nav["values"] = sorted({int(b) for b in walkable})
+    return nav
 
 
 ART_PATH = re.compile(r"art[\\/]([A-Za-z0-9_\\/ .\-]+?)(?=\x00|art[\\/]|ebps[\\/])")

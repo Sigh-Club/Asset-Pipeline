@@ -22,7 +22,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -37,25 +39,45 @@ TILE_SIZE = 2.0
 MAX_RELIEF_STEPS = 6
 
 
-def nearest_prop(name: str, kit_names: list[str]) -> str | None:
-    """The kit prop closest to a blueprint's model name (the kit is a curated subset)."""
+# Tokens that carry no identity: size words, ordinals and stock suffixes.
+_STOP_TOKENS = {
+    "sb", "a", "b", "c", "the", "and", "long", "short", "small", "large", "lrg", "sml", "med", "mid",
+    "one", "two", "three", "four", "five", "six", "stack", "single", "half", "full", "base", "top",
+}
+
+
+def _tokens(name: str) -> list[str]:
+    parts = [t for t in re.split(r"[_\-\s]+", name.lower()) if t]
+    return [t for t in parts if t not in _STOP_TOKENS and not t.isdigit()]
+
+
+def nearest_prop(name: str, kit_names: list[str]) -> tuple[str | None, str]:
+    """The kit prop for a blueprint's model name, and how it was decided.
+
+    The previous rule was a longest-shared-prefix heuristic, which is why a desert map placed
+    `desert_mussel` 38 times: every `desert_*` blueprint shares that prefix. Identity is carried by
+    the **head noun** (the last meaningful token), so a match requires it to agree, and the match is
+    rejected rather than guessed when it does not.
+
+    Returns (prop, "exact" | "token" | "none").
+    """
     low = name.lower()
     if low in kit_names:
-        return low
+        return low, "exact"
+    want = _tokens(low)
+    if not want:
+        return None, "none"
+    head = want[-1]
+    best, best_score = None, 0
     for candidate in kit_names:
-        if candidate in low or low in candidate:
-            return candidate
-    # fall back on the longest shared prefix, so `u_concrete_rubble_03` still finds rubble
-    best, best_len = None, 0
-    for candidate in kit_names:
-        shared = 0
-        for a, b in zip(candidate, low):
-            if a != b:
-                break
-            shared += 1
-        if shared > best_len:
-            best, best_len = candidate, shared
-    return best if best_len >= 4 else None
+        have = _tokens(candidate)
+        if not have or head not in have:
+            continue
+        score = len(set(want) & set(have))
+        if score > best_score:
+            best, best_score = candidate, score
+    # one shared token is the head noun alone, which is too weak to be an identity
+    return (best, "token") if best and best_score >= 2 else (None, "none")
 
 
 def resample_heights(terrain: dict, width: int, height: int,
@@ -85,20 +107,36 @@ def resample_heights(terrain: dict, width: int, height: int,
     return [[int(round(v * scale)) for v in row] for row in samples]
 
 
-def nav_blocked(nav: dict | None, terrain: dict | None, width: int, height: int) -> set[tuple[int, int]]:
-    """Cells the game's nav grid marks as not standable.
+def nav_blocked(nav: dict | None, width: int, height: int) -> set[tuple[int, int]]:
+    """Cells the game's own nav grid marks as not standable, in board cells.
 
-    The nav grid is the game's own passability data (`WRLD/WLDI/PFDR/PRMP`: width, height, layers,
-    bytes). A cell is blocked when its byte is zero — the first layer is the walkable one, and the
-    remaining layers are the extra passability types (cover, chokepoints) the map declares.
+    `WRLD/WLDI/PFDR/PRMP` layer 0 is the passability grid: one byte per nav cell, and a zero byte
+    means nothing can stand there (measured on `xp2_a_chapterkeepselenon`: 93,168 of 163,840 cells
+    are zero). Non-zero bytes are a bitfield of the map's passability types — which bit means what is
+    not yet decoded, so the rule here is the one that is certain: zero is blocked.
     """
     blocked: set[tuple[int, int]] = set()
-    if not nav:
+    if not nav or "walkable_b64" not in nav:
         return blocked
-    nw, nh = nav.get("width", 0), nav.get("height", 0)
-    if not nw or not nh:
+    raw = base64.b64decode(nav["walkable_b64"])
+    nw, nh = int(nav.get("width") or 0), int(nav.get("height") or 0)
+    if not nw or not nh or len(raw) < nw * nh:
         return blocked
-    # the decoder keeps the dimensions; the byte grid is re-read only if present
+    # a board cell is blocked when its nav footprint is mostly blocked: the board is coarser than the
+    # nav grid, so the majority of the cells under it decides, and a sliver does not close a lane
+    for by in range(height):
+        for bx in range(width):
+            x0, x1 = int(bx * nw / width), max(int(bx * nw / width) + 1, int((bx + 1) * nw / width))
+            y0, y1 = int(by * nh / height), max(int(by * nh / height) + 1, int((by + 1) * nh / height))
+            total = blocked_here = 0
+            for ny in range(y0, min(y1, nh)):
+                row = ny * nw
+                for nx in range(x0, min(x1, nw)):
+                    total += 1
+                    if raw[row + nx] == 0:
+                        blocked_here += 1
+            if total and blocked_here / total >= 0.5:
+                blocked.add((bx, by))
     return blocked
 
 
@@ -145,17 +183,27 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
                 break
     layout["biome"] = biomes.most_common(1)[0][0] if biomes else "desert"
 
+    # the game's own passability becomes the layout's paint, so an imported map carries its walkable
+    # shape instead of an empty board
+    for bx, by in sorted(nav_blocked(data.get("nav"), width, height)):
+        layout["paint"][f"{bx},{by}"] = "impassable"
+
     # placements: blueprint -> kit prop, snapped to the board
     span_x = terrain.get("width") or 1
     span_z = terrain.get("height") or 1
+    stats = {"exact": 0, "token": 0, "none": 0}
+    unresolved: dict[str, int] = {}
     for entity in data.get("entities") or []:
         blueprint = (entity.get("blueprint") or "").replace("\\", "/")
         if "world_objects" not in blueprint and "structures" not in blueprint:
             continue
         stem = blueprint.rstrip("/").split("/")[-1].lower()
-        prop = nearest_prop(stem, kit_names)
+        prop, how = nearest_prop(stem, kit_names)
         if prop is None:
+            stats["none"] += 1
+            unresolved[stem] = unresolved.get(stem, 0) + 1
             continue
+        stats[how] += 1
         pos = entity.get("pos") or [0, 0, 0]
         # the map is centred on the origin in world units of one sample per metre-ish; the board is
         # normalised to the map's own extent, which is what makes the reproduction readable
@@ -171,6 +219,10 @@ def convert(map_json: Path, kit_names: list[str], width: int, height: int, name:
             "rot": 0,
             "elev": 0,
         })
+    layout["source"]["placement_resolution"] = {
+        **stats,
+        "unresolved_top": sorted(unresolved.items(), key=lambda kv: -kv[1])[:12],
+    }
     # one prop per cell, as the forge's model requires
     seen = {}
     for prop in layout["props"]:
@@ -211,8 +263,11 @@ def main(argv=None) -> int:
         dest.write_text(json.dumps(layout, indent=1))
         index.append({"file": dest.name, "map": layout["name"], "biome": layout["biome"],
                       "props": len(layout["props"]), "source": layout["source"]})
+        res = layout["source"]["placement_resolution"]
+        total = res["exact"] + res["token"] + res["none"]
         print(f"{layout['name']:40s} {layout['biome']:9s} props {len(layout['props']):4d} "
-              f"terrain {layout['source']['terrain']['width']}x{layout['source']['terrain']['height']}")
+              f"resolved {res['exact']} exact + {res['token']} token / {total} "
+              f"({100 * (res['exact'] + res['token']) // max(1, total)}%)")
     (a.out / "shipped_index.json").write_text(json.dumps({"maps": index}, indent=1))
     print(f"{len(index)} layouts -> {a.out}")
     return 0

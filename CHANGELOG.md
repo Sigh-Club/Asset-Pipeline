@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P2: import quality and passability)
+
+### Added
+
+- The game's nav grid is decoded (`WRLD/WLDI/PFDR/PRMP` layer 0: width x height passability bytes) and
+  `forge_import.py` paints `impassable` from it, so an imported map carries its real walkable shape.
+- `layoutToHeightGrid` exports relief, and the forge gains `raise`/`lower` brushes at the engine's
+  0.35 m step, clamped to a 6-step (2.1 m) board budget.
+- `setDemoRandom` in the demo backend: the board shape is no longer an unfixable die roll for tests.
+
+### Changed
+
+- The environment kit is rebuilt from the corpus by frequency and scale: **185 props (172 board, 13
+  vista)**, up from 109. Exact coverage of corpus placements 30% -> 51%.
+- Prop resolution for map import is exact-then-head-noun with a printed resolution rate and the top
+  unresolved names recorded per map (47-74% resolve), replacing the prefix heuristic that placed
+  `desert_mussel` 38 times on one map.
+- Props whose shipped material has no diffuse map carry a `tint` measured from their biome's ground
+  colour; the forge applies it.
+- The forge's lighting is re-balanced (exposure 1.5 -> 1.0, total illumination ~6x -> daylight); pale
+  albedo was clipping to white.
+- `impassable` paint is a readable slate rather than near-black, and paint overlays follow terrain
+  relief instead of floating at y=0.
+
+### Fixed
+
+- `build_env_kit.py`: a blueprint name is not its model's file name (`lab_wall_02a` ships as
+  `sh_labwall_02a.model`), and a flat `max(dimension)` scale test rejected a 12 m wall for being long
+  while accepting a 7 m boulder.
+- `demoBackend.test.ts` was flaky (1 run in 3): the demo shaped its board from an unseeded random
+  source. Seeded in the suite; 682 tests pass repeatedly.
+
 ## [Unreleased] — 2026-11-18 (session 9, P1: shipped maps in the forge)
 
 ### Added
