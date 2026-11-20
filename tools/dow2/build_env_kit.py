@@ -85,8 +85,43 @@ def _model_index(root: Path) -> dict[str, list[Path]]:
     return _MODEL_INDEX[key]
 
 
+def model_from_blueprint(root: Path, name: str) -> Path | None:
+    """A blueprint's animator path, which is where the model it draws is named.
+
+    A blueprint's file name is not its model's: `wrecked_valkry_04` draws `valkyrie_wreck_04`, and
+    `lab_wall_02a` draws `sh_labwall_02a`. The decoded blueprint text carries the authoritative
+    `animator = "world_objects\..."` line, so it is read rather than guessed.
+    """
+    # the art root may be the extract directory or its parent, so look up and down for the decoded
+    # blueprints rather than assuming one layout
+    attrib = None
+    for candidate in [root, *root.parents]:
+        if (candidate / "attrib-decoded").is_dir():
+            attrib = candidate / "attrib-decoded"
+            break
+    if attrib is None:
+        return None
+    for txt in attrib.rglob(f"{name}.txt"):
+        try:
+            text = txt.read_text(errors="replace")
+        except OSError:
+            continue
+        match = re.search(r'animator\s*=\s*"([^"]+)"', text)
+        if not match:
+            continue
+        animator = match.group(1).replace("\\", "/")
+        stem = animator.rsplit("/", 1)[-1]
+        for hit in root.rglob(f"{stem}.model"):
+            return hit
+    return None
+
+
 def model_for(root: Path, name: str) -> Path | None:
     hits = sorted(root.rglob(f"{name}.model"))
+    if not hits:
+        via_blueprint = model_from_blueprint(root, name)
+        if via_blueprint is not None:
+            return via_blueprint
     if not hits:
         norm = "".join(ch for ch in name.lower() if ch.isalnum())
         index = _model_index(root)

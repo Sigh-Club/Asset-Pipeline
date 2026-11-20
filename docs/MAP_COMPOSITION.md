@@ -190,7 +190,32 @@ The grammar replaces the cell-wise `Math.random()` cover pass in `addRandomCover
 jungle and desert battlefield generators all call) and the second random pass in
 `defaultScenario.ts`. The forge gains a `generate` button and a board-size control.
 
-## 12. What is still missing from the picture
+## 12. Cover asset inventory (measured against the corpus)
+
+Asked whether the kit carries what a turn-based cover system needs, so here is the count by class,
+with what the shipped maps actually place. "Cover volume" means the prop ships a `.coverbox`, which
+is what the grid consumes.
+
+| class | in kit | of which with a cover volume | corpus placements |
+|---|---|---|---|
+| full walls (high walls, support walls, facades, lab walls) | 87 | 58 | — |
+| half/low walls (low walls, sandbags, low metal, low concrete) | 19 | 17 | — |
+| barriers (barbed wire, tank traps, barricades, fences, railings) | 22 | 18 | — |
+| buildings and structures (bunkers, barracks, temples, towers, gates) | 39 | 18 | — |
+| rubble and debris | 40 | 30 | — |
+| **vehicle husks and wrecks** | **16** | 9 | 273 placements / 18 blueprints |
+
+Vehicle husks were the one real gap: the kit carried 2 (a turret and a dreadnought) against 273
+placements in the corpus. Sixteen are now built — Predator wrecks in three states, Leman Russ,
+Battlewagon, Land Raider, Ork wartrukk, Valkyrie, Falcon, Fire Prism, Wraithlord, looted tank, Chaos
+Predator, plus the ruined colosseum pillar — covering **270 of 273** husk placements.
+
+The fix that made it possible is recorded because it generalises: a blueprint's file name is not its
+model's (`wrecked_valkry_04` draws `valkyrie_wreck_04`, `ork_wrecks_looted_tank` draws
+`wreck_looted_pred`), so `model_for` now reads the blueprint's own `animator = "..."` line from the
+decoded attrib data instead of guessing from names.
+
+## 13. What is still missing from the picture
 
 - **the `VIZO` reference graph** — the 469-1026 references per map are decoded as references, and
   their targets are not resolved, so a map's full backdrop is not yet reconstructed;
