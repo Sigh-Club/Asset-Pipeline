@@ -308,7 +308,24 @@ Also this session: the vehicle-husk gap was closed (16 husks built, 270 of 273 c
 covered) and `model_for` now resolves a blueprint's model from its own `animator` line rather than
 guessing from names.
 
-Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
+## 2c9. Staged layouts in the game (session 9, P9) — DONE
+
+The library is playable, which is the only way to judge a generated board as a game rather than as a
+plan.
+
+- `Imperium-of-Ash/frontend/src/data/demoLayout.ts` holds the active layout; `buildDemoBattle` builds
+  the grid from it (`layoutToTerrainGrid`), places its props as dressing, takes the board size from
+  the layout and places both forces on passable ground. Without a staged layout the board is the
+  product model's 23x23; the hardcoded 23/21 bounds are now board-derived.
+- `/layouts` lists the catalogue (68 boards with density, clumping, embedded share) with kind and
+  biome filters and a play button per row.
+- `demoLayout.test.ts` (5 tests): board size, blocked ground, props as dressing, unit placement on
+  passable cells, and the 23x23 fallback.
+
+Recorded: the offline demo still shows the global server-status overlay when no Go backend is
+running. That is pre-existing and unrelated to the layout path — the board renders behind it.
+
+Recorded, not done: no *mission* (as opposed to the demo battle) reads the catalogue yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
 the `VIZO` reference graph is decoded as references but not resolved.
 

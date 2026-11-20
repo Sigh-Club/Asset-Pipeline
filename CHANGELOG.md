@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P9: staged layouts in the game)
+
+### Added
+
+- `/layouts` — the layout library page: 68 staged boards with their measurements, kind and biome
+  filters, and a play button that builds the demo battle on the chosen board.
+- `src/data/demoLayout.ts` — the active staged layout, consumed by `buildDemoBattle`.
+- `demoLayout.test.ts` — 5 tests that the staged board reaches the game: size, blocked ground, props
+  as dressing, unit placement on passable cells, and the 23x23 fallback.
+
+### Changed
+
+- `buildDemoBattle` takes its board size from the staged layout; the hardcoded 23/21 bounds, loops
+  and BFS buffers are board-derived, and the published `grid_width`/`grid_height` follow the board.
+- Biome set dressing is skipped on a staged board: the layout's own props are the dressing.
+
 ## [Unreleased] — 2026-11-18 (session 9, P8: staged layout library)
 
 ### Added
