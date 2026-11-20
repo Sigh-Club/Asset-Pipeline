@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P1: shipped maps in the forge)
+
+### Added
+
+- `tools/dow2/forge_import.py` — converts a decoded shipped map into a forge layout: relief, biome
+  from the placement blueprint mix, and placements snapped to the board. Six maps ship in
+  `Imperium-of-Ash/frontend/public/assets/maps/shipped/` with an index the forge page reads.
+- `/maps` gains a shipped-map row (load a real DoW2 map as an editable layout), a displaced terrain
+  mesh from a layout's `heights`, and props placed at `elev + heightAt(...)`.
+
+### Fixed
+
+- **Relief was carried at source scale** (measured 172-309 steps = 60-108 m on a 24x20 board of 2 m
+  cells), which put the camera inside the hillside. The board budget is now 6 steps (2.1 m), with the
+  source range recorded in `source.relief`.
+- **Vista pieces were placed as board props**: `rock_pile_long_01` is 17x11.8x26.9 m. `vista_*` is now
+  excluded from placement.
+- **The camera did not fit the board**: framing now fits the board diagonal to the camera's horizontal
+  field of view and lifts the target to mid-relief.
+
+### Verified
+
+- `mapLayout.test.ts`: 14 passing, including relief round-trip, resize/crop (4x4 board floor),
+  malformed height rows, and every shipped import inside the board, inside the kit, non-vista, relief
+  within budget.
+
 ## [Unreleased] — 2026-11-18 (session 9, P0: method capture)
 
 ### Added

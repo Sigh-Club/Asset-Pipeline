@@ -138,6 +138,31 @@ Still to adopt from the community package (recorded, not started): the `.simbox`
 `.collision` simple/complex generators, `.markers`, `.hkanim` additive layering and `.motiontree`
 state machines, and terrain layer *blending* in the forge (it renders one ground texture today).
 
+## 2c0. Map import into the forge (session 9, P1) — DONE
+
+`tools/dow2/forge_import.py` converts a decoded shipped map into a forge layout (relief, biome,
+placements) and six maps ship under
+`Imperium-of-Ash/frontend/public/assets/maps/shipped/`. Three bugs were measured and fixed:
+
+- **relief was carried at source scale**: 172-309 steps (60-108 m) on a 24x20 board of 2 m cells, so
+  the camera sat inside the hillside. The board's relief is now normalised to a **6-step (2.1 m)**
+  budget with the true source range kept in `source.relief`; a test asserts no imported layout
+  exceeds it.
+- **vista pieces were placed as board props**: `rock_pile_long_01` is 17 x 11.8 x 26.9 m and landed
+  as a monolith in the middle of the board. `vista_*` entries are now excluded from placement, and a
+  test asserts it.
+- **the camera did not fit the board**: `span * 0.62 + 5` put a 48 m board outside a 45-degree frame.
+  Framing now fits the board's diagonal to the camera's horizontal field of view and lifts the target
+  to mid-relief.
+
+Tests: `mapLayout.test.ts` 14 passing, including relief round-trip, resize/crop behaviour (the board
+has a 4x4 floor), malformed height rows, and every shipped import inside the board, inside the kit,
+non-vista, with relief within budget.
+
+Open from this step: the blueprint→kit mapping is still a name heuristic (see P2), so a desert map
+places `rock_cover_03` 35 times and `desert_mussel` 38 times; paint is empty because the nav byte grid
+is not decoded yet.
+
 ## 2c. Environment kit and the map forge (session 8)
 
 The map-making half of the programme. Measured inventory of what the extraction offers, and what was
