@@ -251,9 +251,26 @@ Two traps paid for: GLSL ES 1.0 cannot index a sampler array with a loop variabl
 are unrolled), and the shader's lighting had to be matched to the forge's rig or the terrain renders
 as a dark slab with lit props on it.
 
+## 2c6. Vista (session 9, P6 step 4) — DONE, with a measured caveat
+
+The shipped vista models are in the kit and a placed vista piece imports and renders (verified on
+`6p_angelgate`, whose three 60 m drain pipes now draw on the board). Two things were measured and
+recorded rather than assumed:
+
+- `counts.vista_objects` (469/map, 1026 on hive city) is **a reference count, not a placement count**:
+  each `VIZO` under `SCEN/MEAD/MOM!/OBJS` is a `DATAOREF` reference to an object defined elsewhere.
+- Only **3 distinct vista blueprints** are actually placed across the 57 maps
+  (`smokestack_large_02` x8, `long_flags_01` x3, `pipe_drain_large_01` x1), because DoW2's horizon is
+  largely baked into the terrain and skybox.
+- `forge_import.py --centre x,z` puts a board window over any feature, which is how a vista-heavy
+  board is produced; `--only`/`--centre` runs now merge into the shipped index instead of replacing
+  it.
+- The camera frames props' own extents: a 60 m drain pipe on a 48 m board previously put the camera
+  inside the scenery.
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
-vista is measured but not rendered.
+the `VIZO` reference graph is decoded as references but not resolved.
 
 ## 2c. Environment kit and the map forge (session 8)
 

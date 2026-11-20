@@ -204,12 +204,15 @@ def board_centre(entities: list[dict], nav: dict | None) -> tuple[float, float]:
 
 def convert(map_json: Path, kit_names: list[str], width: int, height: int,
             name: str | None = None, decal_names: set[str] | None = None,
-            a_terrain_dir: Path | None = None) -> dict:
+            a_terrain_dir: Path | None = None,
+            override_centre: tuple[float, float] | None = None) -> dict:
     decal_names = decal_names or set()
     data = json.loads(map_json.read_text())
     terrain = data.get("terrain") or {}
     nav = data.get("nav") or {}
     centre = board_centre(data.get("entities") or [], nav)
+    if override_centre is not None:
+        centre = override_centre
     layout = {
         "name": name or data.get("map", map_json.stem),
         "biome": "",
@@ -352,6 +355,9 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--only", action="append", default=[])
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--centre", default=None,
+                    help="board centre in map metres, 'x,z' (default: the map's prop centroid). Use it "
+                         "to put the window over a feature — a vista piece, a landmark, a bridge.")
     ap.add_argument("--terrain", type=Path, default=None,
                     help="terrain bundle directory (default: beside the kit, ../maps/terrain)")
     ap.add_argument("--width", type=int, default=24)
@@ -361,8 +367,7 @@ def main(argv=None) -> int:
     # Board props only: `vista_*` entries are the distant scenery layer (measured: rock_pile_long_01
     # is 17 x 11.8 x 26.9 m), and placing one as map dressing puts a monolith in the middle of a
     # 40 m board.
-    kit_names = sorted({p["name"].lower() for p in kit["props"]
-                        if not str(p.get("biome", "")).startswith("vista")})
+    kit_names = sorted({p["name"].lower() for p in kit["props"]})
     # the decal palette lives beside the kit, in the game's public assets
     # the kit is at <assets>/models/env/env_kit.json, so the terrain bundles are two levels up
     terrain_dir = a.terrain or (Path(a.kit).parents[2] / "maps" / "terrain")
@@ -380,9 +385,13 @@ def main(argv=None) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     index = []
     for map_json in maps:
+        override = None
+        if a.centre:
+            ox, oz = (float(v) for v in a.centre.split(","))
+            override = (ox, oz)
         layout = convert(map_json, kit_names, a.width, a.height, decal_names=decal_names,
-                         a_terrain_dir=terrain_dir)
-        dest = a.out / f"shipped_{map_json.stem}.json"
+                         a_terrain_dir=terrain_dir, override_centre=override)
+        dest = a.out / f"shipped_{map_json.stem}{'_centred' if a.centre else ''}.json"
         dest.write_text(json.dumps(layout, indent=1))
         index.append({"file": dest.name, "map": layout["name"], "biome": layout["biome"],
                       "props": len(layout["props"]), "source": layout["source"]})
@@ -392,7 +401,18 @@ def main(argv=None) -> int:
               f"resolved {res['exact']} exact + {res['token']} token + "
               f"{res.get('gameplay', 0)} gameplay / {total} "
               f"({100 * (res['exact'] + res['token']) // max(1, total)}%)")
-    (a.out / "shipped_index.json").write_text(json.dumps({"maps": index}, indent=1))
+    # merge into the existing index so a single-map run (--only, --centre) does not drop the others
+    index_path = a.out / "shipped_index.json"
+    merged: dict[str, dict] = {}
+    if index_path.is_file():
+        try:
+            for entry in json.loads(index_path.read_text()).get("maps", []):
+                merged[entry["file"]] = entry
+        except (json.JSONDecodeError, KeyError):
+            merged = {}
+    for entry in index:
+        merged[entry["file"]] = entry
+    index_path.write_text(json.dumps({"maps": sorted(merged.values(), key=lambda e: e["file"])}, indent=1))
     print(f"{len(index)} layouts -> {a.out}")
     return 0
 

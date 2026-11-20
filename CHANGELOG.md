@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P6 step 4: vista)
+
+### Added
+
+- The shipped vista models are built into the kit (`smokestack_large_02`, `long_flags_01`,
+  `pipe_drain_large_01` added; 420 props total) and vista placements import and render.
+- `forge_import.py --centre x,z` places a board window over any feature, and single-map runs merge
+  into the shipped index instead of replacing it.
+
+### Fixed
+
+- The camera frames props' own extents: a 60 m drain pipe on a 48 m board used to put the camera
+  inside the scenery.
+- Vista was excluded from placement as a workaround for the squashing bug; at 1:1 a 27 m rock ridge
+  is what the map has, so it is allowed and the test now asserts board props still dominate.
+
+### Measured and recorded
+
+- `counts.vista_objects` (469 per map) is a **reference count**, not placements: each `VIZO` record is
+  a `DATAOREF` reference to an object defined elsewhere. Only 3 distinct vista blueprints are placed
+  across the 57 decoded maps.
+
 ## [Unreleased] — 2026-11-18 (session 9, P6 step 3: ground blending)
 
 ### Added

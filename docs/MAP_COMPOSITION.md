@@ -145,9 +145,27 @@ Two implementation notes worth keeping:
 - The shader's lighting is matched to the forge's rig rather than to the engine's. Without that the
   terrain renders as a dark slab with correctly lit props standing on it.
 
-## 10. What is still missing from the picture
+## 10. Vista — what the count actually is
 
-- **vista** (469 per map) — the horizon layer; 65 shipped models, 12 in the kit.
+`counts.vista_objects` (469 per map, 1026 on a hive-city map) is **not a placement count**. Walking
+the chunk tree, each `VIZO` record under `SCEN/MEAD/MOM!/OBJS` is a `DATAOREF` reference (magic
+`DATAOREF`, then a type and an object id) to a vista object defined elsewhere; the map's actual vista
+*placements* appear in the entity list like any other object. Measured: only 3 distinct vista
+blueprints are placed across the 57 decoded maps (`smokestack_large_02` ×8, `long_flags_01` ×3,
+`pipe_drain_large_01` ×1), because DoW2's horizon is largely baked into the terrain and the skybox
+rather than placed as geometry.
+
+Consequence, recorded rather than hidden: vista is built and rendered (the shipped models are in the
+kit, a placed vista piece imports and draws), but most boards will not contain one, and a board's
+window is usually centred on the action rather than on the scenery. `forge_import.py --centre x,z`
+puts the window over any feature, which is how a vista-heavy board is produced.
+
+## 11. What is still missing from the picture
+
+- **the `VIZO` reference graph** — the 469-1026 references per map are decoded as references, and
+  their targets are not resolved, so a map's full backdrop is not yet reconstructed;
+- **vista placements are sparse** (3 distinct blueprints in the corpus) because the horizon is baked
+  into terrain and skybox, not placed.
 
 Until those are rendered, a board can be *correct* by these numbers and still look emptier than the
 map it came from. That is the next programme, not a defect in the rules.

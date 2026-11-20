@@ -374,6 +374,8 @@ def main(argv=None) -> int:
                     help="skip props whose largest dimension exceeds this (metres; default 8)")
     ap.add_argument("--include-structures", action="store_true",
                     help="also build the shipped structures (bunkers, turrets, generators)")
+    ap.add_argument("--max-vista-height", type=float, default=40.0,
+                    help="vista pieces taller than this are skyline, not horizon scenery (default 40 m)")
     ap.add_argument("--include-gameplay", action="store_true",
                     help="also build the visible gameplay markers (capture points, drops, generators)")
     ap.add_argument("--include-vista", action="store_true",
