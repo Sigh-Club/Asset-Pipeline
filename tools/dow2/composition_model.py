@@ -278,7 +278,8 @@ def aggregate(per_map: list[dict]) -> dict:
     }
 
 
-def score_board(props: list[tuple[float, float]], area_m2: float, model: dict) -> dict:
+def score_board(props: list[tuple[float, float]], area_m2: float, model: dict,
+                region: tuple[float, float, float, float] | None = None) -> dict:
     """How close a prop set is to the corpus's composition, as the parameters it deviates on.
 
     A score is a list of z-like deviations in units of the corpus spread, so a caller can say *what*
@@ -294,8 +295,11 @@ def score_board(props: list[tuple[float, float]], area_m2: float, model: dict) -
     else:
         nearest = 0.0
     density = len(pts) * 100.0 / area_m2
-    half = math.sqrt(area_m2) / 2
-    lump = clumping(pts, region=(-half, -half, half, half))
+    # The region has to be in the same coordinate space as the points. A layout is authored in cell
+    # coordinates (0..width, 0..height) while a shipped map is in world metres centred on the origin,
+    # so the caller passes its own region; without one the points' own bounding box is used, which
+    # under-reports clumping because it excludes the empty ground the props were spread over.
+    lump = clumping(pts, region=region)
     deviations = {
         "density": _dev(density, _band(model, "props_per_100m2")),
         "nearest_prop_m": _dev(nearest, _band(model, "nearest_prop_m")),

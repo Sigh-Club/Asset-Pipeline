@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P7: the board grammar)
+
+### Added
+
+- `frontend/src/three/boardGrammar.ts` — a deterministic board generator built on the measured
+  composition: lanes, building plots with alleys, cover 60% in runs along the buildings and 40%
+  spread in the open at the measured spacing, a minority embedded in the blocked mass, one landmark,
+  decals on the lanes. It measures its own clumping and repairs it into the corpus band.
+- `tools/dow2/score_generated.py` — scores generated boards with the same `score_board` the corpus
+  model uses. Measured over 12 boards: mean deviation 0.25 (shipped windows 0.65, scatter 0.55),
+  clumping 1.45 (corpus 1.30, scatter 0.94).
+- `frontend/scripts/exportGeneratedBoards.ts` — writes generated boards for that scoring.
+- The forge gains a `generate` button and a board-size control.
+
+### Changed
+
+- `addRandomCover` (used by the urban, jungle and desert battlefield generators) no longer rolls a
+  die per cell: it places cover on the grammar, seeded from the map's own terrain, and converts the
+  grammar's blocked masses to impassable ground.
+- `defaultScenario.ts` drops its second per-cell random cover pass, which was re-introducing scatter
+  on top of the generator.
+- `demoBackend`'s random source is a wrapper rather than a captured reference, so `jest.spyOn(Math,
+  'random')` is actually observed (a captured reference silently ignored the spy).
+
 ## [Unreleased] — 2026-11-18 (session 9, P6 step 4: vista)
 
 ### Added

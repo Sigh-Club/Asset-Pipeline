@@ -268,6 +268,27 @@ recorded rather than assumed:
 - The camera frames props' own extents: a 60 m drain pipe on a 48 m board previously put the camera
   inside the scenery.
 
+## 2c7. Board grammar (session 9, P7) — DONE
+
+The RNG scatter is gone. `frontend/src/three/boardGrammar.ts` generates a board from the measured
+parameters: lanes first, building plots with alleys, cover 60% in runs along the buildings and 40%
+spread in the open at the measured spacing, a minority embedded in the blocked mass, one landmark, and
+decals on the lanes. It measures its own clumping and repairs it into the corpus band (0.85-2.1),
+because the block layout alone swung from 0.4 to 3.7.
+
+Certified with `tools/dow2/score_generated.py`, which scores generated boards with the same
+`score_board` the corpus model uses. Measured over 12 boards at 24x20: density 1.15/100 m2 (corpus
+1.13), **mean deviation 0.25** (shipped windows 0.65, uniform scatter 0.55), clumping **1.45**
+(corpus 1.30, scatter 0.94).
+
+Replaced: the cell-wise `Math.random()` pass in `addRandomCover` (used by the urban, jungle and desert
+battlefield generators) and the second random pass in `defaultScenario.ts`. The forge gains a
+`generate` button and a board-size control.
+
+Two failures found and fixed, both recorded: the first version piled every prop on the perimeter of
+one big block, and the scorer compared cell coordinates against a model measured in metres (reporting
+dispersion 3.7 for boards already repaired to 1.45).
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
 the `VIZO` reference graph is decoded as references but not resolved.

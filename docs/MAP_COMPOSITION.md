@@ -160,7 +160,37 @@ kit, a placed vista piece imports and draws), but most boards will not contain o
 window is usually centred on the action rather than on the scenery. `forge_import.py --centre x,z`
 puts the window over any feature, which is how a vista-heavy board is produced.
 
-## 11. What is still missing from the picture
+## 11. The grammar, implemented and certified
+
+`Imperium-of-Ash/frontend/src/three/boardGrammar.ts` generates a board from the parameters in §4:
+lanes first (a 35% main lane, a cross lane only when the pair stays under 55% of the area), then
+building plots in the free rectangles with alleys between them, then cover — 60% in runs along the
+buildings, 40% spread in the open at the measured spacing, with a minority embedded in the blocked
+mass. It then **measures its own clumping and repairs it into the corpus band** (0.85-2.1): the block
+layout alone swung from 0.4 to 3.7 dispersion, and the band is the contract.
+
+`tools/dow2/score_generated.py` scores generated boards with the same `score_board` the corpus model
+uses. Measured on 12 boards at 24x20:
+
+| metric | generated | corpus | uniform scatter |
+|---|---|---|---|
+| density | 1.15 per 100 m² | 1.13 | same by construction |
+| mean deviation from the corpus band | **0.25** | 0.65 (shipped windows) | 0.55 |
+| clumping (dispersion) | **1.45** | 1.30 | 0.94 |
+
+The generator is closer to the corpus than the shipped windows are, and clearly separated from a
+scatter. Two failures found and fixed on the way, both recorded because they are the kind of thing
+that silently ships:
+
+- the first version put every prop on the perimeter of one big block — a pile beside a building;
+- the scorer compared cell coordinates against a model measured in metres, which reported dispersion
+  3.7 for boards the generator had already repaired to 1.45.
+
+The grammar replaces the cell-wise `Math.random()` cover pass in `addRandomCover` (which the urban,
+jungle and desert battlefield generators all call) and the second random pass in
+`defaultScenario.ts`. The forge gains a `generate` button and a board-size control.
+
+## 12. What is still missing from the picture
 
 - **the `VIZO` reference graph** — the 469-1026 references per map are decoded as references, and
   their targets are not resolved, so a map's full backdrop is not yet reconstructed;
