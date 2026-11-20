@@ -289,6 +289,25 @@ Two failures found and fixed, both recorded: the first version piled every prop 
 one big block, and the scorer compared cell coordinates against a model measured in metres (reporting
 dispersion 3.7 for boards already repaired to 1.45).
 
+## 2c8. Staged layout library (session 9, P8) — DONE
+
+68 staged layouts: 32 map variants (8 shipped windows x 4 seeds, cover re-laid on the imported ground)
+and 36 biome boards (12 biomes x 3 seeds). `frontend/scripts/stageLayouts.ts` builds them,
+`public/assets/maps/catalogue.json` carries the metadata and measurements, and the forge's `staged`
+browser lists them so the library can be walked and judged.
+
+Measured: density 0.99-1.15 per 100 m2 (corpus 0.41-1.31), clumping 0.90-2.08 (corpus 0.81-2.14),
+embedded share 0.14-0.45 (corpus 0.35); scored against the corpus model, mean deviation 0.30 over 68
+boards with clumping median 1.45.
+
+`stagedLayouts.test.ts` guards it: every entry has a file, every prop is in the kit and inside the
+board, every entry is in band, every window offers several distinct fights, and a map variant keeps
+its imported ground.
+
+Also this session: the vehicle-husk gap was closed (16 husks built, 270 of 273 corpus husk placements
+covered) and `model_for` now resolves a blueprint's model from its own `animator` line rather than
+guessing from names.
+
 Recorded, not done: no mission reads a forged layout yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
 the `VIZO` reference graph is decoded as references but not resolved.

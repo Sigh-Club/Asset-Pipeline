@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P8: staged layout library)
+
+### Added
+
+- `frontend/scripts/stageLayouts.ts` — builds the layout library: 32 map variants (a shipped window
+  keeps its ground, relief and decals and only the cover is re-laid) and 36 biome boards, with the
+  measurements that decide whether each is worth playing on.
+- `public/assets/maps/catalogue.json` — the catalogue a mission picks from: id, kind, biome, source
+  window, seed, size, file and metrics.
+- The forge gains a `staged` browser (kind and biome filters), so the library can be walked and
+  judged rather than only counted.
+- `generatePropsOnLayout` in the grammar: re-lay cover on a board that already has its terrain.
+- `src/three/__tests__/stagedLayouts.test.ts` — 6 tests over the whole catalogue.
+
+### Measured
+
+- Library: density 0.99-1.15 per 100 m², clumping 0.90-2.08, embedded share 0.14-0.45 — all inside
+  the corpus bands. Scored against the corpus model: mean deviation 0.30 over 68 boards.
+
 ## [Unreleased] — 2026-11-18 (session 9, P7: the board grammar)
 
 ### Added

@@ -215,7 +215,30 @@ model's (`wrecked_valkry_04` draws `valkyrie_wreck_04`, `ork_wrecks_looted_tank`
 `wreck_looted_pred`), so `model_for` now reads the blueprint's own `animator = "..."` line from the
 decoded attrib data instead of guessing from names.
 
-## 13. What is still missing from the picture
+## 13. The staged layout library
+
+A game needs more than one board per biome and more than one fight per map. `frontend/scripts/
+stageLayouts.ts` builds that library from the grammar, in two kinds:
+
+- **map variants** — an imported shipped-map window keeps its ground bundle, relief, walkable shape
+  and decals, and only the cover is re-laid (`generatePropsOnLayout`). Same place, different fight.
+- **biome boards** — a board built from nothing on the grammar, using that biome's own prop and
+  ground palettes.
+
+Measured over the current library (68 layouts: 32 map variants across 8 windows, 36 boards across 12
+biomes): density 0.99-1.15 per 100 m² (corpus 0.41-1.31), clumping 0.90-2.08 (corpus 0.81-2.14),
+embedded share 0.14-0.45 (corpus 0.35). Scored against the corpus model: **mean deviation 0.30** over
+68 boards, clumping median 1.45.
+
+The catalogue (`public/assets/maps/catalogue.json`) carries, per entry: id, kind, biome, source window,
+seed, size, file and the measurements. That is what a mission picks from, and what the forge's
+`staged` browser lists so a person can walk the library and judge it.
+
+`src/three/__tests__/stagedLayouts.test.ts` keeps it honest: every entry has a file, every prop is in
+the kit and inside the board, every entry is inside the corpus bands, every window offers several
+*distinct* fights, and a map variant still carries its imported ground.
+
+## 14. What is still missing from the picture
 
 - **the `VIZO` reference graph** — the 469-1026 references per map are decoded as references, and
   their targets are not resolved, so a map's full backdrop is not yet reconstructed;
