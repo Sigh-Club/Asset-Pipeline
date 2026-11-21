@@ -56,3 +56,27 @@ which is not the prop's height: measured, a 0.64 m sandbag pile carried a 2.32 m
 heavy) and a 3.74 m wall an 0.86 m box (classified light). Staging now writes each board's derived
 cover, the backend derives the same tiers, and the demo board reads them instead of hard-coding
 `coverValue: 0` (measured on the live board: 72 cover cells, up from 15).
+
+## Roles and promotions (player infantry)
+
+`tools/dow2/unit_roles.json` gives every player-eligible infantry unit a faction, a role, a weapon and a
+three-tier promotion ladder (ranks 1/3/5). The split across the 29 infantry:
+
+| Role | Units | Ladder (rank 1 → 3 → 5) |
+|---|---|---|
+| Line trooper | 5 | rapid fire → brace overwatch → inspire volley |
+| Squad leader | 5 | command → rallying cry → for the emperor |
+| Gunner | 4 | suppressive barrage → kinetic brace → devastator round |
+| Psyker | 4 | mind shock → warp surge grenade → synapse |
+| Breacher | 3 | charge → rend → brutal |
+| Duelist | 3 | backstab → blood cleave → tough as nails |
+| Support | 3 | field repair → smoke grenade → guardian node |
+| Marksman | 2 | stealth recon → target lock → long range |
+
+`tools/dow2/check_unit_roles.py` gates it: every infantry unit has a role, every rank unlocks something,
+ranks ascend from 1, no heavy carries a promotion ladder, and **every ability id exists in the backend's
+own catalogue** (`internal/domain/ability_data.go`, 81 ids) — otherwise a promotion silently unlocks
+nothing.
+
+Not done yet: the promotion ladder is data, not wired into squad progression (the backend still resolves
+stats through `TemplateForSquadArchetype`). Wiring it is the next step, and this table is what it reads.

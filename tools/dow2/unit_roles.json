@@ -1,0 +1,759 @@
+{
+ "note": "Per-faction role, weapon and promotion ladder for every player-eligible infantry unit. Ability ids come from the backend catalogue (internal/domain/ability_data.go) and are checked by tools/dow2/check_unit_roles.py. Vehicles and monsters are enemy heavies and have no promotion ladder (docs/UNIT_ROSTER.md).",
+ "roles": {
+  "dow_chaos_bloodletter": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "backstab"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "blood_cleave"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "tough_as_nails"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Duelist",
+   "role_key": "duelist",
+   "weapon": "chainsword"
+  },
+  "dow_chaos_champion": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "squad_leader_command"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "squad_leader_rallying_cry"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "squad_leader_for_the_emperor"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Squad leader",
+   "role_key": "leader",
+   "weapon": "bolt_pistol"
+  },
+  "dow_chaos_havoc": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "heavy_weapons_suppressive_barrage"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "kinetic_brace"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "heavy_weapons_devastator_round"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Gunner",
+   "role_key": "gunner",
+   "weapon": "autocannon"
+  },
+  "dow_chaos_heretic": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "guardsman_rapid_fire"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "brace_overwatch"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "inspire_volley"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Line trooper",
+   "role_key": "line",
+   "weapon": "las_rifle"
+  },
+  "dow_chaos_lord": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "squad_leader_command"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "squad_leader_rallying_cry"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "squad_leader_for_the_emperor"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Squad leader",
+   "role_key": "leader",
+   "weapon": "bolt_pistol"
+  },
+  "dow_chaos_marine": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "charge"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "rend"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "brutal"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Breacher",
+   "role_key": "breacher",
+   "weapon": "bolter"
+  },
+  "dow_chaos_plague_champion": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "field_repair"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "smoke_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "guardian_node"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Support",
+   "role_key": "support",
+   "weapon": "plasma_pistol"
+  },
+  "dow_chaos_sorcerer": {
+   "faction": "cinderborn",
+   "promotions": [
+    {
+     "abilities": [
+      "mind_shock"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "warp_surge_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "synapse"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Psyker",
+   "role_key": "psyker",
+   "weapon": "plasma_pistol"
+  },
+  "dow_eldar_banshee": {
+   "faction": "void_corsairs",
+   "promotions": [
+    {
+     "abilities": [
+      "backstab"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "blood_cleave"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "tough_as_nails"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Duelist",
+   "role_key": "duelist",
+   "weapon": "chainsword"
+  },
+  "dow_eldar_farseer": {
+   "faction": "void_corsairs",
+   "promotions": [
+    {
+     "abilities": [
+      "mind_shock"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "warp_surge_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "synapse"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Psyker",
+   "role_key": "psyker",
+   "weapon": "plasma_pistol"
+  },
+  "dow_eldar_guardian": {
+   "faction": "void_corsairs",
+   "promotions": [
+    {
+     "abilities": [
+      "guardsman_rapid_fire"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "brace_overwatch"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "inspire_volley"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Line trooper",
+   "role_key": "line",
+   "weapon": "las_rifle"
+  },
+  "dow_eldar_ranger": {
+   "faction": "void_corsairs",
+   "promotions": [
+    {
+     "abilities": [
+      "stealth_recon"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "target_lock"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "long_range"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Marksman",
+   "role_key": "marksman",
+   "weapon": "sniper_rifle"
+  },
+  "dow_eldar_warlock": {
+   "faction": "void_corsairs",
+   "promotions": [
+    {
+     "abilities": [
+      "mind_shock"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "warp_surge_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "synapse"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Psyker",
+   "role_key": "psyker",
+   "weapon": "plasma_pistol"
+  },
+  "dow_eldar_wraithguard": {
+   "faction": "void_corsairs",
+   "promotions": [
+    {
+     "abilities": [
+      "field_repair"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "smoke_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "guardian_node"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Support",
+   "role_key": "support",
+   "weapon": "plasma_pistol"
+  },
+  "dow_ig_commissar": {
+   "faction": "iron_directorate",
+   "promotions": [
+    {
+     "abilities": [
+      "charge"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "rend"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "brutal"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Breacher",
+   "role_key": "breacher",
+   "weapon": "bolter"
+  },
+  "dow_ig_guardsman": {
+   "faction": "iron_directorate",
+   "promotions": [
+    {
+     "abilities": [
+      "guardsman_rapid_fire"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "brace_overwatch"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "inspire_volley"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Line trooper",
+   "role_key": "line",
+   "weapon": "las_rifle"
+  },
+  "dow_ig_heavy_weapons": {
+   "faction": "iron_directorate",
+   "promotions": [
+    {
+     "abilities": [
+      "heavy_weapons_suppressive_barrage"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "kinetic_brace"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "heavy_weapons_devastator_round"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Gunner",
+   "role_key": "gunner",
+   "weapon": "autocannon"
+  },
+  "dow_ig_inquisitor": {
+   "faction": "iron_directorate",
+   "promotions": [
+    {
+     "abilities": [
+      "field_repair"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "smoke_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "guardian_node"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Support",
+   "role_key": "support",
+   "weapon": "plasma_pistol"
+  },
+  "dow_ig_officer": {
+   "faction": "iron_directorate",
+   "promotions": [
+    {
+     "abilities": [
+      "squad_leader_command"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "squad_leader_rallying_cry"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "squad_leader_for_the_emperor"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Squad leader",
+   "role_key": "leader",
+   "weapon": "bolt_pistol"
+  },
+  "dow_necron_overlord": {
+   "faction": "chrono_revenants",
+   "promotions": [
+    {
+     "abilities": [
+      "squad_leader_command"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "squad_leader_rallying_cry"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "squad_leader_for_the_emperor"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Squad leader",
+   "role_key": "leader",
+   "weapon": "bolt_pistol"
+  },
+  "dow_ork_boy": {
+   "faction": "wreckstorm_clans",
+   "promotions": [
+    {
+     "abilities": [
+      "guardsman_rapid_fire"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "brace_overwatch"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "inspire_volley"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Line trooper",
+   "role_key": "line",
+   "weapon": "las_rifle"
+  },
+  "dow_ork_nob": {
+   "faction": "wreckstorm_clans",
+   "promotions": [
+    {
+     "abilities": [
+      "charge"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "rend"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "brutal"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Breacher",
+   "role_key": "breacher",
+   "weapon": "bolter"
+  },
+  "dow_ork_warboss": {
+   "faction": "wreckstorm_clans",
+   "promotions": [
+    {
+     "abilities": [
+      "squad_leader_command"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "squad_leader_rallying_cry"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "squad_leader_for_the_emperor"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Squad leader",
+   "role_key": "leader",
+   "weapon": "bolt_pistol"
+  },
+  "dow_ork_weirdboy": {
+   "faction": "wreckstorm_clans",
+   "promotions": [
+    {
+     "abilities": [
+      "mind_shock"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "warp_surge_grenade"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "synapse"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Psyker",
+   "role_key": "psyker",
+   "weapon": "plasma_pistol"
+  },
+  "dow_tau_battlesuit": {
+   "faction": "radiant_concord",
+   "promotions": [
+    {
+     "abilities": [
+      "heavy_weapons_suppressive_barrage"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "kinetic_brace"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "heavy_weapons_devastator_round"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Gunner",
+   "role_key": "gunner",
+   "weapon": "autocannon"
+  },
+  "dow_tyr_hormagaunt": {
+   "faction": "parasitic_bloom",
+   "promotions": [
+    {
+     "abilities": [
+      "backstab"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "blood_cleave"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "tough_as_nails"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Duelist",
+   "role_key": "duelist",
+   "weapon": "chainsword"
+  },
+  "dow_tyr_termagaunt": {
+   "faction": "parasitic_bloom",
+   "promotions": [
+    {
+     "abilities": [
+      "guardsman_rapid_fire"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "brace_overwatch"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "inspire_volley"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Line trooper",
+   "role_key": "line",
+   "weapon": "las_rifle"
+  },
+  "dow_tyr_warrior": {
+   "faction": "parasitic_bloom",
+   "promotions": [
+    {
+     "abilities": [
+      "heavy_weapons_suppressive_barrage"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "kinetic_brace"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "heavy_weapons_devastator_round"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Gunner",
+   "role_key": "gunner",
+   "weapon": "autocannon"
+  },
+  "dow_tyranid_lictor": {
+   "faction": "parasitic_bloom",
+   "promotions": [
+    {
+     "abilities": [
+      "stealth_recon"
+     ],
+     "rank": 1
+    },
+    {
+     "abilities": [
+      "target_lock"
+     ],
+     "rank": 3
+    },
+    {
+     "abilities": [
+      "long_range"
+     ],
+     "rank": 5
+    }
+   ],
+   "role": "Marksman",
+   "role_key": "marksman",
+   "weapon": "sniper_rifle"
+  }
+ }
+}
