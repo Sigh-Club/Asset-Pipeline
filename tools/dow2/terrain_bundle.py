@@ -39,13 +39,16 @@ def art_roots(explicit: Path | None) -> list[Path]:
     return [r for r in roots if r.is_dir()]
 
 
-def resolve_layer(roots: list[Path], layer: str) -> Path | None:
+def resolve_layer(roots: list[Path], layer: str, suffix: str = "_dif") -> Path | None:
+    """Resolve one shipped terrain tile map. The shipped tiles carry `_dif`, `_nrm` and `_spc` side by
+    side; only the diffuse was exported for a long time, which is why the ground had no surface relief
+    and no sheen."""
     name = Path(layer.replace("\\", "/")).name
     for root in roots:
         for base in (root / "sga", root, root / "sga_art"):
             if not base.is_dir():
                 continue
-            for hit in base.rglob(f"{name}_dif.dds"):
+            for hit in base.rglob(f"{name}{suffix}.dds"):
                 text = str(hit).replace("\\", "/")
                 if "terrain_textures" in text and "tiles" in text:
                     return hit
@@ -97,8 +100,33 @@ def main(argv=None) -> int:
         map_dir.mkdir(parents=True, exist_ok=True)
 
         written_layers = []
+        # One surface atlas for the whole board: R,G hold the layer's tangent-space normal, B its
+        # shipped specular level. Eight layers in one texture keeps the ground shader inside the
+        # fragment-sampler budget (8 albedo + 2 masks + 1 atlas), where eight normal maps alone would
+        # have pushed it past the 16 units a WebGL2 context guarantees.
+        atlas_tiles: list = []
         for index_no, layer in enumerate(layers[:8]):
-            dds = resolve_layer(roots, layer.get("surface") or "")
+            surface = layer.get("surface") or ""
+            nrm = resolve_layer(roots, surface, "_nrm")
+            spc = resolve_layer(roots, surface, "_spc")
+            tile = None
+            if nrm is not None or spc is not None:
+                try:
+                    tile = Image.new("RGBA", (a.max_texture, a.max_texture), (128, 128, 255, 255))
+                    if nrm is not None:
+                        normal = Image.open(nrm).convert("RGB").resize((a.max_texture, a.max_texture))
+                        tile.paste(normal, (0, 0), None)
+                    if spc is not None:
+                        spec = Image.open(spc).convert("L").resize((a.max_texture, a.max_texture))
+                        blue = tile.split()[2]
+                        # the shipped specular map is a colour: its luminance is the specular level,
+                        # which is what a dielectric's specular response needs
+                        tile = Image.merge("RGBA", (tile.split()[0], tile.split()[1], spec, blue))
+                except Exception as exc:
+                    print(f"  SKIP surface {surface}: {exc}", file=sys.stderr)
+                    tile = None
+            atlas_tiles.append(tile)
+            dds = resolve_layer(roots, surface)
             if dds is None:
                 written_layers.append(None)
                 continue
@@ -123,8 +151,20 @@ def main(argv=None) -> int:
                            base64.b64decode(mask["data_b64"]))
             written_masks.append(f"/assets/maps/terrain/{map_json.stem}/{dest.name}")
 
+        atlas_url = None
+        if any(t is not None for t in atlas_tiles):
+            atlas = Image.new("RGBA", (a.max_texture, a.max_texture * 8), (128, 128, 255, 255))
+            for slot, tile in enumerate(atlas_tiles):
+                if tile is not None:
+                    atlas.paste(tile, (0, slot * a.max_texture))
+            dest = map_dir / "surface_atlas.png"
+            atlas.save(dest)
+            atlas_url = f"/assets/maps/terrain/{map_json.stem}/{dest.name}"
+
         manifest = {
             "map": data.get("map"),
+            "surface_atlas": atlas_url,
+            "surface_atlas_tiles": 8,
             "layers": written_layers,
             "masks": written_masks,
             "mask_size": [int(masks[0]["width"]), int(masks[0]["height"])],

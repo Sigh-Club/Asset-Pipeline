@@ -247,3 +247,39 @@ the kit and inside the board, every entry is inside the corpus bands, every wind
 
 Until those are rendered, a board can be *correct* by these numbers and still look emptier than the
 map it came from. That is the next programme, not a defect in the rules.
+
+## Why the board looked like cardboard, measured
+
+The geometry and the albedo were always 1:1 shipped. What we dropped was every map that gives DoW2 its
+material read, and the renderer had no colour pipeline for the ground shader. Measured on the shipped
+`low_wall_01` material:
+
+| Shipped map | Was exported | Effect |
+|---|---|---|
+| `_dif` (albedo) | yes | correct |
+| `_nrm` (normal) | yes | correct |
+| `_ocl` (baked occlusion) | **no** | props floated: no contact shading |
+| `_spc` (specular colour) | **no**, roughness pinned 0.8 | matte cardboard, no metal or glass |
+| terrain `_nrm` / `_spc` | **no** | the ground had no surface relief and no sheen |
+
+Renderer side, measured:
+- the ground shader wrote **linear** values straight into an sRGB target (no tone map, no encode): the
+  same albedo came out roughly half as bright as the standard path (measured ground luminance 20/255
+  with the ground alone in frame, 121/255 after the fix);
+- it was lit by a **hard-coded** direction, so it ignored the board's baked rig;
+- texture anisotropy was pinned at 4 on a 512 px tile tiled at 32 m — the filtering, not the
+  resolution, is what a player sees at grazing angles;
+- there was **no environment map**, so a specular map had nothing to reflect;
+- the ambient fill was 0.55 against a 3.2 key, which left the shipped urban props (albedo means
+  25-56/255) as black silhouettes (measured board p50 35/255; 43/255 at a 1.2 fill).
+
+Fixes in this pass: `terrain_bundle.py` writes one surface atlas per map (layer normal in RG, shipped
+specular level in B) and the ground shader blends it, uses the board's own key light, tone maps and
+encodes; `dow2_env_import.py` bakes `_ocl` into the albedo and derives roughness from `_spc` against
+the material's shipped `glossValue` (0.3), and the kit was rebuilt (374/526 materials now carry a
+shipped-derived roughness map); anisotropy is the renderer's maximum; an environment is built per board
+from its own sky; the ambient floor is calibrated at 1.2.
+
+Recorded, not done: the props still read dark under a low side sun, because their shipped albedo is
+genuinely dark and we have no baked lightmaps. DoW2 holds that line with baked lighting and local
+lights — that is the next visual step, not another texture fix.
