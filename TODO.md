@@ -338,9 +338,15 @@ running. That is pre-existing and unrelated to the layout path — the board ren
   carries a unique weight-class archetype and no infantry model carries one.
 - `UNIT_ASSET_REV` bumped so clients reload the rebuilt models.
 
-Recorded, not done: no *mission* (as opposed to the demo battle) reads the catalogue yet
-(`layoutToTerrainGrid` / `layoutToHeightGrid` are the seam); the `VIZO` reference graph is decoded as
-references but not resolved.
+**A mission now reads the catalogue.** `backend/internal/stagedboard` loads the staged catalogue, picks
+the board for the mission's biome (hashed from the mission id), derives the authoritative cells (paint ->
+terrain, relief -> elevation, props -> cover tiers from the shipped cover volumes), places both sides in
+the board's landing zones, and publishes `board_surface` / `board_light` / `decals` / `rooms` on the
+battle state. Verified live on `m-pve-urban-1`: board `6p_angelgate_v2202`, 24x20, 183 impassable / 237
+open / 60 cover, and the client drew the map's own ground mesh and the baked light. The generated parcel
+grid is now the fallback for a biome with no staged board, not the default.
+
+Recorded, not done: the `VIZO` reference graph is decoded as references but not resolved.
 
 The board now draws what the pipeline decodes: the map's eight-layer ground at the board's window
 origin, its painted decals, and building faces from the shipped wall kit at 1:1 scale
