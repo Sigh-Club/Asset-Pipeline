@@ -30,3 +30,29 @@ correct the residual until it matches — because Blender's own scene query and 
 
 In a tabletop cover game the silhouette height *is* the tactical read, so a unit that ships at the wrong
 height makes every cover decision wrong.
+
+## Archetype leak, fixed
+
+Deriving `player_archetypes` exposed the actual drift: three of the seven purchasable player squad
+archetypes were modelled by vehicles.
+
+| Player squad archetype | Was modelled by | Now |
+|---|---|---|
+| `pathfinder_scouts` (recon) | `ig_sentinel` — a walker | `ig_guardsman` (scoped line) |
+| `aegis_artillery` (indirect fire) | `ig_manticore` — a tank | `ig_heavy_weapons` |
+| `ashen_reavers` (elite melee) | `chaos_dreadnought` — a walker | `chaos_champion` |
+
+The heavies keep their own identities instead (`sentinel`, `walker`, `tank_artillery`, `hellbrute`).
+Two gates enforce it: `backend/internal/unitroster` fails if any `SquadArchetypeTemplates` key is not
+player-eligible, and `frontend/src/data/__tests__/unitRoster.test.ts` fails if a heavy is marked
+player-eligible or a squad archetype is missing from `player_archetypes`.
+
+## Cover is a height, not a box
+
+`stagedboard.CoverTierForHeight` and `frontend/src/three/coverTiers.ts` use the shipped ladder (XCOM's
+own `Cover_LowCoverHeight` 0.64 m, `Cover_HighCoverHeight` 0.96 m, `Cover_MinClimbOverHeight` 1.6 m).
+The previous rule read the *cover volume* the kit records per prop and used its y-extent as a height —
+which is not the prop's height: measured, a 0.64 m sandbag pile carried a 2.32 m cover box (classified
+heavy) and a 3.74 m wall an 0.86 m box (classified light). Staging now writes each board's derived
+cover, the backend derives the same tiers, and the demo board reads them instead of hard-coding
+`coverValue: 0` (measured on the live board: 72 cover cells, up from 15).

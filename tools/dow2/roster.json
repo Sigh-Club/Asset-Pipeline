@@ -15,7 +15,8 @@
  "dow_chaos_champion": {
   "archetypes": [
    "zealot_captain",
-   "captain"
+   "captain",
+   "ashen_reavers"
   ],
   "class": "infantry",
   "ebps": "csm_aspiring_champion",
@@ -26,8 +27,9 @@
   "archetypes": [
    "son_of_cinder",
    "son_of_ciner",
-   "ashen_reavers",
-   "dreadnought"
+   "dreadnought",
+   "walker",
+   "hellbrute"
   ],
   "class": "heavy",
   "ebps": "csm_dreadnought",
@@ -229,7 +231,8 @@
  "dow_ig_guardsman": {
   "archetypes": [
    "line_infantry",
-   "soldier"
+   "soldier",
+   "pathfinder_scouts"
   ],
   "class": "infantry",
   "ebps": "",
@@ -240,7 +243,8 @@
  "dow_ig_heavy_weapons": {
   "archetypes": [
    "suppression_team",
-   "suppression"
+   "suppression",
+   "aegis_artillery"
   ],
   "class": "infantry",
   "ebps": "ig_heavy_weapon_squad",
@@ -261,8 +265,8 @@
  },
  "dow_ig_manticore": {
   "archetypes": [
-   "aegis_artillery",
-   "artillery"
+   "artillery",
+   "tank_artillery"
   ],
   "class": "heavy",
   "ebps": "ig_manticore",
@@ -283,10 +287,10 @@
  },
  "dow_ig_sentinel": {
   "archetypes": [
-   "pathfinder_scouts",
    "pathfinder_scout",
    "scout",
-   "walker"
+   "walker",
+   "sentinel"
   ],
   "class": "heavy",
   "ebps": "ig_sentinel",
