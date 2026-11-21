@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import struct
 import math
 import sys
 from pathlib import Path
@@ -439,37 +440,97 @@ bpy.context.view_layer.update()
 # unit's real height and the whole rig is scaled to it before export, which bakes the correction into
 # the geometry and the skeleton together (a scale on the exported root would leave the animation
 # translation tracks at the old scale).
-if A.height_m and A.height_m > 0:
+def measured_height() -> float:
+    """World-space height of the assembled unit, through the armature deformation.
+
+    Two earlier measurements were wrong in the same direction. `evaluated_get(...).bound_box` reads the
+    undeformed bounds of an armature-deformed mesh, and the raw `bound_box` is local space. Both
+    under-read the hormagaunt at 0.886 m on a model that exports at 2.07 m, so the 1.69x factor
+    produced a 3.51 m export against a 1.50 m target — the unit shipped twice its declared height.
+    The geometry that will be exported is the evaluated mesh, so that is what gets measured.
+    """
+    bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    lo = 1e9
-    hi = -1e9
+    lo, hi = 1e9, -1e9
     for obj in bpy.context.scene.objects:
         if obj.type != "MESH":
             continue
         evaluated = obj.evaluated_get(depsgraph)
-        for corner in evaluated.bound_box:
-            world = evaluated.matrix_world @ Vector(corner)
+        mesh = evaluated.to_mesh()
+        matrix = evaluated.matrix_world
+        for vertex in mesh.vertices:
+            world = matrix @ vertex.co
             lo = min(lo, world.z)
             hi = max(hi, world.z)
-    current = hi - lo
-    if current > 1e-6:
-        factor = A.height_m / current
-        print(f"SCALE current {current:.3f} m -> target {A.height_m:.3f} m (x{factor:.4f})")
-        for obj in list(bpy.context.scene.objects):
-            if obj.parent is None:
-                obj.scale = tuple(v * factor for v in obj.scale)
-        bpy.context.view_layer.update()
+        evaluated.to_mesh_clear()
+    return hi - lo if hi > -1e8 else 0.0
+
 
 out = Path(A.out)
 out.mkdir(parents=True, exist_ok=True)
 dest = out / f"{A.id}.glb"
-bpy.ops.object.select_all(action="SELECT")
-bpy.ops.export_scene.gltf(filepath=str(dest), export_format="GLB", use_selection=True,
-                          export_animations=True, export_animation_mode="ACTIONS",
-                          export_optimize_animation_size=False,
-                          export_optimize_animation_keep_anim_armature=True)
+
+
+def export_once() -> None:
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.export_scene.gltf(filepath=str(dest), export_format="GLB", use_selection=True,
+                              export_animations=True, export_animation_mode="ACTIONS",
+                              export_optimize_animation_size=False,
+                              export_optimize_animation_keep_anim_armature=True)
+
+
+def glb_height(path: Path):
+    """Height of the exported file's own geometry, in metres."""
+    data = path.read_bytes()
+    off, js = 12, None
+    while off < len(data):
+        length, kind = struct.unpack_from("<II", data, off)
+        chunk = data[off + 8:off + 8 + length]
+        if kind == 0x4E4F534A:
+            js = json.loads(chunk.decode("utf8").rstrip("\x00 "))
+        off += 8 + length
+    if not js:
+        return None
+    lo, hi = 1e9, -1e9
+    for mesh in js.get("meshes", []):
+        for primitive in mesh.get("primitives", []):
+            accessor = js["accessors"][primitive["attributes"]["POSITION"]]
+            if "min" in accessor and "max" in accessor:
+                lo = min(lo, accessor["min"][1])
+                hi = max(hi, accessor["max"][1])
+    return hi - lo if hi > -1e8 else None
+
+
+# Real-world scale, closed on the exported file.
+#
+# The shipped models are authored at the game's own scale, which is not metres: measured, a guardsman
+# imports 2.97 m tall and a Baneblade 10.55 m against a real 1.85 m and 5.3 m, and the ratios are not
+# constant. Scaling the scene and trusting it is not enough: measured on the hormagaunt, Blender's own
+# scene query reported 1.500 m while the export was 3.508 m, because the exporter bakes a scale the
+# scene query does not see. So the factor is applied, the file is exported, the FILE is measured, and
+# the residual is corrected until it matches. A unit that does not match its declared height makes
+# every cover read wrong, so this is a gate, not a best effort.
+export_once()
+if A.height_m and A.height_m > 0:
+    for attempt in range(4):
+        shipped = glb_height(dest)
+        if shipped is None:
+            break
+        factor = A.height_m / shipped
+        print(f"SCALE attempt {attempt + 1}: glb {shipped:.3f} m -> target {A.height_m:.3f} m (x{factor:.4f})")
+        if abs(factor - 1.0) < 0.01:
+            break
+        for obj in list(bpy.context.scene.objects):
+            if obj.parent is None:
+                obj.scale = tuple(v * factor for v in obj.scale)
+        bpy.context.view_layer.update()
+        export_once()
+    shipped = glb_height(dest)
+    print(f"SCALE VERIFY declared {A.height_m:.3f} m glb {shipped if shipped is None else round(shipped, 3)} m")
+    if shipped is None or abs(shipped - A.height_m) > 0.02 * A.height_m:
+        raise SystemExit(f"{A.id}: exported {shipped} m, declared {A.height_m:.3f} m")
 print(f"EXPORTED {dest} actions={len(bpy.data.actions)}")
 if meta:
-    (out / f"{A.id}.actions.json").write_text(json.dumps(
+    (out / (A.id + ".actions.json")).write_text(json.dumps(
         {"unit": A.id, "source": A.manifest, "actions": meta}, indent=1))
     print(f"ACTIONS {out / (A.id + '.actions.json')}")

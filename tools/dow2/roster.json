@@ -1,262 +1,314 @@
 {
- "dow_ig_officer": {
-  "ebps": "ig_commander",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "command_officer",
-   "officer"
-  ]
- },
- "dow_ig_heavy_weapons": {
-  "ebps": "ig_heavy_weapon_squad",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "suppression_team",
-   "suppression"
-  ]
- },
- "dow_ig_inquisitor": {
-  "ebps": "ig_inquisitor",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "ironclad_warden",
-   "bulwark_sentinels",
-   "warden",
-   "bulwark"
-  ]
- },
- "dow_chaos_heretic": {
-  "ebps": "cultist",
-  "faction": "cinderborn",
-  "archetypes": [
-   "cinder_cultist",
-   "cultist"
-  ],
-  "body": "race_chaos/troops_wargear/armour/heretic_common/heretic.model",
-  "primary": true
- },
- "dow_chaos_marine": {
-  "ebps": "csm_tactical_marine",
-  "faction": "cinderborn",
-  "archetypes": [
-   "voidtouched_legionnaire",
-   "legionnaire"
-  ]
- },
- "dow_chaos_lord": {
-  "ebps": "csm_chaos_lord",
-  "faction": "cinderborn",
-  "archetypes": [
-   "warlord"
-  ]
- },
  "dow_chaos_bloodletter": {
-  "ebps": "csm_bloodletter_champion",
-  "faction": "cinderborn",
   "archetypes": [
    "zealot_line",
    "zealot",
    "warp_berserkers"
   ],
   "body": "race_chaos/troops_wargear/armour/bloodletter/bloodletter_body.model",
-  "head": "race_chaos/troops_wargear/heads/bloodletter_head01/bloodletter_head01.model"
+  "class": "infantry",
+  "ebps": "csm_bloodletter_champion",
+  "faction": "cinderborn",
+  "head": "race_chaos/troops_wargear/heads/bloodletter_head01/bloodletter_head01.model",
+  "player_eligible": true
  },
- "dow_eldar_guardian": {
-  "ebps": "eld_guardian",
-  "faction": "void_corsairs",
+ "dow_chaos_champion": {
   "archetypes": [
-   "void_corsair_raider",
-   "trooper",
-   "light_infantry"
+   "zealot_captain",
+   "captain"
   ],
+  "class": "infantry",
+  "ebps": "csm_aspiring_champion",
+  "faction": "cinderborn",
+  "player_eligible": true
+ },
+ "dow_chaos_dreadnought": {
+  "archetypes": [
+   "son_of_cinder",
+   "son_of_ciner",
+   "ashen_reavers",
+   "dreadnought"
+  ],
+  "class": "heavy",
+  "ebps": "csm_dreadnought",
+  "faction": "cinderborn",
+  "loadout": "melee",
+  "player_eligible": false,
+  "weight_class": "heavy"
+ },
+ "dow_chaos_havoc": {
+  "archetypes": [
+   "ash_stalker",
+   "stalker"
+  ],
+  "class": "infantry",
+  "ebps": "csm_havoc",
+  "faction": "cinderborn",
+  "player_eligible": true
+ },
+ "dow_chaos_heretic": {
+  "archetypes": [
+   "cinder_cultist",
+   "cultist"
+  ],
+  "body": "race_chaos/troops_wargear/armour/heretic_common/heretic.model",
+  "class": "infantry",
+  "ebps": "cultist",
+  "faction": "cinderborn",
+  "player_eligible": true,
   "primary": true
  },
- "dow_eldar_ranger": {
-  "ebps": "eld_ranger",
-  "faction": "void_corsairs",
+ "dow_chaos_juggernaut": {
   "archetypes": [
-   "neon_runner",
-   "scout"
-  ]
+   "cinder_wraith",
+   "monstrous"
+  ],
+  "class": "heavy",
+  "ebps": "juggernaut",
+  "faction": "cinderborn",
+  "loadout": "melee_blade",
+  "player_eligible": false,
+  "weight_class": "heavy"
+ },
+ "dow_chaos_lord": {
+  "archetypes": [
+   "warlord"
+  ],
+  "class": "infantry",
+  "ebps": "csm_chaos_lord",
+  "faction": "cinderborn",
+  "player_eligible": true
+ },
+ "dow_chaos_marine": {
+  "archetypes": [
+   "voidtouched_legionnaire",
+   "legionnaire"
+  ],
+  "class": "infantry",
+  "ebps": "csm_tactical_marine",
+  "faction": "cinderborn",
+  "player_eligible": true
+ },
+ "dow_chaos_plague_champion": {
+  "archetypes": [
+   "pyre_immolator",
+   "immolator"
+  ],
+  "class": "infantry",
+  "ebps": "csm_plague_marine_champion",
+  "faction": "cinderborn",
+  "player_eligible": true
+ },
+ "dow_chaos_sorcerer": {
+  "archetypes": [
+   "ashbound_artificer",
+   "artificer"
+  ],
+  "class": "infantry",
+  "ebps": "",
+  "faction": "cinderborn",
+  "player_eligible": true
  },
  "dow_eldar_banshee": {
-  "ebps": "eld_banshee",
-  "faction": "void_corsairs",
   "archetypes": [
    "voidblade_assassin",
    "assault",
    "stealth"
   ],
-  "body": "race_eldar/troops_wargear/armour/banshee_armour_common/banshee_armour_common.model"
+  "body": "race_eldar/troops_wargear/armour/banshee_armour_common/banshee_armour_common.model",
+  "class": "infantry",
+  "ebps": "eld_banshee",
+  "faction": "void_corsairs",
+  "player_eligible": true
+ },
+ "dow_eldar_farseer": {
+  "archetypes": [
+   "farseer",
+   "psyker"
+  ],
+  "class": "infantry",
+  "ebps": "",
+  "faction": "void_corsairs",
+  "player_eligible": true
+ },
+ "dow_eldar_guardian": {
+  "archetypes": [
+   "void_corsair_raider",
+   "trooper",
+   "light_infantry"
+  ],
+  "class": "infantry",
+  "ebps": "eld_guardian",
+  "faction": "void_corsairs",
+  "player_eligible": true,
+  "primary": true
+ },
+ "dow_eldar_ranger": {
+  "archetypes": [
+   "neon_runner",
+   "scout"
+  ],
+  "class": "infantry",
+  "ebps": "eld_ranger",
+  "faction": "void_corsairs",
+  "player_eligible": true
  },
  "dow_eldar_warlock": {
-  "ebps": "eld_warlock",
-  "faction": "void_corsairs",
   "archetypes": [
    "tech_priest",
    "support",
    "seer"
   ],
   "body": "race_eldar/troops_wargear/armour/warlock_epic/warlock_epic.model",
+  "class": "infantry",
+  "ebps": "eld_warlock",
+  "faction": "void_corsairs",
+  "player_eligible": true,
   "weight_class": "heavy"
  },
  "dow_eldar_wraithguard": {
-  "ebps": "eld_wraithguard",
-  "faction": "void_corsairs",
   "archetypes": [
    "hulk_frigate",
    "wraith"
   ],
+  "class": "infantry",
+  "ebps": "eld_wraithguard",
+  "faction": "void_corsairs",
+  "player_eligible": true,
   "weight_class": "infantry"
  },
- "dow_ork_boy": {
-  "ebps": "ork_slugga_boy",
-  "faction": "wreckstorm_clans",
+ "dow_ig_baneblade": {
   "archetypes": [
-   "scrap_boy"
-  ],
-  "primary": true
- },
- "dow_ork_nob": {
-  "ebps": "ork_nob_leader_nobz",
-  "faction": "wreckstorm_clans",
-  "archetypes": [
-   "scrapwalker_brute",
-   "assault"
-  ],
-  "body": "race_ork/troops_wargear/accessories/nob_body/nob_body.model",
-  "extra": [
-   "race_ork/troops_wargear/weapons_melee/huge_choppa_common/huge_choppa_common.model"
-  ],
-  "weight_class": "heavy"
- },
- "dow_ork_weirdboy": {
-  "ebps": "ork_weirdboy",
-  "faction": "wreckstorm_clans",
-  "archetypes": [
-   "detonation_crew",
-   "light_infantry",
-   "trooper",
-   "shaman"
-  ],
-  "weight_class": "vehicle"
- },
- "dow_tyr_hormagaunt": {
-  "ebps": "tyr_hormagaunt",
-  "faction": "parasitic_bloom",
-  "archetypes": [
-   "hunger_crawlers",
-   "flanker",
-   "swarm"
-  ],
-  "primary": true,
-  "weight_class": "heavy"
- },
- "dow_tyr_termagaunt": {
-  "ebps": "tyr_termagaunt",
-  "faction": "parasitic_bloom",
-  "archetypes": [
-   "psi_lynx",
-   "commander",
-   "gaunt"
-  ],
-  "weight_class": "heavy"
- },
- "dow_tyr_warrior": {
-  "ebps": "tyr_warrior",
-  "faction": "parasitic_bloom",
-  "archetypes": [
-   "carapace_warden",
-   "suppressor",
-   "heavy_infantry",
-   "warrior"
-  ],
-  "weight_class": "vehicle"
- },
- "dow_tyr_carnifex": {
-  "ebps": "tyr_carnifex",
-  "faction": "parasitic_bloom",
-  "archetypes": [
-   "voidmaw_monstrosity",
-   "assault",
-   "boss",
-   "monstrous"
-  ],
-  "weight_class": "vehicle"
- },
- "dow_tyr_hive_tyrant": {
-  "ebps": "tyr_hive_tyrant",
-  "faction": "parasitic_bloom",
-  "archetypes": [
-   "void_swarm_titan",
-   "soul_weaver",
-   "ritualist",
-   "support",
+   "logistics_engineer",
+   "engineer",
    "titan"
   ],
-  "body": "race_tyranid/troops_wargear/armour/hive_tyrant_armour_epic/hive_tyrant_armour_epic.model",
-  "extra": [
-   "race_tyranid/troops_wargear/weapons_melee/hivetyrant_lower_talons_rare/hivetyrant_lower_talons_rare.model"
-  ],
+  "class": "heavy",
+  "ebps": "ig_baneblade",
+  "faction": "iron_directorate",
+  "loadout": "baneblade",
+  "player_eligible": false,
   "weight_class": "vehicle"
  },
+ "dow_ig_banewolf": {
+  "archetypes": [
+   "storm_talons",
+   "storm_talon",
+   "tank"
+  ],
+  "class": "heavy",
+  "ebps": "ig_banewolf",
+  "faction": "iron_directorate",
+  "loadout": "base",
+  "player_eligible": false,
+  "weight_class": "vehicle"
+ },
+ "dow_ig_chimera": {
+  "archetypes": [
+   "ashrim_raiders",
+   "ashrim_raider",
+   "transport"
+  ],
+  "class": "heavy",
+  "ebps": "ig_chimera",
+  "faction": "iron_directorate",
+  "loadout": "chimera",
+  "player_eligible": false,
+  "weight_class": "heavy"
+ },
+ "dow_ig_commissar": {
+  "archetypes": [
+   "assault_breachers",
+   "breach_assault"
+  ],
+  "class": "infantry",
+  "ebps": "ig_commissar",
+  "faction": "iron_directorate",
+  "player_eligible": true
+ },
+ "dow_ig_guardsman": {
+  "archetypes": [
+   "line_infantry",
+   "soldier"
+  ],
+  "class": "infantry",
+  "ebps": "",
+  "faction": "iron_directorate",
+  "player_eligible": true,
+  "primary": true
+ },
+ "dow_ig_heavy_weapons": {
+  "archetypes": [
+   "suppression_team",
+   "suppression"
+  ],
+  "class": "infantry",
+  "ebps": "ig_heavy_weapon_squad",
+  "faction": "iron_directorate",
+  "player_eligible": true
+ },
+ "dow_ig_inquisitor": {
+  "archetypes": [
+   "ironclad_warden",
+   "bulwark_sentinels",
+   "warden",
+   "bulwark"
+  ],
+  "class": "infantry",
+  "ebps": "ig_inquisitor",
+  "faction": "iron_directorate",
+  "player_eligible": true
+ },
+ "dow_ig_manticore": {
+  "archetypes": [
+   "aegis_artillery",
+   "artillery"
+  ],
+  "class": "heavy",
+  "ebps": "ig_manticore",
+  "faction": "iron_directorate",
+  "loadout": "manticore",
+  "player_eligible": false,
+  "weight_class": "heavy"
+ },
+ "dow_ig_officer": {
+  "archetypes": [
+   "command_officer",
+   "officer"
+  ],
+  "class": "infantry",
+  "ebps": "ig_commander",
+  "faction": "iron_directorate",
+  "player_eligible": true
+ },
+ "dow_ig_sentinel": {
+  "archetypes": [
+   "pathfinder_scouts",
+   "pathfinder_scout",
+   "scout",
+   "walker"
+  ],
+  "class": "heavy",
+  "ebps": "ig_sentinel",
+  "faction": "iron_directorate",
+  "loadout": "base",
+  "player_eligible": false,
+  "weight_class": "heavy"
+ },
  "dow_necron_night_bringer": {
-  "ebps": "nec_nightbringer_form",
-  "faction": "chrono_revenants",
   "archetypes": [
    "void_reaper",
    "assault",
    "tomb_obelisk",
    "monstrous"
   ],
+  "class": "heavy",
+  "ebps": "nec_nightbringer_form",
+  "faction": "chrono_revenants",
+  "player_eligible": false,
   "weight_class": "vehicle"
  },
- "dow_ig_guardsman": {
-  "ebps": "",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "line_infantry",
-   "soldier"
-  ],
-  "primary": true
- },
- "dow_chaos_sorcerer": {
-  "ebps": "",
-  "faction": "cinderborn",
-  "archetypes": [
-   "ashbound_artificer",
-   "artificer"
-  ]
- },
- "dow_eldar_farseer": {
-  "ebps": "",
-  "faction": "void_corsairs",
-  "archetypes": [
-   "farseer",
-   "psyker"
-  ]
- },
- "dow_ork_warboss": {
-  "ebps": "",
-  "faction": "wreckstorm_clans",
-  "archetypes": [
-   "warboss",
-   "boss"
-  ]
- },
- "dow_tyranid_lictor": {
-  "ebps": "",
-  "faction": "parasitic_bloom",
-  "archetypes": [
-   "ash_stalker",
-   "stalker",
-   "stalker_beast"
-  ],
-  "weight_class": "heavy"
- },
  "dow_necron_overlord": {
-  "ebps": "",
-  "faction": "chrono_revenants",
   "archetypes": [
    "sepulchre_warden",
    "heavy_infantry",
@@ -268,11 +320,100 @@
    "scout",
    "overlord"
   ],
+  "class": "infantry",
+  "ebps": "",
+  "faction": "chrono_revenants",
+  "player_eligible": true,
   "primary": true
  },
- "dow_tau_battlesuit": {
+ "dow_ork_battlewagon": {
+  "archetypes": [
+   "titan_fist",
+   "commander",
+   "battlewagon"
+  ],
+  "class": "heavy",
+  "ebps": "ork_battlewagon",
+  "faction": "wreckstorm_clans",
+  "loadout": "base",
+  "player_eligible": false,
+  "weight_class": "vehicle"
+ },
+ "dow_ork_boy": {
+  "archetypes": [
+   "scrap_boy"
+  ],
+  "class": "infantry",
+  "ebps": "ork_slugga_boy",
+  "faction": "wreckstorm_clans",
+  "player_eligible": true,
+  "primary": true
+ },
+ "dow_ork_deff_dread": {
+  "archetypes": [
+   "junk_goliath",
+   "dreadnought"
+  ],
+  "class": "heavy",
+  "ebps": "deff_dread",
+  "faction": "wreckstorm_clans",
+  "loadout": "base",
+  "player_eligible": false,
+  "weight_class": "vehicle"
+ },
+ "dow_ork_nob": {
+  "archetypes": [
+   "scrapwalker_brute",
+   "assault"
+  ],
+  "body": "race_ork/troops_wargear/accessories/nob_body/nob_body.model",
+  "class": "infantry",
+  "ebps": "ork_nob_leader_nobz",
+  "extra": [
+   "race_ork/troops_wargear/weapons_melee/huge_choppa_common/huge_choppa_common.model"
+  ],
+  "faction": "wreckstorm_clans",
+  "player_eligible": true,
+  "weight_class": "heavy"
+ },
+ "dow_ork_warboss": {
+  "archetypes": [
+   "warboss",
+   "boss"
+  ],
+  "class": "infantry",
   "ebps": "",
-  "faction": "radiant_concord",
+  "faction": "wreckstorm_clans",
+  "player_eligible": true
+ },
+ "dow_ork_wartrukk": {
+  "archetypes": [
+   "wreckstorm_biker",
+   "flanker",
+   "scout",
+   "transport"
+  ],
+  "class": "heavy",
+  "ebps": "wartrukk",
+  "faction": "wreckstorm_clans",
+  "loadout": "base",
+  "player_eligible": false,
+  "weight_class": "vehicle"
+ },
+ "dow_ork_weirdboy": {
+  "archetypes": [
+   "detonation_crew",
+   "light_infantry",
+   "trooper",
+   "shaman"
+  ],
+  "class": "infantry",
+  "ebps": "ork_weirdboy",
+  "faction": "wreckstorm_clans",
+  "player_eligible": true,
+  "weight_class": "vehicle"
+ },
+ "dow_tau_battlesuit": {
   "archetypes": [
    "atmos_battlesuit",
    "assault",
@@ -282,174 +423,123 @@
    "trooper",
    "battlesuit"
   ],
+  "class": "infantry",
+  "ebps": "",
+  "faction": "radiant_concord",
+  "player_eligible": true,
   "primary": true,
   "weight_class": "heavy"
  },
  "dow_tau_gun_drone": {
-  "ebps": "",
-  "faction": "radiant_concord",
   "archetypes": [
    "targeter_flock",
    "support",
    "scout",
    "spear_strike"
   ],
+  "class": "heavy",
+  "ebps": "",
+  "faction": "radiant_concord",
+  "player_eligible": false,
   "weight_class": "infantry"
  },
  "dow_tau_marker_drone": {
-  "ebps": "",
-  "faction": "radiant_concord",
   "archetypes": [
    "marker_drone"
-  ]
- },
- "dow_tau_shield_drone": {
+  ],
+  "class": "heavy",
   "ebps": "",
   "faction": "radiant_concord",
+  "player_eligible": false
+ },
+ "dow_tau_shield_drone": {
   "archetypes": [
    "shield_drone"
-  ]
- },
- "dow_ig_sentinel": {
-  "ebps": "ig_sentinel",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "pathfinder_scouts",
-   "pathfinder_scout",
-   "scout",
-   "walker"
   ],
-  "loadout": "base",
-  "weight_class": "heavy"
+  "class": "heavy",
+  "ebps": "",
+  "faction": "radiant_concord",
+  "player_eligible": false
  },
- "dow_ig_commissar": {
-  "ebps": "ig_commissar",
-  "faction": "iron_directorate",
+ "dow_tyr_carnifex": {
   "archetypes": [
-   "assault_breachers",
-   "breach_assault"
-  ]
- },
- "dow_ig_banewolf": {
-  "ebps": "ig_banewolf",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "storm_talons",
-   "storm_talon",
-   "tank"
-  ],
-  "loadout": "base",
-  "weight_class": "vehicle"
- },
- "dow_ig_chimera": {
-  "ebps": "ig_chimera",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "ashrim_raiders",
-   "ashrim_raider",
-   "transport"
-  ],
-  "loadout": "chimera",
-  "weight_class": "heavy"
- },
- "dow_ig_manticore": {
-  "ebps": "ig_manticore",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "aegis_artillery",
-   "artillery"
-  ],
-  "loadout": "manticore",
-  "weight_class": "heavy"
- },
- "dow_ig_baneblade": {
-  "ebps": "ig_baneblade",
-  "faction": "iron_directorate",
-  "archetypes": [
-   "logistics_engineer",
-   "engineer",
-   "titan"
-  ],
-  "loadout": "baneblade",
-  "weight_class": "vehicle"
- },
- "dow_chaos_havoc": {
-  "ebps": "csm_havoc",
-  "faction": "cinderborn",
-  "archetypes": [
-   "ash_stalker",
-   "stalker"
-  ]
- },
- "dow_chaos_plague_champion": {
-  "ebps": "csm_plague_marine_champion",
-  "faction": "cinderborn",
-  "archetypes": [
-   "pyre_immolator",
-   "immolator"
-  ]
- },
- "dow_chaos_champion": {
-  "ebps": "csm_aspiring_champion",
-  "faction": "cinderborn",
-  "archetypes": [
-   "zealot_captain",
-   "captain"
-  ]
- },
- "dow_chaos_juggernaut": {
-  "ebps": "juggernaut",
-  "faction": "cinderborn",
-  "archetypes": [
-   "cinder_wraith",
+   "voidmaw_monstrosity",
+   "assault",
+   "boss",
    "monstrous"
   ],
-  "loadout": "melee_blade",
-  "weight_class": "heavy"
+  "class": "heavy",
+  "ebps": "tyr_carnifex",
+  "faction": "parasitic_bloom",
+  "player_eligible": false,
+  "weight_class": "vehicle"
  },
- "dow_chaos_dreadnought": {
-  "ebps": "csm_dreadnought",
-  "faction": "cinderborn",
+ "dow_tyr_hive_tyrant": {
   "archetypes": [
-   "son_of_cinder",
-   "son_of_ciner",
-   "ashen_reavers",
-   "dreadnought"
+   "void_swarm_titan",
+   "soul_weaver",
+   "ritualist",
+   "support",
+   "titan"
   ],
-  "loadout": "melee",
-  "weight_class": "heavy"
+  "body": "race_tyranid/troops_wargear/armour/hive_tyrant_armour_epic/hive_tyrant_armour_epic.model",
+  "class": "heavy",
+  "ebps": "tyr_hive_tyrant",
+  "extra": [
+   "race_tyranid/troops_wargear/weapons_melee/hivetyrant_lower_talons_rare/hivetyrant_lower_talons_rare.model"
+  ],
+  "faction": "parasitic_bloom",
+  "player_eligible": false,
+  "weight_class": "vehicle"
  },
- "dow_ork_wartrukk": {
-  "ebps": "wartrukk",
-  "faction": "wreckstorm_clans",
+ "dow_tyr_hormagaunt": {
   "archetypes": [
-   "wreckstorm_biker",
+   "hunger_crawlers",
    "flanker",
-   "scout",
-   "transport"
+   "swarm"
   ],
-  "loadout": "base",
-  "weight_class": "vehicle"
+  "class": "infantry",
+  "ebps": "tyr_hormagaunt",
+  "faction": "parasitic_bloom",
+  "player_eligible": true,
+  "primary": true,
+  "weight_class": "heavy"
  },
- "dow_ork_deff_dread": {
-  "ebps": "deff_dread",
-  "faction": "wreckstorm_clans",
+ "dow_tyr_termagaunt": {
   "archetypes": [
-   "junk_goliath",
-   "dreadnought"
-  ],
-  "loadout": "base",
-  "weight_class": "vehicle"
- },
- "dow_ork_battlewagon": {
-  "ebps": "ork_battlewagon",
-  "faction": "wreckstorm_clans",
-  "archetypes": [
-   "titan_fist",
+   "psi_lynx",
    "commander",
-   "battlewagon"
+   "gaunt"
   ],
-  "loadout": "base",
+  "class": "infantry",
+  "ebps": "tyr_termagaunt",
+  "faction": "parasitic_bloom",
+  "player_eligible": true,
+  "weight_class": "heavy"
+ },
+ "dow_tyr_warrior": {
+  "archetypes": [
+   "carapace_warden",
+   "suppressor",
+   "heavy_infantry",
+   "warrior"
+  ],
+  "class": "infantry",
+  "ebps": "tyr_warrior",
+  "faction": "parasitic_bloom",
+  "player_eligible": true,
   "weight_class": "vehicle"
+ },
+ "dow_tyranid_lictor": {
+  "archetypes": [
+   "ash_stalker",
+   "stalker",
+   "stalker_beast"
+  ],
+  "class": "infantry",
+  "ebps": "",
+  "faction": "parasitic_bloom",
+  "player_eligible": true,
+  "weight_class": "heavy"
  }
 }
