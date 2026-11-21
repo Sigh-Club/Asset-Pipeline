@@ -136,7 +136,8 @@ DoW2* rather than *the method itself*. That is now fixed, because the art must e
 
 Still to adopt from the community package (recorded, not started): the `.simbox` physics hulls, the
 `.collision` simple/complex generators, `.markers`, `.hkanim` additive layering and `.motiontree`
-state machines, and terrain layer *blending* in the forge (it renders one ground texture today).
+state machines. Terrain layer blending is **done** on both surfaces: the forge and the game render
+the eight-layer blend from the decoded masks (`docs/ASSET_SPEC.md` §7).
 
 ## 2c0. Map import into the forge (session 9, P1) — DONE
 
@@ -337,9 +338,13 @@ running. That is pre-existing and unrelated to the layout path — the board ren
   carries a unique weight-class archetype and no infantry model carries one.
 - `UNIT_ASSET_REV` bumped so clients reload the rebuilt models.
 
-Recorded, not done: no *mission* (as opposed to the demo battle) reads the catalogue yet (`layoutToTerrainGrid` /
-`layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
-the `VIZO` reference graph is decoded as references but not resolved.
+Recorded, not done: no *mission* (as opposed to the demo battle) reads the catalogue yet
+(`layoutToTerrainGrid` / `layoutToHeightGrid` are the seam); the `VIZO` reference graph is decoded as
+references but not resolved.
+
+The board now draws what the pipeline decodes: the map's eight-layer ground at the board's window
+origin, its painted decals, and building faces from the shipped wall kit at 1:1 scale
+(`frontend/src/three/boardGround.ts`, `decalLayer.ts`, `structureShells.ts`).
 
 ## 2c. Environment kit and the map forge (session 8)
 
