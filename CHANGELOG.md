@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-18 (session 9, P10: real-world scale and the roster)
+
+### Fixed
+
+- Unit scale: the shipped models are not in metres and their ratios differ per model (measured: a
+  guardsman 2.97 m, a Chimera 6.96 m, a Baneblade 10.55 m against a real 1.85 / 3.7 / 5.3). The
+  importer now takes a real-world height per unit and scales the rig before export, so the
+  correction is baked into geometry and skeleton together. All 45 units rebuilt and measured.
+- Roster archetypes were assigned positionally: a Baneblade held `logistics_engineer`, a Chimera
+  `ashrim_raiders`, a Sentinel `pathfinder_scouts`, so a scout squad rendered as a walker. Heavy and
+  vehicle models now carry a unique weight-class archetype; no infantry model carries one.
+- `UNIT_ASSET_REV` bumped so clients reload the rebuilt models.
+
 ## [Unreleased] — 2026-11-18 (session 9, P9: staged layouts in the game)
 
 ### Added

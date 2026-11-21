@@ -62,6 +62,8 @@ _ap.add_argument("--manifest", default="")
 _ap.add_argument("--part", action="append", default=[])
 _ap.add_argument("--weapon", default="")
 _ap.add_argument("--stride", type=int, default=1)
+_ap.add_argument("--height-m", type=float, default=0.0,
+                 help="real-world height to scale the unit to (0 = leave the source scale)")
 A = _ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
 # the timeline every action is baked onto (see apply_clip)
@@ -430,6 +432,33 @@ for pb in arm.pose.bones:
     pb.rotation_quaternion = (1, 0, 0, 0)
     pb.scale = (1, 1, 1)
 bpy.context.view_layer.update()
+
+# Real-world scale. The shipped models are authored at the game's own scale, which is not metres:
+# measured, a guardsman imports 2.97 m tall and a Baneblade 10.55 m against a real 1.85 m and 5.3 m.
+# The ratios are not constant either, so a single global factor is wrong — `--height-m` sets the
+# unit's real height and the whole rig is scaled to it before export, which bakes the correction into
+# the geometry and the skeleton together (a scale on the exported root would leave the animation
+# translation tracks at the old scale).
+if A.height_m and A.height_m > 0:
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    lo = 1e9
+    hi = -1e9
+    for obj in bpy.context.scene.objects:
+        if obj.type != "MESH":
+            continue
+        evaluated = obj.evaluated_get(depsgraph)
+        for corner in evaluated.bound_box:
+            world = evaluated.matrix_world @ Vector(corner)
+            lo = min(lo, world.z)
+            hi = max(hi, world.z)
+    current = hi - lo
+    if current > 1e-6:
+        factor = A.height_m / current
+        print(f"SCALE current {current:.3f} m -> target {A.height_m:.3f} m (x{factor:.4f})")
+        for obj in list(bpy.context.scene.objects):
+            if obj.parent is None:
+                obj.scale = tuple(v * factor for v in obj.scale)
+        bpy.context.view_layer.update()
 
 out = Path(A.out)
 out.mkdir(parents=True, exist_ok=True)

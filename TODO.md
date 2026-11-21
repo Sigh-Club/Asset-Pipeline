@@ -325,6 +325,18 @@ plan.
 Recorded: the offline demo still shows the global server-status overlay when no Go backend is
 running. That is pre-existing and unrelated to the layout path — the board renders behind it.
 
+## 2c10. Real-world scale and weight-correct roster (session 9, P10) — DONE
+
+- **Scale**: the shipped models are not in metres and their ratios differ per model (guardsman
+  2.97 m, Chimera 6.96 m, Baneblade 10.55 m against 1.85 / 3.7 / 5.3). `build_community_units.py`
+  now carries a real-world height per unit and the importer scales the rig to it before export, so
+  the correction is baked into geometry and skeleton together. All 45 units rebuilt: guardsman
+  1.96 m, Chimera 3.70, Sentinel 4.47, Manticore 4.00, Baneblade 5.30.
+- **Roster**: the archetype mapping was positional, so a Baneblade held `logistics_engineer` and a
+  Sentinel `pathfinder_scouts` — a scout squad rendered as a walker. Each heavy/vehicle model now
+  carries a unique weight-class archetype and no infantry model carries one.
+- `UNIT_ASSET_REV` bumped so clients reload the rebuilt models.
+
 Recorded, not done: no *mission* (as opposed to the demo battle) reads the catalogue yet (`layoutToTerrainGrid` /
 `layoutToHeightGrid` are the seam); the forge renders one ground texture per biome rather than the
 the `VIZO` reference graph is decoded as references but not resolved.

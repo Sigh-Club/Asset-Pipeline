@@ -196,6 +196,26 @@ limit**, the largest at 110 joints, and they render correctly in our engine. Enf
 rejected a third of the roster as broken. The validator reports them under "over the source engine's
 54-bone limit — legal in our engine" rather than hiding them.
 
+## 9b. Real-world scale is a property of the asset, not of the viewer
+
+The shipped models are authored at the game's own scale, which is neither metres nor constant.
+Measured on the built GLBs before this was fixed: a guardsman 2.97 m tall, a Chimera 6.96 m, a
+Baneblade 10.55 m — against a real 1.85 m, 3.7 m and 5.3 m. The ratios differ per model, so a single
+global factor is wrong.
+
+`build_community_units.py` therefore carries a real-world height per unit and the importer scales the
+rig to it before export (`--height-m`). The correction is baked into geometry and skeleton together;
+scaling the exported root instead would leave the animation translation tracks at the old scale.
+
+Measured after: guardsman 1.96 m, Chimera 3.70, Sentinel 4.47, Manticore 4.00, Baneblade 5.30,
+battlewagon 4.40, carnifex 4.21.
+
+The roster's archetype mapping had the same class of defect: it was assigned positionally, so a
+Baneblade held `logistics_engineer`, a Chimera `ashrim_raiders` and a Sentinel `pathfinder_scouts` —
+a scout squad rendered as a walker and an engineer slot as a super-heavy tank. Heavy and vehicle
+models now carry a unique weight-class archetype and no infantry model carries one, which is the
+invariant `unitModelUrl` needs to be deterministic and the reason a squad cannot resolve to a tank.
+
 ## 10. Recorded gaps
 
 Honest list of what is documented here but not yet implemented. Each is a task, not a disclaimer:

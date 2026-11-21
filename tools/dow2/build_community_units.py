@@ -32,6 +32,33 @@ ROOT = Path(__file__).resolve().parents[2]
 ART_ENV = "DOW2_RETRIB"
 LAB = ROOT.parent / "Imperium-of-Ash/frontend/public/assets/models/units/lab"
 
+# Real-world heights, in metres. The shipped models are authored at the game's own scale, which is
+# not metres and not constant: measured on the built GLBs, a guardsman came out 2.97 m tall, a
+# Chimera 6.96 m and a Baneblade 10.55 m against a real 1.85 m, 3.7 m and 5.3 m. A single global
+# factor cannot fix that, so each unit carries the height it should be and the importer scales the
+# rig to it before export. A unit with no entry keeps the source scale (recorded, not silent).
+HEIGHTS_M: dict[str, float] = {
+    # infantry — human baseline
+    "dow_ig_guardsman": 1.85, "dow_ig_commissar": 1.9, "dow_ig_officer": 1.9,
+    "dow_ig_heavy_weapons": 1.9, "dow_ig_inquisitor": 2.0,
+    "dow_chaos_heretic": 1.85, "dow_chaos_marine": 2.3, "dow_chaos_havoc": 2.3,
+    "dow_chaos_champion": 2.4, "dow_chaos_sorcerer": 2.3, "dow_chaos_plague_champion": 2.4,
+    "dow_chaos_bloodletter": 2.4, "dow_chaos_lord": 2.6,
+    "dow_eldar_guardian": 2.0, "dow_eldar_ranger": 2.0, "dow_eldar_banshee": 2.0,
+    "dow_eldar_warlock": 2.2, "dow_eldar_farseer": 2.2, "dow_eldar_wraithguard": 2.6,
+    "dow_ork_boy": 2.2, "dow_ork_nob": 2.6, "dow_ork_warboss": 3.0, "dow_ork_weirdboy": 2.3,
+    "dow_tyr_termagaunt": 1.4, "dow_tyr_hormagaunt": 1.5, "dow_tyr_warrior": 2.6,
+    "dow_tyranid_lictor": 2.8, "dow_tyr_carnifex": 4.2, "dow_tyr_hive_tyrant": 5.8,
+    "dow_necron_overlord": 2.8, "dow_necron_night_bringer": 5.0,
+    "dow_tau_battlesuit": 3.2, "dow_tau_gun_drone": 1.2, "dow_tau_marker_drone": 1.2,
+    "dow_tau_shield_drone": 1.2,
+    # vehicles — length-dominated, so the height is the hull plus turret
+    "dow_ig_sentinel": 4.3, "dow_ig_chimera": 3.7, "dow_ig_banewolf": 3.7,
+    "dow_ig_manticore": 4.0, "dow_ig_baneblade": 5.3,
+    "dow_ork_wartrukk": 2.8, "dow_ork_battlewagon": 4.4, "dow_ork_deff_dread": 4.2,
+    "dow_chaos_dreadnought": 4.2, "dow_chaos_juggernaut": 3.0,
+}
+
 # unit | body (relative to an art root) | head | extra parts | weapon | loadout dir | motiontree
 # The `head` is the ebps `animator_attachments` model the game attaches; `extra` carries the
 # accessories the wargear lists (the chaos sorcerer's backpack).
@@ -236,6 +263,9 @@ def build(unit: str, spec: dict, root: Path, out: Path, manifest_dir: Path) -> N
         cmd += ["--part", str(p)]
     if weapon:
         cmd += ["--weapon", str(weapon)]
+    height = HEIGHTS_M.get(unit, 0.0)
+    if height:
+        cmd += ["--height-m", str(height)]
     log = out / f"{unit}.log"
     out.mkdir(parents=True, exist_ok=True)
     with log.open("w") as fh:
@@ -245,7 +275,7 @@ def build(unit: str, spec: dict, root: Path, out: Path, manifest_dir: Path) -> N
         tail = "\n".join(text.strip().splitlines()[-6:])
         raise SystemExit(f"{unit}: BUILD FAILED (no EXPORTED line in {log})\n{tail}")
     for line in text.splitlines():
-        if line.startswith(("IMPORTED", "ASSEMBLED", "ACTION ", "EXPORTED", "SKIP")):
+        if line.startswith(("IMPORTED", "ASSEMBLED", "ACTION ", "EXPORTED", "SCALE", "SKIP")):
             print("   " + line)
     for suffix in (".glb", ".actions.json"):
         src = out / f"{unit}{suffix}"
