@@ -106,3 +106,25 @@ seeds**. The ladder's objective stages (defend, escort, sabotage) stall when cov
 everywhere — the reference policy holds cover instead of pushing the objective. That is a **policy**
 finding, not a cover-strength finding, so the placement change is parked until the reference policy
 prioritises objectives; changing it now would be fitting the game to a thin test bot.
+
+## Two defects the demo showed, and the gates that now catch them
+
+**A Sentinel walker served the recon squad.** `frontend/src/three/dow2Roster.ts` is *generated* from
+`tools/dow2/roster.json` (`discover_units.py --emit-catalogue`), and it was generated **before** the
+archetype fix — so the client still had `dow_ig_sentinel: [pathfinder_scouts, ...]` and
+`dow_ig_manticore: [aegis_artillery, ...]`. The roster data was corrected; the generated client copy
+was not regenerated. It is regenerated now, and the resolution is: `pathfinder_scouts` → guardsman,
+`aegis_artillery` → heavy weapons, `ashen_reavers` → champion. The client test now asserts that **no
+player archetype resolves to a heavy**, which is the rule that matters (distinctness is not: this
+faction has five infantry models for seven archetypes).
+
+**A headless lord general.** The shipped art separates a unit's *animator* model (the body, which
+carries the head) from its *armour* attachments. Two specs built the armour as if it were the body:
+`dow_ig_commissar` from `general_armour_epic` with no head, and `dow_ig_inquisitor` from
+`witchhunter_armour_epic`. Fixed by declaring the shipped `commissar_lord_head` and by building the
+inquisitor from its animator model (`troops/inquisitor/witchhunter`) with the armour as an attachment.
+Both rebuilt and verified to carry a head mesh.
+
+`tools/dow2/check_unit_heads.py` gates it: a body under `troops_wargear/armour/` is an attachment, so
+the spec must declare a head — with a documented allowlist for the units whose head is modelled into
+the body (space marine helmets, eldar helms, tyranid skulls).
