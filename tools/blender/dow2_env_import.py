@@ -150,9 +150,12 @@ def combine_maps(diffuse, occlusion, specular, name: str, base_roughness: float 
     for i in range(0, len(dif_px), 4):
         r, g, b, a = dif_px[i], dif_px[i + 1], dif_px[i + 2], dif_px[i + 3]
         if ocl_px is not None:
-            # Blender image pixels are linear; multiply in linear space, which is what the shipped
-            # shader's ambient term does
-            ao = 0.35 + 0.65 * ocl_px[i]
+            # The shipped occlusion map is an *ambient* term: the engine multiplies it into ambient
+            # light, not into the diffuse texture. Baking it into the albedo double-darkens — measured
+            # on the props the demo shows, `building_barricade_sb_block_01` shipped at 42/255 came out at
+            # 26/255 and `wall_ruined_concrete_2story_04` at 40 -> 27, a 30% loss that crushed the
+            # mid-tones into black patches. It is applied here at a quarter strength as a hint only.
+            ao = 0.92 + 0.08 * ocl_px[i]
             r, g, b = r * ao, g * ao, b * ao
         out_a[i], out_a[i + 1], out_a[i + 2], out_a[i + 3] = r, g, b, a
         # roughness: 1 - luminance(specular), squeezed so a dielectric keeps a believable floor and the

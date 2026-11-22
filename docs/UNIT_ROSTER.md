@@ -128,3 +128,30 @@ Both rebuilt and verified to carry a head mesh.
 `tools/dow2/check_unit_heads.py` gates it: a body under `troops_wargear/armour/` is an attachment, so
 the spec must declare a head — with a documented allowlist for the units whose head is modelled into
 the body (space marine helmets, eldar helms, tyranid skulls).
+
+## Why the board read as black boxes, measured
+
+The arrows on the demo pointed at three different things, and none of them was a texture being low
+resolution:
+
+1. **Shipped props with near-black diffuse maps.** Measured albedo means on the props the board uses:
+   `metal_wall_low_01_cap` 15/255 (6%), `building_barricade_sb_block_01` 26/255, `wall_ruined_concrete_2story_04`
+   27/255, `stone_bench_01` 48/255, `construction_barricade` 59/255. DoW2 lifts those with baked lightmaps
+   and a bright sky; a physically-based path reads 15/255 as 0.3% linear and renders a black shape. The
+   board is now calibrated: the shipped prop material is lifted 3x (a lighting decision on the material,
+   not a repaint) and the ground shader — which was emitting up to 4.4x the layer albedo and blowing the
+   floor to white — is scaled to the same exposure band. Measured on the demo board: ground 150 -> 87,
+   whole frame 52 -> 86.
+2. **Our own structural panels and roof slabs.** The wall material carried `metalness 0.28` on a dark wall
+   texture, so the *boxes* were darker than the shipped props around them. Now 0.08 with the same 3x
+   calibration.
+3. **Buildings that were extrusions, not buildings.** This was the real "nothing like XCOM" problem: an
+   imported board carries its buildings as paint — solid masses with no interior, no door and no roof
+   access — and only the generator ever hollowed anything. Measured: **32 of the 35 imported boards had
+   zero rooms**, against 36 of 36 generated boards. `src/three/roomCarving.ts` now carves the building
+   cores out of imported paint (erosion finds the thick interior; the ring stays solid; two doors open
+   onto ground that was already walkable). After it: **27 of 35 imported boards carry rooms — 41 rooms,
+   82 doors.**
+
+Still not XCOM-shaped: roofs are flat lids rather than walkable surfaces, walls have no windows, and
+there is one storey. Those are the next three structural changes, in that order.
