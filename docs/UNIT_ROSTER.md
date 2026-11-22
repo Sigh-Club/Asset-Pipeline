@@ -93,6 +93,16 @@ placement, and that is a known mismatch worth naming:
 
 Measured cover density for each candidate placement, against the authored 24–36% band the composition
 model recorded: prop cell + cardinals 12.6%, cardinals only 10.7%, eight neighbours 19.3%, own cell +
-eight 22.5%. All three alternative placements shift the tactical balance enough to change the campaign
-canary's outcome (one variant stalemated at the 60-turn cap), so the placement change is deferred to a
-session with the balance harness in hand rather than tuned against a test written for the old board.
+eight 22.5%.
+
+A board-level harness now exists (`backend/internal/service/board_balance_test.go`): it plays a mission
+across many mission ids — which land on different staged boards — and reports the outcome distribution.
+On the committed placement that is **10 player victories, 2 enemy victories, 0 undecided, median 10
+turns over 12 distinct boards**.
+
+The rules-consistent placement was then tested properly, and the result is worth recording precisely:
+it still passed the harness on eliminate-all missions, but failed the campaign ladder on **0 of 80
+seeds**. The ladder's objective stages (defend, escort, sabotage) stall when cover is available
+everywhere — the reference policy holds cover instead of pushing the objective. That is a **policy**
+finding, not a cover-strength finding, so the placement change is parked until the reference policy
+prioritises objectives; changing it now would be fitting the game to a thin test bot.
