@@ -80,3 +80,19 @@ nothing.
 
 Not done yet: the promotion ladder is data, not wired into squad progression (the backend still resolves
 stats through `TemplateForSquadArchetype`). Wiring it is the next step, and this table is what it reads.
+
+## Cover placement: recorded, not yet changed
+
+The tier now comes from the prop's real height (fixed). **Where** the tier lands is still the old
+placement, and that is a known mismatch worth naming:
+
+- the combat rules read cover from the eight cells *around* a unit (`coverNeighbours` in
+  `combat_cover_exposure.go`, XCOM's own cover-point set) — a soldier stands beside a crate, not in it;
+- our derivation puts the tier on the prop's own cell (plus a light ring), so a soldier beside a
+  barricade is not seen as covered by the rules that decide flanking.
+
+Measured cover density for each candidate placement, against the authored 24–36% band the composition
+model recorded: prop cell + cardinals 12.6%, cardinals only 10.7%, eight neighbours 19.3%, own cell +
+eight 22.5%. All three alternative placements shift the tactical balance enough to change the campaign
+canary's outcome (one variant stalemated at the 60-turn cap), so the placement change is deferred to a
+session with the balance harness in hand rather than tuned against a test written for the old board.
