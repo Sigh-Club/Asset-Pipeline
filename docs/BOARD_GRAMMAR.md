@@ -88,6 +88,24 @@ that had nothing to do with texture quality:
 - **the frame had no buildings in it**: the composition put the rooms at the board's edge, so the
   player's view was open ground with a few cover props. Composition, not art.
 
+## Why our buildings are boxes and XCOM's are buildings
+
+Compared against an XCOM building (Advent city block) element by element:
+
+| XCOM's building has | Ours had | Ours now |
+|---|---|---|
+| composed volumes at different heights, setbacks, a projecting entrance | **one extruded mass at one height** | still one mass — **next** |
+| windows with frames and mullions in a rhythm | **none** | inset glass panels every other cell on walls ≥ 2.6 m |
+| a door with a frame and canopy on the street side | one arched piece, on one face at most | unchanged — **next** |
+| roof equipment: AC units, vents, pipes, planters, signage | **a bare flat lid** | shipped kit props on a deterministic minority of roof cells |
+| a pale concrete roof surface | the dark wall plate | concrete surface, light tone |
+| plinth, cornice, trim bands, panel seams | a thin box strip | shipped plinth/cap strips (unchanged) |
+| street furniture: lamps, benches, planters, kerbs | shipped lamps and decals only | unchanged |
+
+The single biggest remaining difference is **massing**: XCOM's buildings are two or three volumes with
+different heights and setbacks; ours is one extrusion per region. That is a composition change, not an
+art change, and it is next.
+
 ## Remaining work, in order
 
 1. **Walkable roofs + windows + a second storey.** The three structural things that still make our
