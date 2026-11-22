@@ -47,6 +47,16 @@ def main(argv=None) -> int:
         for archetype in unit["archetypes"]:
             by_archetype[archetype] = by_archetype.get(archetype, True) and unit["player_eligible"]
 
+    # the role/promotion ladders travel with the roster: the game resolves a squad's abilities from
+    # them, so they are published rather than read from the pipeline at runtime
+    roles_src = a.roster.parent / "unit_roles.json"
+    roles = json.loads(roles_src.read_text())["roles"] if roles_src.exists() else {}
+    for unit, spec in roles.items():
+        if unit not in units:
+            raise SystemExit(f"{unit}: has a role but is not in the roster")
+        if not units[unit]["player_eligible"]:
+            raise SystemExit(f"{unit}: has a promotion ladder but is not player-eligible")
+
     a.out.mkdir(parents=True, exist_ok=True)
     dest = a.out / "unit_roster.json"
     dest.write_text(json.dumps({
@@ -58,10 +68,11 @@ def main(argv=None) -> int:
         "units": units,
         "player_archetypes": sorted(k for k, v in by_archetype.items() if v),
         "heavy_archetypes": sorted(k for k, v in by_archetype.items() if not v),
+        "roles": roles,
     }, indent=1) + "\n")
     infantry = sum(1 for u in units.values() if u["player_eligible"])
     print(f"{len(units)} units -> {dest} ({infantry} player-eligible infantry, "
-          f"{len(units) - infantry} heavy)")
+          f"{len(units) - infantry} heavy, {len(roles)} role ladders)")
     return 0
 
 
