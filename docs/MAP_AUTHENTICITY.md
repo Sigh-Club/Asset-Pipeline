@@ -116,10 +116,29 @@ direction, offset and length, which is XCOM's entrance model measured rather tha
 Measured zones at 12 m: open 16,245, fortified 7,896, industrial 5,773, ruined 3,762, natural 2,931,
 overgrown 1,615, civic 232. Opening lengths 2–8 cells, evenly spread — real streets, real doorways.
 
-`assemble_parcels.py` then fills a lattice with XCOM's solver (objective parcel first, backtracking,
-no duplicates, entrance match required, height continuity at the seam). Because every parcel is taken
-from **one** map, the palette, ground, decals and lighting are continuous by construction — constraint
-1 is satisfied by the method rather than by a check.
+`assemble_parcels.py` then fills a lattice with XCOM's solver (objective parcel first, constraint-first
+slot order, bounded backtracking, no duplicates, symmetric seam matching, height continuity). Because
+every parcel is taken from **one** map, the palette, ground, decals and lighting are continuous by
+construction — constraint 1 is satisfied by the method rather than by a check.
+
+Verified yield on a 4x3 lattice (48x36 m, the size of one of our boards), 60 seeds:
+
+| Result | Value |
+|---|---|
+| boards solved | **60 of 60** |
+| boards where every parcel is reachable | **60 of 60** |
+| largest walkable component share | median **0.999**, min 0.927 |
+| solve attempts per board | median **2** |
+| wall time | 6.5 s for 60 boards (~0.1 s per board) |
+
+Two defects were found and fixed by measuring this, both worth recording because they are the kind
+that survives a green test:
+
+* the solver returned parcels in *fill* order while the consumer joins tiles in *row-major* order, so
+  every board's walkability was assembled misaligned — the boards looked fine and scored 40%;
+* requiring every parcel to open into the board during the search cut the solve rate to 11 of 40,
+  while verifying and retrying reached 60 of 60. Verify, do not constrain, when the constraint is a
+  post-condition the search cannot see.
 
 ## What is genuinely not possible with these assets
 

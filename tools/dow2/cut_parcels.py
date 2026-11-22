@@ -35,6 +35,7 @@ from collections import Counter
 from pathlib import Path
 
 import numpy as np
+from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -131,6 +132,25 @@ def height_stats(terrain: dict | None, x0: int, y0: int, size: int, cell_m: floa
             "mean": round(float(patch.mean()), 2)}
 
 
+def opening_connectivity(tile: np.ndarray, openings: dict) -> tuple[bool, int]:
+    """Are a tile's openings in one walkable component?
+
+    A parcel whose openings sit in different components is a place with two halves that do not talk:
+    it passes an entrance match on both sides and still cannot be walked through. Measured because
+    assembled boards were failing traversability at 60% for exactly this reason.
+    """
+    labels, count = ndimage.label(tile)  # type: ignore[name-defined]
+    comps = set()
+    size = tile.shape[0]
+    for edge, runs_ in openings.items():
+        for o in runs_:
+            for i in range(o["offset"], o["offset"] + o["length"]):
+                y, x = {"N": (0, i), "S": (size - 1, i), "W": (i, 0), "E": (i, size - 1)}[edge]
+                if labels[y, x]:
+                    comps.add(int(labels[y, x]))
+    return len(comps) == 1, len(comps)
+
+
 def zone_of(props: Counter) -> str:
     names = " ".join(props).lower()
     scores = {zone: sum(n for p, n in props.items() if any(k in p.lower() for k in keys))
@@ -173,6 +193,7 @@ def cut_map(path: Path, tile_m: int) -> dict:
             if not props and not open_cells:
                 continue
             walkable = int(tile.sum())
+            joined, comps = opening_connectivity(tile, openings)
             parcels.append({
                 "map": data.get("map"),
                 "origin": [int(x0), int(y0)],
@@ -180,6 +201,8 @@ def cut_map(path: Path, tile_m: int) -> dict:
                 "walkable_share": round(walkable / float(tile.size), 3),
                 "openings": openings,
                 "opening_count": open_cells,
+                "openings_connected": bool(joined),
+                "opening_components": int(comps),
                 "entrance_edges": [e for e in EDGES if openings.get(e)],
                 "zone": zone_of(props),
                 "prop_total": int(sum(props.values())),
@@ -209,7 +232,7 @@ def main() -> int:
         per_map[cut["map"]] = len(cut["parcels"])
         all_parcels.extend(cut["parcels"])
 
-    usable = [q for q in all_parcels if q["opening_count"] >= 2]
+    usable = [q for q in all_parcels if q["opening_count"] >= 2 and q["openings_connected"]]
     connected = [q for q in usable if len(q["entrance_edges"]) >= 2]
     lengths = Counter(o["length"] for q in all_parcels for e in q["openings"].values() for o in e)
     zones = Counter(q["zone"] for q in all_parcels)
@@ -219,6 +242,7 @@ def main() -> int:
         "parcels": len(all_parcels),
         "parcels_with_two_openings": len(usable),
         "parcels_with_two_edges": len(connected),
+        "parcels_openings_connected": sum(1 for q in all_parcels if q.get("openings_connected")),
         "opening_lengths": dict(sorted(lengths.items())),
         "zones": dict(zones.most_common()),
         "per_map": per_map,

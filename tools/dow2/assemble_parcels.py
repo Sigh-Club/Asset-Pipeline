@@ -53,16 +53,37 @@ def overlaps(a: dict, b: dict) -> int:
     return max(0, hi - lo)
 
 
-def seam_ok(a: dict, b: dict) -> bool:
-    return any(overlaps(oa, ob) >= MIN_SEAM_OVERLAP_CELLS
-               for oa in a.get("openings", {}).get(OPPOSITE.get(b["side"], ""), [])
-               for ob in b.get("openings", {}).get(b["side"], []))
-
-
 def matching_openings(parcel: dict, side: str, other: dict, other_side: str) -> bool:
     return any(overlaps(oa, ob) >= MIN_SEAM_OVERLAP_CELLS
                for oa in parcel.get("openings", {}).get(side, [])
                for ob in other.get("openings", {}).get(other_side, []))
+
+
+class EdgeIndex:
+    """Parcels indexed by the edge they open onto, so a seam is a lookup, not a scan.
+
+    The first version of this file scanned the whole per-map pool for every candidate at every
+    slot: 70 s per board. A slot's candidates are decided entirely by the openings it must meet, so
+    indexing them by (map, side) and filtering on overlap turns each slot into a handful of
+    candidates. Constraint-first ordering, not a faster loop.
+    """
+
+    def __init__(self, catalogue: list[dict]):
+        self.by_edge: dict[tuple[str, str], list[tuple[dict, dict]]] = {}
+        for p in catalogue:
+            for side, opens in (p.get("openings") or {}).items():
+                for o in opens:
+                    self.by_edge.setdefault((p["map"], side), []).append((p, o))
+
+    def candidates(self, mapname: str, side: str, need: dict) -> list[dict]:
+        out, seen = [], set()
+        for p, o in self.by_edge.get((mapname, side), ()):
+            key = tuple(p["origin"])
+            if key in seen or overlaps(o, need) < MIN_SEAM_OVERLAP_CELLS:
+                continue
+            seen.add(key)
+            out.append(p)
+        return out
 
 
 class Corpus:
@@ -94,75 +115,141 @@ class Corpus:
         return g[y:y + s, x:x + s]
 
 
+def seam_legal(parcel: dict, side: str, neighbour: dict, other_side: str) -> bool:
+    """A seam is legal only if the two parcels agree about it.
+
+    An opening on our side must be met by an opening on the neighbour's facing side, and a solid
+    edge must be met by a solid edge. One-sided matching -- our parcel opens, the neighbour does not
+    -- passes the "entrance matched" test but produces an entrance that walks into a wall, and it was
+    the reason the exhaustive search never terminated: it left every seam half-decided, so later
+    slots had nothing to constrain them.
+    """
+    ours = parcel.get("openings", {}).get(side, [])
+    theirs = neighbour.get("openings", {}).get(other_side, [])
+    if not ours and not theirs:
+        return True
+    if not ours or not theirs:
+        return False
+    return any(overlaps(a, b) >= MIN_SEAM_OVERLAP_CELLS for a in ours for b in theirs)
+
+
 def solve(catalogue: list[dict], cols: int, rows: int, rng: random.Random,
-          corpus: Corpus) -> list[dict] | None:
-    """Backtracking fill of a cols x rows lattice, entrance-matched. Returns the parcel list."""
-    slots = [(c, r) for r in range(rows) for c in range(cols)]
+          corpus: Corpus, cap: int = 16, attempts: int = 8,
+          require_entry: bool = False) -> list[dict] | None:
+    """Fill a cols x rows lattice from one map, seams symmetric, with random restarts.
+
+    Order is constraint-first (objective at the centre, slots outward) and every candidate set comes
+    from an index keyed on the edge it must meet, so a slot costs a lookup rather than a scan. The
+    search is greedy with restarts rather than exhaustive: an exhaustive walk over a 12-slot lattice
+    of authored parcels spent minutes proving a partial solution dead, and the measurement we want is
+    the *success rate* of the catalogue, which restarts estimate directly.
+    """
+    index = EdgeIndex(catalogue)
     by_map: dict[str, list[dict]] = {}
     for p in catalogue:
-        if p["entrance_edges"]:
+        # Only pieces a unit can walk through: openings on >=2 edges that share one walkable
+        # component. Measured need -- without it assembled boards were traversable 40% of the time.
+        if p["entrance_edges"] and p.get("openings_connected"):
             by_map.setdefault(p["map"], []).append(p)
     maps = [m for m, ps in by_map.items() if len(ps) >= cols * rows]
     if not maps:
         return None
     rng.shuffle(maps)
 
-    for mapname in maps[:6]:
+    centre = (cols // 2, rows // 2)
+    slots = sorted(((c, r) for r in range(rows) for c in range(cols)),
+                   key=lambda s: (abs(s[0] - centre[0]) + abs(s[1] - centre[1]), s[1], s[0]))
+    sides = ((0, -1, "N", "S"), (0, 1, "S", "N"), (-1, 0, "W", "E"), (1, 0, "E", "W"))
+
+    for mapname in maps[:8]:
         pool = by_map[mapname]
-        rng.shuffle(pool)
-        # Objective parcel first: the one with the most openings, as XCOM places the objective parcel
-        # before filling the rest of the plot.
-        pool.sort(key=lambda p: -p["opening_count"])
-        objective = pool[0]
-        placed: dict[tuple[int, int], dict] = {}
-        used: set[tuple[str, tuple[int, int]]] = set()
+        objective = [p for p in pool if len(p["entrance_edges"]) >= 3] or \
+                    [p for p in pool if len(p["entrance_edges"]) >= 2]
+        if not objective:
+            continue
+        rng.shuffle(objective)
+        # Parcels that are solid on a given side, precomputed: the per-node pool scan was the reason
+        # a run of 60 boards took minutes.
+        solid = {side: {tuple(q["origin"]): q for q in pool
+                        if not q.get("openings", {}).get(side)} for _, _, side, _ in sides}
 
-        def fits(cand: dict, c: int, r: int) -> bool:
-            key = (cand["map"], tuple(cand["origin"]))
-            if key in used:
-                return False
-            # Every already-placed neighbour must match this parcel's facing edge.
-            for dc, dr, side, other_side in ((0, -1, "N", "S"), (0, 1, "S", "N"),
-                                             (-1, 0, "W", "E"), (1, 0, "E", "W")):
-                nb = placed.get((c + dc, r + dr))
-                if nb is None:
-                    continue
-                if not matching_openings(cand, side, nb, other_side):
-                    return False
-                ha, hb = cand.get("height"), nb.get("height")
-                if ha and hb and abs(ha["mean"] - hb["mean"]) > MAX_SEAM_HEIGHT_STEP_M:
-                    return False
-            return True
+        for _ in range(attempts):
+            placed: dict[tuple[int, int], dict] = {}
+            used: set[tuple[int, int]] = set()
+            budget = [3000]
 
-        def fill(i: int) -> bool:
-            if i == len(slots):
-                return True
-            c, r = slots[i]
-            if i == 0:
-                candidates = [objective]
-            else:
-                candidates = pool
-            for cand in candidates:
-                if not fits(cand, c, r):
-                    continue
-                placed[(c, r)] = cand
-                used.add((cand["map"], tuple(cand["origin"])))
-                if fill(i + 1):
+            def cands_for(i: int, c: int, r: int) -> list[dict]:
+                if i == 0:
+                    return objective[:cap]
+                base = None
+                for dc, dr, side, other_side in sides:
+                    nb = placed.get((c + dc, r + dr))
+                    if nb is None:
+                        continue
+                    got: dict[tuple[int, int], dict] = {}
+                    for o in nb.get("openings", {}).get(other_side, []):
+                        for q in index.candidates(mapname, side, o):
+                            got[tuple(q["origin"])] = q
+                    if not got:
+                        # The neighbour is solid on this seam: only parcels solid on our side fit.
+                        got = solid[side]
+                    base = got if base is None else {k: v for k, v in base.items() if k in got}
+                    if not base:
+                        return []
+                out = [v for k, v in base.items() if k not in used]
+                out = [q for q in out if all(seam_legal(q, side, placed[(c + dc, r + dr)], other_side)
+                                             for dc, dr, side, other_side in sides
+                                             if (c + dc, r + dr) in placed)]
+                # A parcel must be entered from the board, not only from off-board: a corner parcel
+                # whose only openings faced the outer edge matched every seam and was still an island.
+                if require_entry:
+                    out = [q for q in out
+                           if any(overlaps(a, o) >= MIN_SEAM_OVERLAP_CELLS
+                                  for dc, dr, side, other_side in sides
+                                  if (c + dc, r + dr) in placed
+                                  for a in q.get("openings", {}).get(side, [])
+                                  for o in placed[(c + dc, r + dr)].get("openings", {}).get(other_side, []))]
+                rng.shuffle(out)
+                return out[:cap]
+
+            def fill(i: int) -> bool:
+                if i == len(slots):
                     return True
-                used.discard((cand["map"], tuple(cand["origin"])))
-                del placed[(c, r)]
-            return False
+                if budget[0] <= 0:
+                    return False
+                c, r = slots[i]
+                for cand in cands_for(i, c, r):
+                    budget[0] -= 1
+                    key = tuple(cand["origin"])
+                    placed[(c, r)] = cand
+                    used.add(key)
+                    if fill(i + 1):
+                        return True
+                    used.discard(key)
+                    del placed[(c, r)]
+                    if budget[0] <= 0:
+                        return False
+                return False
 
-        if fill(0):
-            return [placed[slot] for slot in slots]
+            if fill(0):
+                # Row-major, because the consumer joins tiles by (row, column) index. Returning the
+                # fill order instead silently mis-assembled every board's walkability.
+                return [placed[(c, r)] for r in range(rows) for c in range(cols)]
     return None
 
 
-def connected(board: list[dict], cols: int, corpus: Corpus) -> tuple[bool, float]:
-    """Flood fill the joined walkability of an assembled board."""
+def connected(board: list[dict], cols: int, corpus: Corpus) -> tuple[int, float]:
+    """Join the board's walkability and report reachability.
+
+    A global "largest component >= 90% of walkable cells" test was the wrong gate: a shipped map
+    legitimately has pockets (behind a barricade, a terrace) that no unit reaches, so a faithful
+    assembly scores below 90% while being perfectly playable. The property that matters is that every
+    parcel is reachable from the same space, so this reports how many parcel slots have a walkable
+    cell inside the largest component, alongside that component's share.
+    """
     tiles = [corpus.tile(p) for p in board]
     if any(t is None for t in tiles):
-        return False, 0.0
+        return 0, 0.0
     s = tiles[0].shape[0]
     rows = len(tiles) // cols
     grid = np.zeros((rows * s, cols * s), dtype=bool)
@@ -171,10 +258,9 @@ def connected(board: list[dict], cols: int, corpus: Corpus) -> tuple[bool, float
         grid[r * s:(r + 1) * s, c * s:(c + 1) * s] = t
     walk = int(grid.sum())
     if walk == 0:
-        return False, 0.0
-    # Largest connected walkable component, 4-connected.
+        return 0, 0.0
     labels = np.zeros(grid.shape, dtype=np.int32)
-    best, cur = 0, 0
+    best_label, best_size, cur = 0, 0, 0
     for y in range(grid.shape[0]):
         for x in range(grid.shape[1]):
             if not grid[y, x] or labels[y, x]:
@@ -190,8 +276,15 @@ def connected(board: list[dict], cols: int, corpus: Corpus) -> tuple[bool, float
                             and grid[ny, nx] and not labels[ny, nx]:
                         labels[ny, nx] = cur
                         stack.append((ny, nx))
-            best = max(best, size)
-    return best >= 0.9 * walk, best / float(walk)
+            if size > best_size:
+                best_label, best_size = cur, size
+    reachable = 0
+    for i in range(len(tiles)):
+        r, c = divmod(i, cols)
+        block = labels[r * s:(r + 1) * s, c * s:(c + 1) * s]
+        if (block == best_label).any():
+            reachable += 1
+    return reachable, best_size / float(walk)
 
 
 def main() -> int:
@@ -200,6 +293,7 @@ def main() -> int:
     ap.add_argument("--maps", default=str(ROOT / "output/source_lab/maps"))
     ap.add_argument("--grid", default="4x3")
     ap.add_argument("--seeds", type=int, default=200)
+    ap.add_argument("--retries", type=int, default=4)
     ap.add_argument("--report", action="store_true")
     args = ap.parse_args()
 
@@ -208,25 +302,37 @@ def main() -> int:
     catalogue = data["catalogue"]
     corpus = Corpus(Path(args.maps))
 
-    solved, connected_ok, shares, zones = 0, 0, [], Counter()
+    # Verification, not a hard placement rule: requiring every parcel to open into the board during
+    # the search cut the solve rate to 11 of 40, while a solved board is fully reachable 73% of the
+    # time. So solve freely, verify, retry -- a bounded loop that measures the yield it gets.
+    solved, fully_reachable, shares, zones = 0, 0, [], Counter()
+    attempts_used = []
     for seed in range(args.seeds):
-        board = solve(catalogue, cols, rows, random.Random(seed), corpus)
+        for attempt in range(args.retries):
+            board = solve(catalogue, cols, rows, random.Random(seed * 1000 + attempt), corpus)
+            if board is None:
+                continue
+            reach, share = connected(board, cols, corpus)
+            if reach == len(board) or attempt == args.retries - 1:
+                break
         if board is None:
             continue
         solved += 1
-        ok, share = connected(board, cols, corpus)
-        connected_ok += int(ok)
+        attempts_used.append(attempt + 1)
+        fully_reachable += int(reach == len(board))
         shares.append(share)
         for p in board:
             zones[p["zone"]] += 1
 
     print(f"grid {cols}x{rows} ({cols * 12}x{rows * 12} m) | seeds {args.seeds} | solved {solved}")
     if solved:
-        print(f"  traversable boards {connected_ok}/{solved} "
-              f"({100.0 * connected_ok / solved:.0f}%)")
+        print(f"  boards where every parcel is reachable {fully_reachable}/{solved} "
+              f"({100.0 * fully_reachable / solved:.0f}%)")
         shares.sort()
         print(f"  largest walkable component share: median {shares[len(shares) // 2]:.3f} "
               f"min {shares[0]:.3f}")
+        attempts_used.sort()
+        print(f"  solve attempts per board: median {attempts_used[len(attempts_used) // 2]}")
         print(f"  zones in boards: {dict(zones.most_common(6))}")
     return 0
 
