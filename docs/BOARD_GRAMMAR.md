@@ -73,6 +73,21 @@ pieces with mandatory and optional slots, not a scatter.
 - **Art is DoW2, at 1:1.** No stretching, no repainting: a shipped prop's own diffuse, normal and
   specular, a shipped wall piece's own dimensions.
 
+## Known gaps in the frame (measured from the live demo, 2026-11-22)
+
+Looking at the demo the way a player does — home page, TRY OFFLINE DEMO — the board had three defects
+that had nothing to do with texture quality:
+
+- **the ground ended at a hard rectangular edge with black beyond it**, so the board read as a slab
+  floating in a void. The shipped map continues past the board's window and the ground shader maps world
+  position into that map, so a larger plane under the board now shows more of the same ground.
+- **the ground received no shadows at all**: the mesh set `receiveShadow` but the custom shader had no
+  shadow code, so props and walls cast nothing onto the floor. Sampling three's shadow map from the
+  custom shader was tried and **reverted** — it read as "shadowed" across the whole board and blackened
+  the floor while the props stayed lit. Received shadows on the ground remain a known gap.
+- **the frame had no buildings in it**: the composition put the rooms at the board's edge, so the
+  player's view was open ground with a few cover props. Composition, not art.
+
 ## Remaining work, in order
 
 1. **Walkable roofs + windows + a second storey.** The three structural things that still make our
