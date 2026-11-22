@@ -73,6 +73,48 @@ pieces with mandatory and optional slots, not a scatter.
 - **Art is DoW2, at 1:1.** No stretching, no repainting: a shipped prop's own diffuse, normal and
   specular, a shipped wall piece's own dimensions.
 
+## How XCOM actually builds a map (read from the shipped source, 2026-11-22)
+
+XCOM 2 does not scatter props on a terrain. It assembles a *plot* from a catalogue of **hand-authored
+parcels that are named real places**, and it connects them by matching their entrances.
+
+Measured from `XComGame/Config/DefaultParcels.ini` and
+`Development/SrcOrig/XComGame/Classes/XComParcelManager.uc`:
+
+| Property | XCOM's value |
+|---|---|
+| authored parcels | **172** (55 Small, 81 Medium, 36 Large) |
+| parcel sizes | Small 14x14, Medium 14x28, Large 28x28 (cells) |
+| parcels declaring entrances | **125** — `bHasEntranceN1/N2/E1/E2/S1/S2/W1/W2` |
+| entrance lengths | 6 discrete lengths (`EEntranceLengthType_1..6`), plus "closed" entrances |
+| parcel identity | a **place**: `sm_ArmsDealer_01`, `sm_ChowHouse_01`, `md_FuelDepot_01`, `sm_RadarArray_01`, `md_RecruitmentCenter_01`, `sm_TradingPost_01` |
+| land-use zoning | Retail 26, Shanty 18, Neighborhood 18, Commercial 18, Wilderness 16, Civic 13, Developed 11, Closed 9, Open 7, TrainStation 2 |
+| plot types | Wilderness 43, CityCenter 38, SmallTown 36, Shanty 34, Slums 18, Facility 11, Rooftops 9 |
+| assembly | an **exhaustive backtracking solver** (`GenerateParcelLayout` / `ChooseNonObjectiveParcels`) that places parcels whose size, facing and entrances match, with no duplicate maps, objective parcel chosen first |
+| cover | a separate authored layer: `XComPlotCoverParcel` (PCP) with its own type, turn type and required layers |
+| buildings | `XComBuildingVolume` with **Floors** (multi-storey), per-floor `XComFloorVolume`, and a scanline/cutaway that reveals the interior when a unit is inside |
+| layers | parcels declare `arrAvailableLayers`; the map activates layers, so one parcel yields several variants |
+
+**The flow comes from entrance matching.** A parcel's streets connect to its neighbours' streets because
+the solver only accepts a placement whose entrance faces the neighbour's matching entrance, at the
+matching length, with the parcel's street front facing the plot. That is why XCOM's maps read as a real
+location: the street network is *solved*, not painted.
+
+**The "real place" read comes from the parcels being places.** An arms dealer, a chow house, a fuel
+depot, a radar array, a recruitment centre — each is authored as that thing, with its own dressing,
+signage and roof kit, then re-used.
+
+## Where we are against that
+
+| XCOM | Ours |
+|---|---|
+| 172 authored parcels with names, zones, entrances | **0 parcels** — lanes + plots + a scattered prop palette |
+| entrances solved so streets connect | doors carved per building, never matched to a neighbour |
+| land-use zoning (Retail, Civic, Wilderness) | one zone per board (a biome) |
+| multi-storey volumes with floors and cutaway | one extrusion per region, flat lid, no floors |
+| separate authored cover parcels | cover derived from prop heights |
+| 1.5 m cell, 1.0 m floor | 2.0 m cell, 0.35 m floor |
+
 ## Known gaps in the frame (measured from the live demo, 2026-11-22)
 
 Looking at the demo the way a player does — home page, TRY OFFLINE DEMO — the board had three defects
