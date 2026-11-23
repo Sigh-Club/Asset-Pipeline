@@ -33,6 +33,7 @@ Authorities: `Imperium-of-Ash/docs/game-design/FACTION_IDENTITY.md` (art rules),
 | `tools/pbr/derive_maps.py` | sheet → seamless PBR set | albedo → normal/roughness/metallic |
 | `tools/pbr/build_blender_library.py` | material `.blend` | box-projected PBR materials |
 | `tools/glb_contract.py` | acceptance gate | exit code blocks a bad asset |
+| `tools/review/gemini_ask.py` | vision review (headless Chrome over CDP) | sends a render to Gemini and returns a text verdict; the only transport that attaches an image reliably since the Gemini 3 build (`docs/AGENTIC_3D_RESEARCH.md` §10) |
 | `tools/gpu_policy.py` | workstation budget | VRAM/RAM policy, job parameter matrix |
 | `tools/blender_run.sh` | safe Blender launcher | waits for VRAM, caps threads, sets profile |
 

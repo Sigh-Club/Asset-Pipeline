@@ -77,50 +77,72 @@ def port_is_up(port: int) -> bool:
         return False
 
 
-def seed_profile(dest: pathlib.Path) -> str:
-    """Copy the auth-bearing parts of the logged-in profile (not its 7 GB cache).
+def chrome_profiles() -> list[pathlib.Path]:
+    """Every Chrome-family profile dir on this box that has a cookie store.
+
+    These are just folders Chrome uses for its state; the names mean nothing to
+    the user. Which one holds the live Gemini session is decided by trying them,
+    not by guessing from a name or a modification time.
+    """
+    base = HOME / '.config'
+    out = []
+    for pattern in ('google-chrome*', '*-chrome', 'chromium*', 'BraveSoftware/*'):
+        for d in base.glob(pattern):
+            if (d / 'Default' / 'Cookies').exists():
+                out.append(d)
+    return out
+
+
+def seed_profile(dest: pathlib.Path, src: pathlib.Path) -> str:
+    """Copy the auth-bearing parts of a profile (not its multi-GB cache).
 
     Cookies alone are not enough for a modern web app; localStorage and the
     profile's own identity are what keep the session valid.
     """
-    if (dest / 'Default' / 'Cookies').exists():
-        return 'existing'
-    src = next((p for p in SEED_PROFILES if (p / 'Default' / 'Cookies').exists()), None)
-    if src is None:
-        return 'no seed profile found — log in once in the window that opens'
+    if dest.exists():
+        shutil.rmtree(dest, ignore_errors=True)
     dest.mkdir(parents=True, exist_ok=True)
     items = ['Local State', 'First Run', 'Default/Preferences', 'Default/Secure Preferences',
              'Default/Cookies', 'Default/Local Storage', 'Default/Session Storage',
-             'Default/Web Data', 'Default/Login Data']
+             'Default/Web Data']
     for rel in items:
-        s, d = src / rel, dest / rel
-        if not s.exists():
+        sp, dp = src / rel, dest / rel
+        if not sp.exists():
             continue
-        d.parent.mkdir(parents=True, exist_ok=True)
-        if s.is_dir():
-            shutil.copytree(s, d, dirs_exist_ok=True)
+        dp.parent.mkdir(parents=True, exist_ok=True)
+        if sp.is_dir():
+            shutil.copytree(sp, dp, dirs_exist_ok=True)
         else:
-            shutil.copy2(s, d)
-    return f'seeded from {src.name}'
+            shutil.copy2(sp, dp)
+    return src.name
 
 
-def ensure_chrome(port: int, profile: pathlib.Path, headed: bool) -> tuple[bool, str]:
-    if port_is_up(port):
-        return True, 'reused running browser'
-    note = seed_profile(profile)
+def launch_chrome(port: int, profile: pathlib.Path, headed: bool):
     args = [chrome_bin(), f'--remote-debugging-port={port}',
             f'--user-data-dir={profile}', '--no-first-run', '--no-default-browser-check',
-            '--disable-blink-features=AutomationControlled', '--window-size=1400,1000']
+            '--window-size=1400,1000']
     if not headed:
         args.append('--headless=new')
     args.append('about:blank')
-    subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                     start_new_session=True)
+    proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            start_new_session=True)
     for _ in range(60):
         if port_is_up(port):
-            return True, note
+            return proc
         time.sleep(0.5)
-    return False, f'{note}; CDP port {port} never opened'
+    return proc
+
+
+def is_logged_in(page) -> bool:
+    """Logged in = no 'Sign in' call to action on the page."""
+    try:
+        if page.get_by_role('button', name='Sign in').count():
+            return False
+        if page.get_by_text('Sign in', exact=True).count() and not page.locator(COMPOSER).count():
+            return False
+        return page.locator(COMPOSER).count() > 0
+    except Exception:
+        return False
 
 
 # ------------------------------------------------------------------ page ---
@@ -181,21 +203,69 @@ def start_new_chat(page, state: dict) -> bool:
 
 
 def attach_images(page, images: list[pathlib.Path], state: dict, settle: float) -> bool:
-    """Attach through the composer's "+" -> "Upload files" file chooser."""
+    """Attach through the composer's "+" -> "Upload files" file chooser.
+
+    Diagnostics are recorded in `state` on failure: a silent miss here means the
+    prompt is answered without its image, which is worse than an error.
+    """
     files = [str(p.resolve()) for p in images]
+
+    # 1. open the "+" menu
+    plus = page.get_by_role('button', name='Upload and tools')
+    if not plus.count():
+        plus = page.locator('[aria-label="Upload and tools"], [aria-label*="Upload" i]')
+    if not plus.count():
+        state['upload_error'] = 'no "+" (Upload and tools) control on the composer'
+        return False
+    for how in ('click', 'force', 'js'):
+        try:
+            if how == 'click':
+                plus.first.click(timeout=8000)
+            elif how == 'force':
+                plus.first.click(force=True, timeout=8000)
+            else:
+                plus.first.evaluate('e => e.click()')
+            break
+        except Exception as e:
+            state['plus_error'] = f'{how}: {type(e).__name__}'
+    # 2. wait for the menu and find "Upload files" by its own text
+    item = None
+    deadline = time.time() + 15
+    seen: list[str] = []
+    while time.time() < deadline and item is None:
+        for sel in ('[role="menuitem"]', '.cdk-overlay-container button', '[role="menu"] button'):
+            loc = page.locator(sel)
+            n = loc.count()
+            for i in range(n):
+                el = loc.nth(i)
+                try:
+                    label = (el.get_attribute('aria-label') or el.inner_text() or '').strip()
+                except Exception:
+                    continue
+                if label and label not in seen:
+                    seen.append(label[:48])
+                if re.match(r'upload files', label, re.I):
+                    item = el
+                    break
+            if item is not None:
+                break
+        if item is None:
+            time.sleep(0.4)
+    state['menu_debug'] = seen[:12]
+    if item is None:
+        state['upload_error'] = f'"Upload files" not in the menu (saw: {seen[:8]})'
+        return False
+
+    # 3. the item opens a native file chooser
     try:
-        # the composer's "+" is aria-label="Upload and tools" (verified live
-        # 2026-11-23); Playwright matches a string name as a substring but a
-        # regex name as a full match, which is why regexes never matched
-        plus = page.get_by_role('button', name='Upload and tools')
-        if not plus.count():
-            plus = page.locator('[aria-label="Upload and tools"], [aria-label*="Upload" i]')
         with page.expect_file_chooser(timeout=30000) as fc:
-            plus.first.click(timeout=15000)
-            page.get_by_role('menuitem', name='Upload files').first.click(timeout=20000)
+            try:
+                item.click(timeout=8000)
+            except Exception:
+                item.click(force=True, timeout=8000)
         fc.value.set_files(files)
     except Exception as e:
-        state['upload_error'] = f'{type(e).__name__}: {str(e)[:200]}'
+        state['upload_error'] = f'file chooser: {type(e).__name__}: {str(e)[:160]}'
         return False
 
     deadline = time.time() + 90
@@ -208,7 +278,7 @@ def attach_images(page, images: list[pathlib.Path], state: dict, settle: float) 
         except Exception:
             pass
         time.sleep(0.5)
-    state['upload_error'] = 'file chooser accepted the file but no thumbnail appeared'
+    state['upload_error'] = 'file chosen but no thumbnail appeared'
     return False
 
 
@@ -248,8 +318,10 @@ def main() -> int:
     p.add_argument('--image', action='append', default=[])
     p.add_argument('--check', action='store_true', help='report browser/login state and exit')
     p.add_argument('--port', type=int, default=9222)
-    p.add_argument('--profile', default=str(DEFAULT_PROFILE))
-    p.add_argument('--headless', action='store_true', help='new headless mode (default: headed)')
+    p.add_argument('--profile', help='Chrome profile dir (default: gemini-chrome-<port>, '
+                                     'one per port so instances never fight over the lock)')
+    p.add_argument('--headed', action='store_true',
+                   help='show a browser window (default: headless, no window)')
     p.add_argument('--keep-open', action='store_true', help='leave the tab open')
     p.add_argument('--timeout', type=int, default=90)
     p.add_argument('--max-wait', type=int, default=300)
@@ -261,26 +333,54 @@ def main() -> int:
     args = p.parse_args()
 
     out: dict = {'ok': False, 'text': '', 'images': [], 'elapsed_s': 0.0}
-    profile = pathlib.Path(args.profile).expanduser()
-    ok, note = ensure_chrome(args.port, profile, headed=not args.headless)
-    out['browser'] = note
-    if not ok:
-        print(json.dumps(out | {'error': note}, ensure_ascii=False))
+    from playwright.sync_api import sync_playwright
+    profile_base = (pathlib.Path(args.profile).expanduser() if args.profile
+                    else DEFAULT_PROFILE.with_name(f'{DEFAULT_PROFILE.name}-{args.port}'))
+    candidates = ([profile_base] if args.profile else chrome_profiles())
+    if not candidates:
+        print(json.dumps(out | {'error': 'no Chrome profile found'}, ensure_ascii=False))
         return 1
 
-    from playwright.sync_api import sync_playwright
-
     t0 = time.time()
+    tried: list[str] = []
     with sync_playwright() as pw:
-        browser = pw.chromium.connect_over_cdp(f'http://127.0.0.1:{args.port}')
-        ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-        page = ctx.new_page()
+        browser = page = None
         state: dict = {}
-        try:
-            page.goto(APP_URL, wait_until='domcontentloaded', timeout=args.timeout * 1000)
-            page.wait_for_selector(COMPOSER, timeout=args.timeout * 1000)
-            state['logged_in'] = 'accounts.google.com' not in page.url
+        for cand in candidates:
+            name = seed_profile(profile_base, cand)
+            proc = launch_chrome(args.port, profile_base, headed=args.headed)
+            if not port_is_up(args.port):
+                tried.append(f'{name}: no CDP port')
+                proc.terminate()
+                continue
+            browser = pw.chromium.connect_over_cdp(f'http://127.0.0.1:{args.port}')
+            ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+            page = ctx.new_page()
+            try:
+                page.goto(APP_URL, wait_until='domcontentloaded', timeout=args.timeout * 1000)
+                page.wait_for_selector(COMPOSER, timeout=20000)
+            except Exception as e:
+                tried.append(f'{name}: {type(e).__name__}')
             dismiss_overlays(page)
+            if is_logged_in(page):
+                out['browser'] = f'profile {name}'
+                state['logged_in'] = True
+                break
+            tried.append(f'{name}: not logged in')
+            try:
+                page.close()
+                browser.close()
+            except Exception:
+                pass
+            proc.terminate()
+            time.sleep(1.0)
+            browser = page = None
+        if page is None:
+            print(json.dumps(out | {'error': f'no logged-in Chrome profile: {tried}'},
+                             ensure_ascii=False))
+            return 1
+        try:
+            state['logged_in'] = True
 
             if args.check:
                 out.update({'ok': bool(state['logged_in']), 'logged_in': state['logged_in'],
@@ -326,6 +426,10 @@ def main() -> int:
                 'attached': state.get('attached', False),
                 'images': args.image,
             })
+            if state.get('menu_debug'):
+                out['menu_debug'] = state['menu_debug']
+            if state.get('plus_error'):
+                out['plus_error'] = state['plus_error']
             if state.get('error'):
                 out['error'] = state['error']
             elif state.get('upload_error'):

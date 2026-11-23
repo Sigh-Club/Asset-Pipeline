@@ -10,6 +10,9 @@ grammar decides where walls, floors, cover, doors, roofs and landing zones are. 
 shipped wall kit, the shipped props, the shipped ground layers, the imported units — placed at 1:1, never
 stretched.
 
+**Evidence base:** every number in this document is cited to the shipped source in
+`Imperium-of-Ash/docs/game-design/REFERENCE_SOURCE_REVIEW.md`. Read that before changing a rule here.
+
 ## Vocabulary, and where the source names are allowed
 
 Three words are easy to confuse and the confusion has cost us work, so they are defined here.

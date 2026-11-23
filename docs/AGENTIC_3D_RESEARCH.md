@@ -250,8 +250,25 @@ nothing) or unverifiable (T6 without a judge cannot tell "clean parts" from "sha
 
 ---
 
-## 9. Sources
+## 8b. Addendum 2026-11-23 — the transport for the T1 judge, measured
 
+T1 needs a vision model to look at a render. The route to Gemini from this machine is not the one the
+docs assumed, and the difference cost most of a session, so it is recorded here.
+
+| transport | state | evidence |
+|---|---|---|
+| `gemini_webapi` via `gemini-img` | **fails on any turn carrying an image** | `Unknown API error code: 1100` on lib 2.0.0 and 2.1.1, every Gemini 3 model; `list_models()` returns one model = guest mode (upstream issue #365); text-only turns answer correctly |
+| headless browser + injected cookies | **fails** | Google serves `google.com/sorry/index`; the app keys the session on localStorage and a fingerprint, not cookies alone |
+| **real Chrome profile seeded + CDP, headless** | **works** | `tools/review/gemini_ask.py`: `attached: true`, answer captured in 41–85 s, no window, no interstitial |
+
+Cookies were never the fault: the pair returned 200 from `gemini.google.com/app` and the upload
+endpoint returned 200 in 0.8 s throughout. The lesson for this repo is the same one M1–M5 teach about
+assets: **the failure was in the transport's model of the session, not in the credential** — which is
+why re-supplying the credential did nothing.
+
+This does not change the research findings in §3. It supplies the one component T1 was missing.
+
+## 9. Sources
 Primary
 - Anthropic, *Claude for Creative Work*, 28 Apr 2026 (updated 1 May 2026) — https://www.anthropic.com/news/claude-for-creative-work
 - Blender Lab, `blender_mcp` — https://projects.blender.org/lab/blender_mcp and https://www.blender.org/lab/mcp-server/ (both behind a Cloudflare challenge; tool list and release history read via the StraySpark mirror below)

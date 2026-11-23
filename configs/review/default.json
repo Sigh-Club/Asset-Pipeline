@@ -1,0 +1,14 @@
+{
+  "comment": "Thresholds for tools/review/vlm_critic.py. A feature below its floor, or a required boolean that is false, blocks the pass. Floors are deliberately at the 'same design, minor differences' band: the gate exists to catch a wrong shape or a detached part, not to demand pixel parity with concept art.",
+  "require": [
+    "matches_reference_identity",
+    "single_connected_object"
+  ],
+  "scores": {
+    "contrast_separation": 5,
+    "detail_level": 5,
+    "material_reads": 5,
+    "proportion_match": 6,
+    "silhouette_match": 6
+  }
+}

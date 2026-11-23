@@ -595,21 +595,78 @@ Full state, pass ledger, blockers: `HANDOFF_IMG23D.md` (repo root). Multiview
 capture prompts: `docs/IMG23D.md`. Never ship a mesh whose verify <85 or
 whose sand pass was skipped.
 
-## Gemini web image generation — agent-driven (gemini-img, LIVE 2026-10-23 pending first cookie auth)
+## Gemini web access — the transport that works, and the one that does not (verified 2026-11-23)
 
-Consumer Gemini Pro (Nano Banana) driven programmatically — no API key, no AI Studio.
-Wrapper: `~/.pi/agent/bin/gemini-img` (venv `~/.venvs/gemini`, pkg `gemini_webapi`,
-reverse-engineered web client, 3.6★ repo HanaokaYuzu/Gemini-API).
+Consumer Gemini Pro (Nano Banana), no API key, no AI Studio. **Two transports exist. Only one is
+reliable right now, and it is not the old one.**
 
-- **One-time auth (owner)**: fresh PRIVATE browser window → gemini.google.com → F12 →
-  Network → any request → copy `__Secure-1PSID` + `__Secure-1PSIDTS` → then EITHER
-  `gemini-img --set-cookie <PSID> <PSIDTS>` OR fill `~/.config/gemini/cookies.env`
-  (template beside it). Close the private window after. The lib auto-refreshes the TS
-  cookie while the process runs.
-- **Generate**: `gemini-img "<prompt from IoA Imperium-of-Ash
-  docs/game-design/UI_ART_PROMPTS.md>" --out ~/Downloads/gemini --name <asset>` →
-  JSON `{text, images[], out}` on stdout; images land on disk for agent review
-  (agent reads the PNGs and iterates).
+| transport | tool | state |
+|---|---|---|
+| **Real Chrome over CDP, headless** | `tools/review/gemini_ask.py` | **WORKS** — headless=new Chrome on a seeded profile, image attached, answer captured in 41–85 s. No window, no bot interstitial. |
+| `gemini_webapi` (reverse-engineered web client) | `~/.pi/agent/bin/gemini-img` | **BROKEN for image turns** since the Gemini 3 build — see below. Text-only turns still work. |
+
+### Why `gemini-img` broke (measured, not guessed)
+
+- Cookies are **valid**: the pair returns 200 from `gemini.google.com/app`, and the file-upload
+  endpoint returns 200 in 0.8 s.
+- Text-only prompts **answer correctly**; any prompt **with an image** fails with
+  `Unknown API error code: 1100`.
+- `client.list_models()` returns **one** model. Per the library's own issue #365
+  (HanaokaYuzu/Gemini-API, maintainer reply 2026-10-14): a single-model result means the client is
+  in **guest mode** — *"The reason you only see gemini-flash-lite is because of a cookie error, so
+  you're currently in guest mode."* Guest mode can chat but cannot attach files.
+- Re-copying cookies does **not** fix it. The same issue's reporter: *"switched browsers and
+  grabbing new cookies, but it still fails after multiple attempts."*
+- Open issues against the current web build: **#374** (stalls via StreamGenerate since the
+  2026-11-12 build), **#381** (init deadlock). The library is chasing Google's UI.
+
+### Why a headless browser with injected cookies also fails
+
+Google serves `https://www.google.com/sorry/index` (anti-bot), and modern AI web apps key the
+session on **localStorage + fingerprint**, not cookies alone. Injecting a cookie pair into a blank
+profile lands you logged out, or in guest mode, no matter how fresh the cookie is.
+
+### The method that works: seed a real profile, drive it over CDP, headless
+
+`tools/review/gemini_ask.py`:
+
+1. Enumerates every Chrome-family profile on the box (`~/.config/google-chrome*`, `*-chrome`,
+   `chromium*`) and **seeds** a working copy with `Cookies`, `Local Storage`, `Preferences`,
+   `Local State` — not the multi-GB cache.
+2. Launches Chrome with `--headless=new --remote-debugging-port` and attaches with Playwright over
+   CDP. A real browser with a real profile is not flagged.
+3. **Verifies the session** (absence of the "Sign in" call to action), and tries the next profile if
+   it is not logged in. The profile *name* is irrelevant — the live one is found by trying.
+4. Drives the UI as a person would: `New chat` → verify the empty state → composer `+`
+   (`aria-label="Upload and tools"`) → menu item `Upload files` → file chooser → type → send → wait
+   for the answer to stop changing.
+5. Fails loudly if the image did not attach — a prompt answered without its image is worse than an
+   error.
+
+```bash
+# review a render (headless, no window)
+tools/review/gemini_ask.py --headless --prompt "<rubric>" --image output/gen/<unit>/render/x.png
+# is the browser up and logged in?
+tools/review/gemini_ask.py --check
+```
+
+**Selector traps paid for (all cost real time):**
+
+- The composer `+` is `aria-label="Upload and tools"` — **not** "Upload & tools", and there is **no**
+  `input[type=file]` in the DOM.
+- Playwright matches a **string** `name` as a substring but a **regex** `name` as a full match. Every
+  regex selector here silently matched nothing until it was a plain string.
+- A new chat has **no id in the URL**, so a URL change is the wrong success test — the empty state
+  ("Where should we start?") is the only reliable signal.
+- A cookie-consent sheet inside `.cdk-overlay-container` swallows clicks; dismiss it first.
+
+### `gemini-img` — still correct for what it does
+
+`~/.pi/agent/bin/gemini-img` remains the image *generation* wrapper (prompt in, PNGs on disk,
+`--edit` identity chain). Use it for text-only prompts and for generation that does not attach an
+image. When it must attach one, expect error 1100 until the library catches up; route those calls
+through `tools/review/gemini_ask.py` instead.
+
 - **Edit chain (identity preservation — the entire game)**: `gemini-img "same object
   rotated 90 degrees, keep everything identical except ..." --edit <winner.png>`.
   The wrapper prefixes "Using the attached image:" automatically. NEVER reroll a
@@ -623,8 +680,6 @@ reverse-engineered web client, 3.6★ repo HanaokaYuzu/Gemini-API).
 NEED→SHIPPED, approval law, quota burn log) and the art contract
 `Imperium-of-Ash/docs/game-design/UI_ART_PROMPTS.md` + `ASSET_DIRECTION.md §8`
 (faction hex/silhouette law). Never generate an asset the ledger does not list.
-
-**Status: CONFIRMED LIVE 2026-10-23.** Auth installed (`~/.config/gemini/cookies.env`, PSID+PSIDTS pair; PSIDTS is REQUIRED — PSID alone authenticates-unverified). Proven end-to-end: text turn (`AUTH OK`) and a 2048px portrait generation from the IoA UI art contract saved via the wrapper (`~/Downloads/ioa-ui/line_infantry/line_infantry_v1_0.png`). Iterate via `--edit <winner>`; the wrapper's auto 'Using the attached image:' prefix matches the edit-chain discipline above. If auth expires: re-copy BOTH cookies from a fresh logged-in window (Chromium TS cookies rot fast; Firefox alternative per lib README).
 
 
 ## Style profiles (2026-11-09)

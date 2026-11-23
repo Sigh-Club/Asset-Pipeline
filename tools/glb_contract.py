@@ -33,6 +33,11 @@ LIMITS = {
     # so the floor sits below them while still rejecting a placeholder.
     "unit": {"max_tris": 25000, "min_tris": 700, "soft_tris": 4000, "max_mb": 10.0, "skinned": True,
              "need_uv": True, "need_texture": True, "need_clips": REQUIRED_CLIPS},
+    # AAA PC hero tier (docs/STYLE_BANDS.md): LOD0 80-120k with baked normal/AO.
+    # The old 25k unit cap is a pixel-tier budget and was silently blocking this band.
+    "aaa_pc": {"max_tris": 120000, "min_tris": 4000, "soft_tris": 100000, "max_mb": 60.0,
+               "skinned": True, "need_uv": True, "need_texture": True,
+               "need_clips": REQUIRED_CLIPS},
     "prop": {"max_tris": 12000, "min_tris": 100, "max_mb": 4.0, "skinned": False,
              "need_uv": True, "need_texture": True, "need_clips": []},
     "tile": {"max_tris": 3000, "min_tris": 4, "max_mb": 1.0, "skinned": False,

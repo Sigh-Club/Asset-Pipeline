@@ -26,30 +26,59 @@
     "readability": "asset distinguishes from its neighbours at final camera distance"
   },
   "profiles": {
-    "pbr_3d": {
-      "label": "AAA-style 3D unit/prop (current path)",
+    "aaa_pc": {
+      "label": "AAA PC hero tier (80-120k LOD0, PBR, baked normal/AO)",
+      "extends": "pbr_3d",
       "representation": "mesh_3d",
+      "notes": "docs/STYLE_BANDS.md \u00a71-4. LOD0 80-120k with a real LOD chain; normal+AO baked from a high-poly source (tools/blender/aaa_bake.py). Do not build this tier by decimating a sculpt into the budget \u2014 bake the detail down instead.",
       "geometry": {
-        "tris_max": 25000,
-        "tris_min": 4000,
+        "tris_max": 120000,
+        "tris_min": 80000,
         "shading": "pbr",
-        "uv": "pbr"
+        "uv": "pbr",
+        "lod_chain": [
+          120000,
+          60000,
+          25000,
+          10000
+        ]
       },
       "texture": {
         "atlas_px": 2048,
         "material_model": "pbr",
         "normal_map": true,
         "ao": true,
-        "emission": true
-      },
+        "emission": true,
+        "texel_density_px_m": 1024
+      }
+    },
+    "hd_sprite": {
+      "label": "High-detail pixel sprite (modern HD pixel, 2x house canvas)",
+      "extends": "palette_sprite",
       "render": {
-        "directions": 1
+        "directions": 8,
+        "size_px": [
+          192,
+          256
+        ]
+      },
+      "pixel": {
+        "palette_id": "rotbile",
+        "dither": "bayer2",
+        "outline": 0.5,
+        "ink_luma": 0.3,
+        "selout": true,
+        "ramps": 5,
+        "subpixel": true,
+        "smear_frames": true
       },
       "gates": [
-        "glb_contract",
-        "seam",
-        "material_flatness",
-        "style_distance"
+        "palette_compliance",
+        "silhouette",
+        "direction_coverage",
+        "timing",
+        "sheet_budget",
+        "readability"
       ]
     },
     "lowpoly_3d": {
@@ -176,63 +205,69 @@
         "timing"
       ]
     },
-    "palette_sprite": {
-      "label": "Pixel sprite, house style (8-direction isometric)",
-      "representation": "sprite_2d",
+    "palette_3d_creature": {
+      "label": "Palette 3D, large creature (4+ m body, coarse texel grid)",
+      "representation": "mesh_3d",
+      "geometry": {
+        "tris_max": 16000,
+        "tris_min": 100,
+        "shading": "flat",
+        "uv": "texel_grid"
+      },
+      "texture": {
+        "atlas_px": 512,
+        "material_model": "palette",
+        "normal_map": false,
+        "ao": false,
+        "emission": true,
+        "texel_world_m": 0.03
+      },
       "render": {
-        "directions": 8,
-        "size_px": [
-          96,
-          128
-        ]
+        "directions": 1
       },
       "pixel": {
-        "palette_id": "rotbile",
+        "palette_id": "grimdark_3d",
         "dither": "bayer4",
-        "outline": 0.62,
-        "ink_luma": 0.22,
-        "selout": true,
-        "ramps": 4,
-        "subpixel": true,
-        "smear_frames": true
+        "outline": 0.0,
+        "selout": true
       },
       "animation": {
         "fps_authored": 12,
         "clips": {
           "idle": {
             "frames": [
-              4,
-              8
+              2,
+              6
             ]
           },
           "walk": {
             "frames": [
-              6,
-              10
+              4,
+              8
             ]
           },
           "run": {
             "frames": [
-              6,
+              4,
               8
             ]
           },
           "aim": {
             "frames": [
-              3,
-              5
+              2,
+              4
             ]
           },
           "fire": {
             "frames": [
-              3,
-              6
+              2,
+              4
             ]
           },
           "reload": {
             "frames": [
-              8,
-              14
+              6,
+              10
             ]
           },
           "hit": {
@@ -249,48 +284,22 @@
           },
           "melee": {
             "frames": [
-              6,
-              10
+              4,
+              8
             ]
           }
         }
       },
       "gates": [
+        "glb_contract",
+        "texel_grid",
         "palette_compliance",
-        "silhouette",
-        "direction_coverage",
-        "timing",
-        "sheet_budget"
-      ]
-    },
-    "hd_sprite": {
-      "label": "High-detail pixel sprite (modern HD pixel, 2x house canvas)",
-      "extends": "palette_sprite",
-      "render": {
-        "directions": 8,
-        "size_px": [
-          192,
-          256
-        ]
-      },
-      "pixel": {
-        "palette_id": "rotbile",
-        "dither": "bayer2",
-        "outline": 0.5,
-        "ink_luma": 0.3,
-        "selout": true,
-        "ramps": 5,
-        "subpixel": true,
-        "smear_frames": true
-      },
-      "gates": [
-        "palette_compliance",
-        "silhouette",
-        "direction_coverage",
-        "timing",
-        "sheet_budget",
-        "readability"
-      ]
+        "readability",
+        "timing"
+      ],
+      "//": "High-detail pixel 3D tier for base-mesh authored units: real human anatomy, body-derived armour shells and a held weapon need 9-14k tris and a 512 atlas at the same 2 cm texel grid. Contract change is measured A/B against palette_3d (see docs/PIXEL_UNIT_PROGRAMME.md).",
+      "notes": "Palette 3D, large creature (4+ m body). The 0.02 m/texel grid contracts a 33 m2 silhouette into more texels than a 512 atlas packs, so the grid is coarser by design; correct scale comes first, texel density follows the silhouette area.",
+      "extends": "palette_3d_hi"
     },
     "palette_3d_hi": {
       "label": "Pixel-textured 3D, high-detail tier (base-mesh units, 512 atlas)",
@@ -475,6 +484,119 @@
       ],
       "extends": "palette_3d"
     },
+    "palette_sprite": {
+      "label": "Pixel sprite, house style (8-direction isometric)",
+      "representation": "sprite_2d",
+      "render": {
+        "directions": 8,
+        "size_px": [
+          96,
+          128
+        ]
+      },
+      "pixel": {
+        "palette_id": "rotbile",
+        "dither": "bayer4",
+        "outline": 0.62,
+        "ink_luma": 0.22,
+        "selout": true,
+        "ramps": 4,
+        "subpixel": true,
+        "smear_frames": true
+      },
+      "animation": {
+        "fps_authored": 12,
+        "clips": {
+          "idle": {
+            "frames": [
+              4,
+              8
+            ]
+          },
+          "walk": {
+            "frames": [
+              6,
+              10
+            ]
+          },
+          "run": {
+            "frames": [
+              6,
+              8
+            ]
+          },
+          "aim": {
+            "frames": [
+              3,
+              5
+            ]
+          },
+          "fire": {
+            "frames": [
+              3,
+              6
+            ]
+          },
+          "reload": {
+            "frames": [
+              8,
+              14
+            ]
+          },
+          "hit": {
+            "frames": [
+              2,
+              4
+            ]
+          },
+          "death": {
+            "frames": [
+              6,
+              12
+            ]
+          },
+          "melee": {
+            "frames": [
+              6,
+              10
+            ]
+          }
+        }
+      },
+      "gates": [
+        "palette_compliance",
+        "silhouette",
+        "direction_coverage",
+        "timing",
+        "sheet_budget"
+      ]
+    },
+    "pbr_3d": {
+      "label": "AAA-style 3D unit/prop (current path)",
+      "representation": "mesh_3d",
+      "geometry": {
+        "tris_max": 25000,
+        "tris_min": 4000,
+        "shading": "pbr",
+        "uv": "pbr"
+      },
+      "texture": {
+        "atlas_px": 2048,
+        "material_model": "pbr",
+        "normal_map": true,
+        "ao": true,
+        "emission": true
+      },
+      "render": {
+        "directions": 1
+      },
+      "gates": [
+        "glb_contract",
+        "seam",
+        "material_flatness",
+        "style_distance"
+      ]
+    },
     "stylised_3d": {
       "label": "Stylised PBR (shipping tier: blended base meshes, PBR-lite materials)",
       "representation": "mesh_3d",
@@ -506,102 +628,6 @@
         "readability"
       ],
       "extends": "lowpoly_3d"
-    },
-    "palette_3d_creature": {
-      "label": "Palette 3D, large creature (4+ m body, coarse texel grid)",
-      "representation": "mesh_3d",
-      "geometry": {
-        "tris_max": 16000,
-        "tris_min": 100,
-        "shading": "flat",
-        "uv": "texel_grid"
-      },
-      "texture": {
-        "atlas_px": 512,
-        "material_model": "palette",
-        "normal_map": false,
-        "ao": false,
-        "emission": true,
-        "texel_world_m": 0.03
-      },
-      "render": {
-        "directions": 1
-      },
-      "pixel": {
-        "palette_id": "grimdark_3d",
-        "dither": "bayer4",
-        "outline": 0.0,
-        "selout": true
-      },
-      "animation": {
-        "fps_authored": 12,
-        "clips": {
-          "idle": {
-            "frames": [
-              2,
-              6
-            ]
-          },
-          "walk": {
-            "frames": [
-              4,
-              8
-            ]
-          },
-          "run": {
-            "frames": [
-              4,
-              8
-            ]
-          },
-          "aim": {
-            "frames": [
-              2,
-              4
-            ]
-          },
-          "fire": {
-            "frames": [
-              2,
-              4
-            ]
-          },
-          "reload": {
-            "frames": [
-              6,
-              10
-            ]
-          },
-          "hit": {
-            "frames": [
-              2,
-              4
-            ]
-          },
-          "death": {
-            "frames": [
-              6,
-              12
-            ]
-          },
-          "melee": {
-            "frames": [
-              4,
-              8
-            ]
-          }
-        }
-      },
-      "gates": [
-        "glb_contract",
-        "texel_grid",
-        "palette_compliance",
-        "readability",
-        "timing"
-      ],
-      "//": "High-detail pixel 3D tier for base-mesh authored units: real human anatomy, body-derived armour shells and a held weapon need 9-14k tris and a 512 atlas at the same 2 cm texel grid. Contract change is measured A/B against palette_3d (see docs/PIXEL_UNIT_PROGRAMME.md).",
-      "notes": "Palette 3D, large creature (4+ m body). The 0.02 m/texel grid contracts a 33 m2 silhouette into more texels than a 512 atlas packs, so the grid is coarser by design; correct scale comes first, texel density follows the silhouette area.",
-      "extends": "palette_3d_hi"
     }
   }
 }
