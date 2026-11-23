@@ -121,6 +121,20 @@ def world_area_and_uv_area(obj) -> tuple[float, float]:
     return a_world, a_uv
 
 
+def uv_area_mesh_api(obj) -> float:
+    """UV area measured through the mesh API (independent of the bmesh path)."""
+    mesh = obj.data
+    if not mesh.uv_layers.active:
+        return 0.0
+    mesh.calc_loop_triangles()
+    uvs = mesh.uv_layers.active.data
+    total = 0.0
+    for tri in mesh.loop_triangles:
+        a, b, c = (uvs[i].uv for i in tri.loops)
+        total += abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) * 0.5
+    return total
+
+
 def unwrap_pbr(obj, angle_deg: float, padding_px: int, res: int) -> float:
     """Fresh PBR unwrap with measured padding. Returns the margin used."""
     margin = padding_px / float(res)
@@ -137,7 +151,7 @@ def unwrap_pbr(obj, angle_deg: float, padding_px: int, res: int) -> float:
     bpy.ops.uv.select_all(action='SELECT')
     bpy.ops.uv.pack_islands(rotate=True, margin=margin)
     bpy.ops.object.mode_set(mode='OBJECT')
-    uvs = [l.uv for l in low.data.uv_layers.active.data] if low.data.uv_layers.active else []
+    uvs = [l.uv for l in obj.data.uv_layers.active.data] if obj.data.uv_layers.active else []
     if uvs:
         umin = min(u.x for u in uvs); umax = max(u.x for u in uvs)
         vmin = min(u.y for u in uvs); vmax = max(u.y for u in uvs)
@@ -348,8 +362,12 @@ def main() -> int:
 
     # PBR UV layout (never the palette texel grid)
     unwrap_pbr(low, A.uv_angle, A.padding_px, A.res)
-    a_world, a_uv = world_area_and_uv_area(low)
-    log(f'measured areas: world={a_world:.4f} m2, uv={a_uv:.4f} (of 1.0)')
+    a_world, a_uv_bmesh = world_area_and_uv_area(low)
+    a_uv = uv_area_mesh_api(low)
+    log(f'measured areas: world={a_world:.4f} m2, uv(mesh api)={a_uv:.4f}, '
+        f'uv(bmesh)={a_uv_bmesh:.4f}')
+    if a_uv > 1.05:
+        log(f'WARNING: UV area {a_uv:.3f} exceeds 1.0 — layout overlaps or is unpacked')
     density = (math.sqrt(max(a_uv, 1e-9)) * A.res) / math.sqrt(max(a_world, 1e-9))
     REPORT['uv'] = {'padding_px': A.padding_px, 'world_area_m2': round(a_world, 4),
                     'uv_area': round(a_uv, 4), 'texel_density_px_m': round(density, 1)}
@@ -381,6 +399,11 @@ def main() -> int:
             if o.name in bpy.data.objects:
                 bpy.data.objects.remove(o, do_unlink=True)
         log('bake source removed from the export')
+    # the reference body is a donor, not an output: exporting it doubles the tri
+    # count in the file (caught at 120,080 tris in the first render)
+    if ref and ref.name in bpy.data.objects:
+        log(f'removing reference mesh {ref.name} from the export')
+        bpy.data.objects.remove(ref, do_unlink=True)
 
     out_glb = OUT / f'{A.id}_aaa.glb'
     for o in bpy.data.objects:

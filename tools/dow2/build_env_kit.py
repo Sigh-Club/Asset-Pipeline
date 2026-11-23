@@ -444,9 +444,14 @@ def main(argv=None) -> int:
     if not a.only:
         print(f"{len(entries)} props within {a.max_size} m")
     if a.only:
+        # Every requested name must be attempted. Filtering the palette and falling back only when
+        # *nothing* matched silently dropped the unmatched names: asking for 30 pieces built the 3 that
+        # happened to be in the palette and skipped the other 27 without a word.
         wanted = set(a.only)
-        entries = [e for e in entries if e["name"] in wanted] or \
-            [{"name": n, "biome": "misc", "placements": 0} for n in a.only]
+        matched = [e for e in entries if e["name"] in wanted]
+        have = {e["name"] for e in matched}
+        entries = matched + [{"name": n, "biome": "misc", "placements": 0}
+                             for n in a.only if n not in have]
     log_dir = ROOT / "output/source_lab/env_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     built = []
