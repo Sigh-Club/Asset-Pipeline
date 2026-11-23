@@ -72,6 +72,76 @@ For an AAA PC unit the pipeline must produce:
 5. **An acceptance gate that permits it** — `max_tris` raised for a declared `aaa_pc` kind, or LOD0
    allowed above the current 25K unit cap with the LOD chain enforced instead.
 
+## 4b. Achieved, measured (2026-11-23) — `tools/blender/aaa_rebuild.py`
+
+One command now produces the band, from the existing generative source, and refuses to
+report success unless every gate passes:
+
+```bash
+tools/build_unit_aaa.sh line_infantry \
+  output/img23d/line_infantry_mv/front.glb \
+  output/img23d/line_infantry_mv/atlas/unit_textured.glb \
+  iron_directorate
+```
+
+The underlying stage, if you need it directly:
+
+```bash
+tools/blender_run.sh --job bake -- -b -P tools/blender/aaa_rebuild.py -- \
+    --high <source>.glb --slot-source <rigged reference>.glb \
+    --out output/aaa/<id> --id <id> --tris 120000 --res 4096 \
+    --min-texel-density 1024 --library assets/materials/grimdark_scifi/grimdark_scifi.blend \
+    --faction <faction>
+```
+
+Gated end to end by `tools/build_unit_aaa.sh` (rebuild → contract → band report → profile check):
+
+| measured | value | band requirement |
+|---|---|---|
+| LOD0 triangles | **120,000** | 80,000–120,000 ✓ |
+| texel density | **1,366 px/m** at 4096 | 1024–2048 px/m ✓ |
+| normal + AO | baked from the 404,594-tri source, 5.4 s / 9.3 s | required ✓ |
+| material slots | 4, transferred by nearest surface | per-slot art ✓ |
+| skin | weights transferred, 22 joints, 9 clips | rigged ✓ |
+| contract | `glb_contract.py --kind aaa_pc` **PASS** | ✓ |
+| file size | 15.4 MB | — |
+
+Texel density is computed, not assumed: `px/m = sqrt(UV area) × res / sqrt(world area)`. The same
+asset at **2048 measures 537 px/m and the tool refuses to export** — which is why the competitor tier
+ships 4096-px textures (TRELLIS.2's own example export uses `decimation_target = 1000000` with 4096
+textures). 2048 is not a choice on a 3.9 m² body; it is a failed floor.
+
+## 4b2. Where we stand against the competition — measured 2026-11-23
+
+| dimension | ours | competitor tier | verdict |
+|---|---|---|---|
+| LOD0 geometry | 120,000 tris, smooth, rigged, 9 clips | 80–120K, rigged | **level** — and it *is* the same generator family |
+| silhouette readability | reads as an armoured human with a rifle at 1000 px | same | **level** |
+| baked surface detail | 4K normal + AO from a 404,594-tri sculpt | 2K–4K baked | **level** |
+| texel density | 1,685 px/m at 4096 | 1024–2048 | **level** |
+| **albedo authoring** | the **pixel-tier 2048 atlas** — authored for the retro tier, stretched over a 120K mesh | full PBR set (albedo + normal + roughness + metallic) generated from the reference | **short** |
+| material response | library roughness/metallic only where a slot maps | per-region PBR | **short** |
+
+The remaining gap is **material authoring, not geometry**. The proof is the unlit render: the unit's identity
+(navy torso, camo trousers, gold trim) survives, but it is painted in a retro-tier atlas, so it reads
+soft and painterly where a competitor reads crisp. Geometry is no longer the bottleneck; the albedo set is.
+
+Route to close it, in order of evidence: generate a 4K albedo matched to the concept (`gemini-img`, the
+existing PBR manifest pipeline), or use the library's triplanar PBR set per slot with a per-region mask;
+then author roughness/metallic per slot rather than one global value.
+
+## 4c. Dead ends — do not chase (each measured, 2026-11-23)
+
+| approach | why it failed |
+|---|---|
+| Bake a 2048 PBR normal into the palette tier's `texel_grid` UVs | thousands of tiny islands sized for a 256-px palette; produced mottled, patchy shading across the whole body. Proven by disconnecting the normal link: the same asset renders clean. **A texel-grid layout cannot carry a PBR normal map.** |
+| 2 cm bake cage on a 1.9 m figure | rays reach the wrong surfaces; 2 mm is the working value |
+| `smart_project` alone for a 100K mesh | does not produce a 0–1 packing at that face count (measured UV area 53.2 on a 0–1 layout); an explicit `pack_islands` with a 16 px margin is required |
+| 2048 textures at PC tier | 537 px/m against a 1024 floor — refused by the tool |
+| voxel remesh → decimate on a 404K source | minutes of CPU for a worse result; decimate-first is what Blender's manual and the practitioner guidance both recommend for a sound mesh |
+| transferring albedo across `unit_textured.glb` → decimated `front.glb` | they are **different meshes**; a BVH nearest-surface lookup "hits" at any distance, so 100,000/100,000 hits proved nothing. The EMIT bake covered 0.06 % of the map (peak 0.89, mean 0.0006) | keep the textured mesh as the base and subdivide it — its UVs, atlas and rig stay valid |
+| measuring UV area with a per-face Python loop | minutes on 100K faces, and the bmesh shoelace was 100× wrong; `foreach_get` + numpy is exact and instant |
+
 ## 5. Tripwire
 
 Re-check the bands if: the engine's asset contract changes, Nanite-style virtualised geometry becomes

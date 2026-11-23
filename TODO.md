@@ -1,6 +1,6 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-18 (session 9).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-23 (AAA-PC tier).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
 
@@ -22,6 +22,29 @@ Authority and detail:
 - `docs/KNOWN-ISSUES.md` — recorded defects, not masked.
 
 ---
+
+## 0. AAA-PC tier — built and gated (2026-11-23)
+
+The pipeline can now produce the published AAA-PC band from an existing generative source, and refuses
+to pass unless every gate passes:
+
+```bash
+tools/build_unit_aaa.sh line_infantry \
+  output/img23d/line_infantry_mv/front.glb \
+  output/img23d/line_infantry_mv/atlas/unit_textured.glb iron_directorate
+```
+
+Measured on line infantry: **120,000 tris, 1,366 px/m at 4096, 4K baked normal+AO, 22 joints,
+9 clips, 4 transferred material slots, 15.3 MB, `glb_contract --kind aaa_pc` PASS, band PASS**.
+
+Authority: [`docs/STYLE_BANDS.md`](docs/STYLE_BANDS.md) (sourced industry bands, our measured
+position, and the dead-end list). The fidelity gap was three of ours, not the generator's:
+a 4,160-tri profile with `normal_map: false`; bake tools that existed but were never called; and a
+`texel_grid` UV layout that cannot carry a PBR normal map. All three are closed.
+
+Open on this tier: a real LOD chain (the profile declares 120K→60K→25K→10K but only LOD0 is built);
+per-unit material-slot review (slots transfer by nearest surface, which is correct but unaudited); and
+the vision review gate (`tools/review/`) is built but not yet certified — see the T1 entry below.
 
 ## 1. Current programme
 

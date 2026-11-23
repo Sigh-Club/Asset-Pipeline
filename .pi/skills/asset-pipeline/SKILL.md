@@ -661,7 +661,6 @@ tools/review/gemini_ask.py --check
 - A cookie-consent sheet inside `.cdk-overlay-container` swallows clicks; dismiss it first.
 
 ### `gemini-img` — still correct for what it does
-
 `~/.pi/agent/bin/gemini-img` remains the image *generation* wrapper (prompt in, PNGs on disk,
 `--edit` identity chain). Use it for text-only prompts and for generation that does not attach an
 image. When it must attach one, expect error 1100 until the library catches up; route those calls
@@ -689,3 +688,63 @@ Pixel tiers are selected by profile, not by editing the pixeliser:
 `docs/STYLE_PROFILES.md`). The 2D pixel path is the `pixel_sprite` /
 `hd_pixel_sprite` profile; assets are requested from `configs/assets/*.json` with
 a route, and the pixel gate is `tools/style/check_pixel_asset.py`.
+
+## AAA-PC asset tier — the route, the numbers, and the traps (2026-11-23)
+
+Target band and sourced industry numbers: [`docs/STYLE_BANDS.md`](../../docs/STYLE_BANDS.md). One
+command builds it and refuses to pass unless every gate passes:
+
+```bash
+tools/build_unit_aaa.sh <unit-id> <high-poly.glb> <rigged-reference.glb> <faction>
+```
+
+Stage underneath: `tools/blender/aaa_rebuild.py` (decimate → PBR unwrap with measured padding →
+normal/AO bake → slot + weight transfer → triplanar library materials → export → `aaa_report.json`).
+Gates: `glb_contract.py --kind aaa_pc`, the band report in the wrapper, `tools/style/bands.py`.
+
+**Measured result** (line infantry, 2026-11-23): 120,000 tris, 1,366 px/m, 4K baked normal+AO,
+22 joints, 9 clips, 4 transferred material slots, 15.3 MB, contract PASS.
+
+### Numbers you must not guess
+
+- **Texel density is computed**: `px/m = sqrt(UV area) × res / sqrt(world area)`. A 3.9 m² body at
+  2048 measures **537 px/m** and the tool *refuses to export*; at 4096 it is ~1,366. That is why the
+  competitor tier ships 4K (TRELLIS.2's own export uses 4096 textures). 2K is not a preference here.
+- **UV padding** for a 2048 map is 16 px; for 4096, 32 px (1/128 of the resolution).
+- **Bake cage** 2 mm, not 2 cm, on a ~1.9 m figure — a 2 cm cage casts rays into the wrong surfaces.
+
+### Traps paid for (do not repeat)
+
+| trap | symptom | fix |
+|---|---|---|
+| baking a PBR normal into a `texel_grid` UV layout | mottled, patchy shading over the whole body | unwrap fresh with measured padding; the palette layout cannot carry a normal map |
+| `smart_project` alone on a 100K mesh | UV area 53.2 on a 0–1 layout, bake lands in empty space (1.5 s bake) | explicit `uv.pack_islands(rotate=True, margin=<16/res>)` after it |
+| measuring UV area with a per-face Python loop | minutes of CPU, and the bmesh shoelace was 100× wrong | `foreach_get` + numpy, exact and instant |
+| voxel remesh → decimate on a 404K source | minutes of CPU for a worse result | decimate-first (Blender manual + practitioner guidance) |
+| exporting every mesh in the file | the 404K source and the donor body ship alongside the asset (120,080 tris) | delete the bake source and the reference before export |
+| `pkill -f aaa_rebuild` inside a bash call | kills the calling shell, because the command line contains that string — silently losing edits | `pkill -x blender` |
+
+### Two base routes, and which one is valid
+
+`--base reference` (default): subdivide the **already-textured, UV-correct, rigged** mesh to the
+budget, then bake the sculpt's normal/AO onto it. Keeps the unit's own 2048 atlas, its material slots
+and its rig — the only route that preserves identity. Measured: 20,000 → 120,000 tris, 1,685 px/m,
+contract PASS.
+
+`--base source`: decimate the high-poly. Higher curvature fidelity, but the high-poly has **no UVs**, so
+the atlas must be re-projected — and a cross-mesh bake between `unit_textured.glb` and the decimated
+`front.glb` does **not** work: they are different meshes, and a BVH nearest-surface lookup hits at any
+distance, so a "100,000/100,000 faces hit" result proves nothing. The EMIT bake covered 0.06 % of the
+map. Use this route only when the high-poly ships with its own UVs and textures.
+
+### Bake verification is mandatory
+
+`verify_bake()` checks every baked image (mean and peak) and refuses to ship an empty map; a colour
+transfer that comes back empty retries at a 1 m ray and then falls back to the library albedo. Two
+all-zero maps were shipped silently before this guard existed.
+
+### Profile/contract state
+
+`configs/styles/profiles.json` has `aaa_pc` (80–120K, PBR, normal+AO required, 1024 px/m, LOD chain);
+`tools/glb_contract.py` has the matching `aaa_pc` kind with a 4K texture cap. The old 25,000-tri unit
+cap was a pixel-tier budget and was silently blocking this band.

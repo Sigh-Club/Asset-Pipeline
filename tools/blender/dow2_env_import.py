@@ -77,6 +77,65 @@ for mat in bpy.data.materials:
     mat.use_backface_culling = True
 print(f"MATERIALS alpha: {alpha['opaque']} opaque, {alpha['cutout']} cutout")
 
+# ---------------------------------------------------------------- a diffuse the add-on cannot find
+# Some shipped pieces have no `_dif` of their own: the material names a shared atlas, or the only
+# diffuse on disk belongs to a sibling build of the same geometry (`desert_building_sb_threeslot`
+# ships its texture only as `desert_building_sb_threeslot_tarp_dif.dds`). The add-on then wires no
+# image at all, the GLB carries `baseColorFactor 0.8` and no texture, and the piece renders as a
+# cream slab in the middle of an otherwise textured place.
+#
+# The substitute is chosen by measurement, not by hope: the candidate whose file name shares the most
+# tokens with the material's own name wins, and every substitution is printed so a wrong pick is
+# visible in the build log rather than inferred from a render.
+def _tokens(text: str) -> set[str]:
+    return {t for t in text.lower().replace("-", "_").split("_") if t and not t.isdigit()}
+
+
+def _diffuse_candidates() -> list:
+    model = Path(A.model)
+    stem, parent = model.stem, model.parent
+    found = [parent / f"{stem}_dif.dds"]
+    found.extend(sorted(parent.glob(f"{stem}*_dif.dds")))
+    # a sibling build of the same geometry: <stem>_tarp/, <stem>_buttress/ ...
+    found.extend(sorted(parent.glob(f"{stem}_*/{stem}_*_dif.dds")))
+    found.extend(sorted(parent.glob(f"{stem}_*/*_dif.dds")))
+    # a shared atlas: walk up to the art root and read world_objects/shared_textures/base
+    for ancestor in [parent, *parent.parents]:
+        shared = ancestor / "shared_textures" / "base"
+        if shared.is_dir():
+            found.extend(sorted(shared.glob("*_dif.dds")))
+            break
+    seen, out = set(), []
+    for f in found:
+        if f.is_file() and f not in seen:
+            seen.add(f)
+            out.append(f)
+    return out
+
+
+dif_fallback = {}
+for mat in bpy.data.materials:
+    if not mat.use_nodes or not mat.name.startswith("relic."):
+        continue
+    if any(n.type == "TEX_IMAGE" and n.image and "_dif" in (n.image.name or "").lower()
+           for n in mat.node_tree.nodes):
+        continue
+    want = _tokens(mat.name)
+    best, best_score = None, 0
+    for cand in _diffuse_candidates():
+        score = len(want & _tokens(cand.stem.replace("_dif", "")))
+        if score > best_score:
+            best, best_score = cand, score
+    if best is None:
+        print(f"DIF_FALLBACK {mat.name} -> none")
+        continue
+    image = bpy.data.images.load(str(best), check_existing=True)
+    node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+    node.image = image
+    dif_fallback[mat.name] = (best.name, best_score)
+    print(f"DIF_FALLBACK {mat.name} -> {best.name} (shared tokens {best_score})")
+print(f"DIF_FALLBACK_TOTAL {len(dif_fallback)}")
+
 # ---------------------------------------------------------------- albedo and PBR
 # The add-on's node graph for the *building/prop* shaders does not survive the glTF mapping: measured
 # on `metal_wall_low_01`, the exported base colour pointed at a combined image with mean rgb (0,0,0) —

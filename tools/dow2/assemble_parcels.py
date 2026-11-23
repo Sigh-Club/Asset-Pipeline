@@ -111,8 +111,8 @@ class Corpus:
         if g is None:
             return None
         x, y = parcel["origin"]
-        s = parcel["size_m"]
-        return g[y:y + s, x:x + s]
+        w, h = parcel["size_xy"]
+        return g[y:y + h, x:x + w]
 
 
 def seam_legal(parcel: dict, side: str, neighbour: dict, other_side: str) -> bool:
@@ -295,11 +295,36 @@ def main() -> int:
     ap.add_argument("--seeds", type=int, default=200)
     ap.add_argument("--retries", type=int, default=4)
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--min-density", type=float, default=0.0,
+                    help="drop parcels whose prop density is below this (props/100 m2); the reference's "
+                         "tactical pieces are far denser than a random cut from a strategic map")
+    ap.add_argument("--min-cover", type=int, default=0,
+                    help="drop parcels with fewer than this many cover pieces")
+    ap.add_argument("--out", default=None,
+                    help="write the solved boards (slot + parcel origin) for a renderer or the game")
     args = ap.parse_args()
 
     cols, rows = (int(v) for v in args.grid.lower().split("x"))
     data = json.loads(Path(args.parcels).read_text())
     catalogue = data["catalogue"]
+    # A board is assembled from the catalogue's usable parcels only. `usable` is the cut's own
+    # verdict (the parcel opens onto the board, has a walkable share and a coherent palette), and
+    # solving over the rejected cuts put pieces with no entrance into the boards.
+    before = len(catalogue)
+    catalogue = [p for p in catalogue if p.get("usable")]
+    # The lattice is square, so only pieces whose footprint is the slot's own footprint can be
+    # stitched into it. Rectangles (48x24) are cut and catalogued, but they need a layout model that
+    # allows mixed footprints, which the square solver does not have.
+    sizes = Counter(tuple(p["size_xy"]) for p in catalogue if p.get("size_xy"))
+    slot = sizes.most_common(1)[0][0] if sizes else (24, 24)
+    catalogue = [p for p in catalogue if tuple(p.get("size_xy") or ()) == slot]
+    print(f"lattice slot {slot[0]}x{slot[1]} m")
+    if args.min_density or args.min_cover:
+        catalogue = [p for p in catalogue
+                     if float(p.get("prop_density_100m2") or 0) >= args.min_density
+                     and int(p.get("cover_total") or 0) >= args.min_cover]
+        print(f"catalogue {before} -> {len(catalogue)} usable, density>={args.min_density} "
+              f"cover>={args.min_cover}")
     corpus = Corpus(Path(args.maps))
 
     # Verification, not a hard placement rule: requiring every parcel to open into the board during
@@ -307,6 +332,7 @@ def main() -> int:
     # time. So solve freely, verify, retry -- a bounded loop that measures the yield it gets.
     solved, fully_reachable, shares, zones = 0, 0, [], Counter()
     attempts_used = []
+    boards_out = []
     for seed in range(args.seeds):
         for attempt in range(args.retries):
             board = solve(catalogue, cols, rows, random.Random(seed * 1000 + attempt), corpus)
@@ -319,12 +345,33 @@ def main() -> int:
             continue
         solved += 1
         attempts_used.append(attempt + 1)
+        if args.out:
+            boards_out.append({
+                "seed": seed,
+                "cols": cols,
+                "rows": rows,
+                "map": board[0]["map"],
+                "parcels": [
+                    {"slot": [i % cols, i // cols], "id": p["id"], "map": p["map"],
+                     "origin": p["origin"], "size_xy": p["size_xy"],
+                     "zone": p.get("zone"), "facing": p.get("facing"),
+                     "cover": p.get("cover"), "interior": p.get("has_interior")}
+                    for i, p in enumerate(board)
+                ],
+            })
         fully_reachable += int(reach == len(board))
         shares.append(share)
         for p in board:
             zones[p["zone"]] += 1
 
-    print(f"grid {cols}x{rows} ({cols * 12}x{rows * 12} m) | seeds {args.seeds} | solved {solved}")
+    if args.out and boards_out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps({"boards": boards_out}, indent=1))
+        print(f"wrote {len(boards_out)} boards to {args.out}")
+    cell_m = 12
+    if catalogue:
+        cell_m = int(catalogue[0].get("size_m") or 12)
+    print(f"grid {cols}x{rows} ({cols * cell_m}x{rows * cell_m} m) | seeds {args.seeds} | solved {solved}")
     if solved:
         print(f"  boards where every parcel is reachable {fully_reachable}/{solved} "
               f"({100.0 * fully_reachable / solved:.0f}%)")

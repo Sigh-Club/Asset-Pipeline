@@ -298,9 +298,12 @@ def decode_nav(scen: Node, blob: bytes) -> dict | None:
     if len(data) < 12:
         return None
     width, height, layers = struct.unpack_from("<III", data, 0)
-    # Layer 0 is the walkable/passability grid: width * height bytes, one per cell. Measured across
-    # the corpus, values are 0 (blocked) and 1 (walkable); the remaining layers are the other
-    # passability types the map declares and are kept as their own byte runs.
+    # Layer 0 is the walkable/passability grid: width * height bytes, one per cell. Measured on
+    # `6p_whitewallsofcalderis`, the bytes take eight distinct values (0, 1, 3, 5, 7, 63, 128, 192) --
+    # 0 is blocked and the rest are walkable cells carrying different flags, so "0 or 1" would be
+    # wrong. The remaining layers are the other passability sets the map declares (layer 4 measures
+    # nearly the same distribution as layer 0); they are the vertical structure a 3D board needs and
+    # are kept as their own byte runs. See docs/BOARD_3D_GRID.md.
     nav = {"width": width, "height": height, "layers": layers}
     layer_size = width * height
     if layers >= 1 and len(data) >= 12 + layer_size:

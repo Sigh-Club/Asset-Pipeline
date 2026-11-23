@@ -213,8 +213,11 @@ def analyse(path: Path, kind: str):
             report["warnings"].append(f"origin not centred on Z (min Z {lo[2]:.3f})")
     if kind == "unit" and extents[1] and not (1.2 <= extents[1] <= 3.2):
         report["warnings"].append(f"unit height {extents[1]:.2f} m outside 1.2-3.2 m — check metres scale")
-    if tex_sizes and max(max(t["w"], t["h"]) for t in tex_sizes) > 2048:
-        report["warnings"].append("texture larger than 2K")
+    # the aaa_pc tier REQUIRES 4K: at 2048 a 3.9 m2 body measures 537 px/m against a
+    # 1024 px/m floor (docs/STYLE_BANDS.md 4b), so 4K is the correct size, not a warning
+    tex_cap = 4096 if kind == "aaa_pc" else 2048
+    if tex_sizes and max(max(t["w"], t["h"]) for t in tex_sizes) > tex_cap:
+        report["warnings"].append(f"texture larger than {tex_cap // 1024}K")
     if len(set(materials)) > 4:
         report["warnings"].append(f"{len(set(materials))} materials; target is one atlas (<=2)")
     if len(clips) > len(set(clips)):
