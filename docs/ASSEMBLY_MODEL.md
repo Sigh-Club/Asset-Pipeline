@@ -194,6 +194,70 @@ body — which is the entire commercial reason for modular characters.
 **Falsifier:** play a clip and measure the attached part's transform relative to the socket bone across
 frames. If it drifts, the offset was computed in the wrong space.
 
+### 7.2b Implemented: per-part bakes (2026-11-23)
+
+`aaa_assemble.py` now gives every part its own layout, its own resolution from its own
+surface area, and its own bakes. Measured on line infantry:
+
+| part | LOD0 tris | res | px/m | albedo | normal | AO |
+|---|---|---|---|---|---|---|
+| armour_primary | 43,008 | 4096 | 1339 | True | True | False |
+| metal_trim | 31,266 | 2048 | 1053 | True | True | True |
+| armour_secondary | 29,724 | 2048 | 1081 | True | True | True |
+| underlayer | 16,002 | 2048 | 1691 | True | True | False |
+
+All four parts meet the 1024 px/m PC floor (they previously shared one 4K atlas at
+1,366 px/m for the *whole* figure, so the smallest part received a fraction of that).
+Re-importing skeleton + parts renders the identical figure, so the set still composes.
+
+Two failures found and fixed on the way, both recorded because they will recur:
+
+* A ray-cast albedo transfer between two layouts of the *same* mesh is unreliable —
+  with a positive cage extrusion the ray starts outside the coincident source, and on
+  open shells it misses. Replaced with a UV-space rasteriser (`bake_utils.
+  transfer_uv_texture`), which is exact and needs no rays.
+* Layer names are not trustworthy: `smart_project` can write into the layer that was
+  meant to be preserved, which produced 99.7 % black albedo maps. The source layout is
+  now captured to an array *before* unwrapping.
+
+AO failed on two parts (open shells where the occlusion ray escapes). Recorded as
+`ao=false` in the manifest and not multiplied in — not masked.
+
+### 7.3b Implemented: rigid gear on sockets (2026-11-23)
+
+`tools/blender/aaa_socket_gear.py` (stage 3/6 of the build) classifies rigid pieces by a
+measured rule — a face whose every vertex is weighted >=0.95 to one bone moves rigidly with
+that bone — then parents each piece to its socket and drops its skin. Skeleton now carries
+**12 sockets**.
+
+| bone | socket | faces | follows bone | drift |
+|---|---|---|---|---|
+| Head | SOCKET_head | 4,026 | True | 0.0 |
+| RightUpLeg | SOCKET_thigh_r | 3,706 | True | 0.0 |
+| LeftFoot | SOCKET_boot_l | 3,330 | True | 0.0 |
+| RightFoot | SOCKET_boot_r | 2,736 | True | 0.0 |
+| RightToeBase | SOCKET_toe_r | 1,020 | True | 0.0 |
+| LeftUpLeg | SOCKET_thigh_l | 691 | True | 0.0 |
+| RightLeg | SOCKET_knee_r | 606 | True | 0.0 |
+| LeftToeBase | SOCKET_toe_l | 462 | True | 0.0 |
+
+The falsifier from §7.3 passes on every piece: posing the rig from a clip and comparing the
+part's transform in the *pose* bone's space gives drift 0.0. (The first version of that check
+compared against the bone's *rest* matrix and reported false drift — the check was wrong, not
+the attachment.)
+
+The body is exported with those faces removed (`103,423`
+faces), so the assembly is body + gear rather than body-with-gear + gear.
+
+**What this cannot do, measured rather than assumed:** there is **no rigid cluster at the
+hands**, because the rifle was skinned into the body rather than attached. The weapon is
+therefore not separable by this rule, and it stays in the body until step 3 brings in the
+shipped wargear. This is recorded in the manifest (`rigid_gear_note`).
+
+**Residual:** removing the rigid faces leaves an open boundary on the body where the gear was
+cut away; at grazing angles the seam can show. Mitigation when it matters: keep a low-poly
+under-layer of those faces, or cap the boundary.
+
 ### 7.4 Order and cost
 
 | step | gain | cost | risk |

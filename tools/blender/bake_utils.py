@@ -167,3 +167,123 @@ def bake_albedo_transfer(src_obj, dst_obj, image, extrusion: float, max_ray: flo
     finally:
         for nt, out, emit in restore:
             nt.nodes.remove(emit)
+
+
+def capture_uv(obj) -> "object":
+    """Snapshot the active UV layout as an array (per loop), before it is overwritten."""
+    import numpy as np
+    mesh = obj.data
+    if not mesh.uv_layers.active:
+        return None
+    buf = np.empty(len(mesh.loops) * 2, dtype=np.float64)
+    mesh.uv_layers.active.data.foreach_get('uv', buf)
+    return buf.reshape(-1, 2)
+
+
+def transfer_uv_texture(obj, src_uv, dst_uv, src_image, out_res: int,
+                        dilate_px: int = 4):
+    """Resample a texture from one UV layout to another on the SAME mesh.
+
+    Ray-cast bakes are unreliable for this case: the source and target are coincident,
+    and on open shells the ray misses (measured: 2 of 4 parts returned ~0.1% coverage
+    even at zero extrusion). This is a UV-space rasteriser instead — exact, no rays.
+
+    For every triangle: rasterise its destination-UV triangle into pixels, compute the
+    barycentric coordinate of each covered pixel, sample the source image at the
+    corresponding point of the triangle's source-UV coordinates.
+    """
+    import numpy as np
+    mesh = obj.data
+    # src_uv may be a captured array (preferred) or a layer name
+    if isinstance(src_uv, str):
+        uvs = {uv.name for uv in mesh.uv_layers}
+        if src_uv not in uvs or dst_uv not in uvs:
+            log(f'transfer skipped: have {sorted(uvs)}, need {src_uv!r} and {dst_uv!r}')
+            return False
+        old_uv = None
+    else:
+        old_uv = src_uv
+
+    src_px = np.array(src_image.pixels[:], dtype=np.float32).reshape(
+        src_image.size[1], src_image.size[0], 4)
+    sh, sw = src_px.shape[:2]
+
+    mesh.calc_loop_triangles()
+    tri_loops = np.empty(len(mesh.loop_triangles) * 3, dtype=np.int32)
+    mesh.loop_triangles.foreach_get('loops', tri_loops)
+    tri_loops = tri_loops.reshape(-1, 3)
+
+    def uv_array(name: str) -> np.ndarray:
+        layer = mesh.uv_layers[name]
+        buf = np.empty(len(mesh.loops) * 2, dtype=np.float64)
+        layer.data.foreach_get('uv', buf)
+        return buf.reshape(-1, 2)
+
+    if old_uv is None:
+        old_uv = uv_array(src_uv)
+    new_uv = uv_array(dst_uv)
+
+    out = np.zeros((out_res, out_res, 4), dtype=np.float32)
+    filled = np.zeros((out_res, out_res), dtype=bool)
+
+    for tri in tri_loops:
+        d = new_uv[tri] * out_res            # destination pixel coords
+        s = old_uv[tri]
+        x0, y0 = np.floor(d.min(axis=0)).astype(int)
+        x1, y1 = np.ceil(d.max(axis=0)).astype(int)
+        x0, y0 = max(0, x0), max(0, y0)
+        x1, y1 = min(out_res - 1, x1), min(out_res - 1, y1)
+        if x1 < x0 or y1 < y0:
+            continue
+        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        px, py = xs.ravel(), ys.ravel()
+        # barycentric test in destination space
+        ax, ay = d[0]; bx, by = d[1]; cx, cy = d[2]
+        den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+        if abs(den) < 1e-12:
+            # degenerate in destination space: splat its vertices so the island is
+            # still covered (holes here showed up as white patches on the render)
+            for vi in range(3):
+                sxv = int(np.clip(s[vi][0] * sw, 0, sw - 1))
+                syv = int(np.clip(s[vi][1] * sh, 0, sh - 1))
+                oxv = int(np.clip(d[vi][0], 0, out_res - 1))
+                oyv = int(np.clip(d[vi][1], 0, out_res - 1))
+                out[oyv, oxv] = src_px[syv, sxv]
+                filled[oyv, oxv] = True
+            continue
+        w0 = ((by - cy) * (px - cx) + (cx - bx) * (py - cy)) / den
+        w1 = ((cy - ay) * (px - cx) + (ax - cx) * (py - cy)) / den
+        w2 = 1.0 - w0 - w1
+        inside = (w0 >= -1e-6) & (w1 >= -1e-6) & (w2 >= -1e-6)
+        if not inside.any():
+            continue
+        w0, w1, w2 = w0[inside], w1[inside], w2[inside]
+        # corresponding source UV
+        su = w0 * s[0][0] + w1 * s[1][0] + w2 * s[2][0]
+        sv = w0 * s[0][1] + w1 * s[1][1] + w2 * s[2][1]
+        sx = np.clip((su * sw).astype(int), 0, sw - 1)
+        sy = np.clip((sv * sh).astype(int), 0, sh - 1)
+        ox = px[inside].astype(int)
+        oy = py[inside].astype(int)
+        out[oy, ox] = src_px[sy, sx]
+        filled[oy, ox] = True
+
+    # bleed: expand the filled region so mip filtering does not sample black
+    for _ in range(max(dilate_px, 12)):
+        grown = filled.copy()
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            shifted_fill = np.roll(filled, (dy, dx), axis=(0, 1))
+            shifted_val = np.roll(out, (dy, dx), axis=(0, 1))
+            take = shifted_fill & ~grown
+            out[take] = shifted_val[take]
+            grown |= take
+        filled = grown
+
+    sampled_mean = float(out[filled][:, :3].mean()) if filled.any() else 0.0
+    log(f'resample sampled-source mean={sampled_mean:.3f} (atlas mean='
+        f'{float(src_px[:, :, :3].mean()):.3f})')
+    coverage = float(filled.mean())
+    target = bpy.data.images.new(f'{obj.name}_resampled', out_res, out_res, alpha=False)
+    target.pixels = out.ravel().tolist()
+    log(f'uv transfer {src_uv}->{dst_uv} at {out_res}px: coverage {coverage:.1%}')
+    return target

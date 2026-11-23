@@ -61,6 +61,8 @@ def main() -> None:
     ap.add_argument("--light", default=None,
                     help="JSON light rig to bake; defaults to a daylight rig")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--relief", action="store_true",
+                    help="write the map's own relief into the grid (default: a flat board)")
     ap.add_argument("--catalogue", default=None,
                     help="upsert this board's catalogue entry (the game's index of staged boards)")
     args = ap.parse_args()
@@ -127,14 +129,24 @@ def main() -> None:
                 k = q.get("kind")
                 if isinstance(k, int) and 0 <= k < len(props):
                     inside.append(q)
-        base = seat_base(ground_samples)
+        # Seat the piece on its own footing: the lowest thing in it touches the board. A parcel is a
+        # vertical stack (a rampart stands on a wall run, a crate stands on a roof), and the map's
+        # terrain is not that stack -- a building's floor is a prop, not ground. Measured against the
+        # rendered ground, seating on the terrain left 99 of 124 props hanging (the stairs up to 38 m
+        # in the air). The stack's own lowest piece is the only datum that stands the piece up.
+        base = min((q["pos"][1] for q in inside), default=seat_base(ground_samples))
         seat_report.append({"parcel": pl["id"], "props": len(inside), "base": round(base, 2)})
 
-        # relief: the shipped ground under each cell of this piece, against the same datum the props
-        # are seated on, so the terrain and the pieces on it stay in one frame
+        # Relief is measured but not written by default. The map's terrain is not the surface its props
+        # stand on -- a building's floor is a prop, not ground -- so drawing both in one frame leaves
+        # whichever datum is chosen half wrong: seating on the terrain hung 99 of 124 props in the air,
+        # and seating on the piece's footing buried 43 of 121 under it. A board is flat until the rules
+        # can carry a height band (docs/BOARD_3D_GRID.md 3.1); the map's own ground *texture* stays,
+        # which is what makes the board read as the place.
         for (gx, gy), ground in cell_ground.items():
-            heights[gy][gx] = round((ground - base) / ELEVATION_STEP)
             relief_samples.append(ground - base)
+            if args.relief:
+                heights[gy][gx] = round((ground - base) / ELEVATION_STEP)
 
         # walkability, read from the shipped nav grid at the cell resolution the game plays on
         for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
@@ -159,18 +171,27 @@ def main() -> None:
         seat_report[-1]["lift"] = round(lift, 2)
         for q in inside:
             k = q["kind"]
-            # the gate on seating: a prop's height above the ground under it. The source places props
-            # on the ground, so a large error means the datum is wrong, not the prop.
+            # Seat each prop on the ground *under that prop*, not on the piece's median. Measured on
+            # the first emitted board, seating on the median left 100 of 121 props floating (median
+            # 14 m up) because a parcel can span a wall walk and the courtyard below it: the median
+            # sits between the two and everything above it hangs in the air. The source places a prop
+            # on the ground it was authored on (entity altitude correlates +0.741 with the heightfield
+            # at 2.4 m mean error), so the prop's own local ground is the datum that makes it stand.
             gx_p = int((cx + (q["pos"][0] - px) + bw / 2) // CELL_M)
             gz_p = int((cz + (q["pos"][2] - pz) + bh / 2) // CELL_M)
             ground_here = cell_ground.get((gx_p, gz_p))
+            # A prop's board height is its authored altitude minus the board's datum, and the ground
+            # mesh carries the same datum: the prop then stands exactly as high above the terrain as
+            # the source authored it. Seating it on the ground *under it* instead would drop every
+            # prop that legitimately stands on a wall walk into the courtyard.
+            y = q["pos"][1] - base + lift
             if ground_here is not None:
-                seat_error.append(abs((q["pos"][1] - base + lift) - (ground_here - base)))
+                seat_error.append(y - (ground_here - base))
             free_props.append({
                 "name": props[k]["prop"],
                 "biome": props[k].get("biome") or "",
                 "pos": [round(cx + (q["pos"][0] - px), 3),
-                        round(q["pos"][1] - base + lift, 3),
+                        round(y, 3),
                         round(cz + (q["pos"][2] - pz), 3)],
                 "basis": q.get("basis"),
                 "scale": q.get("scale") or 1,
@@ -263,10 +284,12 @@ def main() -> None:
     bases = [s["base"] for s in seat_report]
     relief = (max(relief_samples) - min(relief_samples)) if relief_samples else 0.0
     steps = sorted({v for row in heights for v in row})
-    err = sorted(seat_error)
+    # the gate: how many props stand on their own ground. A prop authored on a structure legitimately
+    # sits above the terrain, so the measure is the share that is near zero, not the mean.
+    err = sorted(abs(v) for v in seat_error)
+    grounded = sum(1 for v in err if v <= 0.6)
     p50 = err[len(err) // 2] if err else 0.0
-    p90 = err[int(len(err) * 0.9)] if err else 0.0
-    print(f"seat error to ground: median {p50:.2f} m, p90 {p90:.2f} m over {len(err)} props")
+    print(f"seating: {grounded}/{len(err)} props within 0.6 m of their ground (median |dy| {p50:.2f} m)")
     print(f"wrote {out.name}: {gw}x{gh} cells, {len(free_props)} authored props, "
           f"{len(cover)} cover cells, seat bases {min(bases):.1f}..{max(bases):.1f} m, "
           f"relief {relief:.1f} m over {len(steps)} elevation steps "

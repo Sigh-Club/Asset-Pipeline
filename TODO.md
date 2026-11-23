@@ -67,9 +67,22 @@ every export: `skeleton.glb` with 22 bones, 9 clips and **5 SOCKET_* nodes paren
 its own LOD1–LOD3 chain (50/25/10 %); `unit.manifest.json` carrying budgets, sockets and provenance.
 Re-importing skeleton + parts renders the identical figure, so the set is complete.
 
-Open, in order: per-part bakes (parts currently share the whole-body 4K bake); gear actually attached
-at a socket rather than fused into the sculpt; parts authored/sourced separately rather than split on
-material boundaries (`provenance` in the manifest says so).
+**Per-part bakes: done** (step 1 of `docs/ASSEMBLY_MODEL.md` §7.4). Each part now carries its own UV
+layout, its own resolution chosen from its own surface area, and its own albedo/normal bakes:
+1,339 / 1,053 / 1,081 / 1,691 px/m at 4096/2048/2048/2048 — all above the 1024 px/m floor. The set
+still composes to the identical figure.
+
+**Socket-parented rigid gear: done** (step 2 of §7.4). 8 rigid pieces (helmet, boots, thigh/knee/toe
+plates, 16,577 faces total) are extracted by a measured rule (all vertices >=0.95 on one bone), parented
+to their socket on a 12-socket skeleton, and verified: posing the rig from a clip leaves each piece's
+transform in the pose bone's space unchanged (drift 0.0). The body ships with those faces removed
+(103,423 faces), so the set is body + gear.
+
+Measured limitation: there is **no rigid cluster at the hands** — the rifle was skinned into the body,
+so it is not separable by this rule. That is what step 3 (shipped wargear) exists to fix.
+
+Open, in order: parts authored/sourced separately rather than split on material boundaries (step 3);
+semantic segmentation for units with no shipped gear (step 4).
 
 ## 1. Current programme
 

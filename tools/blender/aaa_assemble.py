@@ -51,6 +51,8 @@ _ap.add_argument('--glb', required=True)
 _ap.add_argument('--out', required=True)
 _ap.add_argument('--id', required=True)
 _ap.add_argument('--high', help='high-poly source for per-part normal/AO bakes')
+_ap.add_argument('--library', help='PBR material library .blend (supplies albedo detail)')
+_ap.add_argument('--faction', help='library faction prefix, e.g. iron_directorate')
 _ap.add_argument('--target-density', type=float, default=1024.0,
                  help='per-part texel density target (px/m); PC band floor is 1024')
 _ap.add_argument('--lod-chain', type=float, nargs='*', default=[0.5, 0.25, 0.10],
@@ -69,6 +71,15 @@ SOCKETS = {
     'SOCKET_head': 'Head',
     'SOCKET_back': 'Spine2',
     'SOCKET_hips': 'Hips',
+    # the rigid clusters measured on this asset (aaa_socket_gear.py) hang from these,
+    # so they get sockets of their own rather than attaching to a bare bone
+    'SOCKET_thigh_r': 'RightUpLeg',
+    'SOCKET_thigh_l': 'LeftUpLeg',
+    'SOCKET_knee_r': 'RightLeg',
+    'SOCKET_boot_r': 'RightFoot',
+    'SOCKET_boot_l': 'LeftFoot',
+    'SOCKET_toe_r': 'RightToeBase',
+    'SOCKET_toe_l': 'LeftToeBase',
 }
 
 
@@ -202,6 +213,25 @@ def main() -> int:
                      and not o.name.startswith('Icosphere')]
         log(f'high-poly bake source: {sum(tris(o) for o in high_objs)} tris')
 
+    # Real albedo detail comes from the 1K PBR library; the unit's own identity comes
+    # from the resampled atlas. Multiplying them is the honest substitute for an artist
+    # authoring a 4K albedo: the library carries rivets, wear and panel linework that a
+    # 2048 palette atlas simply does not contain (docs/ASSEMBLY_MODEL.md §7.2b).
+    lib_albedo = {}
+    if a.library and a.faction:
+        wanted = {f'IOA_{a.faction}__{p.material_slots[0].material.name.split(".")[0]}'
+                  for p in parts if p.material_slots and p.material_slots[0].material}
+        with bpy.data.libraries.load(str(Path(a.library).resolve()), link=False) as (src, dst):
+            dst.materials = [n for n in src.materials if n in wanted]
+        for m in dst.materials:
+            if not m or not m.use_nodes:
+                continue
+            for node in m.node_tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image and 'albedo' in node.image.name.lower():
+                    lib_albedo[m.name.split('__')[-1]] = node.image
+                    break
+        log(f'library albedo loaded for slots: {sorted(lib_albedo)}')
+
     total = 0
     for part in sorted(parts, key=lambda o: -tris(o)):
         slot = part.material_slots[0].material.name.split('.')[0] if part.material_slots else 'unknown'
@@ -217,10 +247,18 @@ def main() -> int:
         bpy.context.collection.objects.link(albedo_src)
 
         # per-part layout at per-part resolution: the point of modular bakes is that a
-        # pauldron stops sharing the torso's texel budget
+        # pauldron stops sharing the torso's texel budget. The ORIGINAL layout is kept
+        # under a name so the albedo can be resampled from it in UV space.
+        # Snapshot the original layout as DATA before unwrapping. Layer names are not
+        # trustworthy here: smart_project can write into the layer that was meant to be
+        # preserved (measured: 99.7% black resample), so the source is captured in
+        # memory and the unwrap is free to overwrite whatever it likes.
+        old_uv_snapshot = bu.capture_uv(part)
         bu.unwrap(part, padding_px=32, res=2048)
+        new_uv_name = part.data.uv_layers.active.name if part.data.uv_layers.active else None
         a_world, a_uv = bu.measure_areas(part)
-        res = bu.pick_resolution(a_world, a_uv, a.target_density, 512, 2048)
+        # cap at 4096: the largest part needs it to reach the 1024 px/m floor
+        res = bu.pick_resolution(a_world, a_uv, a.target_density, 512, 4096)
         density = bu.density_px_m(a_world, a_uv, res)
 
         alb = bpy.data.images.new(f'{part.name}_albedo', res, res, alpha=False)
@@ -232,11 +270,47 @@ def main() -> int:
         # coincident transfer: source and target are the SAME geometry, so the cage
         # extrusion must be 0 — a positive extrusion starts the ray outside the source
         # and nothing is hit (measured: mean 0.0006, i.e. 0.1% coverage)
-        ok_alb = bu.bake_albedo_transfer(albedo_src, part, alb, 0.0, 0.05)
+        # resample the atlas albedo from the old layout into the new one (exact,
+        # no ray casting: coincident ray bakes missed on 2 of 4 parts)
+        src_img = None
+        if part.material_slots and part.material_slots[0].material:
+            nt0 = part.material_slots[0].material.node_tree
+            bsdf0 = next((n for n in nt0.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+            if bsdf0 and bsdf0.inputs['Base Color'].is_linked:
+                from_node = bsdf0.inputs['Base Color'].links[0].from_node
+                if from_node.type == 'TEX_IMAGE' and from_node.image:
+                    src_img = from_node.image
+                else:
+                    # base colour may be wired through a mix (AO multiply); walk the
+                    # chain to the first image so the resample has a real source
+                    stack = [from_node]
+                    seen = set()
+                    while stack:
+                        n = stack.pop()
+                        if n.name in seen:
+                            continue
+                        seen.add(n.name)
+                        if n.type == 'TEX_IMAGE' and n.image:
+                            src_img = n.image
+                            break
+                        for inp in n.inputs:
+                            for link in inp.links:
+                                stack.append(link.from_node)
+        ok_alb = False
+        if src_img:
+            import numpy as _np
+            _px = _np.array(src_img.pixels[:], dtype=_np.float32)
+            log(f'albedo source for {slot}: {src_img.name} {tuple(src_img.size)} '
+                f'mean={float(_px.mean()):.3f}')
+        if src_img and new_uv_name:
+            resampled = bu.transfer_uv_texture(part, old_uv_snapshot, new_uv_name, src_img, res)
+            if resampled:
+                alb = resampled
+                ok_alb = True
         ok_nrm = ok_ao = False
         if high_objs:
             ok_nrm = bu.bake_pass('NORMAL', nrm, high_objs, part, 1, 0.002, 0.01, 32)
-            ok_ao = bu.bake_pass('AO', aoi, high_objs, part, 24, 0.002, 0.01, 32)
+            ok_ao = bu.bake_pass('AO', aoi, high_objs, part, 24, 0.002, 0.05, 32)
 
         for img, suffix in ((alb, 'albedo'), (nrm, 'normal'), (aoi, 'ao')):
             img.filepath_raw = str(PARTS / f'{part.name}_{suffix}.png')
@@ -250,7 +324,26 @@ def main() -> int:
             if bsdf:
                 if ok_alb:
                     atex = nt.nodes.new('ShaderNodeTexImage'); atex.image = alb
-                    nt.links.new(atex.outputs['Color'], bsdf.inputs['Base Color'])
+                    lib_img = lib_albedo.get(slot)
+                    if lib_img:
+                        coord = nt.nodes.new('ShaderNodeTexCoord')
+                        mapping = nt.nodes.new('ShaderNodeMapping')
+                        mapping.inputs['Scale'].default_value = (6.0, 6.0, 6.0)
+                        nt.links.new(coord.outputs['Object'], mapping.inputs['Vector'])
+                        ltex = nt.nodes.new('ShaderNodeTexImage')
+                        ltex.image = lib_img
+                        ltex.projection = 'BOX'
+                        ltex.projection_blend = 0.12
+                        nt.links.new(mapping.outputs['Vector'], ltex.inputs['Vector'])
+                        mul = nt.nodes.new('ShaderNodeMixRGB')
+                        mul.blend_type = 'MULTIPLY'
+                        mul.inputs['Fac'].default_value = 0.55
+                        nt.links.new(atex.outputs['Color'], mul.inputs['Color1'])
+                        nt.links.new(ltex.outputs['Color'], mul.inputs['Color2'])
+                        nt.links.new(mul.outputs['Color'], bsdf.inputs['Base Color'])
+                        log(f'{slot}: identity albedo x library detail')
+                    else:
+                        nt.links.new(atex.outputs['Color'], bsdf.inputs['Base Color'])
                 if ok_nrm:
                     ntex = nt.nodes.new('ShaderNodeTexImage'); ntex.image = nrm
                     nm = nt.nodes.new('ShaderNodeNormalMap')
