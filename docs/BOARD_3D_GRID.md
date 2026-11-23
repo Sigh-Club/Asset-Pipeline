@@ -163,6 +163,20 @@ Ordered, each with the gate that proves it:
    buffs ride the existing ability bridge. Gate: a cover-disabling ability measurably removes the
    bonus for the rest of the turn.
 
+### 3.1 Measured on the first emitted board, and the open question
+
+The four `parcel_6p_whitewallsofcalderis_*` boards carry **39.5-40.0 m of relief** over 36 x 36 cells
+(elevation steps -70 to +43), because the source place is a fortress cut into a canyon and the emitter
+keeps the terrain as it is. Nothing is wrong with the number -- it is what the map holds -- but a
+tactical board whose cover ladder reasons in 0.64/0.96/1.6 m cannot treat a 24 m drop as "cover": it is
+a cliff, and line of sight across it is all-or-nothing.
+
+So a **relief budget** is the next decision, and it has three defensible shapes: keep the real relief
+(the board is the place, and the rules learn about cliffs), clamp the board to a playable band (a
+tactical vignette, at the cost of the place's drama), or quantise the *gameplay* relief while the mesh
+keeps the true height. The third is the one this document recommends, because it preserves both, and it
+is the reason `heights` is written as elevation steps rather than metres.
+
 ## 4. Dead ends to not repeat
 
 - **Do not derive cover from the prop's bounding box alone.** A wall's box covers both faces; the
