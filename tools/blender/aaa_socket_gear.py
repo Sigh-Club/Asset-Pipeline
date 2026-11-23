@@ -182,11 +182,14 @@ def main() -> int:
         for f in files:
             bpy.ops.import_scene.gltf(filepath=str(f))
         log(f'imported {len(files)} part file(s) from {a.from_parts}')
-        meshes = [o for o in bpy.data.objects if o.type == 'MESH']
+        meshes = [o for o in bpy.data.objects
+                  if o.type == 'MESH' and not o.name.startswith('Icosphere')]
         arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+        # join into the LARGEST part, never a stray reference mesh
+        body_seed = max(meshes, key=lambda o: len(o.data.polygons))
         for o in bpy.data.objects:
             o.select_set(o in meshes)
-        bpy.context.view_layer.objects.active = meshes[0]
+        bpy.context.view_layer.objects.active = body_seed
         bpy.ops.object.join()
         body = bpy.context.view_layer.objects.active
         body.name = f'{a.id}_body'

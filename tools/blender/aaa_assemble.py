@@ -53,6 +53,9 @@ _ap.add_argument('--id', required=True)
 _ap.add_argument('--high', help='high-poly source for per-part normal/AO bakes')
 _ap.add_argument('--library', help='PBR material library .blend (supplies albedo detail)')
 _ap.add_argument('--faction', help='library faction prefix, e.g. iron_directorate')
+_ap.add_argument('--views', help='directory holding front/back/left/right reference views; '
+                                 'when given, the albedo is PROJECTED from the concept instead of '
+                                 'composited from the atlas (reference-driven texturing)')
 _ap.add_argument('--tint-value', type=float, default=0.8,
                  help='value the per-part colour tint is normalised to; the atlas is dark '
                       '(measured 0.10-0.24) so its HUE is kept and its VALUE restored')
@@ -146,6 +149,14 @@ def main() -> int:
     if not meshes or not arms:
         log(f'missing mesh or armature (meshes={len(meshes)} arms={len(arms)})')
         return 1
+    # the source ships a small Icosphere reference mesh; it must not be exported inside
+    # every part (measured: each part GLB contained an 80-tri, 0-group Icosphere, which
+    # then became the join target downstream)
+    for o in list(meshes):
+        if o.name.startswith('Icosphere'):
+            log(f'removing reference mesh {o.name}')
+            bpy.data.objects.remove(o, do_unlink=True)
+    meshes = [o for o in bpy.data.objects if o.type == 'MESH']
     body = max(meshes, key=lambda o: len(o.data.polygons))
     arm = arms[0]
     log(f'source: {body.name} {tris(body)} tris, rig {arm.name} ({len(arm.data.bones)} bones)')
@@ -300,7 +311,16 @@ def main() -> int:
                             for link in inp.links:
                                 stack.append(link.from_node)
         ok_alb = False
-        if src_img:
+        proj_img = None
+        if a.views:
+            vdir = Path(a.views)
+            proj_img = bu.project_reference_texture(part, {
+                'front': vdir / 'front.png', 'back': vdir / 'back.png',
+                'left': vdir / 'left.png', 'right': vdir / 'right.png'}, res)
+            if proj_img is not None:
+                alb = proj_img
+                ok_alb = True
+        if src_img and not ok_alb:
             import numpy as _np
             _px = _np.array(src_img.pixels[:], dtype=_np.float32)
             log(f'albedo source for {slot}: {src_img.name} {tuple(src_img.size)} '

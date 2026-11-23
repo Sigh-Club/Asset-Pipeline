@@ -14,6 +14,7 @@ use one implementation. Every rule here traces to a measured failure:
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import bpy
 
@@ -287,3 +288,133 @@ def transfer_uv_texture(obj, src_uv, dst_uv, src_image, out_res: int,
     target.pixels = out.ravel().tolist()
     log(f'uv transfer {src_uv}->{dst_uv} at {out_res}px: coverage {coverage:.1%}')
     return target
+
+
+def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 12):
+    """Project reference images onto the mesh as albedo (multiview projection texturing).
+
+    This is what a reference-driven texturing pipeline does, and it is the only way to get
+    an albedo that actually matches the concept: the shipped palette atlas is a 2048
+    texture authored for the pixel tier, and compositing library detail over it cannot
+    invent the design's own colours.
+
+    views: {'front'|'back'|'left'|'right': image_path}. Each texel is filled from the view
+    whose axis best matches that triangle's normal, using an orthographic mapping of the
+    mesh's bounding box onto the image. Faces pointing away from every view stay unfilled
+    and are bled from their neighbours.
+    """
+    import numpy as np
+
+    mesh = obj.data
+    if not mesh.uv_layers.active:
+        log('projection skipped: no UV layer')
+        return None
+
+    imgs = {}
+    for name, path in views.items():
+        if not path or not Path(path).exists():
+            continue
+        # PIL is not reliably importable inside Blender (libtiff soname clash), so use
+        # Blender's own loader. Its pixel buffer is bottom-up, which matches UV space, so
+        # no vertical flip is applied below.
+        bi = bpy.data.images.load(str(path))
+        w, h = bi.size
+        buf = np.array(bi.pixels[:], dtype=np.float32).reshape(h, w, 4)
+        imgs[name] = buf[:, :, :3]
+        bpy.data.images.remove(bi)
+    if not imgs:
+        log('projection skipped: no readable reference views')
+        return None
+    log(f'projecting {sorted(imgs)} onto {obj.name} at {out_res}px')
+
+    co = np.array([obj.matrix_world @ v.co for v in mesh.vertices], dtype=np.float64)
+    lo, hi = co.min(axis=0), co.max(axis=0)
+    span = np.maximum(hi - lo, 1e-6)
+
+    mesh.calc_loop_triangles()
+    tri_loops = np.empty(len(mesh.loop_triangles) * 3, dtype=np.int32)
+    mesh.loop_triangles.foreach_get('loops', tri_loops)
+    tri_loops = tri_loops.reshape(-1, 3)
+    uv = np.empty(len(mesh.loops) * 2, dtype=np.float64)
+    mesh.uv_layers.active.data.foreach_get('uv', uv)
+    uv = uv.reshape(-1, 2)
+
+    # per-vertex normals for view selection
+    nrm = np.array([v.normal for v in mesh.vertices], dtype=np.float64)
+    loop_verts = np.empty(len(mesh.loops), dtype=np.int32)
+    mesh.loops.foreach_get('vertex_index', loop_verts)
+
+    # axis/sign per view: front looks along -Y, back +Y, left -X, right +X
+    AXES = {'front': (1, -1.0), 'back': (1, 1.0), 'left': (0, -1.0), 'right': (0, 1.0)}
+
+    out = np.zeros((out_res, out_res, 4), dtype=np.float32)
+    out[:, :, 3] = 1.0
+    filled = np.zeros((out_res, out_res), dtype=bool)
+
+    for tri in tri_loops:
+        d = uv[tri] * out_res
+        x0, y0 = np.floor(d.min(axis=0)).astype(int)
+        x1, y1 = np.ceil(d.max(axis=0)).astype(int)
+        x0, y0 = max(0, x0), max(0, y0)
+        x1, y1 = min(out_res - 1, x1), min(out_res - 1, y1)
+        if x1 < x0 or y1 < y0:
+            continue
+        # view selection from the triangle normal
+        n = nrm[loop_verts[tri]].mean(axis=0)
+        best, best_dot = None, 0.0
+        for name, (axis, sign) in AXES.items():
+            if name not in imgs:
+                continue
+            vec = np.zeros(3)
+            vec[axis] = sign
+            dot = float(np.dot(n, vec))
+            if dot > best_dot:
+                best, best_dot = name, dot
+        if best is None or best_dot <= 0.15:
+            continue
+        img = imgs[best]
+        axis, sign = AXES[best]
+        ih, iw = img.shape[:2]
+        p3 = co[loop_verts[tri]]                      # triangle in world space
+
+        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        px, py = xs.ravel(), ys.ravel()
+        ax, ay = d[0]; bx, by = d[1]; cx, cy = d[2]
+        den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+        if abs(den) < 1e-12:
+            continue
+        w0 = ((by - cy) * (px - cx) + (cx - bx) * (py - cy)) / den
+        w1 = ((cy - ay) * (px - cx) + (ax - cx) * (py - cy)) / den
+        w2 = 1.0 - w0 - w1
+        inside = (w0 >= -1e-6) & (w1 >= -1e-6) & (w2 >= -1e-6)
+        if not inside.any():
+            continue
+        w0, w1, w2 = w0[inside], w1[inside], w2[inside]
+        pos = (w0[:, None] * p3[0] + w1[:, None] * p3[1] + w2[:, None] * p3[2])
+        # orthographic projection of the mesh bbox onto the reference image
+        horiz = pos[:, 1] if axis == 1 else pos[:, 0]
+        u = (horiz - lo[1 if axis == 1 else 0]) / span[1 if axis == 1 else 0]
+        if (axis == 1 and sign > 0) or (axis == 0 and sign < 0):
+            u = 1.0 - u
+        v = (pos[:, 2] - lo[2]) / span[2]
+        sx = np.clip((u * (iw - 1)).astype(int), 0, iw - 1)
+        sy = np.clip((v * (ih - 1)).astype(int), 0, ih - 1)   # bottom-up buffer
+        ox = np.clip(px[inside].astype(int), 0, out_res - 1)
+        oy = np.clip(py[inside].astype(int), 0, out_res - 1)
+        out[oy, ox, :3] = img[sy, sx]
+        filled[oy, ox] = True
+
+    for _ in range(max(dilate_px, 12)):
+        grown = filled.copy()
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            sf = np.roll(filled, (dy, dx), axis=(0, 1))
+            sv = np.roll(out, (dy, dx), axis=(0, 1))
+            take = sf & ~grown
+            out[take] = sv[take]
+            grown |= take
+        filled = grown
+
+    log(f'projection coverage {float(filled.mean()):.1%}')
+    tex = bpy.data.images.new(f'{obj.name}_projected', out_res, out_res, alpha=False)
+    tex.pixels = out.ravel().tolist()
+    return tex

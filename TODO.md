@@ -81,8 +81,17 @@ transform in the pose bone's space unchanged (drift 0.0). The body ships with th
 Measured limitation: there is **no rigid cluster at the hands** — the rifle was skinned into the body,
 so it is not separable by this rule. That is what step 3 (shipped wargear) exists to fix.
 
-Open, in order: parts authored/sourced separately rather than split on material boundaries (step 3);
-semantic segmentation for units with no shipped gear (step 4).
+**Albedo route fixed** (§7.3c): library PBR albedo as base with a per-part unit tint, and the body/gear
+stage now runs on the per-part set so those materials actually reach the deliverable. The unit reads as
+its design for the first time (camo trousers, gold trim, plated armour, detailed rifle).
+
+Remaining gap, stated plainly: the albedo is a composite of a 1K tiling library and a flat tint, **not
+an authored 2K-4K albedo set matched to the concept**. That is the last art gap and it needs a real
+albedo source, not more compositing.
+
+Open, in order: certify the vision gate (T1) so quality is measured rather than judged by eye; parts
+authored/sourced separately rather than split on material boundaries (step 3); semantic segmentation for
+units with no shipped gear (step 4).
 
 ## 1. Current programme
 

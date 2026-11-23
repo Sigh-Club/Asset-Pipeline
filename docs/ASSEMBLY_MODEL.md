@@ -258,6 +258,35 @@ shipped wargear. This is recorded in the manifest (`rigid_gear_note`).
 cut away; at grazing angles the seam can show. Mitigation when it matters: keep a low-poly
 under-layer of those faces, or cap the boundary.
 
+### 7.3c Albedo: what was actually wrong, and what fixed it (2026-11-23)
+
+Three attempts failed before the cause was measured:
+
+1. Multiplying the atlas albedo by a library detail map at 0.55 — no visible change, because
+   the atlas measures **0.10-0.25 in RGB**; multiplying a dark base by a mid-grey detail
+   changes nothing a viewer can see.
+2. The reason nothing reached the render at all: **the body/gear stage ran on the pre-part
+   mesh**, so the per-part bakes and materials were built into `parts/` and then never used by
+   `line_infantry_body.glb`. An ordering bug, not a material bug.
+3. The join in that stage picked an 80-tri `Icosphere` reference mesh as its active object,
+   because the reference mesh was being exported inside **every** part GLB.
+
+Fixed: the reference mesh is removed at import; gear extraction runs on the per-part set
+(`--from-parts`), so body and gear carry the per-part UVs, bakes and materials; and the albedo
+is built the right way round — **library PBR albedo as the base** (authored detail and value)
+with the unit's colour identity as a **constant per-part tint**, derived by keeping the atlas
+hue and restoring its value (`--tint-value`, default 0.8). Measured tints: armour_primary
+(0.33, 0.45, 0.80), metal_trim (0.44, 0.53, 0.80), armour_secondary (0.53, 0.59, 0.80),
+underlayer (0.79, 0.79, 0.80).
+
+The result reads as the intended unit for the first time: camo trousers, gold shoulder trim,
+plated armour and a detailed rifle.
+
+**Still not competitor tier, and the reason is specific:** the albedo is a *composite* of a 1K
+tiling library and a flat tint, not an authored 2K-4K albedo set matched to the concept. That is
+the remaining art gap, and it cannot be closed by compositing existing assets — it needs a real
+albedo source (generated PBR from the reference, or an authored set).
+
 ### 7.4 Order and cost
 
 | step | gain | cost | risk |

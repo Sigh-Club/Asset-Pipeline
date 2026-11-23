@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import math
 import random
 from collections import Counter
 from pathlib import Path
@@ -140,6 +141,23 @@ def main() -> None:
         base = min((q["pos"][1] for q in inside), default=seat_base(ground_samples))
         seat_report.append({"parcel": pl["id"], "props": len(inside), "base": round(base, 2)})
 
+        # A terrace is the one form of relief a stack of shipped pieces can carry: the whole parcel
+        # stands one or two elevation steps above the board, and everything in it -- ground, props,
+        # cover -- moves together. Per-cell terrain cannot work (the map's terrain is not the surface
+        # its props stand on), but a parcel-sized platform can: it is the piece's own footing, raised.
+        # A terrace is the one form of relief a stack of shipped pieces could carry: the whole parcel
+        # stands a step above the board and everything in it moves together. Measured on the board it
+        # is *not* ready: the ground mesh builds its surface from the cell elevations and a parcel-sized
+        # step turned the courtyard into a row of white domes, so a board stays flat and its verticality
+        # comes from the architecture -- which already stands 20 m of it. Recorded, not hidden.
+        terrace = 0
+        if args.relief:
+            terrace = 2 if (c + r) % 3 == 1 else 0
+            for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
+                for gx in range(c * cells_per_parcel, (c + 1) * cells_per_parcel):
+                    if paint.get(f"{gx},{gy}") == "normal":
+                        heights[gy][gx] = terrace
+
         # Relief is measured but not written by default. The map's terrain is not the surface its props
         # stand on -- a building's floor is a prop, not ground -- so drawing both in one frame leaves
         # whichever datum is chosen half wrong: seating on the terrain hung 99 of 124 props in the air,
@@ -187,7 +205,7 @@ def main() -> None:
             # mesh carries the same datum: the prop then stands exactly as high above the terrain as
             # the source authored it. Seating it on the ground *under it* instead would drop every
             # prop that legitimately stands on a wall walk into the courtyard.
-            y = q["pos"][1] - base + lift
+            y = q["pos"][1] - base + lift + terrace * ELEVATION_STEP
             if ground_here is not None:
                 seat_error.append(y - (ground_here - base))
             free_props.append({
@@ -261,6 +279,9 @@ def main() -> None:
     # walled-off courtyard is not a parade ground. Impassable cells count as covered, so the measure
     # is "bare ground a fight can happen on".
     occ = np.zeros((gh * 2, gw * 2), dtype=bool)
+    # props alone, for "is there room here": the bare-square measure also treats impassable ground as
+    # covered, but a crate can stand in an open cell beside a wall
+    prop_occ = np.zeros((gh * 2, gw * 2), dtype=bool)
     for gy in range(gh):
         for gx in range(gw):
             if paint.get(f"{gx},{gy}") != "normal":
@@ -270,55 +291,145 @@ def main() -> None:
         cz1 = int((fp["pos"][2] + bh / 2))
         if 0 <= cx1 < occ.shape[1] and 0 <= cz1 < occ.shape[0]:
             occ[max(0, cz1 - 1):cz1 + 2, max(0, cx1 - 1):cx1 + 2] = True
+            prop_occ[max(0, cz1 - 1):cz1 + 2, max(0, cx1 - 1):cx1 + 2] = True
     bare_before, _, _ = bare_square(occ, 0.10, 0.90)
     dressed = 0
-    if dressable and bare_before >= 4:
+    if dressable:
+        # Coverage, not hole-filling: filling the single largest hole left a board with a dressed
+        # middle and an empty deployment side, which is the half of the board a player looks at first.
+        # A jittered lattice at the corpus spacing covers the playable area evenly, and a piece is only
+        # placed where nothing is within reach.
         rng = random.Random(args.seed)
-        # Place at the centre of the largest bare square, then measure again: the biggest hole is where
-        # the eye and the fight both go. A cap keeps a board from turning into a crate yard.
-        for _ in range(48):
-            bare, cx1, cz1 = bare_square(occ, 0.10, 0.90)
-            if bare <= 2:
-                break
-            gx = min(gw - 1, max(0, cx1 // 2))
-            gy = min(gh - 1, max(0, cz1 // 2))
-            # the nearest walkable cell to the hole's centre, so a piece never lands inside a wall
-            spot = None
-            for radius in range(0, 4):
-                for dy in range(-radius, radius + 1):
-                    for dx in range(-radius, radius + 1):
-                        tx, ty = gx + dx, gy + dy
-                        if not (0 <= tx < gw and 0 <= ty < gh):
-                            continue
-                        if paint.get(f"{tx},{ty}") != "normal":
-                            continue
-                        if occ[ty * 2:ty * 2 + 2, tx * 2:tx * 2 + 2].any():
-                            continue
-                        spot = (tx, ty)
-                        break
-                    if spot:
-                        break
-                if spot:
+        step_m = 6.0
+        step_cells = max(1, int(step_m / CELL_M))
+        for gy in range(1, gh - 1, step_cells):
+            for gx in range(1, gw - 1, step_cells):
+                jx = min(gw - 2, max(1, gx + rng.randint(-1, 1)))
+                jy = min(gh - 2, max(1, gy + rng.randint(-1, 1)))
+                if paint.get(f"{jx},{jy}") != "normal":
+                    continue
+                # clear of anything within 3 m, so a dressed piece does not sit inside a wall
+                near = False
+                for dy in range(-1, 2):
+                    for dx in range(-1, 2):
+                        tx, ty = jx + dx, jy + dy
+                        if 0 <= tx < gw and 0 <= ty < gh and prop_occ[ty * 2, tx * 2]:
+                            near = True
+                if near:
+                    continue
+                name = dressable[rng.randrange(len(dressable))]
+                free_props.append({
+                    "name": name,
+                    "biome": next((q.get("biome") for q in props if q.get("prop") == name), ""),
+                    "pos": [round(jx * CELL_M - bw / 2 + CELL_M / 2, 3), 0.0,
+                            round(jy * CELL_M - bh / 2 + CELL_M / 2, 3)],
+                    "basis": [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                    "scale": 1,
+                    "dressed": True,
+                })
+                occ[jy * 2:jy * 2 + 2, jx * 2:jx * 2 + 2] = True
+                prop_occ[jy * 2:jy * 2 + 2, jx * 2:jx * 2 + 2] = True
+                dressed += 1
+                if dressed >= 72:
                     break
-            if spot is None:
+            if dressed >= 72:
                 break
-            gx, gy = spot
-            name = dressable[rng.randrange(len(dressable))]
-            # Dressing stands on the board's floor, which is flat: the piece's own stack is what the
-            # authored pieces carry, and a dressed crate that copied a neighbour's height would sit on
-            # top of a wall instead of on the ground the fight happens on.
-            floor_y = 0.0
+    # Landing zones are derived from the ground, not placed at a corner: a parcel board's paint is the
+    # shipped nav grid, so 44% of its cells can be impassable and a hard-coded corner zone lands on a
+    # wall. A zone is a 3x2 block of walkable cells, searched from the two opposite corners inward.
+    def find_zone(from_top: bool) -> dict:
+        block_w, block_h = 3, 2
+        # the two zones come from opposite corners, so the squads start across the board from each
+        # other rather than beside one another on the same edge
+        rows = range(0, gh - block_h + 1) if from_top else range(gh - block_h, -1, -1)
+        cols = range(gw - block_w, -1, -1) if from_top else range(0, gw - block_w + 1)
+        for gy in rows:
+            for gx in cols:
+                if all(paint.get(f"{gx + dx},{gy + dy}") == "normal"
+                       for dx in range(block_w) for dy in range(block_h)):
+                    return {"x": gx, "y": gy, "w": block_w, "h": block_h}
+        return {"x": 0, "y": 0, "w": block_w, "h": block_h}
+
+    # ---------------------------------------------------------------- cover a deployment zone
+    # A squad that lands in an empty plaza has nothing to fight from: measured at the game's own
+    # camera, the deployment corner was twenty-four metres of bare paving with the nearest wall off
+    # frame. A zone always gets cover within reach -- four pieces from the map's own kit, on walkable
+    # ground, just outside the spawn cells so they never block the landing itself.
+    zones = {"player": find_zone(False), "enemy": find_zone(True)}
+    zone_dressed = 0
+    if dressable:
+        rng = random.Random(args.seed * 13 + 5)
+        for zone in zones.values():
+            placed_for_zone = 0
+            for radius in (2, 3, 4):
+                for dx in range(-radius, zone["w"] + radius):
+                    for dy in range(-radius, zone["h"] + radius):
+                        if placed_for_zone >= 4:
+                            break
+                        gx, gy = zone["x"] + dx, zone["y"] + dy
+                        if not (1 <= gx < gw - 1 and 1 <= gy < gh - 1):
+                            continue
+                        # outside the spawn block itself, and on walkable, prop-free ground
+                        inside = zone["x"] <= gx < zone["x"] + zone["w"] and zone["y"] <= gy < zone["y"] + zone["h"]
+                        if inside or paint.get(f"{gx},{gy}") != "normal":
+                            continue
+                        if prop_occ[gy * 2, gx * 2]:
+                            continue
+                        name = dressable[rng.randrange(len(dressable))]
+                        free_props.append({
+                            "name": name,
+                            "biome": next((q.get("biome") for q in props if q.get("prop") == name), ""),
+                            "pos": [round(gx * CELL_M - bw / 2 + CELL_M / 2, 3), 0.0,
+                                    round(gy * CELL_M - bh / 2 + CELL_M / 2, 3)],
+                            "basis": [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                            "scale": 1,
+                            "dressed": True,
+                        })
+                        occ[gy * 2:gy * 2 + 2, gx * 2:gx * 2 + 2] = True
+                        prop_occ[gy * 2:gy * 2 + 2, gx * 2:gx * 2 + 2] = True
+                        placed_for_zone += 1
+                        zone_dressed += 1
+                if placed_for_zone >= 4:
+                    break
+
+    # ---------------------------------------------------------------- the periphery band
+    # A board that ends at its own edge leaves the eye with a void: haze hides it, but haze is not a
+    # place. The band is the map's own vocabulary again -- the tallest pieces the parcel already uses,
+    # stood just outside the play area, facing in -- so the board is surrounded by the same architecture
+    # rather than by nothing.
+    # A band is an enclosing wall, not "the tallest thing to hand": the first version put a 38 m domed
+    # building, a 20 m staircase and a hedge along the edge, and the board grew three white domes.
+    family_of = {p["name"]: p.get("family") for p in families.get("pieces", [])}
+    WALL_FAMILIES = {"wall_run", "wall_corner", "wall_barrier"}
+    band_names = [n for n in {p["name"] for p in free_props if not p.get("dressed")}
+                  if family_of.get(n) in WALL_FAMILIES
+                  and max(kit_size.get(n) or [0, 0, 0]) <= 25.0
+                  and float((kit_size.get(n) or [0, 0, 0])[2] or 0) >= 3.0][:6]
+    band = 0
+    if band_names:
+        rng = random.Random(args.seed * 7 + 1)
+        ring = 3.0  # metres beyond the play area
+        spots = []
+        for gx in range(2, gw - 2, 3):
+            spots.append((gx * CELL_M - bw / 2 + CELL_M / 2, -bh / 2 - ring, 0))
+            spots.append((gx * CELL_M - bw / 2 + CELL_M / 2, bh / 2 + ring, 0))
+        for gy in range(2, gh - 2, 3):
+            spots.append((-bw / 2 - ring, gy * CELL_M - bh / 2 + CELL_M / 2, 90))
+            spots.append((bw / 2 + ring, gy * CELL_M - bh / 2 + CELL_M / 2, 90))
+        for bx, bz, deg in spots:
+            name = band_names[rng.randrange(len(band_names))]
+            a = math.radians(deg)
+            c, sn = math.cos(a), math.sin(a)
             free_props.append({
                 "name": name,
-                "biome": next((p.get("biome") for p in props if p.get("prop") == name), ""),
-                "pos": [round(gx * CELL_M - bw / 2 + CELL_M / 2, 3), round(floor_y, 3),
-                        round(gy * CELL_M - bh / 2 + CELL_M / 2, 3)],
-                "basis": [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                "biome": next((q.get("biome") for q in props if q.get("prop") == name), ""),
+                "pos": [round(bx, 3), 0.0, round(bz, 3)],
+                "basis": [c, 0, sn, 0, 1, 0, -sn, 0, c],
                 "scale": 1,
-                "dressed": True,
+                "periphery": True,
             })
-            occ[gy * 2:gy * 2 + 2, gx * 2:gx * 2 + 2] = True
-            dressed += 1
+            band += 1
+
     bare_after, _, _ = bare_square(occ, 0.10, 0.90)
 
     # cover cells under the pieces that ship a cover tier, so the rules and the HUD agree with what
@@ -335,22 +446,6 @@ def main() -> None:
         gy = int((fp["pos"][2] + bh / 2) // CELL_M)
         if 0 <= gx < gw and 0 <= gy < gh and paint.get(f"{gx},{gy}") == "normal":
             cover[f"{gx},{gy}"] = name
-
-    # Landing zones are derived from the ground, not placed at a corner: a parcel board's paint is the
-    # shipped nav grid, so 44% of its cells can be impassable and a hard-coded corner zone lands on a
-    # wall. A zone is a 3x2 block of walkable cells, searched from the two opposite corners inward.
-    def find_zone(from_top: bool) -> dict:
-        block_w, block_h = 3, 2
-        # the two zones come from opposite corners, so the squads start across the board from each
-        # other rather than beside one another on the same edge
-        rows = range(0, gh - block_h + 1) if from_top else range(gh - block_h, -1, -1)
-        cols = range(gw - block_w, -1, -1) if from_top else range(0, gw - block_w + 1)
-        for gy in rows:
-            for gx in cols:
-                if all(paint.get(f"{gx + dx},{gy + dy}") == "normal"
-                       for dx in range(block_w) for dy in range(block_h)):
-                    return {"x": gx, "y": gy, "w": block_w, "h": block_h}
-        return {"x": 0, "y": 0, "w": block_w, "h": block_h}
 
     light = json.loads(args.light) if args.light else {
         "azimuthDeg": 215, "elevationDeg": 52, "colour": "#ffe6c2", "intensity": 3.4,
@@ -372,7 +467,7 @@ def main() -> None:
         "decals": [],
         "terrain": terrain,
         "light": light,
-        "deployment": {"player": find_zone(False), "enemy": find_zone(True)},
+        "deployment": zones,
         "cover": cover,
         "source": {
             "kind": "parcel-board",
@@ -414,6 +509,8 @@ def main() -> None:
     grounded = sum(1 for v in err if v <= 0.6)
     p50 = err[len(err) // 2] if err else 0.0
     print(f"seating: {grounded}/{len(err)} props within 0.6 m of their ground (median |dy| {p50:.2f} m)")
+    print(f"deployment cover: {zone_dressed} pieces at the landing zones")
+    print(f"periphery: {band} pieces around the edge")
     print(f"dressing: bare middle {bare_before * bare_before:.0f} m2 -> {bare_after * bare_after:.0f} m2, "
           f"{dressed} pieces from the map's own inventory")
     print(f"wrote {out.name}: {gw}x{gh} cells, {len(free_props)} authored props, "
