@@ -249,11 +249,11 @@
   "source": "tools/dow2/scenario_decode.py"
  },
  "budgets": {
-  "unit": {
-   "max_tris": 25000,
-   "min_tris": 700,
-   "soft_tris": 4000,
-   "max_mb": 10.0,
+  "aaa_pc": {
+   "max_tris": 120000,
+   "min_tris": 4000,
+   "soft_tris": 100000,
+   "max_mb": 60.0,
    "skinned": true,
    "need_uv": true,
    "need_texture": true,
@@ -268,6 +268,15 @@
     "death",
     "melee"
    ]
+  },
+  "env": {
+   "max_tris": 60000,
+   "min_tris": 8,
+   "max_mb": 20.0,
+   "skinned": false,
+   "need_uv": true,
+   "need_texture": false,
+   "need_clips": []
   },
   "prop": {
    "max_tris": 12000,
@@ -287,14 +296,25 @@
    "need_texture": true,
    "need_clips": []
   },
-  "env": {
-   "max_tris": 60000,
-   "min_tris": 8,
-   "max_mb": 20.0,
-   "skinned": false,
+  "unit": {
+   "max_tris": 25000,
+   "min_tris": 700,
+   "soft_tris": 4000,
+   "max_mb": 10.0,
+   "skinned": true,
    "need_uv": true,
-   "need_texture": false,
-   "need_clips": []
+   "need_texture": true,
+   "need_clips": [
+    "idle",
+    "walk",
+    "run",
+    "aim",
+    "fire",
+    "reload",
+    "hit",
+    "death",
+    "melee"
+   ]
   },
   "weapon": {
    "max_tris": 8000,

@@ -218,6 +218,18 @@ def main() -> int:
 
     t0 = time.time()
     text, transport = ask(sheet_path, RUBRIC, a.timeout)
+
+    # A transport failure is not a verdict. Check the image actually reached the
+    # model BEFORE judging the answer, or a dead upload is misreported as
+    # "the model did not return JSON" (caught by certify.py on 2026-11-23).
+    if not transport.get('attached', False):
+        record.update({'decision': 'stop',
+                       'reasons': [f"transport: {transport.get('error', 'image not attached')}"],
+                       'transport': transport, 'elapsed_s': round(time.time() - t0, 1)})
+        (outdir / 'review.json').write_text(json.dumps(record, indent=2))
+        print(json.dumps({'asset': a.asset, 'decision': 'stop', 'reasons': record['reasons']}))
+        return EXIT['stop']
+
     obj = parse_json(text)
     errs = validate(obj) if obj else ['no JSON object in the answer']
     if errs:

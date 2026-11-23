@@ -46,8 +46,9 @@ SECTION_KEYS = {
     "label", "extends", "representation", "notes",
     "geometry", "texture", "render", "pixel", "animation", "gates",
 }
-GEOMETRY_KEYS = {"tris_max", "tris_min", "shading", "uv"}
-TEXTURE_KEYS = {"atlas_px", "material_model", "normal_map", "ao", "emission", "texel_world_m"}
+GEOMETRY_KEYS = {"tris_max", "tris_min", "shading", "uv", "lod_chain"}
+TEXTURE_KEYS = {"atlas_px", "material_model", "normal_map", "ao", "emission",
+                 "texel_world_m", "texel_density_px_m"}
 RENDER_KEYS = {"directions", "size_px", "aa", "per_asset_resolution"}
 PIXEL_KEYS = {"palette_id", "dither", "outline", "ink_luma", "selout", "ramps",
               "subpixel", "smear_frames"}
@@ -149,6 +150,15 @@ def validate(profile: dict, config: dict | None = None) -> list[str]:
     geometry = profile.get("geometry", {})
     if geometry:
         _check_keys(geometry, GEOMETRY_KEYS, f"{where}.geometry", errors)
+        chain = geometry.get("lod_chain")
+        if chain is not None:
+            if (not isinstance(chain, list) or not chain
+                    or any(not isinstance(v, int) or v <= 0 for v in chain)):
+                errors.append(f"{where}.geometry: lod_chain must be a non-empty list of positive ints")
+            elif chain != sorted(chain, reverse=True):
+                errors.append(f"{where}.geometry: lod_chain must descend (LOD0 first)")
+            elif any(v > geometry.get("tris_max", 0) for v in chain):
+                errors.append(f"{where}.geometry: lod_chain cannot exceed tris_max")
         tris_max, tris_min = geometry.get("tris_max"), geometry.get("tris_min", 0)
         if not isinstance(tris_max, int) or tris_max <= 0:
             errors.append(f"{where}.geometry: tris_max must be a positive integer")
