@@ -34,6 +34,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 CELL_M = 2.0  # the game's grid; a cell is 2 m on every axis
 ELEVATION_STEP = 0.35  # the game's elevation step, in metres (three/gridMath.ts)
+UPPER_LEVEL_STEPS = 4  # 1.4 m: one storey of the source's upper passability
+CRATER_DEPTH_STEPS = 3  # 1.05 m: deep enough that the rim protects, shallow enough to climb out
 
 
 def load_map(maps: Path, name: str) -> dict:
@@ -80,6 +82,19 @@ def main() -> None:
     nav_w, nav_h = int(mp["nav"]["width"]), int(mp["nav"]["height"])
     raw = np.frombuffer(base64.b64decode(mp["nav"]["walkable_b64"]), dtype=np.uint8)
     walk = raw[: nav_w * nav_h].reshape(nav_h, nav_w) > 0
+    # The map declares more than one passability layer, and that is the source's vertical structure: a
+    # cell blocked on the ground layer and walkable on another is an upper surface -- a wall walk, a
+    # bridge, a raised terrace. This is the only place a board can get a second level without inventing
+    # one, so the layers are read rather than approximated.
+    upper_layers = []
+    for b64 in (mp["nav"].get("upper_b64") or []):
+        run = np.frombuffer(base64.b64decode(b64), dtype=np.uint8)
+        if run.size == nav_w * nav_h:
+            upper_layers.append(run.reshape(nav_h, nav_w) > 0)
+    upper = np.zeros_like(walk)
+    for layer in upper_layers:
+        upper |= layer
+    upper &= ~walk  # a cell walkable on the ground is ground; the upper layer is what is left over
     props = mp.get("props") or []
     placements = [p for p in (mp.get("placements") or []) if p.get("pos") and len(p["pos"]) >= 3]
 
@@ -98,6 +113,7 @@ def main() -> None:
     # coordinates measures a correlation of -0.06 against where the props actually stand, and that
     # reads as "the heightfield is unrelated to the ground", which is false.
     heights = [[0] * gw for _ in range(gh)]
+    upper_cells: set[tuple[int, int]] = set()
     terrain_meta = mp.get("terrain") or {}
     H = terrain_meta.get("heights") or []
     stride_m = float(terrain_meta.get("stride") or 8)
@@ -159,12 +175,22 @@ def main() -> None:
                 ny = y0 + (gy - r * cells_per_parcel) * int(CELL_M)
                 patch = walk[ny:ny + int(CELL_M), nx:nx + int(CELL_M)]
                 blocked = patch.size == 0 or patch.mean() < 0.5
-                paint[f"{gx},{gy}"] = "impassable" if blocked else "normal"
+                up = upper[ny:ny + int(CELL_M), nx:nx + int(CELL_M)]
+                on_upper = up.size > 0 and up.mean() >= 0.5
+                if on_upper:
+                    # an upper surface is walkable, and stands a level above the ground
+                    paint[f"{gx},{gy}"] = "normal"
+                    upper_cells.add((gx, gy))
+                else:
+                    paint[f"{gx},{gy}"] = "impassable" if blocked else "normal"
 
         # A terrace is the relief a stack of shipped pieces can carry: the whole piece -- ground,
         # props, cover -- stands a step above the board and moves as one. The map's own heightfield is
         # not usable here (a building's floor is a prop, not terrain), and a parcel-sized plateau is
         # the smallest unit that keeps the ground and the pieces on it in the same frame.
+        for (gx, gy) in [cell for cell in upper_cells if c * cells_per_parcel <= cell[0] < (c + 1) * cells_per_parcel
+                         and r * cells_per_parcel <= cell[1] < (r + 1) * cells_per_parcel]:
+            heights[gy][gx] = UPPER_LEVEL_STEPS
         if not args.flat and (c + r) % 3 == 1:
             terrace = 4  # 1.4 m: a raised terrace, and a real height advantage
             for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
@@ -200,6 +226,8 @@ def main() -> None:
             # the source authored it. Seating it on the ground *under it* instead would drop every
             # prop that legitimately stands on a wall walk into the courtyard.
             y = q["pos"][1] - base + lift + terrace * ELEVATION_STEP
+            if (gx_p, gz_p) in upper_cells:
+                y += UPPER_LEVEL_STEPS * ELEVATION_STEP
             if ground_here is not None:
                 seat_error.append(y - (ground_here - base))
             free_props.append({
@@ -343,6 +371,31 @@ def main() -> None:
                        for dx in range(block_w) for dy in range(block_h)):
                     return {"x": gx, "y": gy, "w": block_w, "h": block_h}
         return {"x": 0, "y": 0, "w": block_w, "h": block_h}
+
+    # ---------------------------------------------------------------- craters
+    # A crater is relief plus a rim: a bowl one level below the board and cover on the cells around it.
+    # The source has no crater cover type (its `nm_craters` is a ground splat), so the crater is ours --
+    # but it costs no new mechanic, because the rules already read a lower cell as a height term and the
+    # adjacent cells as directional cover.
+    craters = 0
+    if not args.flat:
+        rng = random.Random(args.seed * 31 + 7)
+        for _ in range(40):
+            gx = rng.randrange(3, max(4, gw - 4))
+            gy = rng.randrange(3, max(4, gh - 4))
+            bowl = [(gx, gy), (gx + 1, gy), (gx, gy + 1), (gx + 1, gy + 1)]
+            if any(paint.get(f"{bx},{by}") != "normal" or prop_occ[by * 2, bx * 2] for bx, by in bowl):
+                continue
+            rim = [(gx - 1 + dx, gy - 1 + dy) for dx in range(4) for dy in range(4)
+                   if (gx - 1 + dx, gy - 1 + dy) not in bowl]
+            for bx, by in bowl:
+                heights[by][bx] = -CRATER_DEPTH_STEPS
+            for rx, ry in rim:
+                if 0 <= rx < gw and 0 <= ry < gh and paint.get(f"{rx},{ry}") == "normal":
+                    cover.setdefault(f"{rx},{ry}", "heavy_cover")
+            craters += 1
+            if craters >= 3:
+                break
 
     # ---------------------------------------------------------------- cover a deployment zone
     # A squad that lands in an empty plaza has nothing to fight from: measured at the game's own
@@ -503,6 +556,7 @@ def main() -> None:
     grounded = sum(1 for v in err if v <= 0.6)
     p50 = err[len(err) // 2] if err else 0.0
     print(f"seating: {grounded}/{len(err)} props within 0.6 m of their ground (median |dy| {p50:.2f} m)")
+    print(f"levels: {len(upper_cells)} upper-surface cells, {craters} craters")
     print(f"deployment cover: {zone_dressed} pieces at the landing zones")
     print(f"periphery: {band} pieces around the edge")
     print(f"dressing: bare middle {bare_before * bare_before:.0f} m2 -> {bare_after * bare_after:.0f} m2, "

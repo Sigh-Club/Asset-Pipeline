@@ -142,40 +142,77 @@ is lower than the ground around it (height term against it, but protected from t
 rim itself is cover for a unit standing behind it. It costs no new mechanic — it is relief plus an
 edge, both of which the grid already carries.
 
-## 3. What has to change in the pipeline
+## 3. What was built, and the decision behind each
 
-Ordered, each with the gate that proves it:
+All five items below are in the tree and gated. The order is the order they were built, and each entry
+records the choice, the alternative that was rejected, and the check that holds it.
 
-1. **Stop flattening the board.** The parcel emitter resamples the source heightfield into the board
-   grid instead of writing zeros. Gate: for every parcel, the emitted heights match the source window
-   within one elevation step, and the props seated on it do not float (measured: median |Δy| < 0.35 m
-   between a prop's base and the cell height under it).
-2. **Cover edges from shipped objects.** For each cover-bearing prop, derive its footprint, its facing
-   normal from the recorded `basis`, and its `cover_type`; write the edges to the board. Gate: a shot
-   from behind the prop gets the safety value, a shot from the side gets none, and a prop whose cover
-   is disabled gives none.
-3. **Layered nav.** Decode nav layers 1–4 into per-cell surface sets; render an upper layer only where
-   it exists, with the cutaway rule. Gate: a unit on an upper surface is drawn above, a unit beneath it
-   stays visible when the camera is over the upper surface.
-4. **Craters.** Author them as relief + rim edges (a small tool over the grid). Gate: a unit in the
-   crater centre takes the height penalty and the rim cover applies to the rim side only.
-5. **Abilities read and write cover state.** Disable/enable cover, cover-based healing and damage
-   buffs ride the existing ability bridge. Gate: a cover-disabling ability measurably removes the
-   bonus for the rest of the turn.
+### 3.1 Relief: a parcel terrace, not the map's heightfield
 
-### 3.1 Measured on the first emitted board, and the open question
+**Choice** — a piece stands on a terrace of four elevation steps (1.4 m) and its ground, props and cover
+move together; the terrace comes from the parcel's position, not from the terrain.
+**Rejected** — writing the map's own heightfield into the grid. The terrain does not follow the surfaces
+the pieces stand on (a building's floor is a prop, not ground), so it put the ground tens of metres above
+or below the architecture: measured, 99 of 124 props hanging in the air when seated on the terrain, and
+43 of 121 buried when the piece was seated on its own footing instead.
+**Check** — the emitted board reports its elevation steps (0 and 4), and `--flat` writes a flat board.
 
-The four `parcel_6p_whitewallsofcalderis_*` boards carry **39.5-40.0 m of relief** over 36 x 36 cells
-(elevation steps -70 to +43), because the source place is a fortress cut into a canyon and the emitter
-keeps the terrain as it is. Nothing is wrong with the number -- it is what the map holds -- but a
-tactical board whose cover ladder reasons in 0.64/0.96/1.6 m cannot treat a 24 m drop as "cover": it is
-a cliff, and line of sight across it is all-or-nothing.
+Two defects surfaced on the way and are worth remembering, because both were silent: the terrace was
+assigned before the parcel's paint existed, so the board came out flat *with the flag set*; and the
+ground skirt sat at −0.06 m and cut a striped curtain through every raised terrace. A feature that is
+"on" and does nothing is worse than one that is off.
 
-So a **relief budget** is the next decision, and it has three defensible shapes: keep the real relief
-(the board is the place, and the rules learn about cliffs), clamp the board to a playable band (a
-tactical vignette, at the cost of the place's drama), or quantise the *gameplay* relief while the mesh
-keeps the true height. The third is the one this document recommends, because it preserves both, and it
-is the reason `heights` is written as elevation steps rather than metres.
+### 3.2 Cover: directional by geometry, not by a per-cell tier
+
+**Choice** — cover is resolved from the *cell the cover sits on relative to the target*. The rules take
+the unit vector towards the cover cell and compare it with the vector towards the attacker: inside the
+covered hemisphere the shot is into cover, outside it the shot flanks (`combat_cover_exposure.go`,
+`FlankingAngle` 180). A cell tier alone cannot express "the same rock protects from the north and not
+the south", but the geometry can, and it does so with the data a board already carries.
+**Rejected** — a per-edge cover table in the board data. It duplicates what the position of the cover
+cell already says, and the two could disagree.
+**Check** — `TestAssessCoverExposure` (service) covers the model; `TestParcelBoardCoverIsDirectional`
+(stagedboard) proves the *authored board* feeds it: a target with cover on one side only is protected
+from that side and flanked from the other. The first version of that test failed for a good reason — a
+dense board has cover on several sides, so walking round one piece puts you in front of another. The test
+now looks for the geometry that makes a flank definable at all.
+
+### 3.3 A second level: the source's own upper passability
+
+**Choice** — the decoder now keeps every passability layer the map declares (measured: five on
+`6p_whitewallsofcalderis`), and the emitter raises a cell that is blocked on the ground layer and walkable
+above. That is a wall walk, a bridge or a raised terrace, and it is the only second level a board can have
+without inventing one. The piece's props move up with the level.
+**Rejected** — deriving upper floors from the props (a "roof" family). It would be our guess about which
+pieces are floors, where the map states it directly.
+**Check** — the emitted boards report their raised cells (measured: 463 across the catalogue) and
+`TestParcelBoardCarriesLevelsAndCraters` fails if no parcel board carries a raised level.
+
+### 3.4 Craters: negative relief plus a covered rim
+
+**Choice** — a crater is a 2 × 2 bowl three steps (1.05 m) below the board with heavy cover on the cells
+around it. It costs no new mechanic: the rules already read a lower cell as a height term and an adjacent
+cover cell as directional cover, so a unit in the bowl is low and a unit behind the rim is covered.
+**Rejected** — giving the crater a cover *type* of its own. The source has no crater cover type (its
+`nm_craters` is a ground splat), so a new type would be our word for something the game already models.
+**Check** — `TestParcelBoardCarriesLevelsAndCraters` fails if no parcel board carries a sunken cell, and
+the emitter reports the count (measured: 20 sunken cells across the catalogue).
+
+### 3.5 The board a player sees: density, dressing, band, contact
+
+**Choice** — a 48 m board (2 × 2 parcels); the solver measures the largest prop-free square in the
+playable middle and one kit name's share; the emitter dresses bare ground, the deployment zones and the
+surrounding band from the *same map's own inventory* at 1:1.
+**Rejected** — a 72 m board (3 × 3). Measured: 121 m² of bare middle against 0 m² at 48 m. A strategic
+map's content density cannot fill 72 m, and the reference's tactical boards are ~40 m.
+**Check** — the solver reports both measures per run; the catalogue ranks boards by density; the emitter
+reports what it dressed and where.
+
+Two wrong turns are recorded because they cost a session each: filling only the largest hole left the
+deployment side empty (a player looks at that half first), and "the tallest piece to hand" for the band
+put a 38 m domed building, a 20 m staircase and a hedge on the edge — three white domes on the board. The
+band is now wall families only, and a white patch in a shipped atlas is capped by an albedo ceiling
+rather than being mistaken for a missing texture (every GLB on that board had images).
 
 ## 4. Dead ends to not repeat
 
@@ -187,3 +224,19 @@ is the reason `heights` is written as elevation steps rather than metres.
 - **Do not treat `nav.walkable` as 0/1.** Eight byte values exist in layer 0 alone.
 - **Do not give a crater a cover *type* the source does not have.** The source has no crater cover; our
   crater is relief plus an edge, and calling it `tp_heavy` would be our word, not the game's.
+
+## 5. What is still open
+
+Recorded so the next session does not re-derive it:
+
+- **The upper level is carried in the grid but not visually distinguished.** A raised cell is ground at
+  1.4 m; the renderer draws it as ground, not as a walkway with an underside. The data is there
+  (`heights > 0`); the cutaway rule is not.
+- **A crater's rim is cover by cell, not by edge.** The rules make it directional through the geometry
+  (3.2), which is the same thing from the player's side, but the board does not record *which* face of
+  the rim is protected, so a crater cannot be authored with an open side.
+- **The map's own heightfield is measured and discarded.** It correlates +0.741 with where the map's
+  entities stand, and a board does not use it; a mesh that can carry a true heightfield would let the
+  board keep the place's real relief instead of a parcel terrace.
+- **Cover density is ours, not the source's.** Dressing fills bare ground from the map's own kit; the
+  count per board (measured 5–48 pieces) is a board decision, not a shipped number.

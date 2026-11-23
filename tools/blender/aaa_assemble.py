@@ -404,6 +404,11 @@ def main() -> int:
                     nm = nt.nodes.new('ShaderNodeNormalMap')
                     nt.links.new(ntex.outputs['Color'], nm.inputs['Color'])
                     nt.links.new(nm.outputs['Normal'], bsdf.inputs['Normal'])
+                pbr = SLOT_PBR.get(slot)
+                if pbr:
+                    bsdf.inputs['Metallic'].default_value = pbr['metallic']
+                    bsdf.inputs['Roughness'].default_value = pbr['roughness']
+                    log(f'{slot}: PBR metallic={pbr["metallic"]} roughness={pbr["roughness"]}')
                 if ok_ao and bsdf.inputs['Base Color'].is_linked:
                     src_socket = bsdf.inputs['Base Color'].links[0].from_socket
                     mix = nt.nodes.new('ShaderNodeMixRGB')

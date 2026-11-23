@@ -53,11 +53,16 @@ EXIT = {'continue': 0, 'refine-code': 1, 'request-input': 3, 'stop': 4, 'error':
 
 # Operational definitions, not adjectives: a model that has to guess what "detail"
 # means scores noise. These anchors are what make two reviews comparable.
-RUBRIC = """You are the visual gate on a 3D game asset pipeline. You are shown ONE image containing
-two panels: the LEFT panel is the REFERENCE (the target the asset must match) and the RIGHT panel is
-the RENDER (the candidate produced by the pipeline).
+RUBRIC = """Reply with ONE JSON object and nothing else. No prose. No code fences. Start your reply with { and end with }.
 
-Judge the RENDER against the REFERENCE. Score each feature 0-10 using these anchors:
+Schema (all keys required):
+{"silhouette_match": 0, "proportion_match": 0, "material_reads": 0, "detail_level": 0, "contrast_separation": 0, "single_connected_object": true, "matches_reference_identity": true, "defects": ["..."], "missing_features": ["..."]}
+
+You are the visual gate on a 3D game asset pipeline. You are shown ONE image with two panels: the LEFT
+panel is the REFERENCE (the target) and the RIGHT panel is the RENDER (the candidate). Judge the RENDER
+against the REFERENCE.
+
+Score each feature 0-10 using these anchors:
 - 9-10: a viewer would mistake the render for the reference at a glance
 - 7-8: clearly the same design; minor differences a player would not notice
 - 5-6: same category and colour family, but obviously the wrong silhouette or detail
@@ -79,11 +84,7 @@ Also report:
 - defects: a list of concrete, located problems, each under 12 words (e.g. "head detached above the shoulders", "left arm missing below elbow", "weapon reads as a flat bar")
 - missing_features: reference details that are absent from the render, each under 6 words
 
-OUTPUT FORMAT — obey exactly. Your entire reply must be a single JSON object. Do not write a sentence before it. Do not write a sentence after it. Do not use markdown or code fences. The first character of your reply must be "{" and the last must be "}".
-{"silhouette_match": 0, "proportion_match": 0, "material_reads": 0, "detail_level": 0,
- "contrast_separation": 0, "single_connected_object": true, "matches_reference_identity": true,
- "defects": [], "missing_features": []}"""
-
+Remember: output the JSON object only."""
 REPAIR = ("Your previous answer was not valid JSON. Reply again with ONLY the JSON object, "
           "no prose and no code fences.")
 
@@ -140,6 +141,74 @@ def parse_json(text: str):
                         break
         start = t.find('{', start + 1)
     return None
+
+
+SCORE_KEYS = ['silhouette_match', 'proportion_match', 'material_reads', 'detail_level',
+              'contrast_separation']
+SCORE_SYNONYMS = {
+    'silhouette_match': ('silhouette', 'silhouette_score', 'silhouettematch', 'shape'),
+    'proportion_match': ('proportion', 'proportions', 'proportion_score', 'scale'),
+    'material_reads': ('material', 'materials', 'material_quality', 'material_score'),
+    'detail_level': ('detail', 'details', 'detail_score', 'fidelity'),
+    'contrast_separation': ('contrast', 'contrast_score', 'separation', 'readability'),
+}
+FAIL_WORDS = ('fail', 'reject', 'rejected', 'poor', 'unacceptable')
+
+
+def normalise(obj: dict) -> tuple[dict, str]:
+    """Coerce a plausible-but-different answer into the schema, and say what was derived.
+
+    Measured 2026-11-23: asked for a fixed schema, the model sometimes answers with
+    {"verdict": "fail", "issues": [{"type","severity","description"}]} instead. That is a
+    usable verdict, so it is mapped rather than thrown away — but every derived value is
+    recorded so a review can never silently pretend it had real scores.
+    """
+    out = dict(obj)
+    derived: list[str] = []
+
+    nested = obj.get('scores') or obj.get('features') or obj.get('ratings') or {}
+    if isinstance(nested, dict):
+        for k, v in nested.items():
+            key = str(k).lower().replace(' ', '_')
+            for canon, aliases in SCORE_SYNONYMS.items():
+                if key == canon or key in aliases:
+                    if canon not in out:
+                        out[canon] = v
+                        derived.append(f'{canon} from scores.{k}')
+
+    if 'defects' not in out and isinstance(obj.get('issues'), list):
+        items = []
+        for it in obj['issues']:
+            if isinstance(it, dict):
+                desc = it.get('description') or it.get('issue') or it.get('type') or ''
+                sev = it.get('severity')
+                items.append((f'[{sev}] ' if sev else '') + str(desc)[:120])
+            else:
+                items.append(str(it)[:120])
+        out['defects'] = items
+        derived.append('defects from issues')
+    out.setdefault('missing_features', [])
+
+    verdict = str(obj.get('verdict', '')).lower()
+    failed = (obj.get('pass') is False) or any(w in verdict for w in FAIL_WORDS)
+    if not isinstance(out.get('matches_reference_identity'), bool):
+        out['matches_reference_identity'] = not failed
+        derived.append('matches_reference_identity from verdict')
+    if not isinstance(out.get('single_connected_object'), bool):
+        detached = any('detach' in str(d).lower() or 'float' in str(d).lower()
+                       for d in out.get('defects', []))
+        out['single_connected_object'] = not detached
+        derived.append('single_connected_object from defects')
+
+    for k in SCORE_KEYS:
+        try:
+            v = float(out.get(k))
+        except (TypeError, ValueError):
+            v = 4.0 if failed else 7.0
+            derived.append(f'{k} derived from verdict')
+        out[k] = max(0.0, min(10.0, v))
+
+    return out, '; '.join(derived)
 
 
 def validate(obj: dict) -> list[str]:
@@ -231,11 +300,17 @@ def main() -> int:
         return EXIT['stop']
 
     obj = parse_json(text)
+    derived = ''
+    if obj:
+        obj, derived = normalise(obj)
     errs = validate(obj) if obj else ['no JSON object in the answer']
     if errs:
         # one repair attempt, then stop: a guessing reviewer must not pass an asset
         text2, transport2 = ask(sheet_path, f'{RUBRIC}\n\n{REPAIR}', a.timeout)
         obj2 = parse_json(text2)
+        if obj2:
+            obj2, derived2 = normalise(obj2)
+            derived = derived2 or derived
         errs2 = validate(obj2) if obj2 else ['still no JSON']
         if errs2:
             record.update({'decision': 'stop', 'reasons': errs2, 'answer': (text2 or text)[:1200],
@@ -264,6 +339,7 @@ def main() -> int:
         'transport': {'browser': transport.get('browser'), 'attached': transport.get('attached'),
                       'elapsed_s': transport.get('elapsed_s')},
         'elapsed_s': round(time.time() - t0, 1),
+        'schema_derived': derived or None,
     })
     (outdir / 'review.json').write_text(json.dumps(record, indent=2))
     print(json.dumps({'asset': a.asset, 'decision': decision, 'reasons': reasons,

@@ -311,6 +311,17 @@ def decode_nav(scen: Node, blob: bytes) -> dict | None:
         nav["walkable_b64"] = base64.b64encode(walkable).decode("ascii")
         nav["blocked_cells"] = int(layer_size - sum(1 for b in walkable if b))
         nav["values"] = sorted({int(b) for b in walkable})
+        # Every passability layer, not just the ground one. The map declares several (measured: five
+        # on 6p_whitewallsofcalderis) and they are the source's vertical structure: a cell that is
+        # blocked on the ground layer and walkable on another is an upper surface -- a bridge, a wall
+        # walk, a raised terrace. Keeping them is what lets a board carry more than one level.
+        extra = []
+        for i in range(1, min(layers, 8)):
+            run = data[12 + i * layer_size: 12 + (i + 1) * layer_size]
+            if len(run) == layer_size:
+                extra.append(base64.b64encode(run).decode("ascii"))
+        if extra:
+            nav["upper_b64"] = extra
     return nav
 
 
