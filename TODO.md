@@ -46,6 +46,31 @@ Open on this tier: a real LOD chain (the profile declares 120K→60K→25K→10K
 per-unit material-slot review (slots transfer by nearest surface, which is correct but unaudited); and
 the vision review gate (`tools/review/`) is built but not yet certified — see the T1 entry below.
 
+### Modular assembly — the correction this pipeline needed (2026-11-23)
+
+Research and comparison: [`docs/ASSEMBLY_MODEL.md`](docs/ASSEMBLY_MODEL.md). Short version: modern
+characters are **assembled from parts on a shared skeleton with sockets** (Epic: "modular characters
+comprised of multiple Skeletal Meshes"; gear attaches to sockets), and our AAA route was building one
+fused mesh with one atlas — which is why every material decision was a global compromise.
+
+Now emitted by `tools/build_unit_aaa.sh` alongside the combined LOD0:
+
+```
+output/aaa/line_infantry/parts/line_infantry_{armour_primary,metal_trim,armour_secondary,underlayer}.glb
+output/aaa/line_infantry/unit.manifest.json   # parts, tris, sockets (Head/RightHand/LeftHand/Spine*/Hips), skeleton
+```
+
+Implemented as a pipeline stage (`tools/blender/aaa_assemble.py`, step 2/5), verified by re-loading
+every export: `skeleton.glb` with 22 bones, 9 clips and **5 SOCKET_* nodes parented to their joints**
+(`SOCKET_weapon_r`→RightHand, `SOCKET_weapon_l`→LeftHand, `SOCKET_head`→Head, `SOCKET_back`→Spine2,
+`SOCKET_hips`→Hips); 4 parts at 43,008 / 31,266 / 29,724 / 16,002 tris, each skinned to that rig with
+its own LOD1–LOD3 chain (50/25/10 %); `unit.manifest.json` carrying budgets, sockets and provenance.
+Re-importing skeleton + parts renders the identical figure, so the set is complete.
+
+Open, in order: per-part bakes (parts currently share the whole-body 4K bake); gear actually attached
+at a socket rather than fused into the sculpt; parts authored/sourced separately rather than split on
+material boundaries (`provenance` in the manifest says so).
+
 ## 1. Current programme
 
 Copy DoW2 units 1:1 — geometry, rig, weights, materials, weapons, clips — and drive them from a

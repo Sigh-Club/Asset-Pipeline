@@ -45,16 +45,20 @@ from style.profiles import resolve
 p = resolve('${PROFILE}')
 print(p['texture'].get('texel_density_px_m', 1024))")
 
-echo "=== 1/4 rebuild at the ${PROFILE} band (${TRIS} tris, ${RES}px, ${DENSITY} px/m floor)"
+echo "=== 1/5 rebuild at the ${PROFILE} band (${TRIS} tris, ${RES}px, ${DENSITY} px/m floor)"
 tools/blender_run.sh --job bake -- -b -P tools/blender/aaa_rebuild.py -- \
   --high "$HIGH" --slot-source "$REF" --out "$OUT" --id "$ID" \
   --tris "$TRIS" --res "$RES" --min-texel-density "$DENSITY" \
-  --library "$LIB" --faction "$FACTION" --split-parts
+  --library "$LIB" --faction "$FACTION"
 
-echo "=== 2/4 asset contract (${PROFILE})"
+echo "=== 2/5 assemble: skeleton + sockets + parts + per-part LODs"
+tools/blender_run.sh --job script -- -b -P tools/blender/aaa_assemble.py -- \
+  --glb "$OUT/${ID}_aaa.glb" --out "$OUT" --id "$ID" --high "$HIGH"
+
+echo "=== 3/5 asset contract (${PROFILE})"
 python3 tools/glb_contract.py "$OUT/${ID}_aaa.glb" --kind "$PROFILE"
 
-echo "=== 3/4 measured band report"
+echo "=== 4/5 measured band report"
 python3 - "$OUT/aaa_report.json" "$DENSITY" "$TRIS" <<'PY'
 import json, sys
 rep = json.load(open(sys.argv[1]))
@@ -80,7 +84,7 @@ if problems:
 print('  band: PASS')
 PY
 
-echo "=== 4/4 profile vs published band"
+echo "=== 5/5 profile vs published band"
 python3 tools/style/bands.py --target "$PROFILE" | tail -1
 
 echo "OK  ${OUT}/${ID}_aaa.glb"

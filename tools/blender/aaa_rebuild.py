@@ -740,10 +740,15 @@ def main() -> int:
             log(f'part {mat}: {tris_of(part)} tris, skinned='
                 f'{any(m.type == "ARMATURE" for m in part.modifiers)} -> {part_glb.name}')
             bpy.data.objects.remove(part, do_unlink=True)
+        # Sockets are attachment points on the skeleton (Epic: "you can attach your
+        # objects, weapons, and other actors to the Socket"). The rig here uses
+        # Mixamo-style bone names (Head, RightHand, Spine2...), not UE names, so the
+        # attachment set is derived from the actual bones rather than a hardcoded list.
+        SOCKET_PATTERNS = ('Head', 'RightHand', 'LeftHand', 'Spine2', 'Spine1', 'Hips')
         sockets = []
         if armature:
-            wanted = ('hand_r', 'hand_l', 'head', 'spine_03', 'spine_02', 'pelvis', 'root')
-            sockets = [b.name for b in armature.data.bones if b.name in wanted]
+            names = {b.name for b in armature.data.bones}
+            sockets = [n for n in SOCKET_PATTERNS if n in names]
         REPORT['parts'] = parts
         REPORT['sockets'] = sockets
         (OUT / 'unit.manifest.json').write_text(json.dumps(

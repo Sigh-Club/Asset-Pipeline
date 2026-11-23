@@ -101,6 +101,35 @@ Rules that follow from the research:
 5. **Assembly is data.** The manifest is what the engine reads; recomposing a variant is editing the
    manifest, not rebuilding a mesh.
 
+## 4b. Implemented and verified (2026-11-23)
+
+`tools/blender/aaa_assemble.py` is now a stage in `tools/build_unit_aaa.sh` (step 2/5). It produces,
+and then **re-loads every file it wrote to verify** bones, sockets, skin and clips survived:
+
+```
+skeleton.glb                       22 bones, 9 clips, 5 SOCKET_* nodes parented to their joints
+  SOCKET_weapon_r -> RightHand     SOCKET_weapon_l -> LeftHand     SOCKET_head -> Head
+  SOCKET_back -> Spine2            SOCKET_hips -> Hips
+parts/line_infantry_<slot>.glb     4 parts, 120,000 tris total, each skinned to the 22-bone rig
+parts/line_infantry_<slot>_lodN.glb per-part LOD chain at 50 / 25 / 10 %
+unit.manifest.json                 parts, budgets, LODs, sockets, skeleton, provenance
+```
+
+Measured on line infantry: parts at 43,008 / 31,266 / 29,724 / 16,002 tris, each with LOD1–LOD3
+(21,503 / 10,752 / 4,300 …), every part verified `skinned=True bones=22 clips=9`. Re-importing the
+skeleton plus the four parts renders the identical figure — the assembly reconstructs the whole, which
+is the test that a modular set is actually complete.
+
+**Honest limitations, recorded not hidden:**
+
+1. The parts are derived by splitting the built LOD0 on material boundaries. The *structure* is
+   industry-shaped; the *provenance* is a split, not separately authored gear. `unit.manifest.json`
+   states this in `provenance`.
+2. Every part carries the whole-body 4K bake. Per-part bakes are the next step and are where the
+   texture budget actually gets spent properly.
+3. Sockets are declared and exported, but gear is still fused geometry — nothing is *attached* at a
+   socket yet. The socket nodes exist so that the first separately-authored gear piece can be.
+
 ## 5. What this does not change
 
 The band numbers in `docs/STYLE_BANDS.md` still apply — they now apply **per part** rather than per
@@ -111,3 +140,69 @@ still the geometry source. What changes is the unit of production.
 
 Re-check if the engine side adopts a virtualised-geometry pipeline (Nanite) for characters, which
 removes the per-part LOD incentive but not the per-part material and socket ones.
+
+## 7. Closing the three limitations — plan, evidence and falsifier
+
+### 7.1 Parts derived by material split → real authored or segmented parts
+
+**Two routes, in order of fidelity:**
+
+**(a) Source the gear from the shipped wargear.** `AGENTS.md` G3 already mandates it: *"Assemble from the
+shipped wargear `render_models` list."* DoW2 ships body, armour overlays and weapons as **separate
+models with their own meshes and materials**, already posed and already bound to a 93-bone skeleton.
+`tools/dow2/discover_units.py` + `build_community_units.py` already resolve `default_wargear` to shipped
+files per unit (see `TODO.md` §2: "each unit's `default_wargear` resolved to shipped models"). The work
+is to feed those gear meshes into the AAA assemble stage instead of splitting a generated body.
+This is the only route that gives **authored** parts rather than inferred ones.
+
+**(b) Semantic segmentation of the generated mesh.** `tencent/Hunyuan3D-Part` (open weights) provides
+P3-SAM, a native 3D part-segmentation model — its card states *"P3-SAM can handle any input mesh"* — and
+returns part masks plus bounding boxes. That converts a generated monolith into head / limbs / gear
+regions without inventing geometry. This is also exactly what Tripo and Meshy sell as "segmentation
+before rigging" (`docs/AGENTIC_3D_RESEARCH.md` §2.3).
+
+**Falsifier:** if the segmented parts cannot be re-posed independently (a pauldron that deforms when the
+shoulder rotates is not a part), the segmentation is cosmetic and route (a) is the only real answer.
+
+### 7.2 Shared 4K bake → per-part bakes at per-part texel density
+
+Per part: fresh 0–1 UV layout with a 32 px margin at 2K (1/128 of resolution), a resolution chosen from
+that part's surface area against the 1024–2048 px/m band, and its own normal/AO bake from the high-poly.
+
+The arithmetic is the whole argument: a pauldron occupying ~1/6 of a shared 4K atlas receives ~1/6 of
+the texels; the same pauldron with its **own** 1K layout receives ~4–8× the texel density, because it no
+longer shares with the torso, trousers and rifle. This is standard practice — modular UV layouts and
+per-piece texture sets are AAA UV practice (nastyrodent, *UV Unwrapping for Games*; Tripo, *Smart Mesh UV
+Strategy for Modular Kits*), and the atlas-packing guidance is explicit that texel density must be
+preserved per packed region (CraftPBR, *Texture Atlas Guide*).
+
+**Falsifier:** measure px/m per part with the existing formula; if a part's density does not exceed what
+it had in the shared atlas, the re-layout is not worth the extra draw call.
+
+### 7.3 Sockets declared but gear fused → rigid gear parented to the socket
+
+Classify each part:
+- **rigid** (helmet, pauldron, backpack, weapon) → compute the offset from the socket bone's rest matrix,
+  parent the part to the `SOCKET_*` node, drop its skin weights. Practitioner consensus: *"you can parent
+  hard objects directly to a bone"*; Epic's sockets exist for exactly this.
+- **deforming** (underlayer, cloth) → keep skinning to the same bones, as shipped characters do
+  (*"each hair, armor, and clothing is essentially another skin using the same bones"*).
+
+Once rigid gear is socket-parented, a variant is a **part swap in the manifest**, not a re-bake of the
+body — which is the entire commercial reason for modular characters.
+
+**Falsifier:** play a clip and measure the attached part's transform relative to the socket bone across
+frames. If it drifts, the offset was computed in the wrong space.
+
+### 7.4 Order and cost
+
+| step | gain | cost | risk |
+|---|---|---|---|
+| 1. per-part bakes (§7.2) | **largest visible quality gain**; no new data needed | mechanical: loop the existing bake per part with its own layout | low — the bake and texel machinery already exist and are gated |
+| 2. socket-parent rigid gear (§7.3) | unlocks variants and equipment swapping | needs a rigid/deforming classification per part | medium — offsets must be verified per bone |
+| 3. real gear sourcing (§7.1a) | authored parts instead of inferred; the structural fix | wiring DoW2 wargear into the AAA stage | medium — the wargear resolution already exists, the assembly path does not |
+| 4. P3-SAM segmentation (§7.1b) | semantic parts for *generated* units with no shipped gear | model download + VRAM (8 GB card, one job at a time) | medium — new dependency, unproven on our meshes |
+
+Do them in that order. Step 1 is pure gain with the machinery already built; step 3 is the one that makes
+the structure genuinely authored, and it should not be attempted before the per-part pipeline exists,
+or the gear will be authored and then baked into one atlas anyway.

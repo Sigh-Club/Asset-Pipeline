@@ -61,6 +61,8 @@ def main() -> None:
     ap.add_argument("--light", default=None,
                     help="JSON light rig to bake; defaults to a daylight rig")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--catalogue", default=None,
+                    help="upsert this board's catalogue entry (the game's index of staged boards)")
     args = ap.parse_args()
 
     boards = json.loads(Path(args.boards).read_text())["boards"]
@@ -189,6 +191,22 @@ def main() -> None:
         if 0 <= gx < gw and 0 <= gy < gh and paint.get(f"{gx},{gy}") == "normal":
             cover[f"{gx},{gy}"] = name
 
+    # Landing zones are derived from the ground, not placed at a corner: a parcel board's paint is the
+    # shipped nav grid, so 44% of its cells can be impassable and a hard-coded corner zone lands on a
+    # wall. A zone is a 3x2 block of walkable cells, searched from the two opposite corners inward.
+    def find_zone(from_top: bool) -> dict:
+        block_w, block_h = 3, 2
+        # the two zones come from opposite corners, so the squads start across the board from each
+        # other rather than beside one another on the same edge
+        rows = range(0, gh - block_h + 1) if from_top else range(gh - block_h, -1, -1)
+        cols = range(gw - block_w, -1, -1) if from_top else range(0, gw - block_w + 1)
+        for gy in rows:
+            for gx in cols:
+                if all(paint.get(f"{gx + dx},{gy + dy}") == "normal"
+                       for dx in range(block_w) for dy in range(block_h)):
+                    return {"x": gx, "y": gy, "w": block_w, "h": block_h}
+        return {"x": 0, "y": 0, "w": block_w, "h": block_h}
+
     light = json.loads(args.light) if args.light else {
         "azimuthDeg": 215, "elevationDeg": 52, "colour": "#ffe6c2", "intensity": 3.4,
         "sky": "#cfd8e6", "ground": "#4a4238", "ambient": 2.2,
@@ -209,8 +227,7 @@ def main() -> None:
         "decals": [],
         "terrain": terrain,
         "light": light,
-        "deployment": {"player": {"x": 1, "y": gh - 4, "w": 3, "h": 2},
-                       "enemy": {"x": gw - 4, "y": 1, "w": 3, "h": 2}},
+        "deployment": {"player": find_zone(False), "enemy": find_zone(True)},
         "cover": cover,
         "source": {
             "kind": "parcel-board",
@@ -225,6 +242,24 @@ def main() -> None:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc))
+    if args.catalogue:
+        # The catalogue is the game's index of staged boards. A parcel board is registered here, by
+        # the tool that emits it, because a staging run that rewrote the index used to delete it and
+        # the game silently fell back to generated boards.
+        cat_path = Path(args.catalogue)
+        cat = json.loads(cat_path.read_text())
+        area = doc["size"]["width"] * CELL_M * doc["size"]["height"] * CELL_M
+        entry = {
+            "id": out.stem, "kind": "parcel-board", "biome": doc["biome"], "seed": args.seed,
+            "size": doc["size"], "file": out.name,
+            "metrics": {"props": len(free_props),
+                        "densityPer100m2": round(100.0 * len(free_props) / area, 2),
+                        "dispersion": 0, "embeddedShare": 0},
+        }
+        entries = [e for e in cat.get("entries", []) if e.get("id") != entry["id"]]
+        entries.append(entry)
+        cat["entries"] = entries
+        cat_path.write_text(json.dumps(cat, indent=1))
     bases = [s["base"] for s in seat_report]
     relief = (max(relief_samples) - min(relief_samples)) if relief_samples else 0.0
     steps = sorted({v for row in heights for v in row})
