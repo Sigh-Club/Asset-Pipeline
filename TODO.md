@@ -378,8 +378,42 @@ destructible), the big vista props (cliffs, 29 m trees) are excluded by the size
 separate vista layer, and the ground library's PNGs are indexed but not yet wired into a terrain
 material.
 
+## 2c11. Prefab programme (session 10) — RESEARCHED, NOT STARTED
+
+The map work has been dressing a structure that has no parcels. This is the programme that builds the
+parcels, and it is written up with sources and gates in
+[`docs/PREFAB_PIPELINE.md`](docs/PREFAB_PIPELINE.md). Research findings that decide it:
+
+* **Texture resolution is not the ceiling.** XCOM's own spec authors props at 1024 and ships them at
+  512 (`XCOM2Mods_Environments.pdf`); DoW2 ships 256–512. The gap is a **master material with channel
+  packing** (spec/cavity/tint/emissive), which DoW2 already ships as `_spc`/`_ocl`. We currently
+  collapse four maps into two and pin roughness constant, so every prop shares one response — that is
+  the measured cause of "the pieces don't sit together".
+* **XCOM's parcel contract is documented and short**: fixed sizes on a 1.5 m tile, asset archetypes
+  (never raw meshes), building/floor volumes at 4 m per floor, visibility markup with a build pass,
+  group spawns 3x3, spawn restrictors, turret selectors, and a parcel definition with zone, facing and
+  entrance flags. Plus two helper maps (a pathing check map and a light environment) that make the
+  authoring testable without loading the game.
+* **Kit rules are multiples and snaps**: footprints must be multiples of each other, snap at half the
+  footprint (Skyrim GDC 2013). Our grid is 2 m, so families snap at 1 m and segment lengths are
+  multiples of 2 m.
+
+Phases, each with a gate that can fail (detail in the doc): P0 material spine, P1 kit classification,
+P2 prefab schema + validator + check-map overlay, P3 prefab library v1, P4 streets/periphery, P5 detail
+layer (decals, light presets), P6 catalogue + solver integration, P7 faction plinths.
+
+State: **nothing implemented yet**. Existing pieces that this builds on: `cut_parcels.py` and
+`assemble_parcels.py` (verified 60/60 boards, 0.1 s each), `env_kit.json` (435 props with measured
+sizes and cover boxes), `terrain_bundle.py` (ground blending), `decal_kit.py` (420 decals),
+`boardLight.ts` (baked light rig), `structureShells.ts` + `buildingPrefabs.ts` (the current shells,
+which P1 replaces).
+
 ## 3. Ordered next work
 
+0. **The prefab programme** (§2c11): P0 material spine first, then P1 kit classification. P0 is a
+   re-export through a new master material and changes every later render; P1 decides which shipped
+   pieces are architecture. Do not start P3 (prefab library) before P0 lands, or its verdict will be
+   about materials rather than composition.
 1. **The rest of the layering**: the aim directions are composed from the shipped layers now, but the
    game also layers fire over locomotion (`ub_fire_run*` over `fb_run`) and adds idle sway. Those are
    still exported as base clips. The layers and their bindings are decoded; what is missing is the
