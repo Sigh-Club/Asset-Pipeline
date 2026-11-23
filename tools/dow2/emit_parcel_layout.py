@@ -65,8 +65,8 @@ def main() -> None:
     ap.add_argument("--light", default=None,
                     help="JSON light rig to bake; defaults to a daylight rig")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--relief", action="store_true",
-                    help="write the map's own relief into the grid (default: a flat board)")
+    ap.add_argument("--flat", action="store_true",
+                    help="write a flat board; by default a piece stands on its own terrace")
     ap.add_argument("--catalogue", default=None,
                     help="upsert this board's catalogue entry (the game's index of staged boards)")
     args = ap.parse_args()
@@ -141,22 +141,7 @@ def main() -> None:
         base = min((q["pos"][1] for q in inside), default=seat_base(ground_samples))
         seat_report.append({"parcel": pl["id"], "props": len(inside), "base": round(base, 2)})
 
-        # A terrace is the one form of relief a stack of shipped pieces can carry: the whole parcel
-        # stands one or two elevation steps above the board, and everything in it -- ground, props,
-        # cover -- moves together. Per-cell terrain cannot work (the map's terrain is not the surface
-        # its props stand on), but a parcel-sized platform can: it is the piece's own footing, raised.
-        # A terrace is the one form of relief a stack of shipped pieces could carry: the whole parcel
-        # stands a step above the board and everything in it moves together. Measured on the board it
-        # is *not* ready: the ground mesh builds its surface from the cell elevations and a parcel-sized
-        # step turned the courtyard into a row of white domes, so a board stays flat and its verticality
-        # comes from the architecture -- which already stands 20 m of it. Recorded, not hidden.
         terrace = 0
-        if args.relief:
-            terrace = 2 if (c + r) % 3 == 1 else 0
-            for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
-                for gx in range(c * cells_per_parcel, (c + 1) * cells_per_parcel):
-                    if paint.get(f"{gx},{gy}") == "normal":
-                        heights[gy][gx] = terrace
 
         # Relief is measured but not written by default. The map's terrain is not the surface its props
         # stand on -- a building's floor is a prop, not ground -- so drawing both in one frame leaves
@@ -166,8 +151,6 @@ def main() -> None:
         # which is what makes the board read as the place.
         for (gx, gy), ground in cell_ground.items():
             relief_samples.append(ground - base)
-            if args.relief:
-                heights[gy][gx] = round((ground - base) / ELEVATION_STEP)
 
         # walkability, read from the shipped nav grid at the cell resolution the game plays on
         for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
@@ -177,6 +160,17 @@ def main() -> None:
                 patch = walk[ny:ny + int(CELL_M), nx:nx + int(CELL_M)]
                 blocked = patch.size == 0 or patch.mean() < 0.5
                 paint[f"{gx},{gy}"] = "impassable" if blocked else "normal"
+
+        # A terrace is the relief a stack of shipped pieces can carry: the whole piece -- ground,
+        # props, cover -- stands a step above the board and moves as one. The map's own heightfield is
+        # not usable here (a building's floor is a prop, not terrain), and a parcel-sized plateau is
+        # the smallest unit that keeps the ground and the pieces on it in the same frame.
+        if not args.flat and (c + r) % 3 == 1:
+            terrace = 4  # 1.4 m: a raised terrace, and a real height advantage
+            for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
+                for gx in range(c * cells_per_parcel, (c + 1) * cells_per_parcel):
+                    if paint.get(f"{gx},{gy}") == "normal":
+                        heights[gy][gx] = terrace
 
         # board-space transform: the parcel's slot centre, minus its own centre in the map
         cx = (c + 0.5) * slot - bw / 2

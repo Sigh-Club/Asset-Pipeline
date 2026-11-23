@@ -290,7 +290,8 @@ def transfer_uv_texture(obj, src_uv, dst_uv, src_image, out_res: int,
     return target
 
 
-def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 12):
+def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 12,
+                              bounds=None):
     """Project reference images onto the mesh as albedo (multiview projection texturing).
 
     This is what a reference-driven texturing pipeline does, and it is the only way to get
@@ -328,7 +329,14 @@ def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 1
     log(f'projecting {sorted(imgs)} onto {obj.name} at {out_res}px')
 
     co = np.array([obj.matrix_world @ v.co for v in mesh.vertices], dtype=np.float64)
-    lo, hi = co.min(axis=0), co.max(axis=0)
+    # The projection must map the WHOLE CHARACTER onto the reference, not this part.
+    # Using the part's own bbox stretched a small part (trousers) across the entire
+    # image, so every texel sampled the dark torso (measured 2026-11-23).
+    if bounds is not None:
+        lo = np.asarray(bounds[0], dtype=np.float64)
+        hi = np.asarray(bounds[1], dtype=np.float64)
+    else:
+        lo, hi = co.min(axis=0), co.max(axis=0)
     span = np.maximum(hi - lo, 1e-6)
 
     mesh.calc_loop_triangles()
@@ -345,7 +353,16 @@ def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 1
     mesh.loops.foreach_get('vertex_index', loop_verts)
 
     # axis/sign per view: front looks along -Y, back +Y, left -X, right +X
-    AXES = {'front': (1, -1.0), 'back': (1, 1.0), 'left': (0, -1.0), 'right': (0, 1.0)}
+    # Each view needs TWO axes: which axis its surface normal must point along, and which
+    # axis is HORIZONTAL in the image. Conflating them was the bug — the front view's
+    # horizontal was taken as Y (depth), so every island sampled one line of the image and
+    # the result was dark vertical striping (measured 2026-11-23).
+    VIEWS = {
+        'front': {'n_axis': 1, 'n_sign': -1.0, 'h_axis': 0, 'mirror': False},
+        'back':  {'n_axis': 1, 'n_sign': 1.0,  'h_axis': 0, 'mirror': True},
+        'left':  {'n_axis': 0, 'n_sign': -1.0, 'h_axis': 1, 'mirror': False},
+        'right': {'n_axis': 0, 'n_sign': 1.0,  'h_axis': 1, 'mirror': True},
+    }
 
     out = np.zeros((out_res, out_res, 4), dtype=np.float32)
     out[:, :, 3] = 1.0
@@ -362,18 +379,18 @@ def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 1
         # view selection from the triangle normal
         n = nrm[loop_verts[tri]].mean(axis=0)
         best, best_dot = None, 0.0
-        for name, (axis, sign) in AXES.items():
+        for name, cfg in VIEWS.items():
             if name not in imgs:
                 continue
             vec = np.zeros(3)
-            vec[axis] = sign
+            vec[cfg['n_axis']] = cfg['n_sign']
             dot = float(np.dot(n, vec))
             if dot > best_dot:
                 best, best_dot = name, dot
         if best is None or best_dot <= 0.15:
             continue
         img = imgs[best]
-        axis, sign = AXES[best]
+        cfg = VIEWS[best]
         ih, iw = img.shape[:2]
         p3 = co[loop_verts[tri]]                      # triangle in world space
 
@@ -392,13 +409,16 @@ def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 1
         w0, w1, w2 = w0[inside], w1[inside], w2[inside]
         pos = (w0[:, None] * p3[0] + w1[:, None] * p3[1] + w2[:, None] * p3[2])
         # orthographic projection of the mesh bbox onto the reference image
-        horiz = pos[:, 1] if axis == 1 else pos[:, 0]
-        u = (horiz - lo[1 if axis == 1 else 0]) / span[1 if axis == 1 else 0]
-        if (axis == 1 and sign > 0) or (axis == 0 and sign < 0):
+        h_axis = cfg['h_axis']
+        u = (pos[:, h_axis] - lo[h_axis]) / span[h_axis]
+        if cfg['mirror']:
             u = 1.0 - u
         v = (pos[:, 2] - lo[2]) / span[2]
         sx = np.clip((u * (iw - 1)).astype(int), 0, iw - 1)
-        sy = np.clip((v * (ih - 1)).astype(int), 0, ih - 1)   # bottom-up buffer
+        # Blender's pixel buffer for a loaded image is top-down in this build: sampling
+        # it with v up gives an upside-down projection (measured 2026-11-23 — the helmet
+        # took the boots' colour and the legs took the torso's). Flip to fix.
+        sy = np.clip(((1.0 - v) * (ih - 1)).astype(int), 0, ih - 1)
         ox = np.clip(px[inside].astype(int), 0, out_res - 1)
         oy = np.clip(py[inside].astype(int), 0, out_res - 1)
         out[oy, ox, :3] = img[sy, sx]

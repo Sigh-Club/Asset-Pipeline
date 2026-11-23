@@ -89,9 +89,15 @@ Remaining gap, stated plainly: the albedo is a composite of a 1K tiling library 
 an authored 2K-4K albedo set matched to the concept**. That is the last art gap and it needs a real
 albedo source, not more compositing.
 
+Projection texturing from the four reference views was attempted and parked (§7.3c): it needs a camera
+solve, because an orthographic bbox mapping cannot align a generated mesh to a flat drawing. The shipping
+albedo is therefore library PBR x per-part unit tint, which reads as the design (navy plate, camo
+trousers, gold trim, detailed rifle) but is soft — it is a composite, not an authored set.
+
 Open, in order: certify the vision gate (T1) so quality is measured rather than judged by eye; parts
 authored/sourced separately rather than split on material boundaries (step 3); semantic segmentation for
-units with no shipped gear (step 4).
+units with no shipped gear (step 4); a camera solve for reference projection if concept-matched albedo
+is wanted.
 
 ## 1. Current programme
 

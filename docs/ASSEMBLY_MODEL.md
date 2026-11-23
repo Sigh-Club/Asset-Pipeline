@@ -282,6 +282,17 @@ underlayer (0.79, 0.79, 0.80).
 The result reads as the intended unit for the first time: camo trousers, gold shoulder trim,
 plated armour and a detailed rifle.
 
+**Attempted and parked: projection texturing from the reference views.** `bake_utils.
+project_reference_texture` projects front/back/left/right onto the mesh by orthographic bbox
+mapping, which is what a reference-driven pipeline should do. Measured outcome: the concept's
+upper body and arm bands land correctly, but the legs come out unfilled/black, because an
+orthographic bbox projection cannot align a *generated* mesh to a *flat drawing* — the drawing's
+proportions and the mesh's differ, and there is no camera to solve against. It is available as
+`--views <dir>` and needs a camera solve (or per-region alignment) before it can replace the
+composite. Four failed variants were tried before the cause was clear: vertical flip, axis swap,
+part-vs-character bounds, and library multiply on top — each produced a pixel-identical render,
+which is what proved the source image was not reaching the output.
+
 **Still not competitor tier, and the reason is specific:** the albedo is a *composite* of a 1K
 tiling library and a flat tint, not an authored 2K-4K albedo set matched to the concept. That is
 the remaining art gap, and it cannot be closed by compositing existing assets — it needs a real

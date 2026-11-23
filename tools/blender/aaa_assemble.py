@@ -246,6 +246,15 @@ def main() -> int:
                     break
         log(f'library albedo loaded for slots: {sorted(lib_albedo)}')
 
+    # whole-character bounds, used by the reference projection so every part is mapped
+    # onto the same reference frame
+    import numpy as _np
+    all_co = _np.array([o.matrix_world @ v.co for o in parts for v in o.data.vertices],
+                       dtype=_np.float64)
+    char_bounds = (tuple(all_co.min(axis=0)), tuple(all_co.max(axis=0)))
+    log(f'character bounds for projection: {tuple(round(v, 3) for v in char_bounds[0])} .. '
+        f'{tuple(round(v, 3) for v in char_bounds[1])}')
+
     total = 0
     for part in sorted(parts, key=lambda o: -tris(o)):
         slot = part.material_slots[0].material.name.split('.')[0] if part.material_slots else 'unknown'
@@ -311,15 +320,18 @@ def main() -> int:
                             for link in inp.links:
                                 stack.append(link.from_node)
         ok_alb = False
+        projected = False
         proj_img = None
         if a.views:
             vdir = Path(a.views)
             proj_img = bu.project_reference_texture(part, {
                 'front': vdir / 'front.png', 'back': vdir / 'back.png',
-                'left': vdir / 'left.png', 'right': vdir / 'right.png'}, res)
+                'left': vdir / 'left.png', 'right': vdir / 'right.png'}, res,
+                bounds=char_bounds)
             if proj_img is not None:
                 alb = proj_img
                 ok_alb = True
+                projected = True
         if src_img and not ok_alb:
             import numpy as _np
             _px = _np.array(src_img.pixels[:], dtype=_np.float32)
@@ -364,7 +376,9 @@ def main() -> int:
                                 f'(atlas mean {tuple(round(float(v), 3) for v in mean)})')
                     except Exception as e:
                         log(f'{slot}: tint failed ({type(e).__name__}); using atlas albedo')
-                    if lib_img and tint:
+                    # a projected albedo IS the colour authority: multiplying the
+                    # library over it desaturates the design's own colours
+                    if lib_img and tint and not projected:
                         coord = nt.nodes.new('ShaderNodeTexCoord')
                         mapping = nt.nodes.new('ShaderNodeMapping')
                         mapping.inputs['Scale'].default_value = (6.0, 6.0, 6.0)
