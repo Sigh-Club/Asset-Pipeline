@@ -371,7 +371,7 @@ def main(argv=None) -> int:
             rows.append((unit_id, want))
         lines = [
             "/**",
-            " * dow2Roster.ts — the DoW2-imported unit roster (GENERATED, do not hand-edit).",
+            " * unitRoster.ts — the imported unit roster (GENERATED, do not hand-edit).",
             " *",
             " * Written by asset-pipeline/tools/dow2/discover_units.py --emit-catalogue from",
             " * tools/dow2/roster.json. Each entry is a unit built from the shipped Dawn of War II data",
@@ -379,7 +379,7 @@ def main(argv=None) -> int:
             " * the same standard as the rig lab: `sourceMaterials` keeps the shipped textures rather",
             " * than repainting them into the IoA palette.",
             " */",
-            "export interface Dow2RosterEntry {",
+            "export interface UnitRosterEntry {",
             "  unit: string;",
             "  label: string;",
             "  faction: string;",
@@ -388,7 +388,7 @@ def main(argv=None) -> int:
             "  primary?: boolean;",
             "}",
             "",
-            "export const DOW2_ROSTER: Dow2RosterEntry[] = [",
+            "export const UNIT_ROSTER: UnitRosterEntry[] = [",
         ]
         for unit_id, want in rows:
             label = unit_id.replace("dow_", "").replace("_", " ")

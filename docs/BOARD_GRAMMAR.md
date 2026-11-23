@@ -10,6 +10,41 @@ grammar decides where walls, floors, cover, doors, roofs and landing zones are. 
 shipped wall kit, the shipped props, the shipped ground layers, the imported units — placed at 1:1, never
 stretched.
 
+## Vocabulary, and where the source names are allowed
+
+Three words are easy to confuse and the confusion has cost us work, so they are defined here.
+
+| Word | What it means in this project |
+|---|---|
+| **the reference tactics game** | the game whose *mechanics and level grammar* we copy. Named in documents, never in code. |
+| **the shipped kit / the source game** | the game whose *art* we use at 1:1: models, textures, ground, props, animations. |
+| **the board** | what we build: a combat grid with our grammar and the shipped art standing on it. |
+
+**Naming rule (owner, 2026-11-23): the source names do not appear in code.** No `xcom`, no `dow2`, no
+`dawn of war`, in any casing, in:
+
+- identifiers, types, constants, exported symbols;
+- file and directory names;
+- CSS class names and element ids;
+- player-facing strings.
+
+Use our own vocabulary (`board`, `cell`, `cover`, `kit`, `prop`, `parcel`, `prefab`, `roster`,
+`clip`) or a neutral technical term (`unit_roster`, `turn_queue`, `clip_candidates`). The words belong
+in documents, and in a code comment only when the comment is citing a concrete artefact — a source
+file name (`XComWorldData.uc`), a shipped asset, or a document path. Prose in a comment says "the
+shipped kit" or "the reference game", not "XCOM".
+
+The reason is not tidiness: a codebase that names the *source* makes every later reader think we are
+building a clone, and it hides which parts are ours to change. Our vocabulary is the contract.
+
+## How to review a board
+
+A review judges the product board, so it has to *be* the product board. Two surfaces do that:
+`/demo` (a staged board, `?board=<n>` to pin one, `?reveal=1` to lift the fog for an art read) and
+`/layouts`. A sandbox or fixture board — anything that builds its own grid — is a *mechanical*
+harness: it may legitimately have no shipped ground and no baked light, so do not judge art on it.
+If a harness is being used to judge art, that is a bug in the harness, not a verdict on the board.
+
 ## What XCOM's grammar actually is (measured from the shipped game)
 
 Read from `XComWorldData.uc`, `XComCoverGrid.uc`, `XComCoverInterface.uc` and the XCOM 2 SDK plot
@@ -72,6 +107,9 @@ pieces with mandatory and optional slots, not a scatter.
   draw a 2.4 m grey module, which is why a grammar-built board still looked like a grid.
 - **Art is DoW2, at 1:1.** No stretching, no repainting: a shipped prop's own diffuse, normal and
   specular, a shipped wall piece's own dimensions.
+- **One renderer.** The board is drawn by the 3D board renderer, isometric camera, Three.js. The
+  retired 2D board renderer is not a fallback for art review and nothing may mount it by hand; see
+  `Imperium-of-Ash/docs/3D_COMBAT_MIGRATION.md`.
 
 ## How XCOM actually builds a map (read from the shipped source, 2026-11-22)
 
