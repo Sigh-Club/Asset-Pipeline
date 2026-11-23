@@ -40,7 +40,10 @@ import bpy
 from mathutils import Matrix
 
 _ap = argparse.ArgumentParser()
-_ap.add_argument('--glb', required=True)
+_ap.add_argument('--glb', help='combined LOD0 GLB (default source)')
+_ap.add_argument('--from-parts', help='parts directory: join its LOD0 parts and extract gear '
+                                      'from THAT, so the body and gear carry the per-part '
+                                      'materials/bakes instead of the pre-part atlas')
 _ap.add_argument('--out', required=True)
 _ap.add_argument('--id', required=True)
 _ap.add_argument('--min-faces', type=int, default=400,
@@ -81,7 +84,9 @@ def rigid_clusters(body) -> dict[str, list[int]]:
     clusters: dict[str, list[int]] = {}
     for p in body.data.polygons:
         bones = [dom.get(i) for i in p.vertices]
-        if any(b is None or w < a.rigid_weight for b, w in bones):
+        if any(x is None for x in bones):          # a vertex with no groups is not rigid
+            continue
+        if any(w < a.rigid_weight for _, w in bones):
             continue
         names = {b for b, _ in bones}
         if len(names) != 1:
@@ -170,9 +175,26 @@ def verify_follow(part, arm, bone: str) -> dict:
 
 def main() -> int:
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=str(Path(a.glb).resolve()))
-    body = max((o for o in bpy.data.objects if o.type == 'MESH'), key=lambda o: len(o.data.polygons))
-    arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+    if a.from_parts:
+        # join the per-part LOD0 meshes into one body, so the gear/body split inherits
+        # the per-part UVs, bakes and materials (the whole point of steps 1 and 2)
+        files = sorted(p for p in Path(a.from_parts).glob('*.glb') if '_lod' not in p.name)
+        for f in files:
+            bpy.ops.import_scene.gltf(filepath=str(f))
+        log(f'imported {len(files)} part file(s) from {a.from_parts}')
+        meshes = [o for o in bpy.data.objects if o.type == 'MESH']
+        arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+        for o in bpy.data.objects:
+            o.select_set(o in meshes)
+        bpy.context.view_layer.objects.active = meshes[0]
+        bpy.ops.object.join()
+        body = bpy.context.view_layer.objects.active
+        body.name = f'{a.id}_body'
+    else:
+        bpy.ops.import_scene.gltf(filepath=str(Path(a.glb).resolve()))
+        body = max((o for o in bpy.data.objects if o.type == 'MESH'),
+                   key=lambda o: len(o.data.polygons))
+        arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
     log(f'source: {body.name} {len(body.data.polygons)} faces, rig {arm.name}')
 
     # sockets are defined on the SKELETON asset (skeleton.glb), not in this mesh file,

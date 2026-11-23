@@ -58,7 +58,7 @@ tools/blender_run.sh --job script -- -b -P tools/blender/aaa_assemble.py -- \
 
 echo "=== 3/6 socket-parent rigid gear (helmet, boots, plates)"
 tools/blender_run.sh --job script -- -b -P tools/blender/aaa_socket_gear.py -- \
-  --glb "$OUT/${ID}_aaa.glb" --out "$OUT" --id "$ID"
+  --from-parts "$OUT/parts" --out "$OUT" --id "$ID"
 
 echo "=== 4/6 asset contract (${PROFILE})"
 python3 tools/glb_contract.py "$OUT/${ID}_aaa.glb" --kind "$PROFILE"

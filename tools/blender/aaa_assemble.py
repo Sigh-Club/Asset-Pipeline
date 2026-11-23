@@ -53,6 +53,9 @@ _ap.add_argument('--id', required=True)
 _ap.add_argument('--high', help='high-poly source for per-part normal/AO bakes')
 _ap.add_argument('--library', help='PBR material library .blend (supplies albedo detail)')
 _ap.add_argument('--faction', help='library faction prefix, e.g. iron_directorate')
+_ap.add_argument('--tint-value', type=float, default=0.8,
+                 help='value the per-part colour tint is normalised to; the atlas is dark '
+                      '(measured 0.10-0.24) so its HUE is kept and its VALUE restored')
 _ap.add_argument('--target-density', type=float, default=1024.0,
                  help='per-part texel density target (px/m); PC band floor is 1024')
 _ap.add_argument('--lod-chain', type=float, nargs='*', default=[0.5, 0.25, 0.10],
@@ -325,7 +328,23 @@ def main() -> int:
                 if ok_alb:
                     atex = nt.nodes.new('ShaderNodeTexImage'); atex.image = alb
                     lib_img = lib_albedo.get(slot)
-                    if lib_img:
+                    # per-part tint: keep the atlas hue, restore its value. The atlas
+                    # measures 0.10-0.25 in RGB, so using it directly crushes the surface
+                    # to near-black (measured 2026-11-23: a 0.55 multiply changed nothing).
+                    tint = None
+                    try:
+                        import numpy as _np
+                        px = _np.array(alb.pixels[:], dtype=_np.float32).reshape(-1, 4)[:, :3]
+                        lit = px[px.sum(axis=1) > 0.09]
+                        if len(lit):
+                            mean = lit.mean(axis=0)
+                            peak = float(mean.max()) or 1.0
+                            tint = tuple(float(v) / peak * a.tint_value for v in mean)
+                            log(f'{slot}: tint {tuple(round(v, 3) for v in tint)} '
+                                f'(atlas mean {tuple(round(float(v), 3) for v in mean)})')
+                    except Exception as e:
+                        log(f'{slot}: tint failed ({type(e).__name__}); using atlas albedo')
+                    if lib_img and tint:
                         coord = nt.nodes.new('ShaderNodeTexCoord')
                         mapping = nt.nodes.new('ShaderNodeMapping')
                         mapping.inputs['Scale'].default_value = (6.0, 6.0, 6.0)
@@ -335,13 +354,15 @@ def main() -> int:
                         ltex.projection = 'BOX'
                         ltex.projection_blend = 0.12
                         nt.links.new(mapping.outputs['Vector'], ltex.inputs['Vector'])
+                        # library albedo is the BASE (authored detail and value);
+                        # the unit's colour identity is the constant tint on top
                         mul = nt.nodes.new('ShaderNodeMixRGB')
                         mul.blend_type = 'MULTIPLY'
-                        mul.inputs['Fac'].default_value = 0.55
-                        nt.links.new(atex.outputs['Color'], mul.inputs['Color1'])
-                        nt.links.new(ltex.outputs['Color'], mul.inputs['Color2'])
+                        mul.inputs['Fac'].default_value = 1.0
+                        nt.links.new(ltex.outputs['Color'], mul.inputs['Color1'])
+                        mul.inputs['Color2'].default_value = (*tint, 1.0)
                         nt.links.new(mul.outputs['Color'], bsdf.inputs['Base Color'])
-                        log(f'{slot}: identity albedo x library detail')
+                        log(f'{slot}: library albedo x unit tint')
                     else:
                         nt.links.new(atex.outputs['Color'], bsdf.inputs['Base Color'])
                 if ok_nrm:

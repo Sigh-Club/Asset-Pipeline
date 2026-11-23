@@ -96,15 +96,23 @@ def _diffuse_candidates() -> list:
     stem, parent = model.stem, model.parent
     found = [parent / f"{stem}_dif.dds"]
     found.extend(sorted(parent.glob(f"{stem}*_dif.dds")))
-    # a sibling build of the same geometry: <stem>_tarp/, <stem>_buttress/ ...
-    found.extend(sorted(parent.glob(f"{stem}_*/{stem}_*_dif.dds")))
-    found.extend(sorted(parent.glob(f"{stem}_*/*_dif.dds")))
-    # a shared atlas: walk up to the art root and read world_objects/shared_textures/base
-    for ancestor in [parent, *parent.parents]:
-        shared = ancestor / "shared_textures" / "base"
-        if shared.is_dir():
-            found.extend(sorted(shared.glob("*_dif.dds")))
-            break
+    # A sibling build of the same geometry sits beside the model's own directory, not inside it:
+    # `buildings/desert_building_sb_threeslot_tarp/` next to `buildings/desert_building_sb_threeslot/`.
+    # Globbing inside the model's directory found nothing and the fallback silently gave up.
+    found.extend(sorted(parent.parent.glob(f"{stem}_*/{stem}_*_dif.dds")))
+    found.extend(sorted(parent.parent.glob(f"{stem}_*/*_dif.dds")))
+    # A shared atlas lives in one of the archive roots (`sga_art/000_data`, `000_extra`, ...), and a
+    # model in one root reads the atlas from another. Walk the art root and take every shared atlas.
+    roots = [parent, *parent.parents]
+    # The archive roots (`sga_art/000_data`, `000_extra`, ...) sit above `DATA/art`, so the directory
+    # that holds them is found by looking for `000_*` children -- not by looking for `world_objects`,
+    # which is one level too deep and left a model in `000_extra` with no atlas at all.
+    archive_root = next((a for a in roots if any(a.glob("000_*"))), None)
+    if archive_root is not None:
+        for archive in sorted(archive_root.glob("000_*")):
+            shared = archive / "DATA" / "art" / "world_objects" / "shared_textures" / "base"
+            if shared.is_dir():
+                found.extend(sorted(shared.glob("*_dif.dds")))
     seen, out = set(), []
     for f in found:
         if f.is_file() and f not in seen:
@@ -122,8 +130,14 @@ for mat in bpy.data.materials:
         continue
     want = _tokens(mat.name)
     best, best_score = None, 0
+    stem = Path(A.model).stem
     for cand in _diffuse_candidates():
-        score = len(want & _tokens(cand.stem.replace("_dif", "")))
+        # A sibling build of the same geometry is the strongest evidence there is, whatever the
+        # material is called: `desert_building_sb_threeslot` names its material `new_healthy`, which
+        # shares no token with `desert_building_sb_threeslot_tarp_dif`, and the token score alone
+        # rejected the only correct texture on disk.
+        score = 10 if cand.parent.name.startswith(stem) else 0
+        score += len(want & _tokens(cand.stem.replace("_dif", "")))
         if score > best_score:
             best, best_score = cand, score
     if best is None:

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import random
 from collections import Counter
 from pathlib import Path
 
@@ -58,6 +59,8 @@ def main() -> None:
     ap.add_argument("--parcels", default=str(ROOT / "output/source_lab/parcels_xcom.json"))
     ap.add_argument("--maps", default=str(ROOT / "output/source_lab/maps"))
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--name", default=None,
+                    help="output stem; defaults to the board's own (parcel_<map>_<seed>)")
     ap.add_argument("--light", default=None,
                     help="JSON light rig to bake; defaults to a daylight rig")
     ap.add_argument("--out", required=True)
@@ -197,6 +200,127 @@ def main() -> None:
                 "scale": q.get("scale") or 1,
             })
 
+    # ---------------------------------------------------------------- dressing a bare middle
+    # A cut from a strategic map is not guaranteed to be fightable in its middle: measured on twelve
+    # solved boards, the largest bare square inside the middle half was 121 m2 -- an 11 m parade ground
+    # where the fight happens. The source's own vocabulary is the fix, not invented architecture: the
+    # bare cells are dressed with cover pieces drawn from the same map's own inventory, at 1:1, on
+    # walkable ground, spaced by the corpus interval. A dressed piece is marked, so a reviewer can see
+    # what came from the map and what the board needed.
+    families_path = ROOT / "output/source_lab/env_families.json"
+    families = json.loads(families_path.read_text()) if families_path.exists() else {"pieces": []}
+    tier_of_name = {p["name"]: p.get("cover") for p in families.get("pieces", []) if p.get("cover")}
+    # Dressing has to *read* at the game's camera distance: a 0.4 m crate fills a cell on paper and is
+    # a speck on screen. The kit's own sizes pick the pieces that carry mass at board scale -- 1.2 m to
+    # 4 m tall -- and the cover ladder decides whether a piece is cover once it is chosen.
+    sizes_path = ROOT / "output/source_lab/env_families.json"
+    kit_size = {p["name"]: (p.get("size") or [0, 0, 0]) for p in families.get("pieces", [])}
+    inventory = sorted({p["name"] for p in free_props})
+
+    def reads_at_board_scale(name: str) -> bool:
+        size = kit_size.get(name)
+        if not size or len(size) < 3:
+            return False
+        height = float(size[2] or 0)
+        footprint = max(float(size[0] or 0), float(size[1] or 0))
+        return 1.2 <= height <= 4.0 and footprint >= 1.0
+
+    dressable = [n for n in inventory if reads_at_board_scale(n) and tier_of_name.get(n)]
+    if not dressable:
+        dressable = [n for n in inventory if reads_at_board_scale(n)]
+    if not dressable:
+        dressable = [n for n in inventory if tier_of_name.get(n)]
+
+    def bare_square(occupancy, lo_frac: float, hi_frac: float) -> tuple[int, int, int]:
+        """The largest empty square in the middle of the board: side, and its centre in metres."""
+        cells_h, cells_w = occupancy.shape
+        lo_x, hi_x = int(cells_w * lo_frac), int(cells_w * hi_frac)
+        lo_y, hi_y = int(cells_h * lo_frac), int(cells_h * hi_frac)
+        region = occupancy[lo_y:hi_y, lo_x:hi_x]
+        if region.size == 0:
+            return 0, 0, 0
+        dp = np.zeros(region.shape, dtype=np.int32)
+        best, best_at = 0, (0, 0)
+        for yy in range(region.shape[0]):
+            for xx in range(region.shape[1]):
+                if region[yy, xx]:
+                    continue
+                dp[yy, xx] = 1 + min(dp[yy - 1, xx] if yy else 0,
+                                     dp[yy, xx - 1] if xx else 0,
+                                     dp[yy - 1, xx - 1] if xx and yy else 0)
+                if dp[yy, xx] > best:
+                    best, best_at = int(dp[yy, xx]), (yy, xx)
+        # the DP's corner is the square's bottom-right; its centre is half a side back from it
+        cy = lo_y + best_at[0] - best // 2
+        cx = lo_x + best_at[1] - best // 2
+        return best, cx, cy
+
+    # occupancy at 1 m, stamped from every authored prop's footprint (a piece covers its own cell and
+    # the metre around it, which is what the eye reads as "there is something there")
+    # A hole only matters where a unit can stand: 44% of a parcel board's cells are impassable, and a
+    # walled-off courtyard is not a parade ground. Impassable cells count as covered, so the measure
+    # is "bare ground a fight can happen on".
+    occ = np.zeros((gh * 2, gw * 2), dtype=bool)
+    for gy in range(gh):
+        for gx in range(gw):
+            if paint.get(f"{gx},{gy}") != "normal":
+                occ[gy * 2:gy * 2 + 2, gx * 2:gx * 2 + 2] = True
+    for fp in free_props:
+        cx1 = int((fp["pos"][0] + bw / 2))
+        cz1 = int((fp["pos"][2] + bh / 2))
+        if 0 <= cx1 < occ.shape[1] and 0 <= cz1 < occ.shape[0]:
+            occ[max(0, cz1 - 1):cz1 + 2, max(0, cx1 - 1):cx1 + 2] = True
+    bare_before, _, _ = bare_square(occ, 0.10, 0.90)
+    dressed = 0
+    if dressable and bare_before >= 4:
+        rng = random.Random(args.seed)
+        # Place at the centre of the largest bare square, then measure again: the biggest hole is where
+        # the eye and the fight both go. A cap keeps a board from turning into a crate yard.
+        for _ in range(48):
+            bare, cx1, cz1 = bare_square(occ, 0.10, 0.90)
+            if bare <= 2:
+                break
+            gx = min(gw - 1, max(0, cx1 // 2))
+            gy = min(gh - 1, max(0, cz1 // 2))
+            # the nearest walkable cell to the hole's centre, so a piece never lands inside a wall
+            spot = None
+            for radius in range(0, 4):
+                for dy in range(-radius, radius + 1):
+                    for dx in range(-radius, radius + 1):
+                        tx, ty = gx + dx, gy + dy
+                        if not (0 <= tx < gw and 0 <= ty < gh):
+                            continue
+                        if paint.get(f"{tx},{ty}") != "normal":
+                            continue
+                        if occ[ty * 2:ty * 2 + 2, tx * 2:tx * 2 + 2].any():
+                            continue
+                        spot = (tx, ty)
+                        break
+                    if spot:
+                        break
+                if spot:
+                    break
+            if spot is None:
+                break
+            gx, gy = spot
+            name = dressable[rng.randrange(len(dressable))]
+            # Dressing stands on the board's floor, which is flat: the piece's own stack is what the
+            # authored pieces carry, and a dressed crate that copied a neighbour's height would sit on
+            # top of a wall instead of on the ground the fight happens on.
+            floor_y = 0.0
+            free_props.append({
+                "name": name,
+                "biome": next((p.get("biome") for p in props if p.get("prop") == name), ""),
+                "pos": [round(gx * CELL_M - bw / 2 + CELL_M / 2, 3), round(floor_y, 3),
+                        round(gy * CELL_M - bh / 2 + CELL_M / 2, 3)],
+                "basis": [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                "scale": 1,
+                "dressed": True,
+            })
+            occ[gy * 2:gy * 2 + 2, gx * 2:gx * 2 + 2] = True
+            dressed += 1
+    bare_after, _, _ = bare_square(occ, 0.10, 0.90)
+
     # cover cells under the pieces that ship a cover tier, so the rules and the HUD agree with what
     # is drawn rather than with a separate, generated cover map
     families = json.loads((ROOT / "output/source_lab/env_families.json").read_text()) \
@@ -290,6 +414,8 @@ def main() -> None:
     grounded = sum(1 for v in err if v <= 0.6)
     p50 = err[len(err) // 2] if err else 0.0
     print(f"seating: {grounded}/{len(err)} props within 0.6 m of their ground (median |dy| {p50:.2f} m)")
+    print(f"dressing: bare middle {bare_before * bare_before:.0f} m2 -> {bare_after * bare_after:.0f} m2, "
+          f"{dressed} pieces from the map's own inventory")
     print(f"wrote {out.name}: {gw}x{gh} cells, {len(free_props)} authored props, "
           f"{len(cover)} cover cells, seat bases {min(bases):.1f}..{max(bases):.1f} m, "
           f"relief {relief:.1f} m over {len(steps)} elevation steps "

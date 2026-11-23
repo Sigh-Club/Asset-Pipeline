@@ -92,6 +92,41 @@ class Corpus:
     def __init__(self, maps_dir: Path):
         self.dir = maps_dir
         self._nav: dict[str, np.ndarray] = {}
+        self._props: dict[str, list[tuple[float, float, str]]] = {}
+        self._prop_index: dict[tuple[str, int, int, int, int], list[tuple[float, float, str]]] = {}
+
+    def props(self, parcel: dict) -> list[tuple[float, float, str]]:
+        """The parcel's props as (nav x, nav y, name) in the source map's own frame.
+
+        Read from the map's placements, so a board can be measured for what it will actually show: a
+        parcel can be "dense" by count and still leave its middle bare, which is the defect a board
+        with an empty centre has.
+        """
+        name = parcel["map"]
+        if name not in self._props:
+            path = self.dir / f"{name}.json"
+            out: list[tuple[float, float, str]] = []
+            if path.exists():
+                d = json.loads(path.read_text())
+                props = d.get("props") or []
+                nw = float((d.get("nav") or {}).get("width") or 0)
+                nh = float((d.get("nav") or {}).get("height") or 0)
+                for q in d.get("placements") or []:
+                    pos = q.get("pos")
+                    if not pos or len(pos) < 3:
+                        continue
+                    k = q.get("kind")
+                    if not isinstance(k, int) or not (0 <= k < len(props)):
+                        continue
+                    out.append((pos[0] + nw / 2, pos[2] + nh / 2, props[k]["prop"]))
+            self._props[name] = out
+        x0, y0 = parcel["origin"]
+        w, h = parcel["size_xy"]
+        key = (name, x0, y0, w, h)
+        if key not in self._prop_index:
+            self._prop_index[key] = [t for t in self._props[name]
+                                     if x0 <= t[0] < x0 + w and y0 <= t[1] < y0 + h]
+        return self._prop_index[key]
 
     def nav(self, name: str) -> np.ndarray | None:
         if name not in self._nav:
@@ -238,6 +273,63 @@ def solve(catalogue: list[dict], cols: int, rows: int, rng: random.Random,
     return None
 
 
+def centre_hollow_m2(board: list[dict], cols: int, corpus: Corpus, cell_m: int = 1) -> float:
+    """The largest square of board, in the middle half, with no prop within reach of it.
+
+    A board can pass a density test and still be hollow where the fight happens: the parcels at the
+    edges are dense and the middle one is a parade ground. Measured on the emitted boards, the middle
+    of a 72 m board was bare for 12 m or more -- a lobby, not a firefight. Props count as reaching
+    1.5 m, which is a piece you can take cover behind rather than a pebble.
+    """
+    slot = int(board[0]["size_xy"][0])
+    bw, bh = cols * slot, len(board) // cols * slot
+    grid = np.zeros((bh // cell_m, bw // cell_m), dtype=bool)
+    names: list[str] = []
+    for i, parcel in enumerate(board):
+        r, c = divmod(i, cols)
+        ox, oy = c * slot, r * slot
+        x0, y0 = parcel["origin"]
+        for px, py, name in corpus.props(parcel):
+            gx = int(ox + (px - x0))
+            gy = int(oy + (py - y0))
+            if not (0 <= gx < bw and 0 <= gy < bh):
+                continue
+            grid[max(0, gy - 1):gy + 2, max(0, gx - 1):gx + 2] = True
+            names.append(name)
+    # the middle half of the board, where a fight is decided
+    lo_x, hi_x = int(bw * 0.25), int(bw * 0.75)
+    lo_y, hi_y = int(bh * 0.25), int(bh * 0.75)
+    region = grid[lo_y:hi_y, lo_x:hi_x]
+    if region.size == 0:
+        return 0.0
+    # largest all-empty square, by the standard dynamic program
+    best = 0
+    dp = np.zeros(region.shape, dtype=np.int32)
+    for y in range(region.shape[0]):
+        for x in range(region.shape[1]):
+            if region[y, x]:
+                continue
+            dp[y, x] = 1 + min(dp[y - 1, x] if y else 0,
+                               dp[y, x - 1] if x else 0,
+                               dp[y - 1, x - 1] if x and y else 0)
+            best = max(best, int(dp[y, x]))
+    return float(best * best * cell_m * cell_m)
+
+
+def name_dominance(board: list[dict], cols: int, corpus: Corpus) -> float:
+    """The share of a board's props that one kit name supplies.
+
+    A parcel is cut from one place, and a fortress is built from one wall family: placed as they come,
+    a board shows the same module eight times and the eye reads tiling rather than architecture.
+    """
+    counts: Counter[str] = Counter()
+    for parcel in board:
+        for _x, _y, name in corpus.props(parcel):
+            counts[name] += 1
+    total = sum(counts.values())
+    return (counts.most_common(1)[0][1] / total) if total else 0.0
+
+
 def connected(board: list[dict], cols: int, corpus: Corpus) -> tuple[int, float]:
     """Join the board's walkability and report reachability.
 
@@ -300,6 +392,11 @@ def main() -> int:
                          "tactical pieces are far denser than a random cut from a strategic map")
     ap.add_argument("--min-cover", type=int, default=0,
                     help="drop parcels with fewer than this many cover pieces")
+    ap.add_argument("--max-hollow", type=float, default=0.0,
+                    help="reject a board whose middle half holds a bare square this large, m2 "
+                         "(0 reports only: the emitter dresses a bare middle with the map's own kit)")
+    ap.add_argument("--max-dominance", type=float, default=0.45,
+                    help="largest share one kit name may take of a board's props (0 disables)")
     ap.add_argument("--out", default=None,
                     help="write the solved boards (slot + parcel origin) for a renderer or the game")
     args = ap.parse_args()
@@ -331,6 +428,8 @@ def main() -> int:
     # the search cut the solve rate to 11 of 40, while a solved board is fully reachable 73% of the
     # time. So solve freely, verify, retry -- a bounded loop that measures the yield it gets.
     solved, fully_reachable, shares, zones = 0, 0, [], Counter()
+    hollows: list[float] = []
+    dominances: list[float] = []
     attempts_used = []
     boards_out = []
     for seed in range(args.seeds):
@@ -339,7 +438,15 @@ def main() -> int:
             if board is None:
                 continue
             reach, share = connected(board, cols, corpus)
-            if reach == len(board) or attempt == args.retries - 1:
+            hollow = centre_hollow_m2(board, cols, corpus) if args.max_hollow else 0.0
+            dominance = name_dominance(board, cols, corpus) if args.max_dominance else 0.0
+            # A board is accepted when it is playable *and* it reads: reachable, not hollow in the
+            # middle, and not one module repeated. Each is measured, so a rejected board is rejected
+            # for a stated reason rather than by taste.
+            good = (reach == len(board)
+                    and (not args.max_hollow or hollow <= args.max_hollow)
+                    and (not args.max_dominance or dominance <= args.max_dominance))
+            if good or attempt == args.retries - 1:
                 break
         if board is None:
             continue
@@ -361,6 +468,8 @@ def main() -> int:
             })
         fully_reachable += int(reach == len(board))
         shares.append(share)
+        hollows.append(hollow)
+        dominances.append(dominance)
         for p in board:
             zones[p["zone"]] += 1
 
@@ -376,6 +485,12 @@ def main() -> int:
         print(f"  boards where every parcel is reachable {fully_reachable}/{solved} "
               f"({100.0 * fully_reachable / solved:.0f}%)")
         shares.sort()
+        hollows.sort()
+        dominances.sort()
+        print(f"  bare middle (largest empty square): median {hollows[len(hollows) // 2]:.0f} m2, "
+              f"max {hollows[-1]:.0f} m2")
+        print(f"  one module's share of a board: median {dominances[len(dominances) // 2]:.2f}, "
+              f"max {dominances[-1]:.2f}")
         print(f"  largest walkable component share: median {shares[len(shares) // 2]:.3f} "
               f"min {shares[0]:.3f}")
         attempts_used.sort()
