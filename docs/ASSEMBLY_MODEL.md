@@ -310,3 +310,36 @@ albedo source (generated PBR from the reference, or an authored set).
 Do them in that order. Step 1 is pure gain with the machinery already built; step 3 is the one that makes
 the structure genuinely authored, and it should not be attempted before the per-part pipeline exists,
 or the gear will be authored and then baked into one atlas anyway.
+
+## 8. Vision gate: certified, and what it found (2026-11-23)
+
+`tools/review/certify.py` passes all six checks — the gate separates a good render from a detached-part
+render and a flattened render, names the injected defect, and scores the good one higher (7.0 vs 4.0):
+
+```
+[PASS] good render is not stopped        decision=continue
+[PASS] detached part is rejected         decision=refine-code
+[PASS] detached defect is named          "[critical] head and upper shoulder detached..."
+[PASS] flat render is rejected           decision=refine-code
+[PASS] flat defect lands on detail/contrast
+[PASS] good outscores both broken        7.0 vs 4.0 vs 4.0
+CERTIFIED
+```
+
+Getting it certified required three fixes, each a real failure: the format demand had to lead the prompt
+(the model answered in prose when it trailed), the critic had to tolerate a plausible variant schema
+(`{verdict, pass, issues:[{type,severity,description}]}`) and record what it derived, and `pkill -f
+certify.py` had to stop killing its own shell.
+
+**What the gate then found in the asset, and what it fixed.** Its first certified review named
+"excessively glossy and metallic across the camo pants, boots and weapon" as the top defect. Chasing that
+found a real bug: the part materials had metallic/roughness **linked to a texture**, so every
+`default_value` the script set was ignored — confirmed by reading the exported GLB, which carried
+`metallicRoughnessTexture` with `metallicFactor=None`. Unlinking before authoring produced the intended
+factors in the GLB (`armour 0.1/0.55`, `metal_trim 0.55/0.50`, `underlayer 0.0/0.92`, `mrTex=False`), and
+the gate now returns `continue` at 7.0 across all five features.
+
+**The residual defect the gate keeps naming is albedo contrast, not material response**: the library
+albedo carries bright patches that read as highlights under review lighting. That is the same gap as
+§7.3c — a composite albedo, not an authored set — and it is the one thing left that compositing cannot
+fix.

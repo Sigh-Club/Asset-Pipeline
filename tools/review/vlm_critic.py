@@ -187,6 +187,19 @@ def normalise(obj: dict) -> tuple[dict, str]:
                 items.append(str(it)[:120])
         out['defects'] = items
         derived.append('defects from issues')
+    # defects / missing_features must be lists whatever the model returned
+    for key in ('defects', 'missing_features'):
+        v = out.get(key)
+        if isinstance(v, str):
+            out[key] = [v][:20]
+            derived.append(f'{key} coerced from string')
+        elif isinstance(v, dict):
+            out[key] = [f'{k}: {val}'[:120] for k, val in list(v.items())[:20]]
+            derived.append(f'{key} coerced from object')
+        elif isinstance(v, list):
+            out[key] = [str(x)[:160] for x in v][:40]
+        elif v is None:
+            out[key] = []
     out.setdefault('missing_features', [])
 
     verdict = str(obj.get('verdict', '')).lower()

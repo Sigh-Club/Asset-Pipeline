@@ -88,6 +88,20 @@ SOCKETS = {
     'SOCKET_toe_l': 'LeftToeBase',
 }
 
+# Per-slot surface response — a PBR authoring decision, stated once.
+# The vision gate's first certified review named "excessively glossy and metallic across the camo
+# pants, boots and weapon" as its top defect: the part materials had no roughness/metallic set and
+# inherited glTF defaults (metallic 1.0), which turns cloth and painted plate into chrome.
+SLOT_PBR = {
+    'armour_primary':   {'metallic': 0.10, 'roughness': 0.55},
+    'armour_secondary': {'metallic': 0.10, 'roughness': 0.60},
+    # 1.0 read as chrome across the boots and leg trim — the gate flagged "gold/yellow
+    # specular" on the pants twice. This slot covers metal AND the grey-blue boots, so it
+    # takes a compromise value until a metal mask separates them.
+    'metal_trim':       {'metallic': 0.55, 'roughness': 0.50},
+    'underlayer':       {'metallic': 0.00, 'roughness': 0.92},
+}
+
 
 def log(m: str) -> None:
     print(f'[aaa_assemble] {m}', flush=True)
@@ -242,7 +256,9 @@ def main() -> int:
                 continue
             for node in m.node_tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image and 'albedo' in node.image.name.lower():
-                    lib_albedo[m.name.split('__')[-1]] = node.image
+                    # flatten baked lighting before use: bright patches in a photographed
+                    # albedo read as specular highlights once re-lit (gate defect, §8)
+                    lib_albedo[m.name.split('__')[-1]] = bu.flatten_albedo(node.image)
                     break
         log(f'library albedo loaded for slots: {sorted(lib_albedo)}')
 
@@ -406,6 +422,13 @@ def main() -> int:
                     nt.links.new(nm.outputs['Normal'], bsdf.inputs['Normal'])
                 pbr = SLOT_PBR.get(slot)
                 if pbr:
+                    # The atlas material has metallic/roughness LINKED to a texture, so a
+                    # default_value is ignored (measured: the exported GLB carried
+                    # metallicRoughnessTexture with metallicFactor=None, which is why three
+                    # rounds of "set roughness" changed nothing). Unlink, then author.
+                    for inp_name in ('Metallic', 'Roughness'):
+                        for link in list(bsdf.inputs[inp_name].links):
+                            nt.links.remove(link)
                     bsdf.inputs['Metallic'].default_value = pbr['metallic']
                     bsdf.inputs['Roughness'].default_value = pbr['roughness']
                     log(f'{slot}: PBR metallic={pbr["metallic"]} roughness={pbr["roughness"]}')

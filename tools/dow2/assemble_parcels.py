@@ -390,6 +390,10 @@ def main() -> int:
     ap.add_argument("--min-density", type=float, default=0.0,
                     help="drop parcels whose prop density is below this (props/100 m2); the reference's "
                          "tactical pieces are far denser than a random cut from a strategic map")
+    ap.add_argument("--min-walkable", type=float, default=0.35,
+                    help="drop parcels whose walkable share is below this: a board assembled from wall-heavy "
+                         "pieces is a maze, and measured on the balance harness the fight could not reach "
+                         "its last enemy and stalled at the turn cap")
     ap.add_argument("--min-cover", type=int, default=0,
                     help="drop parcels with fewer than this many cover pieces")
     ap.add_argument("--max-hollow", type=float, default=0.0,
@@ -416,6 +420,10 @@ def main() -> int:
     slot = sizes.most_common(1)[0][0] if sizes else (24, 24)
     catalogue = [p for p in catalogue if tuple(p.get("size_xy") or ()) == slot]
     print(f"lattice slot {slot[0]}x{slot[1]} m")
+    if args.min_walkable:
+        before_walk = len(catalogue)
+        catalogue = [p for p in catalogue if float(p.get("walkable_share") or 0) >= args.min_walkable]
+        print(f"walkable>={args.min_walkable}: {before_walk} -> {len(catalogue)}")
     if args.min_density or args.min_cover:
         catalogue = [p for p in catalogue
                      if float(p.get("prop_density_100m2") or 0) >= args.min_density

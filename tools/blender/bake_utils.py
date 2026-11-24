@@ -438,3 +438,37 @@ def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 1
     tex = bpy.data.images.new(f'{obj.name}_projected', out_res, out_res, alpha=False)
     tex.pixels = out.ravel().tolist()
     return tex
+
+
+def flatten_albedo(image, sigma_px: int = 24, strength: float = 0.85):
+    """Remove large-scale luminance variation (baked lighting) from an albedo.
+
+    The library albedos were derived from photographed material sheets, so they carry the
+    original lighting: bright patches that read as specular highlights when re-lit in 3D.
+    Our own docs call this "a geometry lie" (gemini-image skill). A high-pass normalisation
+    keeps the detail and removes the lighting, which is what an authored albedo looks like.
+    """
+    import numpy as np
+    w, h = image.size
+    px = np.array(image.pixels[:], dtype=np.float32).reshape(h, w, 4)
+    rgb = px[:, :, :3]
+    # Blur LUMINANCE only. Blurring each channel separately and dividing by it normalises
+    # every channel to the same mean, which wipes the colour out (measured: the gate read
+    # the result as "entirely grayscale").
+    lum = (0.2126 * rgb[:, :, 0] + 0.7152 * rgb[:, :, 1] + 0.0722 * rgb[:, :, 2])[:, :, None]
+    acc = lum.copy()
+    k = max(3, int(sigma_px))
+    for _ in range(3):
+        pad = np.pad(acc, ((k // 2, k // 2), (0, 0), (0, 0)), mode='edge')
+        acc = sum(pad[i:i + h] for i in range(k)) / k
+        pad = np.pad(acc, ((0, 0), (k // 2, k // 2), (0, 0)), mode='edge')
+        acc = sum(pad[:, i:i + w] for i in range(k)) / k
+    low = np.maximum(acc, 1e-3)
+    flat = rgb / low * float(low.mean())     # same luminance field for all channels
+    flat = rgb * (1.0 - strength) + flat * strength
+    out = px.copy()
+    out[:, :, :3] = np.clip(flat, 0.0, 1.0)
+    tex = bpy.data.images.new(f'{image.name}_flat', w, h, alpha=False)
+    tex.pixels = out.ravel().tolist()
+    log(f'flattened albedo {image.name} (sigma={sigma_px}, strength={strength})')
+    return tex

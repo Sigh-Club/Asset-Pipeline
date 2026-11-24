@@ -356,21 +356,182 @@ def main() -> None:
                     break
             if dressed >= 72:
                 break
+    # ---------------------------------------------------------------- dressing a bare middle
+    # A cut from a strategic map is not guaranteed to be fightable in its middle: measured on twelve
+    # solved boards, the largest bare square inside the middle half was 121 m2 -- an 11 m parade ground
+    # where the fight happens. The source's own vocabulary is the fix, not invented architecture: the
+    # bare cells are dressed with cover pieces drawn from the same map's own inventory, at 1:1, on
+    # walkable ground, spaced by the corpus interval. A dressed piece is marked, so a reviewer can see
+    # what came from the map and what the board needed.
+    families_path = ROOT / "output/source_lab/env_families.json"
+    families = json.loads(families_path.read_text()) if families_path.exists() else {"pieces": []}
+    tier_of_name = {p["name"]: p.get("cover") for p in families.get("pieces", []) if p.get("cover")}
+    # Dressing has to *read* at the game's camera distance: a 0.4 m crate fills a cell on paper and is
+    # a speck on screen. The kit's own sizes pick the pieces that carry mass at board scale -- 1.2 m to
+    # 4 m tall -- and the cover ladder decides whether a piece is cover once it is chosen.
+    sizes_path = ROOT / "output/source_lab/env_families.json"
+    kit_size = {p["name"]: (p.get("size") or [0, 0, 0]) for p in families.get("pieces", [])}
+    inventory = sorted({p["name"] for p in free_props})
+
+    def reads_at_board_scale(name: str) -> bool:
+        size = kit_size.get(name)
+        if not size or len(size) < 3:
+            return False
+        height = float(size[2] or 0)
+        footprint = max(float(size[0] or 0), float(size[1] or 0))
+        return 1.2 <= height <= 4.0 and footprint >= 1.0
+
+    dressable = [n for n in inventory if reads_at_board_scale(n) and tier_of_name.get(n)]
+    if not dressable:
+        dressable = [n for n in inventory if reads_at_board_scale(n)]
+    if not dressable:
+        dressable = [n for n in inventory if tier_of_name.get(n)]
+
+    def bare_square(occupancy, lo_frac: float, hi_frac: float) -> tuple[int, int, int]:
+        """The largest empty square in the middle of the board: side, and its centre in metres."""
+        cells_h, cells_w = occupancy.shape
+        lo_x, hi_x = int(cells_w * lo_frac), int(cells_w * hi_frac)
+        lo_y, hi_y = int(cells_h * lo_frac), int(cells_h * hi_frac)
+        region = occupancy[lo_y:hi_y, lo_x:hi_x]
+        if region.size == 0:
+            return 0, 0, 0
+        dp = np.zeros(region.shape, dtype=np.int32)
+        best, best_at = 0, (0, 0)
+        for yy in range(region.shape[0]):
+            for xx in range(region.shape[1]):
+                if region[yy, xx]:
+                    continue
+                dp[yy, xx] = 1 + min(dp[yy - 1, xx] if yy else 0,
+                                     dp[yy, xx - 1] if xx else 0,
+                                     dp[yy - 1, xx - 1] if xx and yy else 0)
+                if dp[yy, xx] > best:
+                    best, best_at = int(dp[yy, xx]), (yy, xx)
+        # the DP's corner is the square's bottom-right; its centre is half a side back from it
+        cy = lo_y + best_at[0] - best // 2
+        cx = lo_x + best_at[1] - best // 2
+        return best, cx, cy
+
+    # occupancy at 1 m, stamped from every authored prop's footprint (a piece covers its own cell and
+    # the metre around it, which is what the eye reads as "there is something there")
+    # A hole only matters where a unit can stand: 44% of a parcel board's cells are impassable, and a
+    # walled-off courtyard is not a parade ground. Impassable cells count as covered, so the measure
+    # is "bare ground a fight can happen on".
+    occ = np.zeros((gh * 2, gw * 2), dtype=bool)
+    # props alone, for "is there room here": the bare-square measure also treats impassable ground as
+    # covered, but a crate can stand in an open cell beside a wall
+    prop_occ = np.zeros((gh * 2, gw * 2), dtype=bool)
+    for gy in range(gh):
+        for gx in range(gw):
+            if paint.get(f"{gx},{gy}") != "normal":
+                occ[gy * 2:gy * 2 + 2, gx * 2:gx * 2 + 2] = True
+    for fp in free_props:
+        cx1 = int((fp["pos"][0] + bw / 2))
+        cz1 = int((fp["pos"][2] + bh / 2))
+        if 0 <= cx1 < occ.shape[1] and 0 <= cz1 < occ.shape[0]:
+            occ[max(0, cz1 - 1):cz1 + 2, max(0, cx1 - 1):cx1 + 2] = True
+            prop_occ[max(0, cz1 - 1):cz1 + 2, max(0, cx1 - 1):cx1 + 2] = True
+    bare_before, _, _ = bare_square(occ, 0.10, 0.90)
+    dressed = 0
+    if dressable:
+        # Coverage, not hole-filling: filling the single largest hole left a board with a dressed
+        # middle and an empty deployment side, which is the half of the board a player looks at first.
+        # A jittered lattice at the corpus spacing covers the playable area evenly, and a piece is only
+        # placed where nothing is within reach.
+        rng = random.Random(args.seed)
+        step_m = 6.0
+        step_cells = max(1, int(step_m / CELL_M))
+        for gy in range(1, gh - 1, step_cells):
+            for gx in range(1, gw - 1, step_cells):
+                jx = min(gw - 2, max(1, gx + rng.randint(-1, 1)))
+                jy = min(gh - 2, max(1, gy + rng.randint(-1, 1)))
+                if paint.get(f"{jx},{jy}") != "normal":
+                    continue
+                # clear of anything within 3 m, so a dressed piece does not sit inside a wall
+                near = False
+                for dy in range(-1, 2):
+                    for dx in range(-1, 2):
+                        tx, ty = jx + dx, jy + dy
+                        if 0 <= tx < gw and 0 <= ty < gh and prop_occ[ty * 2, tx * 2]:
+                            near = True
+                if near:
+                    continue
+                name = dressable[rng.randrange(len(dressable))]
+                free_props.append({
+                    "name": name,
+                    "biome": next((q.get("biome") for q in props if q.get("prop") == name), ""),
+                    "pos": [round(jx * CELL_M - bw / 2 + CELL_M / 2, 3), 0.0,
+                            round(jy * CELL_M - bh / 2 + CELL_M / 2, 3)],
+                    "basis": [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                    "scale": 1,
+                    "dressed": True,
+                })
+                occ[jy * 2:jy * 2 + 2, jx * 2:jx * 2 + 2] = True
+                prop_occ[jy * 2:jy * 2 + 2, jx * 2:jx * 2 + 2] = True
+                dressed += 1
+                if dressed >= 72:
+                    break
+            if dressed >= 72:
+                break
     # Landing zones are derived from the ground, not placed at a corner: a parcel board's paint is the
     # shipped nav grid, so 44% of its cells can be impassable and a hard-coded corner zone lands on a
     # wall. A zone is a 3x2 block of walkable cells, searched from the two opposite corners inward.
+    # Landing zones are derived from the ground, not placed at a corner: a parcel board's paint is the
+    # shipped nav grid, so 44% of its cells can be impassable and a hard-coded corner zone lands on a
+    # wall. A zone is a 3x2 block of walkable cells, searched from the two opposite corners inward.
+    # The board has to be *walkable end to end*, not just walkable cell by cell. A parcel is cut from a
+    # walled place, and 44% of its cells are impassable; assembled, that can leave the two deployment
+    # areas in different pockets. Measured on the balance harness: eliminate missions on an authored
+    # board stalled at the 60-turn cap with every soldier alive and the last enemy unreachable. So the
+    # landing zones are chosen inside the largest connected walkable region, which is the region a fight
+    # can actually happen in.
+    def largest_component() -> set[tuple[int, int]]:
+        seen: set[tuple[int, int]] = set()
+        best: set[tuple[int, int]] = set()
+        for y in range(gh):
+            for x in range(gw):
+                if (x, y) in seen or paint.get(f"{x},{y}") != "normal":
+                    continue
+                stack = [(x, y)]
+                comp: set[tuple[int, int]] = set()
+                while stack:
+                    cx, cy = stack.pop()
+                    if (cx, cy) in comp or not (0 <= cx < gw and 0 <= cy < gh):
+                        continue
+                    if paint.get(f"{cx},{cy}") != "normal":
+                        continue
+                    comp.add((cx, cy))
+                    stack.extend(((cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)))
+                seen |= comp
+                if len(comp) > len(best):
+                    best = comp
+        return best
+
+    walkable_main = largest_component()
+
     def find_zone(from_top: bool) -> dict:
+        """A landing zone a fixed distance from the other side, not at the far corner.
+
+        Measured on the campaign ladder: zones at opposite corners of a 24-cell board put the two forces
+        twenty cells apart, the bot spent 40-50 turns walking, and the attrition cost it the finale. The
+        reference's boards open at roughly one move of contact, so the two zones are placed a fixed
+        distance apart along the board's long axis, on the largest walkable region.
+        """
         block_w, block_h = 3, 2
-        # the two zones come from opposite corners, so the squads start across the board from each
-        # other rather than beside one another on the same edge
-        rows = range(0, gh - block_h + 1) if from_top else range(gh - block_h, -1, -1)
-        cols = range(gw - block_w, -1, -1) if from_top else range(0, gw - block_w + 1)
+        contact_cells = 18
+        # the hostiles hold the north edge, the squad deploys a fixed distance south of them
+        target = 2 if from_top else min(gh - block_h - 1, 2 + contact_cells)
+        target = max(0, min(gh - block_h, target))
+        rows = [target] + sorted(range(0, gh - block_h + 1), key=lambda y: abs(y - target))
+        cols = list(range(gw - block_w, -1, -1)) if from_top else list(range(0, gw - block_w + 1))
         for gy in rows:
             for gx in cols:
                 if all(paint.get(f"{gx + dx},{gy + dy}") == "normal"
+                       and (gx + dx, gy + dy) in walkable_main
                        for dx in range(block_w) for dy in range(block_h)):
                     return {"x": gx, "y": gy, "w": block_w, "h": block_h}
         return {"x": 0, "y": 0, "w": block_w, "h": block_h}
+
+    zones = {"player": find_zone(False), "enemy": find_zone(True)}
 
     # ---------------------------------------------------------------- craters
     # A crater is relief plus a rim: a bowl one level below the board and cover on the cells around it.

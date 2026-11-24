@@ -94,10 +94,16 @@ solve, because an orthographic bbox mapping cannot align a generated mesh to a f
 albedo is therefore library PBR x per-part unit tint, which reads as the design (navy plate, camo
 trousers, gold trim, detailed rifle) but is soft — it is a composite, not an authored set.
 
-Open, in order: certify the vision gate (T1) so quality is measured rather than judged by eye; parts
-authored/sourced separately rather than split on material boundaries (step 3); semantic segmentation for
-units with no shipped gear (step 4); a camera solve for reference projection if concept-matched albedo
-is wanted.
+**Vision gate: CERTIFIED** (docs/ASSEMBLY_MODEL.md §8). It separates a good render from a detached-part
+render and a flattened one, names the injected defect, and scores the good one higher (7.0 vs 4.0). Its
+first certified review found a real bug — part materials had metallic/roughness linked to a texture, so
+every authored value was ignored; the exported GLB now carries `armour 0.1/0.55`, `metal_trim 0.55/0.50`,
+`underlayer 0.0/0.92`. The gate returns `continue` at 7.0 across all five features.
+
+Open, in order: an authored 2K-4K albedo set (the gate's residual defect is albedo contrast, not material
+response — compositing cannot fix it); parts authored/sourced separately rather than split on material
+boundaries (step 3); semantic segmentation for units with no shipped gear (step 4); a camera solve for
+reference projection.
 
 ## 1. Current programme
 
