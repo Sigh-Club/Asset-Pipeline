@@ -18,6 +18,18 @@ record: `docs/BOARD_3D_GRID.md` §4b.
 
 **Next, in order** (each with its gate):
 
+0. **Read a reference plot's plan from the SDK, and build that plan.** The method question the owner keeps
+   asking ("copy the maps, then work backwards to fit the assets") is the right one, and it is not what we
+   have been doing: we generate a plot from the reference's *statistics*. The SDK ships 122 plots under
+   `XCOM 2 SDK/XComGame/Content/XCOM_2/Maps/Plots/` and the module vocabulary is in their own names
+   (`ARC_CTY_Blvd_Str_16x08`, `ARC_CTY_Blvd_Crn_16x16`, `ARC_24_Periphery_Commercial`,
+   `XComParcelEntrance`), so a plot can be reproduced module for module and the assets chosen afterwards.
+   Blocker, measured 2026-11-24: `tools/xcom2/read_umap.py` parses the name table (306 names) and the
+   import table, but the SDK package's export table begins at **14800** while the header implies 14916, and
+   `read_properties` returns nothing for those exports — so placements are not extracted yet. The reader
+   was written for the cooked game packages; it needs a pass for the SDK editor packages.
+   Gate: one plot's road and parcel placements extracted, drawn as a plan, and reproduced on a board.
+
 1. **P2 parcel size mix** — 18 / 18×36 / 36×36 m slots, medium dominant (the reference's own mix).
    Gate: ≥2 sizes on a board, none over 36 m.
 2. **P4 line of sight as a rule** — walls block, cover absorbs; reject a board with no sightline under
@@ -139,9 +151,11 @@ card is the unlock.** Until then the albedo is a composite of a 1K library and a
 slot genuinely matches (Cadian camo on the trousers, IG kit on the webbing) and the plates keep tinted
 library albedo, which is solid navy — the concept's actual colour. Putting the camo on the *plates* was the
 gate's critical defect; corrected. **The certified gate now returns `continue`, 7.0 across all five
-features, with an empty defect list.** The multi-process paint split (render → per-view diffusion → UV bake,
-each its own process so the peak is one component, ~4 GB) is designed and documented in §11 and is the next
-build.
+features, with an empty defect list.** The multi-process paint split is **built** (`tools/img23d/paint_split.py`, §11b): stage 1 (renderer)
+**works** and produced 6 normal + 6 position maps; stage 2 (diffusion) needs **6.38 GiB** and this card
+offers **~6.2 GiB** with the desktop running — **~180 MB short**, measured three times. Six faults were
+fixed to get this far (PIL control maps, channel-last map resampling, mesh_utils import, and three offload
+API failures). Unblocks with ~200 MB of free VRAM or the 24 GB card; the command is in §11b.
 
 The gate's remaining defects are now **source geometry, not material**: bulbous helmet, thin groin plate,
 stockier proportions. Those come from the generated mesh and cannot be fixed downstream — they need better

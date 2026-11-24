@@ -294,5 +294,10 @@ Recorded so the next session does not re-derive it:
 - **The map's own heightfield is measured and discarded.** It correlates +0.741 with where the map's
   entities stand, and a board does not use it; a mesh that can carry a true heightfield would let the
   board keep the place's real relief instead of a parcel terrace.
+- **A reference plot's *plan* is not extracted yet.** We reproduce its grammar and its measured numbers,
+  but not one of its actual layouts. The SDK ships 122 plots whose module names carry their own
+  dimensions (`ARC_CTY_Blvd_Str_16x08`, `ARC_CTY_Blvd_Crn_16x16`, `ARC_24_Periphery_Commercial`), so the
+  plan is there to copy; `read_umap.py` parses names and imports but not the SDK package's export table
+  (table at 14800, header says 14916; no properties read), which is the blocker.
 - **Cover density is ours, not the source's.** Dressing fills bare ground from the map's own kit; the
   count per board (measured 5–48 pieces) is a board decision, not a shipped number.
