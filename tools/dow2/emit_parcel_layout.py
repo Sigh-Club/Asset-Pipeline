@@ -655,9 +655,13 @@ def main() -> None:
         if 0 <= gx < gw and 0 <= gy < gh and paint.get(f"{gx},{gy}") == "normal":
             cover[f"{gx},{gy}"] = name
 
+    # The ambient is a floor, not a mood: at 2.2 it out-votes the warm key and every surface the key
+    # does not hit squarely turns the colour of the fill (measured on the city kit: a warm brown albedo
+    # of 126,104,91 rendered violet, because 2.2 of cool ambient plus 2.4 of cool hemisphere buried the
+    # 3.4 key). 0.9 keeps shadowed faces readable and lets the key set the colour of the board.
     light = json.loads(args.light) if args.light else {
         "azimuthDeg": 215, "elevationDeg": 52, "colour": "#ffe6c2", "intensity": 3.4,
-        "sky": "#cfd8e6", "ground": "#4a4238", "ambient": 2.2,
+        "sky": "#dfe4ea", "ground": "#4a4238", "ambient": 0.9,
     }
     terrain = json.loads((ROOT.parent / "Imperium-of-Ash/frontend/public/assets/maps/terrain"
                           / board["map"] / "terrain.json").read_text())

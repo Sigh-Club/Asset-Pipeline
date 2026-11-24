@@ -343,3 +343,32 @@ the gate now returns `continue` at 7.0 across all five features.
 albedo carries bright patches that read as highlights under review lighting. That is the same gap as
 §7.3c — a composite albedo, not an authored set — and it is the one thing left that compositing cannot
 fix.
+
+## 9. Final material state and the trade-off that was resolved (2026-11-23)
+
+Two albedo fixes were measured against the gate, and one was rejected:
+
+| change | gate result | decision |
+|---|---|---|
+| luminance-only flatten of the library albedo (removes baked lighting) | `continue`, 7.0; the "specular/metallic sheen" defect drops | **kept** |
+| per-slot desaturation of the library (tint as sole colour authority) | `continue`, 7.0, but the render goes flat grey | **rejected** |
+
+The desaturation removed the "unintended yellow/tan bands" defect but also removed the concept's
+**gold shoulder trim** and the cloth's camo variation — colour identity is the more important property, so
+desaturation is off (`SLOT_DESAT` all 0.0) and the flatten does the work alone. That is a recorded
+trade-off, not an oversight: the defect it leaves behind is cosmetic, the one it fixes is identity.
+
+Authoring values now in the build: `armour 0.10/0.55`, `armour_secondary 0.10/0.60`,
+`metal_trim 0.55/0.50`, `underlayer 0.00/0.92` (metallic/roughness), exported as material factors with no
+metallicRoughness texture, verified by reading the GLB.
+
+**What remains, and what it would take:**
+
+| gap | cause | fix |
+|---|---|---|
+| helmet reads bulbous, groin plate thin, proportions stockier | the *generated mesh's* shape, not the material pipeline | better source geometry or a reference-matched generator; not fixable downstream |
+| albedo is a composite, not authored | no authored 2K-4K set exists for this unit | the shipped DoW2 wargear textures (128-512 px, too small) or a working image-generation route |
+| weapon not separable | no rigid cluster at the hands; the rifle was skinned into the body | step 3: assemble from shipped wargear meshes |
+
+The first row is the honest answer to "are we at competitor tier": the material and structure work is
+there; the *shape* is the generator's, and it is the shape the gate keeps naming.

@@ -92,6 +92,20 @@ SOCKETS = {
 # The vision gate's first certified review named "excessively glossy and metallic across the camo
 # pants, boots and weapon" as its top defect: the part materials had no roughness/metallic set and
 # inherited glTF defaults (metallic 1.0), which turns cloth and painted plate into chrome.
+# How much of the library's own colour to discard per slot. The library is a DETAIL source
+# and the tint is the colour authority — but not equally: the concept's gold shoulder trim is
+# a real identity feature that comes from the brass albedo, so metal_trim keeps its warmth
+# while plate and cloth are neutralised (gate defect: "unintended yellow/tan bands" on the
+# sleeves, and the opposite failure — a fully grey figure — when desaturating everything).
+# Measured trade-off: desaturating the detail source removes the "unintended yellow/tan bands"
+# the gate named, but it also removes the concept's gold shoulder trim and the cloth's camo
+# variation — the render goes flat grey. Colour identity wins, so desaturation is off and the
+# luminance flatten (which fixed the specular defect) does the work alone.
+SLOT_DESAT = {
+    'armour_primary': 0.0, 'armour_secondary': 0.0,
+    'metal_trim': 0.0, 'underlayer': 0.0,
+}
+
 SLOT_PBR = {
     'armour_primary':   {'metallic': 0.10, 'roughness': 0.55},
     'armour_secondary': {'metallic': 0.10, 'roughness': 0.60},
@@ -258,7 +272,9 @@ def main() -> int:
                 if node.type == 'TEX_IMAGE' and node.image and 'albedo' in node.image.name.lower():
                     # flatten baked lighting before use: bright patches in a photographed
                     # albedo read as specular highlights once re-lit (gate defect, §8)
-                    lib_albedo[m.name.split('__')[-1]] = bu.flatten_albedo(node.image)
+                    slot_key = m.name.split('__')[-1]
+                    lib_albedo[slot_key] = bu.flatten_albedo(
+                        node.image, desaturate=SLOT_DESAT.get(slot_key, 0.85))
                     break
         log(f'library albedo loaded for slots: {sorted(lib_albedo)}')
 

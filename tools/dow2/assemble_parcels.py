@@ -390,6 +390,9 @@ def main() -> int:
     ap.add_argument("--min-density", type=float, default=0.0,
                     help="drop parcels whose prop density is below this (props/100 m2); the reference's "
                          "tactical pieces are far denser than a random cut from a strategic map")
+    ap.add_argument("--map", default="",
+                    help="restrict the boards to one source map: a map's kit is what the board looks like, "
+                         "and a kit whose shared atlas samples badly cannot be fixed by the board")
     ap.add_argument("--min-walkable", type=float, default=0.35,
                     help="drop parcels whose walkable share is below this: a board assembled from wall-heavy "
                          "pieces is a maze, and measured on the balance harness the fight could not reach "
@@ -413,6 +416,9 @@ def main() -> int:
     # solving over the rejected cuts put pieces with no entrance into the boards.
     before = len(catalogue)
     catalogue = [p for p in catalogue if p.get("usable")]
+    if args.map:
+        catalogue = [p for p in catalogue if p.get("map") == args.map]
+        print(f"map {args.map}: {len(catalogue)} usable parcels")
     # The lattice is square, so only pieces whose footprint is the slot's own footprint can be
     # stitched into it. Rectangles (48x24) are cut and catalogued, but they need a layout model that
     # allows mixed footprints, which the square solver does not have.

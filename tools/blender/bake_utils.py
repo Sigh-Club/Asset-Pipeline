@@ -440,7 +440,8 @@ def project_reference_texture(obj, views: dict, out_res: int, dilate_px: int = 1
     return tex
 
 
-def flatten_albedo(image, sigma_px: int = 24, strength: float = 0.85):
+def flatten_albedo(image, sigma_px: int = 24, strength: float = 0.85,
+                   desaturate: float = 0.0):
     """Remove large-scale luminance variation (baked lighting) from an albedo.
 
     The library albedos were derived from photographed material sheets, so they carry the
@@ -466,9 +467,16 @@ def flatten_albedo(image, sigma_px: int = 24, strength: float = 0.85):
     low = np.maximum(acc, 1e-3)
     flat = rgb / low * float(low.mean())     # same luminance field for all channels
     flat = rgb * (1.0 - strength) + flat * strength
+    if desaturate > 0:
+        # The library is a DETAIL source; colour identity comes from the per-part tint.
+        # Leaving the library's own colour in produced "unintended yellow/tan bands" on the
+        # sleeves and right leg (gate defect). Desaturating makes the tint the only hue.
+        l = (0.2126 * flat[:, :, 0] + 0.7152 * flat[:, :, 1] + 0.0722 * flat[:, :, 2])[:, :, None]
+        flat = flat * (1.0 - desaturate) + l * desaturate
     out = px.copy()
     out[:, :, :3] = np.clip(flat, 0.0, 1.0)
     tex = bpy.data.images.new(f'{image.name}_flat', w, h, alpha=False)
     tex.pixels = out.ravel().tolist()
-    log(f'flattened albedo {image.name} (sigma={sigma_px}, strength={strength})')
+    log(f'flattened albedo {image.name} (sigma={sigma_px}, strength={strength}, '
+        f'desaturate={desaturate})')
     return tex

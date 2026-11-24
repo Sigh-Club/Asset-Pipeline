@@ -197,11 +197,26 @@ print(f"PBR albedo from _dif: {fixed['albedo']}, flat colour: {fixed['flat']}")
 #     The shipped `_spc` is a specular *colour*, not glTF's metal/rough pair, so its luminance is the
 #     honest input for roughness and metallic stays 0 (dielectric), which is what these surfaces are.
 def find_image(suffix: str):
+    """The image for this prop, preferring the one named after the model.
+
+    A shipped material can carry a generic name (`08 - default`) that several props share, and the
+    add-on then loads several props' textures into the same file. Taking the first match picked another
+    prop's diffuse: measured on the city kit, `banner_post_01` rendered violet because it sampled a
+    shared atlas instead of its own. The model's own stem is the evidence for which one is its own.
+    """
+    stem = Path(A.model).stem.lower()
+    candidates = []
     for image in bpy.data.images:
         name = (image.name or "").lower()
-        if name.endswith(suffix) or f"{suffix}." in name:
+        if not (name.endswith(suffix) or f"{suffix}." in name):
+            continue
+        candidates.append(image)
+    if not candidates:
+        return None
+    for image in candidates:
+        if (image.name or "").lower().startswith(stem):
             return image
-    return None
+    return candidates[0]
 
 
 def combine_maps(diffuse, occlusion, specular, name: str, base_roughness: float = 0.7):

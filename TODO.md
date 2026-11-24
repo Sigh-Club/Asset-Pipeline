@@ -100,10 +100,16 @@ first certified review found a real bug — part materials had metallic/roughnes
 every authored value was ignored; the exported GLB now carries `armour 0.1/0.55`, `metal_trim 0.55/0.50`,
 `underlayer 0.0/0.92`. The gate returns `continue` at 7.0 across all five features.
 
-Open, in order: an authored 2K-4K albedo set (the gate's residual defect is albedo contrast, not material
-response — compositing cannot fix it); parts authored/sourced separately rather than split on material
-boundaries (step 3); semantic segmentation for units with no shipped gear (step 4); a camera solve for
-reference projection.
+Albedo: luminance flattening of the library (removes baked lighting, which read as specular) is kept;
+per-slot desaturation was measured and **rejected** — it removed the yellow-band defect but also the gold
+trim and camo identity. Final authored factors: armour 0.10/0.55, metal_trim 0.55/0.50, underlayer
+0.00/0.92, exported as factors with no metallicRoughness texture (verified in the GLB).
+
+The gate's remaining defects are now **source geometry, not material**: bulbous helmet, thin groin plate,
+stockier proportions. Those come from the generated mesh and cannot be fixed downstream — they need better
+source geometry. Open beyond that: an authored albedo set (compositing cannot close it); parts
+authored/sourced separately (step 3), which also fixes weapon separability; P3-SAM for units with no
+shipped gear (step 4).
 
 ## 1. Current programme
 
