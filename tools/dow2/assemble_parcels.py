@@ -390,6 +390,10 @@ def main() -> int:
     ap.add_argument("--min-density", type=float, default=0.0,
                     help="drop parcels whose prop density is below this (props/100 m2); the reference's "
                          "tactical pieces are far denser than a random cut from a strategic map")
+    ap.add_argument("--min-architecture", type=int, default=0,
+                    help="drop parcels with fewer than this many pieces taller than 3 m: a parcel with a "
+                         "high walkable share is usually an empty courtyard, and a board built only from "
+                         "those is a paved plane with nothing on it")
     ap.add_argument("--map", default="",
                     help="restrict the boards to one source map: a map's kit is what the board looks like, "
                          "and a kit whose shared atlas samples badly cannot be fixed by the board")
@@ -426,6 +430,22 @@ def main() -> int:
     slot = sizes.most_common(1)[0][0] if sizes else (24, 24)
     catalogue = [p for p in catalogue if tuple(p.get("size_xy") or ()) == slot]
     print(f"lattice slot {slot[0]}x{slot[1]} m")
+    if args.min_architecture:
+        families_path = ROOT / "output/source_lab/env_families.json"
+        heights = {}
+        if families_path.exists():
+            for piece in json.loads(families_path.read_text()).get("pieces", []):
+                size = piece.get("size") or [0, 0, 0]
+                if len(size) >= 3:
+                    heights[piece["name"]] = float(size[2] or 0)
+        before_arch = len(catalogue)
+
+        def architecture(parcel: dict) -> int:
+            inventory = parcel.get("prop_inventory") or {}
+            return sum(int(n) for name, n in inventory.items() if heights.get(name, 0.0) >= 3.0)
+
+        catalogue = [p for p in catalogue if architecture(p) >= args.min_architecture]
+        print(f"architecture>={args.min_architecture}: {before_arch} -> {len(catalogue)}")
     if args.min_walkable:
         before_walk = len(catalogue)
         catalogue = [p for p in catalogue if float(p.get("walkable_share") or 0) >= args.min_walkable]

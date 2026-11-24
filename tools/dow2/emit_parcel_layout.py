@@ -190,7 +190,11 @@ def main() -> None:
         # the smallest unit that keeps the ground and the pieces on it in the same frame.
         for (gx, gy) in [cell for cell in upper_cells if c * cells_per_parcel <= cell[0] < (c + 1) * cells_per_parcel
                          and r * cells_per_parcel <= cell[1] < (r + 1) * cells_per_parcel]:
-            heights[gy][gx] = UPPER_LEVEL_STEPS
+            # `--flat` writes a truly flat board: the raised level has no ramp down, and a unit that
+            # spawns on it is stranded -- measured in the game, the squad stood on a plateau with the
+            # map's paving a step below and no way off. The cells are still recorded in `source` so the
+            # level can be switched back on when the movement rules carry a step.
+            heights[gy][gx] = 0 if args.flat else UPPER_LEVEL_STEPS
         if not args.flat and (c + r) % 3 == 1:
             terrace = 4  # 1.4 m: a raised terrace, and a real height advantage
             for gy in range(r * cells_per_parcel, (r + 1) * cells_per_parcel):
@@ -226,7 +230,7 @@ def main() -> None:
             # the source authored it. Seating it on the ground *under it* instead would drop every
             # prop that legitimately stands on a wall walk into the courtyard.
             y = q["pos"][1] - base + lift + terrace * ELEVATION_STEP
-            if (gx_p, gz_p) in upper_cells:
+            if (gx_p, gz_p) in upper_cells and not args.flat:
                 y += UPPER_LEVEL_STEPS * ELEVATION_STEP
             if ground_here is not None:
                 seat_error.append(y - (ground_here - base))
@@ -533,6 +537,32 @@ def main() -> None:
 
     zones = {"player": find_zone(False), "enemy": find_zone(True)}
 
+    # Every cell a unit can stand on must be reachable from the landing zones. A parcel cut from a
+    # walled place can leave pockets: measured in the game, a squad deployed into one and the fight
+    # could not reach the enemy. A cell that no unit can walk to is not walkable, so it is sealed --
+    # intentionally impassable -- rather than left as a trap, and the board reports what it sealed.
+    def reachable_from(zone: dict) -> set[tuple[int, int]]:
+        seeds = [(zone["x"] + dx, zone["y"] + dy) for dx in range(zone["w"]) for dy in range(zone["h"])]
+        seen: set[tuple[int, int]] = set()
+        stack = [s for s in seeds if paint.get(f"{s[0]},{s[1]}") == "normal"]
+        while stack:
+            cx, cy = stack.pop()
+            if (cx, cy) in seen or not (0 <= cx < gw and 0 <= cy < gh):
+                continue
+            if paint.get(f"{cx},{cy}") != "normal":
+                continue
+            seen.add((cx, cy))
+            stack.extend(((cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)))
+        return seen
+
+    reachable = reachable_from(zones["player"])
+    sealed = 0
+    for gy in range(gh):
+        for gx in range(gw):
+            if paint.get(f"{gx},{gy}") == "normal" and (gx, gy) not in reachable:
+                paint[f"{gx},{gy}"] = "impassable"
+                sealed += 1
+
     # ---------------------------------------------------------------- craters
     # A crater is relief plus a rim: a bowl one level below the board and cover on the cells around it.
     # The source has no crater cover type (its `nm_craters` is a ground splat), so the crater is ours --
@@ -564,6 +594,32 @@ def main() -> None:
     # frame. A zone always gets cover within reach -- four pieces from the map's own kit, on walkable
     # ground, just outside the spawn cells so they never block the landing itself.
     zones = {"player": find_zone(False), "enemy": find_zone(True)}
+
+    # Every cell a unit can stand on must be reachable from the landing zones. A parcel cut from a
+    # walled place can leave pockets: measured in the game, a squad deployed into one and the fight
+    # could not reach the enemy. A cell that no unit can walk to is not walkable, so it is sealed --
+    # intentionally impassable -- rather than left as a trap, and the board reports what it sealed.
+    def reachable_from(zone: dict) -> set[tuple[int, int]]:
+        seeds = [(zone["x"] + dx, zone["y"] + dy) for dx in range(zone["w"]) for dy in range(zone["h"])]
+        seen: set[tuple[int, int]] = set()
+        stack = [s for s in seeds if paint.get(f"{s[0]},{s[1]}") == "normal"]
+        while stack:
+            cx, cy = stack.pop()
+            if (cx, cy) in seen or not (0 <= cx < gw and 0 <= cy < gh):
+                continue
+            if paint.get(f"{cx},{cy}") != "normal":
+                continue
+            seen.add((cx, cy))
+            stack.extend(((cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)))
+        return seen
+
+    reachable = reachable_from(zones["player"])
+    sealed = 0
+    for gy in range(gh):
+        for gx in range(gw):
+            if paint.get(f"{gx},{gy}") == "normal" and (gx, gy) not in reachable:
+                paint[f"{gx},{gy}"] = "impassable"
+                sealed += 1
     zone_dressed = 0
     if dressable:
         rng = random.Random(args.seed * 13 + 5)
@@ -689,6 +745,11 @@ def main() -> None:
             "slot_m": slot,
             "parcels": [{"id": p["id"], "slot": p["slot"], "zone": p["zone"]} for p in board["parcels"]],
             "seating": seat_report,
+            "connectivity": {
+                "walkable": sum(1 for v in paint.values() if v == "normal"),
+                "reachable": len(reachable),
+                "sealed": sealed,
+            },
         },
     }
     out = Path(args.out)
@@ -721,6 +782,7 @@ def main() -> None:
     grounded = sum(1 for v in err if v <= 0.6)
     p50 = err[len(err) // 2] if err else 0.0
     print(f"seating: {grounded}/{len(err)} props within 0.6 m of their ground (median |dy| {p50:.2f} m)")
+    print(f"connectivity: {len(reachable)} reachable cells, {sealed} sealed pockets")
     print(f"levels: {len(upper_cells)} upper-surface cells, {craters} craters")
     print(f"deployment cover: {zone_dressed} pieces at the landing zones")
     print(f"periphery: {band} pieces around the edge")
