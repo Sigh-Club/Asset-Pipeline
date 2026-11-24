@@ -109,14 +109,14 @@ def wait_for_vram(need_mb: int, tag: str, poll_s: int = 20, timeout_s: int = 0) 
         time.sleep(poll_s)
 
 
-def build_pipeline(texture_size: int, render_size: int, views: int):
+def build_pipeline(texture_size: int, render_size: int, views: int, res: int = 512):
     _patch_obj_to_glb()
     from textureGenPipeline import Hunyuan3DPaintConfig, Hunyuan3DPaintPipeline
-    cfg = Hunyuan3DPaintConfig(max_num_view=views, resolution=512)
+    cfg = Hunyuan3DPaintConfig(max_num_view=views, resolution=res)
     # Load weights into system RAM first: the 2B diffusion model alone OOMs the card during
     # loading (measured: 12 MB allocation failing with 6.2 GB free), so accelerate's
     # cpu_offload never got a chance to run. Load on CPU, then swap in per forward pass.
-    cfg.device = 'cpu'
+    cfg.device = 'cuda' if os.environ.get('PAINT_GPU') else 'cpu'
     cfg.render_size = render_size
     cfg.texture_size = texture_size
     # Do NOT truncate candidate_camera_azims/elevs: bake_view_selection indexes them with
@@ -134,6 +134,7 @@ def main() -> int:
     ap.add_argument('--texture', type=int, default=2048)
     ap.add_argument('--render', type=int, default=384)
     ap.add_argument('--views', type=int, default=3)
+    ap.add_argument("--res", type=int, default=512, help='diffusion resolution; 256 halves activations')
     a = ap.parse_args()
 
     a.mesh = str((ORIG_CWD / a.mesh).resolve())
@@ -161,7 +162,7 @@ def main() -> int:
         t0 = time.time()
         pipe = None
         try:
-            pipe = build_pipeline(tex, rend, views)
+            pipe = build_pipeline(tex, rend, views, a.res)
             # The 2B diffusion weights alone exceed this card. accelerate's cpu_offload keeps
             # them in system RAM and swaps them in per forward pass — the same pattern
             # run21_offload.py uses for the shape model. Slow, but it fits.
