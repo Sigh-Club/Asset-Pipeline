@@ -153,21 +153,34 @@ def read_exports(r: Reader, count: int, offset: int) -> list[dict]:
 
 
 def read_export_table(r: Reader, count: int, offset: int) -> list[dict]:
-    """The export entry is 68 bytes in UE3; the fields we need are the first 28."""
+    """Read the export table.
+
+    Measured on the SDK's plot packages (2026-11-24): the entry is 68 bytes and the serial fields sit at
+    +32 (size) and +36 (offset), not at +20/+24 as the first version assumed. With the wrong offsets every
+    export looked like an empty object and no actor could be placed, which is why the reference's plots
+    could not be imported. The layout is: Class(+0) Super(+4) Outer(+8) Name(+12) Archetype(+16)
+    ObjectFlags(+20, 8 bytes) ... SerialSize(+32) SerialOffset(+36).
+    """
     r.offset = offset
     out = []
     for _ in range(count):
         base = r.offset
-        entry = {
-            "class": r.i32(),
-            "super": r.i32(),
-            "outer": r.i32(),
-            "name": r.i32(),
-            "flags": r.u32(),
-            "serial_size": r.i32(),
-            "serial_offset": r.i32(),
-        }
-        out.append(entry)
+        r.offset = base
+        cls = r.i32()
+        sup = r.i32()
+        outer = r.i32()
+        name = r.i32()
+        r.offset = base + 32
+        size = r.i32()
+        serial = r.i32()
+        out.append({
+            "class": cls,
+            "super": sup,
+            "outer": outer,
+            "name": name,
+            "serial_size": size,
+            "serial_offset": serial,
+        })
         r.offset = base + 68
     return out
 

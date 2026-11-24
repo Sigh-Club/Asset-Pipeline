@@ -294,6 +294,11 @@ Recorded so the next session does not re-derive it:
 - **The map's own heightfield is measured and discarded.** It correlates +0.741 with where the map's
   entities stand, and a board does not use it; a mesh that can carry a true heightfield would let the
   board keep the place's real relief instead of a parcel terrace.
+- **The reference kit is imported and one board is built from it.** `tools/xcom2/build_xcom_plot.py` lays
+  its road modules (15.36 x 7.68 m boulevard pieces), its `BLDGKit_Wall` courses (2.56 m, stacked two
+  storeys), its floors and its own cover on a boulevard plan. Live: 299 pieces, all from its kit. What is
+  still wrong is *assembly*, not parts: wall runs leave gaps, the kit floor is 34 m against a 15 m lot, and
+  roofs need tiling from 5-6 m caps.
 - **The reference's own parts are importable now, and only nine of them are in.** `tools/xcom2/import_pieces.py`
   exports a shipped piece with UE Viewer, relinks its DIF albedo in Blender and writes a GLB with the
   reference's cover class and footprint (from its own file names). What is imported is street furniture; the

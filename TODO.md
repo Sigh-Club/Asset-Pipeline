@@ -18,7 +18,18 @@ record: `docs/BOARD_3D_GRID.md` §4b.
 
 **Next, in order** (each with its gate):
 
-0a. **Import the reference game's own parts (working, first pieces in).**
+0a. **The reference kit is imported and a board is live on it.** `tools/xcom2/build_xcom_plot.py` lays the
+   reference's own modules out on a boulevard plan and writes a board our engine loads: road modules
+   (`cty_blvd_str_16x08_01` 15.36 x 7.68 m, `str_16x16`, `crn`, `t`, `int`), `BLDGKit_Wall` courses at
+   2.56 m stacked to two storeys, kit floors, and its own low/high cover. Live at
+   `imperium-of-ash.com/demo?combat=1&board=xcom_boulevard_1` (299 pieces, all `source: xcom2`; 460
+   walkable cells, 24 cover cells, 4 units deploy).
+   **Assembly is the next pass, and it is now only assembly:** wall runs need to tile without gaps, floors
+   need sizing to the lot (the kit's floor piece is 34 m), and roofs need tiling from 5-6 m caps rather
+   than dropped as one slab (a single cap read as a floating platform).
+   Gate: a board a player reads as a street without being told what it is.
+
+0b. **Import the reference game's own parts (working, first pieces in).**
    `tools/xcom2/import_pieces.py` drives UE Viewer (`~/tools/umodel/umodel`, needs a 32-bit libpng12 — the
    tool supplies one from `~/tools/umodel/lib`) to export a shipped piece to glTF, relinks its own DIF
    albedo in Blender, writes a GLB, and records the reference's metadata parsed from its own file names:

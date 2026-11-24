@@ -95,40 +95,17 @@ def footprint_of(name: str) -> tuple[int, int] | None:
 BLENDER_SCRIPT = r"""
 import bpy, json, sys, glob
 from pathlib import Path
-src, dst, side = sys.argv[-4], sys.argv[-3], sys.argv[-2]
-tex_root = sys.argv[-1]
+src_list, dst, side, tex_root = sys.argv[-5], sys.argv[-4], sys.argv[-3], sys.argv[-2]
+limit = int(sys.argv[-1]) if sys.argv[-1].isdigit() else 256
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.ops.import_scene.gltf(filepath=src)
+# A shipped piece is a *package*, and a package holds several meshes (a road module carries its surface,
+# kerbs and markings as separate meshes). Exporting only the biggest one produced a 0.94 m "road" where
+# the module is 24 m: every mesh in the package is part of the piece.
+for src in [p for p in src_list.split('|') if p]:
+    bpy.ops.import_scene.gltf(filepath=src)
 objs = [o for o in bpy.context.scene.objects if o.type == 'MESH']
 if not objs:
     sys.exit('no mesh in ' + src)
-# UE Viewer writes the piece's textures beside the mesh but its glTF writer drops them, so the piece
-# arrives as grey geometry. The albedo is the shipped DIF texture: relink it here, and the GLB carries
-# the piece's own look rather than a placeholder.
-albedo = None
-piece = Path(src).parent.name.lower()
-cands = [p for p in glob.glob(tex_root + '/**/*.png', recursive=True)
-         if 'dif' in Path(p).stem.lower() and 'msk' not in Path(p).stem.lower()]
-def score(p):
-    stem = Path(p).stem.lower()
-    shared = len(set(piece.split('_')) & set(stem.split('_')))
-    return (shared, Path(p).stat().st_size)
-if cands:
-    albedo = max(cands, key=score)
-if albedo:
-    img = bpy.data.images.load(albedo)
-    # a piece does not need a 4k atlas: 512 is enough at the tactical camera and keeps the GLB small
-    if max(img.size) > 512:
-        img.scale(min(512, img.size[0]), min(512, img.size[1]))
-    mat = bpy.data.materials.new('piece_albedo')
-    mat.use_nodes = True
-    bsdf = mat.node_tree.nodes.get('Principled BSDF')
-    tex = mat.node_tree.nodes.new('ShaderNodeTexImage')
-    tex.image = img
-    mat.node_tree.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
-    for o in objs:
-        o.data.materials.clear()
-        o.data.materials.append(mat)
 import mathutils
 lo = mathutils.Vector((1e9, 1e9, 1e9)); hi = mathutils.Vector((-1e9, -1e9, -1e9)); tris = 0
 for o in objs:
@@ -137,6 +114,58 @@ for o in objs:
         w = o.matrix_world @ mathutils.Vector(c)
         lo = mathutils.Vector((min(lo[i], w[i]) for i in range(3)))
         hi = mathutils.Vector((max(hi[i], w[i]) for i in range(3)))
+# UE Viewer writes the piece's textures beside the mesh but its glTF writer drops them, so the piece
+# arrives as grey geometry. The albedo is the shipped DIF texture: relink it here, and the GLB carries
+# the piece's own look rather than a placeholder.
+# UE Viewer's glTF writer drops textures, so a piece arrives as grey geometry. It does write each
+# material as a `.mat` beside the meshes, and that file names the exact diffuse the material uses:
+#   Diffuse=CharredDrywalll_DIF
+# Guessing by file name instead (the first version did) put a UV-helper atlas on every wall, which is why
+# an imported kit rendered as a rainbow.
+tex_root_path = Path(tex_root)
+mats = {p.stem: p for p in tex_root_path.rglob('*.mat')}
+tex = {p.stem: p for p in tex_root_path.rglob('*.png')}
+
+def albedo_for(mat_name):
+    # Blender renames duplicate materials with a numeric suffix (`WLD_BrickA_Brown.001`); the shipped
+    # material is the unsuffixed one.
+    import re as _re
+    mat = mats.get(_re.sub(r'\.\d+$', '', mat_name or ''))
+    if mat is None:
+        return None
+    diffuse = ''
+    for line in mat.read_text(errors='ignore').splitlines():
+        if line.startswith('Diffuse='):
+            diffuse = line.split('=', 1)[1].strip()
+            break
+    if not diffuse or diffuse.lower().startswith('uv_mapping'):
+        return None
+    return tex.get(diffuse)
+
+def material_for(mat_name, img):
+    mat = bpy.data.materials.new(mat_name or 'piece')
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get('Principled BSDF')
+    if img is not None:
+        if max(img.size) > limit:
+            img.scale(min(limit, img.size[0]), min(limit, img.size[1]))
+        node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+        node.image = img
+        mat.node_tree.links.new(node.outputs['Color'], bsdf.inputs['Base Color'])
+    else:
+        bsdf.inputs['Base Color'].default_value = (0.45, 0.45, 0.47, 1)
+    return mat
+
+for o in objs:
+    slots = [m for m in o.data.materials if m]
+    built = []
+    for m in slots:
+        img = bpy.data.images.load(str(albedo_for(m.name))) if albedo_for(m.name) else None
+        built.append(material_for(m.name, img))
+    if built:
+        o.data.materials.clear()
+        for m in built:
+            o.data.materials.append(m)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=dst, export_format='GLB', use_selection=True)
 size = [round(hi[i]-lo[i], 3) for i in range(3)]
@@ -144,12 +173,13 @@ Path(side).write_text(json.dumps({'size': size, 'tris': tris, 'min': [round(v,3)
 """
 
 
-def convert(gltf: Path, dst: Path, tex_root: Path) -> dict | None:
+def convert(files: list[Path], dst: Path, tex_root: Path, tex: int = 256) -> dict | None:
     side = dst.with_suffix('.json')
     script = Path(tempfile.mkdtemp()) / "conv.py"
     script.write_text("import json\nfrom pathlib import Path\n" + BLENDER_SCRIPT)
     proc = subprocess.run(
-        ["blender", "-b", "--python", str(script), "--", str(gltf), str(dst), str(side), str(tex_root)],
+        ["blender", "-b", "--python", str(script), "--", "|".join(str(f) for f in files), str(dst),
+         str(side), str(tex_root), str(tex)],
         capture_output=True, text=True,
     )
     if proc.returncode != 0 or not dst.exists():
@@ -158,6 +188,40 @@ def convert(gltf: Path, dst: Path, tex_root: Path) -> dict | None:
         return json.loads(side.read_text())
     except Exception:
         return None
+
+
+def export_split(pkg: Path, biome: str, match: str | None = None, tex: int = 256) -> list[dict]:
+    """Export every mesh in a *kit* package as its own piece.
+
+    A kit package is a sheet: `bldgkit_citycenter_sf` holds dozens of walls, doors and windows laid out
+    side by side, so merging it gives one 13 m slab. Each mesh in it is a part, and a part is what a plot
+    is assembled from.
+    """
+    root = game_root()
+    if root is None:
+        return []
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    made: list[dict] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        rel = pkg.relative_to(root.parent.parent)
+        run_umodel([f"-path={root.parent.parent}", "-game=xcom2", "-gltf", "-png", "-export",
+                    f"-out={tmp}", str(rel)])
+        for g in sorted(Path(tmp).rglob("*.gltf")):
+            if match and not re.search(match, g.stem, re.I):
+                continue
+            name = f"{pkg.stem}__{g.stem}"
+            entry = convert([g], OUT_DIR / f"{name}.glb", Path(tmp), tex)
+            if entry is None:
+                continue
+            meta = {
+                "name": name, "source": "xcom2", "package": str(pkg),
+                "url": f"/assets/models/xcom/{name}.glb", "biome": biome,
+                "cover": cover_of(g.stem), "footprint_tiles": footprint_of(g.stem),
+                "size": entry["size"], "tris": entry["tris"],
+            }
+            (OUT_DIR / f"{name}.json").write_text(json.dumps(meta, indent=1))
+            made.append(meta)
+    return made
 
 
 def export_piece(pkg: Path, biome: str) -> dict | None:
@@ -174,14 +238,8 @@ def export_piece(pkg: Path, biome: str) -> dict | None:
         gltfs = sorted(Path(tmp).rglob("*.gltf"))
         if not gltfs:
             return None
-        # the piece is the biggest mesh in the package (a package can carry several sub-meshes)
-        best, best_tris = None, -1
-        for g in gltfs:
-            entry = convert(g, OUT_DIR / f"{pkg.stem}.glb", Path(tmp))
-            if entry is None:
-                continue
-            if entry["tris"] > best_tris:
-                best, best_tris = entry, entry["tris"]
+        # the whole package is the piece
+        best = convert(sorted(Path(tmp).rglob("*.gltf")), OUT_DIR / f"{pkg.stem}.glb", Path(tmp))
         if best is None:
             return None
         meta = {
@@ -235,6 +293,9 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=40)
     ap.add_argument("--biome", default="urban")
     ap.add_argument("--write-kit", action="store_true")
+    ap.add_argument("--split", action="store_true", help="export each mesh in a kit package as its own piece")
+    ap.add_argument("--match", default=None, help="with --split, only meshes whose name matches this pattern")
+    ap.add_argument("--tex", type=int, default=256, help="albedo size limit in pixels")
     args = ap.parse_args()
 
     if not UMODEL.exists():
@@ -258,6 +319,13 @@ def main() -> None:
         pkg = next(root.rglob(f"{name}.upk"), None) or next(root.rglob(f"{name}.umap"), None)
         if pkg is None:
             print(f"  {name}: not found")
+            continue
+        if args.split:
+            made = export_split(pkg, args.biome, args.match, args.tex)
+            if not made:
+                print(f"  {name}: export failed")
+            for meta in made:
+                print(f"  {meta['name']}: {meta['size']} tris={meta['tris']}")
             continue
         meta = export_piece(pkg, args.biome)
         if meta is None:
