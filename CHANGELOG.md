@@ -15,6 +15,16 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- **A parcel is a building, and there were none.** A plot board measured 77% impassable (solid lots with
+  a facade on the street side) and a cut parcel board 0% impassable (a plane with props). Each lot is now
+  a shell: perimeter walls, walkable interior floor, a door on the street side and one at the back, a
+  varied depth, a lot type (building, walled yard, ruin with breaches), party walls for a continuous
+  frontage, and walls at 4-7 m so a room reads from the tactical camera. Measured after: 41% impassable,
+  47-50 wall modules from 12 distinct pieces, 91-117 decals, cover on target.
+- The plot type now seeds the layout, so seven types are seven places rather than one place with seven
+  cover counts.
+- Walls are drawn from the kit's 39 usable wall modules with a least-used-first choice; machinery
+  (generators, vents, turbines) and spikes (shards, crystals) are excluded from building lines.
 - Frontage pieces are chosen by architecture family and storeys, not by size alone: the first attempt
   used 2 m wall runs (a fence round a field) and the second used the arena kit's 40 m platform (one
   machine instead of a street).

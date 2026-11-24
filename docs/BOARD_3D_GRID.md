@@ -251,6 +251,25 @@ and placing it well are different problems; the plot layer is the one that makes
 - `backend/internal/stagedboard` gates every authored board to "no unreachable ground" from its own
   landing zone (22 boards).
 
+**The finding that mattered most: a parcel is a building, and we had none.**
+
+Measured on our own boards, the two ways we were getting it wrong were exact opposites: a plot board was
+**77% impassable** — solid lots with a facade pasted on the street side, so the playable space was a thin
+lane and no building could be entered — and a cut parcel board was **0% impassable**, a plane with props
+on it. Neither is a place. The reference's parcels are enterable: their packages carry interior lights
+(`PointLightMovable`, 159 in one CityCenter parcel), blocking volumes and breachable walls
+(`ALN_WallDestro`), and their cover pieces are authored inside as well as out.
+
+What a plot board is now: each lot is a **shell** — perimeter cells are walls, the interior is floor, a
+door is carved on the street side and a second on the back — with a varied depth (10-22 m), a lot type
+(building, walled yard, ruin with breaches), party walls so the frontage is continuous, and walls at
+4-7 m for most buildings so the room reads from the tactical camera, with a few 8-14 m pieces for
+skyline. Ground is differentiated: paved lane, floor inside, yard dirt in the yards. Measured after:
+41% impassable, 47-50 wall modules from 12 distinct kit pieces, 91-117 decals, cover still on the plot
+type's target, and `TestParcelBoardCarriesAuthoredPlacements`-style gates extended with a structural one
+(`builds its parcels as buildings a squad can walk into`: interior ≥ 75% walkable, perimeter ≥ 60% wall,
+for every lot on every plot board).
+
 **Measured, and what it cost to learn:**
 - A parcel taller than two storeys is what a street is made of; the first attempt used 2 m wall runs
   and produced a fence around a field, and the second used the arena kit's 40 m platform and produced

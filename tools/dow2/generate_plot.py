@@ -78,7 +78,10 @@ def pick_kit(names: list[str], biome: str, heights: dict, families: dict,
 
 def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
              cells: int) -> dict:
-    rng = random.Random(seed)
+    # The plot type is part of the seed: seven types sharing one layout is one place with seven cover
+    # counts, not seven places. The type's own name enters the stream, so CityCenter and Shanty differ in
+    # geometry as well as in density.
+    rng = random.Random(f"{seed}:{plot}")
     spec = PLOT_TYPES.get(plot, PLOT_TYPES["CityCenter"])
     gw = gh = cells
     bw = bh = gw * CELL_M
@@ -124,40 +127,76 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
         lay_road(junction_x, lane_y, MODULE_CELLS, MODULE_CELLS, "court")
 
     # ---------------------------------------------------------------- parcels
-    # The reference's plot is a street with parcel *lots* along it: the lots fill the ground between the lane
-    # and the periphery, they are subdivided, and the plot's lanes and alleys are what connect them (105 of
-    # the reference's 172 parcels declare no entrance of their own). Scattering a handful of free-standing
-    # blocks leaves a field with objects in it -- the first attempt did exactly that.
+    # A parcel is a *building*, and a building is a shell: walls on its perimeter, floor inside, a door onto
+    # the lane. This is the difference between a place and a plane, and it is the one thing the first
+    # attempts got wrong in both directions -- a lot painted solid is a mass you can only walk past (the
+    # first plot board was 77% impassable), and a lot left open is a field with props on it. The reference's
+    # parcels are enterable: their packages carry interior lights, blocking volumes and breachable walls,
+    # and their cover pieces are authored inside as well as out.
     blocks: list[dict] = []
     strips = [(border, lane_y - 1, "north"), (lane_y + ROAD_CELLS + 1, gh - border - 1, "south")]
-    for (y0, y1, side) in strips:
+    for si, (y0, y1, side) in enumerate(strips):
+        # One alley per strip, and it runs the full depth: the space behind the shallower buildings is a
+        # service alley, and without a way through the frontage it becomes a sealed pocket (measured: 3
+        # sealed cells on a plot whose lots abutted along their whole length).
+        alley_x = rng.randrange(border + 3, gw - border - 4)
+        shallow_done = False
         depth = y1 - y0 + 1
-        if depth < 3:
+        if depth < 4:
             continue
         x = border
         while x < gw - border:
-            w = rng.choice([6, 7, 8, 9])
+            w = rng.choice([7, 8, 9, 10])
             if x + w > gw - border:
                 w = gw - border - x
-            if w < 3:
+            if w < 5:
                 break
-            lot = {"x": x, "y": y0, "w": w, "h": depth, "side": side}
-            for y in range(y0, y0 + depth):
+            # Depth varies per parcel: a 10 m shop front and a 22 m block are different buildings, and a
+            # strip of identical full-depth shells is what made the first street read as repetition.
+            dh = rng.choice([5, 6, 7, 8, depth])
+            dh = min(dh, depth)
+            if not shallow_done and x > alley_x:
+                # the lot behind the alley is set back, which is what makes the alley a route
+                dh = min(dh, max(3, depth - 3))
+                shallow_done = True
+            ly = y0 if side == "north" else y0 + depth - dh
+            lot = {"x": x, "y": ly, "w": w, "h": dh, "side": side,
+                   "type": rng.choices(["building", "yard", "ruin"], weights=[5, 3, 2])[0]}
+            # interior floor: walkable, and the walls are its perimeter
+            for y in range(ly, ly + dh):
                 for xx in range(x, x + w):
-                    paint[f"{xx},{y}"] = "impassable"
-            # a door onto the lane, two cells wide
-            door_x = x + w // 2
-            door_y = y1 if side == "north" else y0
+                    paint[f"{xx},{y}"] = "normal"
+            for y in range(ly, ly + dh):
+                for xx in range(x, x + w):
+                    edge = y in (ly, ly + dh - 1) or xx in (x, x + w - 1)
+                    if edge:
+                        paint[f"{xx},{y}"] = "impassable"
+            # the frontage wall takes the door; the far wall takes a second opening, so a room can be
+            # entered from the alley behind it as well -- one way in makes a room a dead end
+            # Every lot has a way in, and it is carved unconditionally: a door that lands on a corner cell
+            # leaves a sealed room, and a sealed room is a solid block again.
+            door_y = ly + dh - 1 if side == "north" else ly
+            door_x = min(max(x + w // 2, x + 1), x + w - 2)
             for dx in (0, 1):
-                if door_x + dx < gw:
-                    paint[f"{door_x + dx},{door_y}"] = "normal"
+                px = min(door_x + dx, x + w - 2)
+                paint[f"{px},{door_y}"] = "normal"
+            back_y = ly if side == "north" else ly + dh - 1
+            back_x = min(max(x + 1 + (w - 3) // 2, x + 1), x + w - 2)
+            if paint.get(f"{back_x},{back_y}") == "impassable":
+                paint[f"{back_x},{back_y}"] = "normal"
+            if lot["type"] == "ruin":
+                # a ruin has lost parts of its walls: two more gaps, so it is cover you can move through
+                for _ in range(2):
+                    gx = rng.randrange(x, x + w)
+                    gy = rng.choice([ly, ly + dh - 1])
+                    paint[f"{gx},{gy}"] = "normal"
             lot["door"] = [door_x, door_y]
+            lot["back_door"] = [back_x, back_y]
             blocks.append(lot)
-            x += w + (1 if rng.random() < 0.6 else 0)  # an alley between most lots
-    # the alleys are the plot's second connection layer: a lot's side wall gets a gap onto the alley
-    for b in blocks:
-        if b["x"] > border and paint.get(f"{b['x'] - 1},{b['y'] + b['h'] // 2}") == "normal":
-            continue
+            # Buildings abut along the street: a continuous frontage is what makes a street read as a
+            # canyon rather than a row of monuments with air around them. An alley every few lots is the
+            # exception, and it is what lets a squad get behind the frontage.
+            x += w + (1 if (rng.random() < 0.3 or abs(x + w - alley_x) <= 1) else 0)
 
     # ---------------------------------------------------------------- cover
     # Small pieces at the measured density for this plot type, low about twice high, on the kerb line and in
@@ -183,7 +222,11 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
             if cover_piece(n)]
     highs = [n for n in pick_kit(names, biome, heights_of, families, tier="high", min_h=0.95, max_h=1.6)
              if cover_piece(n)]
+    # Cover inside the parcels is cover: the reference measures its own density over the parcel, interiors
+    # included. Two pieces per room are placed later (with the walls), so the kerb pass fills the rest --
+    # counting only street cover and then adding rooms overshot the target by 45%.
     target = max(6, int(round(area / 100.0 * spec["cover_per_100m2"])))
+    kerb_target = max(4, target - 2 * len(blocks))
 
     taken: set[tuple[int, int]] = set()
 
@@ -217,7 +260,7 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
     kerb += [(x, lane_y + ROAD_CELLS - 1) for x in range(border, gw - border)]
     rng.shuffle(kerb)
     for (x, y) in kerb:
-        if placed >= target:
+        if placed >= kerb_target:
             break
         if place_cover(x, y):
             placed += 1
@@ -228,7 +271,7 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
               for y in range(lane_y, lane_y + MODULE_CELLS)]
     rng.shuffle(inner)
     for (x, y) in inner:
-        if placed >= target:
+        if placed >= kerb_target:
             break
         if place_cover(x, y):
             placed += 1
@@ -293,11 +336,22 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
     # instead of a street.
     # Architecture only: the kit also holds vehicles and rocks, and a 8 m tank passes a size filter while
     # reading as a tank. A frontage is a wall, a pillar, a doorway or a roof piece.
-    ARCH = {"wall_run", "wall_corner", "wall_barrier", "pillar", "doorway"}
+    # A wall is a wall run, a corner or a doorway. The classifier files fountains, twisted metal and scrub
+    # as "pillar", and a fountain standing in a building line is exactly the sort of thing that makes a
+    # board read as props rather than architecture.
+    ARCH = {"wall_run", "wall_corner", "doorway"}
+    # A wall is a slab, not a spike: shards and crystal formations pass a height filter and read as debris
+    # stuck to the building line.
+    SPIKE = ("shard", "crystal", "spike", "fin_", "stalag")
+    # Machinery in the wall family: the kit's wall runs include generators, vents and turbines, and eight
+    # identical turbines in a row is the strongest "manufactured" signal a street can carry.
+    MACHINE = ("generator", "turbine", "pump", "machine", "vent", "pipe", "boiler", "tank")
     facades = [n for n in names
                if (families.get(n) or {}).get("family") in ARCH
-               and 5.0 <= sizes_of(n)[2] <= 14.0
-               and 4.0 <= max(sizes_of(n)[0], sizes_of(n)[1]) <= 16.0]
+               and 3.5 <= sizes_of(n)[2] <= 14.0
+               and 4.0 <= max(sizes_of(n)[0], sizes_of(n)[1]) <= 16.0
+               and min(sizes_of(n)[0], sizes_of(n)[1]) >= 1.5
+               and not any(k in n.lower() for k in SPIKE + MACHINE)]
     # Walls first, then pillars and doorways: a frontage is built from wall modules. Sorting by size alone
     # put collapsed columns and statues on the street line, because they happen to be wide.
     # A frontage is a building line: pieces of at least two storeys. Two-metre wall runs read as a fence
@@ -307,35 +361,79 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
                                 -sizes_of(n)[2],
                                 -max(sizes_of(n)[0], sizes_of(n)[1])))
     lamps = [n for n in names if "lamp" in n.lower()]
-    for i, b in enumerate(blocks):
-        if not facades:
-            break
-        # A frontage is continuous: pieces are laid edge to edge along the lane-facing side, using each
-        # piece's own width, so the block reads as a building line rather than as objects in a field.
-        run_len = b["w"] * CELL_M
+
+    used_names: dict[str, int] = {}
+
+    def lay_wall(x0: float, y0: float, x1: float, y1: float, pool: list[str]) -> None:
+        """Wall modules edge to edge along one side of a shell, best fit to the remaining run."""
+        run = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+        if run < 1.0 or not pool:
+            return
         cursor = 0.0
         k = 0
-        while cursor < run_len - 1.0 and k < 24:
-            # best fit: the module that fills the remaining run most closely, so the line is continuous
-            remaining = run_len - cursor
-            pool = facades[:min(len(facades), 12)]
-            name = min(pool, key=lambda n: abs(max(sizes_of(n)[0], sizes_of(n)[1]) - min(remaining, 9.0)))
-            width = max(sizes_of(name)[0], sizes_of(name)[1]) or 4.0
-            width = min(width, remaining)
+        while cursor < run - 1.0 and k < 24:
+            remaining = run - cursor
+            # least-used first, then best fit: a street built from one module repeated reads as a kit,
+            # and the kit's own catalogue has dozens of wall pieces to spend instead
+            name = min(pool, key=lambda n: (used_names.get(n, 0),
+                                            abs(max(sizes_of(n)[0], sizes_of(n)[1]) - min(remaining, 9.0))))
+            used_names[name] = used_names.get(name, 0) + 1
+            width = min(max(sizes_of(name)[0], sizes_of(name)[1]) or 4.0, remaining)
             mid = cursor + width / 2
             cursor += width
             k += 1
-            # the frontage runs along the lot's lane-facing edge
-            x = b["x"] * CELL_M + mid
-            y = (b["y"] + b["h"] - 1 if b["side"] == "north" else b["y"]) * CELL_M
+            t = mid / run
             free_props.append({
                 "name": name,
                 "biome": (kit.get(name) or {}).get("biome") or biome,
-                "pos": [round(x - bw / 2, 3), 0.0, round(y - bh / 2, 3)],
+                "pos": [round(x0 + (x1 - x0) * t - bw / 2, 3), 0.0,
+                        round(y0 + (y1 - y0) * t - bh / 2, 3)],
                 "basis": [1, 0, 0, 0, 1, 0, 0, 0, 1],
                 "scale": 1,
                 "parcel": True,
             })
+
+    # Building styles: each lot is its own prefab. The reference ships a catalogue of distinct parcels
+    # (clinic, monument, municipal building); six shells built from one wall module read as repetition,
+    # which is the fastest way for a street to look manufactured rather than built.
+    # Most walls are 4-7 m: the tactical camera looks down, and a 10 m wall turns every room into a pen
+    # you cannot see into. Tall pieces are kept for the few buildings that should dominate the skyline.
+    tall = [n for n in facades if sizes_of(n)[2] >= 7.0]
+    mid = [n for n in facades if 3.5 <= sizes_of(n)[2] < 7.0]
+    low = [n for n in facades if sizes_of(n)[2] < 3.5]
+    for i, b in enumerate(blocks):
+        if not facades:
+            break
+        if b["type"] == "yard" and low:
+            pool_all = low
+        elif (i % 4 == 0) and len(tall) >= 3:
+            pool_all = tall
+        elif len(mid) >= 3:
+            pool_all = mid + tall[:4]   # a mid building can borrow a tall piece for its corner
+        else:
+            pool_all = facades
+        start = (i * 3) % max(1, len(pool_all) - 2)
+        pool = pool_all[start:start + 3] or pool_all[:3]
+        # A shell is four walls, not one frontage: the lane side, the back, and both flanks. One wall per
+        # lot read as a facade standing in a field, because from the camera you see the other three sides.
+        x0 = b["x"] * CELL_M
+        x1 = (b["x"] + b["w"] - 1) * CELL_M
+        y0 = b["y"] * CELL_M
+        y1 = (b["y"] + b["h"] - 1) * CELL_M
+        front_y = y1 if b["side"] == "north" else y0
+        back_y = y0 if b["side"] == "north" else y1
+        lay_wall(x0, front_y, x1, front_y, pool)
+        lay_wall(x0, back_y, x1, back_y, pool)
+        lay_wall(x0, y0, x0, y1, pool)
+        lay_wall(x1, y0, x1, y1, pool)
+        # interior cover: a room with nothing in it is a box. Two pieces per room, low-heavy, against the
+        # walls where a defender would take them.
+        inner = [(cx, cy) for cy in range(b["y"] + 1, b["y"] + b["h"] - 1)
+                 for cx in range(b["x"] + 1, b["x"] + b["w"] - 1)]
+        rng.shuffle(inner)
+        for (cx, cy) in inner[:2]:
+            place_cover(cx, cy)
+
     # street furniture on the kerb line: what makes a lane read as a street rather than a painted strip
     if lamps:
         for k, x in enumerate(range(border + 2, gw - border, 6)):
@@ -360,6 +458,17 @@ def generate(plot: str, seed: int, map_name: str, kit: dict, families: dict,
         names_d = [d["name"] for d in json.loads(decal_kit.read_text()).get("decals", [])]
         prefer = ["cobblestone", "stone_tiles", "u_stone_tiles", "cobbles"]
         road_decal = next((n for k in prefer for n in names_d if k in n), None)
+        # Inside is not outside: a room floor and a yard surface are what make the two read as different
+        # ground. The reference paints its ground from 349 decal placements per map; we had one surface.
+        floor_decal = next((n for n in names_d if "stone_tiles" in n or "u_stone" in n), road_decal)
+        yard_decal = next((n for n in names_d if "mud" in n or "dirt" in n or "rubble" in n), road_decal)
+        for b in blocks:
+            ground = floor_decal if b["type"] == "building" else yard_decal
+            if not ground:
+                continue
+            for yy in range(b["y"] + 1, b["y"] + b["h"] - 1, 2):
+                for xx in range(b["x"] + 1, b["x"] + b["w"] - 1, 2):
+                    decals.append({"name": ground, "x": xx + 1, "y": yy + 1, "size": [2, 2], "rot": 0})
         if road_decal:
             for piece in road:
                 for dy in range(0, piece["h"], 2):
