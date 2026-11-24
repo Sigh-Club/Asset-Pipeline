@@ -592,7 +592,12 @@ fidelity is the deliverable.
    then plate/tiles via `plate.py`/`tiles.py`, verify, print-prep per cr200b
 
 Full state, pass ledger, blockers: `HANDOFF_IMG23D.md` (repo root). Multiview
-capture prompts: `docs/IMG23D.md`. Never ship a mesh whose verify <85 or
+capture prompts: `docs/IMG23D.md`. Multi-view **spec sheets** convert too
+(helmet/rifle, measured 2026-11-24): split the panels with
+`tools/img23d/panel.py` first — fed whole, the model fuses the callouts and
+grid into the geometry — and note that the multiview preprocessor rescales each
+view independently, so an elongated object needs `--extent VIEW=W:H` or its
+cross-section inflates to the object's length. Never ship a mesh whose verify <85 or
 whose sand pass was skipped.
 
 ## Gemini web access — the transport that works, and the one that does not (verified 2026-11-23)

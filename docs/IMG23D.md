@@ -19,6 +19,7 @@ Weights auto-download from Hugging Face on first run to `~/.cache/hy3dgen`
 ```
 tools/img23d/
   img23d.py          CLI wrapper (re-execs itself under .venv)
+  panel.py           spec sheet → per-view RGBA panels (system python, no GPU)
   .venv/             python3.12 env (gitignored) — torch cu126, hy3dgen deps
   Hunyuan3D-2/       shallow clone (gitignored)
   TripoSR/           shallow clone (gitignored)
@@ -32,7 +33,19 @@ tools/img23d/img23d.py concept.png                     # hunyuan, seedless
 tools/img23d/img23d.py a.png b.png --seed 7 --steps 20 # batch, reproducible
 tools/img23d/img23d.py x.png --engine triposr --resolution 320
 tools/img23d/img23d.py x.png --formats stl --quiet     # print-only
+
+# spec sheet → multiview (see "Spec sheets" below)
+tools/img23d/panel.py sheet.png --out /tmp/views --box front:X,Y,W,H --box side:X,Y,W,H \
+    --mirror left=side
+tools/img23d/img23d.py --front /tmp/views/front.png --left /tmp/views/left.png \
+    --right /tmp/views/side.png --back /tmp/views/back.png --seed 7 --resolution 384
 ```
+
+`--steps` and `--resolution` reach the pipeline as `num_inference_steps` / `octree_resolution`
+(fixed 2026-11-24 — before that both were passed under the wrong names and silently ignored, so
+every run did 50 steps at octree 384 whatever the flags said). Hunyuan defaults: 50 steps, octree
+384. 20 steps at octree 320 halves the runtime (62 s vs 96 s measured) and loses fine detail —
+use it for look-dev, not for the mesh you keep.
 
 The wrapper prints per-mesh QC (verts/faces/watertight/components/bounds).
 Non-watertight output is normal — repair before printing:
@@ -125,7 +138,68 @@ Notes:
 - one view per generation; verify each against the front (same books, same
   order) before running the batch:
 
-    img23d.py --front front.png --left left.png --right right.png --seed 7 --steps 30 --resolution 384
+    img23d.py --front front.png --left left.png --right right.png --seed 7 --steps 50 --resolution 384
+
+## Spec sheets → models (PROVEN 2026-11-24, helmet + rifle)
+
+The Gemini concept sheets (`~/Pictures/IoA Gemini/Gemini_Generated_Image_*.png`, e.g. the ID-H9 helmet
+and ID-90 plasma rifle spec sheets) are multiview already, and they convert. Measured on the shared
+8 GB card, one job at a time:
+
+| sheet | input | result |
+|---|---|---|
+| ID-H9 helmet | front/side/mirrored side/back, octree 384, 50 steps | 130.9 s, 690 550 verts, 1.38 M faces, 4 shells, bounds 1.90×1.98×2.00 — dome, brow trim, visor recess, comms box, both antennae, chin vent, rear louvre all present |
+| ID-90 rifle | front (extent-cased) + side + mirrored side, octree 384, 50 steps | 122.3 s, 124 871 verts, watertight, 0.295×0.774×1.995 — receiver, scope, stock, grip, magazine well, muzzle present; handguard slots and cable bundle fused |
+
+Both rows are the documented commands below, `panel.py` → `img23d.py`, seed 7, on the shared 8 GB card.
+Wall time varies with desktop VRAM pressure (the same helmet job ran 96-131 s); the mesh differs
+slightly run to run even at a fixed seed.
+
+**The sheet must be split into per-view panels first.** Fed whole, the model fuses the leader lines,
+dimension callouts, title block and grid into the geometry. `panel.py` crops a panel, deletes the 1–3 px
+leader/dimension rules with a morphological opening, keeps the largest connected ink component, fills
+it, and writes RGBA on true alpha (which the shape stage trusts, so rembg never runs):
+
+```bash
+tools/img23d/panel.py sheet.png --out /tmp/views \
+    --box front:170,300,440,510 --box side:1120,310,580,560 \
+    --box top:1900,300,540,560 --box back:160,890,530,540 --mirror left=side
+```
+
+Boxes are `x,y,w,h` in sheet pixels — find them by cropping and looking. `--mirror NEW=SRC` writes the
+opposite side by flipping one view (2mv needs both); `panels.json` records boxes, sizes and extents.
+
+### Trap: each view is rescaled independently
+
+`MVImageProcessorV2.recenter` (`Hunyuan3D-2/hy3dgen/shapegen/preprocessors.py:36`) normalises **every
+view's silhouette to fill the frame on its own**. Relative scale between views is destroyed, so an
+elongated object seen muzzle-on gets its cross-section inflated to the object's length. Measured on the
+rifle: 0.412×0.863 cross-section against a 1.993 length (thickness/length 0.207). `--extent VIEW=W:H`
+re-cases that view on a canvas of its true projected bounding box (white, alpha=1 padding — invisible in
+the composite but inside the mask bbox, which is what `recenter` scales by). Same job after the fix:
+0.295-0.307 × 0.764-0.774, thickness/length **0.148-0.154**, which matches the sheet's own 1:1 panels —
+the fix is the padding, not a guess.
+
+### Trap: the sheets are not scale-consistent between panels
+
+The helmet sheet draws the same object at 395×485 px (front panel) and 527×522 px (side panel, labelled
+SCALE 1:1), so panels disagree by ~30 %. Shape comes out right; **absolute dimensions do not** — the
+reconstruction made the helmet 1.90 wide against 1.63 implied by the front panel's own aspect. Take the
+real numbers from the printed dimension callouts and correct the mesh in Blender, or reconcile panel
+scales before the run. Do not trust the reconstruction's units.
+
+### What a reconstruction is, and is not
+
+Shape only. No colour (the texture stage needs 16 GB), no part separation (the helmet is one blob in 4
+shells — visor, antennae and trim have to be split in Blender to take separate materials), no
+hard-surface crispness (handguard slots, muzzle-brake fins and cable bundles fuse).
+`tools/glb_contract.py` fails both as shipped — helmet against `--kind prop` (1.38 M tris / 23.7 MB,
+cap 12 000 / 4.0), rifle against `--kind weapon` (250 k tris / 4.29 MB, cap 8 000 / 4.0), both with no
+UVs, no normals and no texture. So the mesh is a **master**, and the prop route is decimate →
+`tools/blender/uv_prepare.py` → PBR from the library → up-axis and origin → the gate. (A rigged
+*unit* has a better route: `tools/build_unit_aaa.sh` takes an img23d mesh to the 120 k AAA-PC band with
+baked normal/AO, but it wants a rig and clips, which a helmet or rifle does not have yet.) Judge the
+result against the sheet (G5), not against the numbers.
 
 ## Low-VRAM operation (shared-GPU desktop, 8 GB card)
 

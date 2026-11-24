@@ -7,7 +7,7 @@
 > Blender, the material library and the GPU, not their settings.
 > **Target**: Dawn of War 1/2 presentation quality, achieved with our own assets
 > **This document must be updated when any task is completed. Priority: HIGH.**
-> **Last Updated**: 2026-11-09 — scoped this document to the 2D sprite programme; 3D GLB path moved to `3D_ASSETS.md`; MCP section marked as proposal (batch-only is the implemented method).
+> **Last Updated**: 2026-11-24 — §18 image-to-3D gained spec-sheet multiview input (`tools/img23d/panel.py`) and the `--steps`/`--resolution` no-op fix; everything else as of 2026-11-09 (document scoped to the 2D sprite programme; 3D GLB path in `3D_ASSETS.md`; MCP section marked as proposal — batch-only is the implemented method).
 > **2026-08-02 PIVOT**: Switched primary target from DoW2 (normal-map sculpt/bake) to DoW1 (painted diffuse + team-colour mask on lean geometry). See section 16.
 
 ---
@@ -1032,6 +1032,16 @@ Status:
 - [x] Certification run — hunyuan mini-turbo: 87 s, 418 362 verts, watertight,
   1 component (`output/img23d/test_tome-hunyuan/`); triposr: 100 711 verts,
   8 components, repair-before-print (`output/img23d/test_tome-triposr/`).
+- [x] Spec-sheet multiview input (2026-11-24) — `tools/img23d/panel.py` splits a
+  multi-view sheet into clean per-view RGBA panels (leader lines, callouts and
+  grid removed) and `--extent` restores the per-view scale that the multiview
+  preprocessor destroys. Measured: ID-H9 helmet 130.9 s → 690 550 verts,
+  1.38 M faces, 4 shells, recognisable from every view; ID-90 rifle 122.3 s →
+  124 871 verts, watertight, cross-section 0.295×0.774 on a 1.995 length. Both
+  fail `glb_contract` (prop/weapon) as masters only — no UVs, texture or
+  triangle budget. Fixed in the same change: `--steps` / `--resolution` were
+  passed to the pipeline under names it ignores, so every run silently did 50
+  steps at octree 384. Evidence and traps: `docs/IMG23D.md`.
 - [ ] First real concept-to-asset run (unit or prop) through critic gate.
 - [ ] Decide Hunyuan Community License posture for shipped game assets.
 

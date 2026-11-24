@@ -123,12 +123,15 @@ def run_hunyuan(image_path: Path, out_dir: Path, args) -> None:
         model, subfolder=subfolder)
 
     kwargs = {}
+    # the pipeline's own names, not ours: it takes num_inference_steps and octree_resolution, and
+    # silently swallows anything else in **kwargs — `steps=` / `resolution=` did nothing at all
+    # (every run did 50 steps at octree 384 regardless of the flags).
     if args.steps:
-        kwargs["steps"] = args.steps
+        kwargs["num_inference_steps"] = args.steps
     if args.seed is not None:
         kwargs["seed"] = args.seed
     if args.resolution:
-        kwargs["resolution"] = args.resolution
+        kwargs["octree_resolution"] = args.resolution
     wait_for_vram()
     t0 = time.time()
     for attempt in range(3):
@@ -144,10 +147,12 @@ def run_hunyuan(image_path: Path, out_dir: Path, args) -> None:
             torch.cuda.empty_cache()
             import gc; gc.collect()
             wait_for_vram(min_free_mb=3800, timeout_s=900)
-            if args.resolution and args.resolution > 256:
-                kwargs["resolution"] = max(256, args.resolution - 64)
-            if args.steps and args.steps > 20:
-                kwargs["steps"] = max(20, args.steps - 10)
+            octree = kwargs.get("octree_resolution", 384)
+            if octree > 256:
+                kwargs["octree_resolution"] = max(256, octree - 64)
+            steps = kwargs.get("num_inference_steps", 50)
+            if steps > 20:
+                kwargs["num_inference_steps"] = max(20, steps - 10)
     print(f"[img23d] shape generated in {time.time() - t0:.1f}s")
 
     _export(mesh, out_dir, image_path.stem, args.formats, args.quiet)
@@ -214,8 +219,9 @@ def main() -> None:
     p.add_argument("--out", type=Path, default=None,
                    help="output dir (default: output/img23d/<image stem>)")
     p.add_argument("--resolution", type=int, default=None,
-                   help=f"marching-cubes resolution (default {MC_RESOLUTION_DEFAULT})")
-    p.add_argument("--steps", type=int, default=None, help="diffusion steps (hunyuan)")
+                   help="octree/marching-cubes resolution (hunyuan default 384, "
+                        f"triposr {MC_RESOLUTION_DEFAULT})")
+    p.add_argument("--steps", type=int, default=None, help="diffusion steps (hunyuan default 50)")
     p.add_argument("--seed", type=int, default=None)
     p.add_argument("--hunyuan-model", default=None,
                    help="HF repo id (default: 2mini single-view, 2mv with --front etc)")
