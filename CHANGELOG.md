@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] — 2026-11-24 (plot generator: the board is a place, not a plane)
+
+### Added
+
+- `tools/dow2/generate_plot.py` — a board generated in the reference's layout grammar: road network of
+  8-cell modules (straight/T/court), parcel lots filling the strips with alleys, continuous building
+  frontages laid edge to edge by best fit, kerb cover at the plot type's measured density, a paved lane
+  from the shipped decal kit, and a report of every invariant it holds. Seven plot types emitted, each
+  within 2% of its own measured cover target, none with a sealed pocket. Decision record:
+  `docs/BOARD_3D_GRAMMAR`-adjacent, `docs/BOARD_3D_GRID.md` §4b.
+
+### Fixed
+
+- Frontage pieces are chosen by architecture family and storeys, not by size alone: the first attempt
+  used 2 m wall runs (a fence round a field) and the second used the arena kit's 40 m platform (one
+  machine instead of a street).
+- Cover must have a footprint and come from the kit's cover family or a crate/barrier name; pale wedges
+  placed as cover read as markers, not as cover.
+
 ## [Unreleased] — 2026-11-18 (session 9, P10: real-world scale and the roster)
 
 ### Fixed

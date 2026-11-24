@@ -1,8 +1,31 @@
 # Asset-pipeline — live work tracker
 
-**Updated 2026-11-23 (AAA-PC tier).** This is the actionable list, and it is the honest one: it states
+**Updated 2026-11-24 (plot generator).** This is the actionable list, and it is the honest one: it states
 what works, what is partial, and what is broken, with the measurement that decides each. Read it
 before touching the DoW2 import.
+
+## Live status — 2026-11-24
+
+**Done this cycle: plot layer.** `tools/dow2/generate_plot.py` generates a board in the reference's
+layout grammar — road modules, parcel lots with alleys, continuous frontages, kerb cover at the plot
+type's measured density, a paved lane from the shipped decal kit — and refuses to write a board that
+breaks its invariants. Seven plot types are in the catalogue (`plot_citycenter_1` … `plot_rooftops_1`),
+the backend prefers them (`stagedboard.Pick`), and the demo rotates through them.
+
+Measured: cover within 2% of each type's target, 0 sealed pockets on every board, longest sightline 26
+cells at a 0.53 long-sightline share, 22 authored boards gated to "no unreachable ground". Decision
+record: `docs/BOARD_3D_GRID.md` §4b.
+
+**Next, in order** (each with its gate):
+
+1. **P2 parcel size mix** — 18 / 18×36 / 36×36 m slots, medium dominant (the reference's own mix).
+   Gate: ≥2 sizes on a board, none over 36 m.
+2. **P4 line of sight as a rule** — walls block, cover absorbs; reject a board with no sightline under
+   one weapon range. The generator already reports the metric; the rules do not read it yet.
+3. **P3 cover placement by lane/wall edge** rather than kerb rows, low ≥60%.
+4. **P5 biome by asset swap** — one layout, three biome skins (the reference's own technique).
+5. **Kit gap** — author low-cover pieces per biome; the low share stops at 54% because some kits hold
+   almost none.
 
 Authority and detail:
 
@@ -104,6 +127,21 @@ Albedo: luminance flattening of the library (removes baked lighting, which read 
 per-slot desaturation was measured and **rejected** — it removed the yellow-band defect but also the gold
 trim and camo identity. Final authored factors: armour 0.10/0.55, metal_trim 0.55/0.50, underlayer
 0.00/0.92, exported as factors with no metallicRoughness texture (verified in the GLB).
+
+**Root cause of the material gap, measured** (`docs/ASSEMBLY_MODEL.md` §10): the competitors run a
+dedicated PBR *texture-generation* model; we never do. Ours is wired (`tools/img23d/paint_run.py`,
+Hunyuan3D-Paint) and all four dependency blockers are solved, but it **does not fit 8 GB** — it OOMs while
+loading the 2B weights (20 MB allocation failing with 80-135 MB free), runs on CPU but then dies in the
+CUDA-only renderer. **This is the concrete reason our materials are not at competitor tier, and the 24 GB
+card is the unlock.** Until then the albedo is a composite of a 1K library and a flat tint.
+
+**Complete-looking assets without the texture model** (§11): shipped authored art is used only where the
+slot genuinely matches (Cadian camo on the trousers, IG kit on the webbing) and the plates keep tinted
+library albedo, which is solid navy — the concept's actual colour. Putting the camo on the *plates* was the
+gate's critical defect; corrected. **The certified gate now returns `continue`, 7.0 across all five
+features, with an empty defect list.** The multi-process paint split (render → per-view diffusion → UV bake,
+each its own process so the peak is one component, ~4 GB) is designed and documented in §11 and is the next
+build.
 
 The gate's remaining defects are now **source geometry, not material**: bulbous helmet, thin groin plate,
 stockier proportions. Those come from the generated mesh and cannot be fixed downstream — they need better

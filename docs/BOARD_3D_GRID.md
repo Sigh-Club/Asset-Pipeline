@@ -225,6 +225,43 @@ rather than being mistaken for a missing texture (every GLB on that board had im
 - **Do not give a crater a cover *type* the source does not have.** The source has no crater cover; our
   crater is relief plus an edge, and calling it `tp_heavy` would be our word, not the game's.
 
+## 4b. A plot generator in the reference's grammar
+
+**Choice** — the product board is *generated* in the reference's layout grammar: a road network of
+8-cell modules (straight, T, court), parcel lots filling the strips either side of it with alleys
+between them, continuous building frontages along the lane, cover on the kerb line at the plot type's
+measured density, and a paved lane drawn from the shipped decal kit. Tool:
+`tools/dow2/generate_plot.py`. **Not rejected** — importing the reference's `.umap` geometry, or
+continuing to cut parcels and hope a composition reads as a place.
+
+**Because** — the reference's method is plot → road network → parcel slots → cover/LOS metrics, and we
+had none of the first two: measured on the installed SDK, 172 parcel definitions and 443 PCP road
+definitions, while our boards were a solver's selection of cuts on open ground. Cutting a good parcel
+and placing it well are different problems; the plot layer is the one that makes a board a place.
+
+**Check** — `generate_plot.py` self-reports and refuses on the invariants it can check:
+- cover at the plot type's measured target ±2% (Facility 0.39 vs 0.40, CityCenter 0.72 vs 0.73,
+  Shanty 2.69 vs 2.70 pieces/100 m², all seven types);
+- `sealed 0` — every walkable cell reachable from the lane spine;
+- deployment zones on the carriageway, asserted walkable before the file is written;
+- longest sightline and long-sightline share reported per board (26 cells, 0.53 share on the 60 m
+  plots);
+- `frontend/src/three/__tests__/stagedLayouts.test.ts` gates each plot board to its own type's cover
+  target within a quarter and to the corpus dispersion band (0.8–2.2);
+- `backend/internal/stagedboard` gates every authored board to "no unreachable ground" from its own
+  landing zone (22 boards).
+
+**Measured, and what it cost to learn:**
+- A parcel taller than two storeys is what a street is made of; the first attempt used 2 m wall runs
+  and produced a fence around a field, and the second used the arena kit's 40 m platform and produced
+  one machine instead of a street. Frontages are now architecture-family pieces, 5–14 m tall, laid
+  edge to edge by best fit.
+- Cover has to *read*: a piece with a footprint, from the kit's cover family or a crate/barrier name.
+  Pale wedges placed as cover looked like markers.
+- The lane needs a surface: the decal layer was built only on a ground rebuild, so it landed after the
+  board's second build and was discarded — the paved lane never drew until the layer was keyed on the
+  decals themselves.
+
 ## 5. What is still open
 
 Recorded so the next session does not re-derive it:
