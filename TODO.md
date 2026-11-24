@@ -18,7 +18,16 @@ record: `docs/BOARD_3D_GRID.md` §4b.
 
 **Next, in order** (each with its gate):
 
-0. **Read a reference plot's plan from the SDK, and build that plan.** The method question the owner keeps
+0a. **Import the reference game's own parts (working, first pieces in).**
+   `tools/xcom2/import_pieces.py` drives UE Viewer (`~/tools/umodel/umodel`, needs a 32-bit libpng12 — the
+   tool supplies one from `~/tools/umodel/lib`) to export a shipped piece to glTF, relinks its own DIF
+   albedo in Blender, writes a GLB, and records the reference's metadata parsed from its own file names:
+   `locov`/`hicov` is its low/high cover class and `NxM` is its footprint in tiles. Nine CityCenter pieces
+   are imported and in `env_kit.json` (`source: xcom2`) with measured sizes — an ATM 0.73x0.64x1.25 m, a
+   bench 1.84 m, a ladder 5.4 m. Next: the building and road pieces, then a plot built from them.
+   Gate: a board drawn entirely from `source: xcom2` pieces.
+
+0b. **Read a reference plot's plan from the SDK, and build that plan.** The method question the owner keeps
    asking ("copy the maps, then work backwards to fit the assets") is the right one, and it is not what we
    have been doing: we generate a plot from the reference's *statistics*. The SDK ships 122 plots under
    `XCOM 2 SDK/XComGame/Content/XCOM_2/Maps/Plots/` and the module vocabulary is in their own names

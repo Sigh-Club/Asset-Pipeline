@@ -294,6 +294,10 @@ Recorded so the next session does not re-derive it:
 - **The map's own heightfield is measured and discarded.** It correlates +0.741 with where the map's
   entities stand, and a board does not use it; a mesh that can carry a true heightfield would let the
   board keep the place's real relief instead of a parcel terrace.
+- **The reference's own parts are importable now, and only nine of them are in.** `tools/xcom2/import_pieces.py`
+  exports a shipped piece with UE Viewer, relinks its DIF albedo in Blender and writes a GLB with the
+  reference's cover class and footprint (from its own file names). What is imported is street furniture; the
+  buildings and roads are the mass that is still ours.
 - **A reference plot's *plan* is not extracted yet.** We reproduce its grammar and its measured numbers,
   but not one of its actual layouts. The SDK ships 122 plots whose module names carry their own
   dimensions (`ARC_CTY_Blvd_Str_16x08`, `ARC_CTY_Blvd_Crn_16x16`, `ARC_24_Periphery_Commercial`), so the
